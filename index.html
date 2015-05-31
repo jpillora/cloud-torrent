@@ -1,0 +1,394 @@
+<html>
+	<head>
+		<title>Cloud Torrent</title>
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/semantic-ui/1.7.3/semantic.min.css">
+		<link rel="stylesheet" type="text/css" href="static/app.css">
+		<link rel="icon" href="cloud-favicon.png" type="image/x-icon" />
+		<style type="text/css">[ng-cloak]{display: none;}</style>
+	</head>
+	<body ng-app="app"><div ng-cloak class="cage">
+
+		<!-- TITLE ===================== -->
+		<div class="title">
+			<h2>
+				<a href="https://github.com/jpillora/cloud-torrent" target="_blank"
+					ng-init="logoHover = false"
+					ng-mouseover="logoHover = true"
+					ng-mouseleave="logoHover = false">
+					<i class="blue icon" ng-class="{cloud:!logoHover, github: logoHover}"></i> Cloud Torrent
+				</a>
+			</h2>
+			<div class="status">
+
+				<i ng-click="$root.omni.omni = 'magnet:?xt=urn:btih:'; $root.omni.edit = true;"
+					class="ui circular magnet icon" style="font-size: 14px;"></i>
+
+				<i ng-show="request.count > 0"
+					class="ui circular loading repeat icon"></i>
+
+				<i class="ui circular lightning icon" ng-class="{
+					green: connected,
+					red: !connected
+				}"></i>
+			</div>
+		</div>
+
+		<!-- GLOBAL ERROR MESSAGE ===================== -->
+		<div ng-if="err" class="ui error message">
+			<i class="close icon" ng-click="$root.err = null"></i>
+			<div class="header">
+			Error
+			</div>
+			<p>{{err}}</p>
+		</div>
+
+		<!-- OMNI INPUT/EDITOR ===================== -->
+		<div class="omni" ng-controller="OmniController">
+
+			<div class="omni ui fluid icon input">
+				<input
+					placeholder="Enter search query, torrent URL or magnet URI"
+					ng-model="omni"
+					ng-change="parse()"
+					ng-enter="magnet && torrentsAPI('load', {magnet:omni}) || searchList()"/>
+				<i ng-class="{search: search, magnet: magnet || torrent,
+								help: !search && !magnet && !torrent}"
+					class="icon"></i>
+			</div>
+
+			<form ng-show="edit" class="ui edit form">
+				<div class="ui divider"></div>
+				<div class="field">
+					<label>Name</label>
+					<div class="field">
+						<input type="text"
+						ng-model="name"
+						ng-change="stringify()"
+						placeholder="Name">
+					</div>
+				</div>
+				<div class="field">
+					<label>Info Hash</label>
+					<div class="field">
+						<input type="text"
+						ng-model="infohash"
+						ng-change="stringify()"
+						placeholder="Info Hash">
+					</div>
+				</div>
+				<div class="field">
+					<label>Trackers</label>
+				</div>
+				<div>
+					<div class="field" ng-repeat="t in trackers">
+						<input type="text"
+						ng-model="t.v"
+						ng-change="stringify()"
+						placeholder="Tracker">
+					</div>
+				</div>
+			</form>
+
+			<div ng-show="omnierr" class="ui error message">
+				<p>{{omnierr}}</p>
+			</div>
+
+			<div class="search buttons" ng-show="search && provider">
+
+				<select class="ui green button" ng-model="provider"
+					ng-options="id as label for (id, label) in data.providers">
+				</select>
+
+				<div ng-click="searchList()"
+					class="ui tiny blue button"
+					ng-class="{loading: request.to('search/list'),
+						disabled: noResults || hasMore && results && results.length > 0
+					}">
+					<span ng-show="noResults">No results!</span>
+					<span ng-show="!noResults">Search</span>
+				</div>
+			</div>
+
+			<div class="ui error message" ng-show="search && !provider">
+				<p>You have no search providers</p>
+			</div>
+
+			<div class="results" ng-show="search && results && results.length > 0" >
+				<table class="ui unstackable compact striped tcld table">
+					<tr ng-repeat="r in results">
+						<td class="name">
+							<a ng-href="{{ r.url }}" target="_blank">{{ r.name }}</a>
+						</td>
+						<td ng-if="r.size" class="size">
+							{{ r.size }}
+						</td>
+						<td class="users">
+							<span class="seeds">{{ r.seeds }}</span>
+							<span class="peers"> {{ r.peers }}</span>
+						<td class="controls">
+							<i ng-click="searchLoad(r)"
+								class="ui green download icon"></i>
+						</td>
+					</tr>
+					<tr ng-if="hasMore">
+						<td class="loadmore" colspan="10">
+							<div ng-click="searchList()"
+								class="ui tiny blue button"
+								ng-class="{loading: request.to('search/list')}">
+								Load more
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+
+			<div class="magnet buttons" ng-show="magnet">
+				<div ng-show="magnet"
+					ng-click="edit = !edit"
+					ng-class="{green: edit}"
+					class="ui tiny button">Edit</div>
+				<div ng-click="torrentsAPI('load', {magnet: omni})"
+					class="ui tiny blue button"
+					ng-class="{loading: request.to('torrent/load')}">
+					Load Magnet
+				</div>
+			</div>
+
+			<div class="buttons" ng-show="torrent">
+				<div ng-click="torrentsAPI('load', {torrent: omni})"
+					class="ui tiny blue button"
+					ng-class="{loading: request.to('torrent/load')}">
+					Load Torrent
+				</div>
+			</div>
+		</div>
+
+		<!-- TORRENT LIST ===================== -->
+
+		<div class="torrents-header">
+			<h3 class="ui header">
+				Torrents
+			</h3>
+			<h5 class="ui files downloading header">
+				Downloading {{ data.filesDownloading }} files
+			</h5>
+		</div>
+
+		<div ng-if="!data.torrents || data.torrents.length == 0" class="ui message nodownloads">
+			<p>Add torrents above</p>
+		</div>
+
+ 		<div ng-repeat="t in data.torrents"
+			ng-init="t.index = $index"
+			ng-class="{open: t.open}"
+ 			class="ui torrent segment">
+
+			<div ng-if="t.openning" class="ui active inverted dimmer">
+				<div class="ui text loader">Loading</div>
+			</div>
+
+			<div class="ui stackable grid">
+				<div class="two column row">
+					<div class="info column">
+						<div class="name">
+							<span ng-show="!uploaded(t.name+'.zip')">
+								{{ t.name }}
+							</span>
+							<a ng-show="uploaded(t.name+'.zip')"
+								ng-href="{{ uploaded(t.name+'.zip').url }}">
+								{{ t.name }}
+							</a>
+						</div>
+						<div class="hash">#{{ t.hash }}</div>
+					</div>
+					<div class="controls column">
+						<div class="open" ng-show="t.open">
+
+							<div class="status">
+								<div class="down">
+									<span ng-class="{muted:t.status.down == 0}">{{t.status.down | bytes}}</span>
+									<span ng-class="{muted:t.status.downps == 0}"> ({{t.status.downps | bytes}}/s)
+										<i class="ui arrow down icon"></i>
+									</span>
+								</div>
+								<!-- DISABLED UPLOAD
+								<div class="up">
+									<span ng-class="{muted:t.status.up == 0}">{{t.status.up | bytes}}</span>
+									<span ng-class="{muted:t.status.upps == 0}"> ({{t.status.upps | bytes}}/s)
+										<i class="ui arrow up icon"></i>
+									</span>
+								</div>
+								 -->
+							</div>
+
+							<a class="ui green label"
+								ng-class="{disabled: uploaded(t.name+'.zip')}"
+								ng-click="!uploaded(t.name+'.zip') && torrentsAPI('zipAll', {hash: t.hash })">
+								<i class="save icon"></i> Zip
+							</a>
+
+							<a class="ui red label"
+								ng-click="torrentsAPI('close', {hash: t.hash })">
+								<i class="stop icon"></i> Stop
+							</a>
+						</div>
+						<div class="closed" ng-show="!t.open">
+							<a class="ui green label"
+								ng-click="torrentsAPI('open', {hash: t.hash })">
+								<i class="play icon"></i> Start
+							</a>
+
+							<a class="ui red label"
+								ng-click="torrentsAPI('remove', {hash: t.hash })">
+								<i class="trash icon"></i> Remove
+							</a>
+						</div>
+					</div>
+				</div>
+
+				<div ng-if="!t.open" class="row stopped"><div class="column">
+					This torrent is inactive. Press the green power button to reactivate or the red trash can to remove it.
+				</div></div>
+
+				<div class="row" ng-show="t.open"><div class="column">
+					<table class="ui unstackable compact striped downloads tcld table">
+						<thead>
+							<tr>
+								<th class="name">File</th>
+								<th class="size">Size</th>
+								<th>&nbsp;</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr ng-if="!t.files || t.files.length == 0">
+								<td colspan="3" class="muted">No downloads</td>
+							</tr>
+							<tr class="download file" ng-repeat="f in t.files">
+								<td class="name">
+									<div>
+										<span ng-show="!uploaded(f)">
+											{{ f.path | filename }}
+										</span>
+										<a ng-show="uploaded(f)"
+											ng-href="{{ uploaded(f).url }}">
+											{{ f.path | filename }}
+										</a>
+									</div>
+									<div ng-show="f.downloading || f.uploading"
+										 class="ui blue active progress">
+										<div class="bar" ng-style="{width: (f.downloadLength/f.length)*90 +
+																	(!f.uploading && 10 || 0) + '%'}">
+											<div class="progress"></div>
+										</div>
+									</div>
+									<div ng-if="f.downloadError"
+										class="ui error message">
+										<i class="close icon" ng-click="f.downloadError = null"></i>
+										<p>{{f.downloadError}}</p>
+									</div>
+								</td>
+								<td class="size">
+									{{ f.length | bytes }}
+								</td>
+								<td class="controls">
+									<i ng-class="{disabled: t.zipping || f.uploading || uploaded(f) || f.downloading}"
+										ng-click="!uploaded(f) && !f.downloading && torrentsAPI('downloadFile', {hash: t.hash, path: f.path})"
+										class="green cloud download icon"></i>
+									<i ng-show="f.downloading"
+										ng-click="f.downloading && torrentsAPI('cancelFile', {hash: t.hash, path: f.path})"
+										class="red stop icon"></i>
+								</td>
+							</tr>
+						</tbody>
+						<tfoot ng-if="t.files.length > 1">
+							<tr>
+								<th class="name">
+									{{ t.files.length }} Files
+								</th>
+								<th>
+									{{ sumFiles(t) | bytes }} Total
+								</th>
+								<th>
+									&nbsp;
+								</th>
+							</tr>
+						</tfoot>
+					</table>
+				</div></div>
+			</div>
+ 		</div>
+
+		<!-- DOWNLOAD LIST  ===================== -->
+		<h3 class="ui header">Downloads</h3>
+
+		<div ng-if="!data.uploads || (data.uploads | keys).length == 0" class="ui message nodownloads">
+			<p>Download files above</p>
+		</div>
+
+		<table ng-if="data.uploads && (data.uploads | keys).length > 0" class="ui unstackable compact striped uploads tcld table">
+			<thead>
+				<tr>
+					<th class="name">File</th>
+					<th class="size">Size</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="upload file" ng-repeat="(path, f) in data.uploads">
+					<td class="name">
+						<a ng-href="{{ f.url }}" target="_blank" class="path">
+							{{ path | filename }}
+							<i class="ui external link icon"></i>
+						</a>
+						<!-- preview button -->
+						<i ng-show="ext(f.url) == ext(path) &&
+						            (ext(path) == 'mp4' ||
+									ext(path) == 'mp3' ||
+									ext(path) == 'pdf')"
+							ng-click="previews[path] = !previews[path]"
+							class="video play icon"
+							ng-class="{outline: previews[path]}"></i>
+						<!-- previewers -->
+						<div ng-if="previews[path]" ng-switch="ext(path)">
+							<div ng-switch-when="mp4">
+								<video width="100%" controls>
+									<source jp-src="f.url" type="video/mp4">
+								</video>
+							</div>
+							<div ng-switch-when="mp3">
+								<audio controls>
+									<source jp-src="f.url" type="audio/mpeg; codecs='mp3'">
+								</audio>
+							</div>
+							<div ng-switch-when="pdf">
+								<object data="{{ f.url }}" type="application/pdf"
+										width="100%" height="300px">
+									<embed jp-src="f.url" type="application/pdf" />
+								</object>
+							</div>
+						</div>
+
+					</td>
+					<td class="size">
+						{{ f.length | bytes }}
+					</td>
+					<td class="controls">
+						<i ng-show="!f.$confirm" ng-click="f.$confirm = true"
+							class="red trash icon"></i>
+						<i ng-show="!f.$deleting && f.$confirm"
+							ng-click="f.$deleting = true; torrentsAPI('trash', {path: path})"
+							ng-class="{red: !f.$deleting, grey: f.$deleting}"
+							class="check icon"></i>
+						<i ng-show="f.$deleting" class="grey notched circle loading icon"></i>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+		<script src="//cdn.rawgit.com/sindresorhus/query-string/master/query-string.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.4/angular.min.js"></script>
+		<!-- <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/3.1.0/lodash.min.js"></script> -->
+		<script src="static/app.js"></script>
+	</div></body>
+</html>

@@ -1,0 +1,219 @@
+
+/* global styles  */
+html, body {
+	width: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+.cage {
+	padding-top: 10px;
+	padding-bottom: 40px;
+	max-width: 700px;
+	margin: 10px auto;
+}
+
+@media (max-width: 740px) {
+    .cage {
+		margin: 10px;
+		padding-top: 0;
+    }
+}
+
+html body .muted {
+	color: gray;
+}
+
+.ellipsis {
+	display: inline-block;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+[ng-click] {
+	cursor: pointer;
+}
+
+.disabled {
+	cursor: default !important;
+}
+
+.icon[ng-click] {
+	font-size: 1.2em;
+}
+
+/* 
+	================
+	app styles
+*/
+
+.title {
+	position: relative;
+}
+.title a {
+	font-size: 2.35rem;
+}
+.title .status {
+	position: absolute;
+	top: 2px;
+	right: 10px;
+}
+
+.omni {
+	margin-top: 5px; 
+}
+
+.omni .buttons {
+	margin-top: 5px;
+	text-align: center;
+}
+
+.omni .results {
+	max-height: 200px;
+	overflow-y: auto;
+	border: 1px solid rgba(0,0,0,.15);
+	margin-top: 5px;
+	border-radius: 4px;
+}
+
+.omni .results .name {
+	/*font-size: .75em;*/
+	text-align: right;
+}
+
+.omni .results .users {
+	width: 75px;
+	text-align: center;
+}
+.omni .results .seeds {
+	color: #5bbd72;
+}
+
+.omni .results .peers {
+	color: rgb(176, 127, 20);
+}
+
+.omni .results .loadmore {
+	text-align: right;
+}
+
+.omni .search select {
+	padding: 0 10px;
+	margin-top: 0px;
+	border-radius: 4px;
+	background: #D58686;
+	color: #888;
+	border: none;
+	outline: none;
+	height: 31px;
+	display: inline-block;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	cursor: pointer;
+}
+.omni .form {
+	margin-top: 5px;
+}
+
+.torrents-header {
+	margin-top: 20px;
+	position: relative;
+}
+
+.torrents-header .files.downloading {
+	position: absolute;
+	right: 0px;
+	top: 1px;
+	margin: 9px;
+	font-size: 0.75rem;
+	color: grey;
+}
+
+.torrent {
+	opacity: 0.95;
+	min-height: 10px;
+}
+
+.torrent.open {
+	opacity: 1
+}
+
+.torrent .info .name,
+.torrent .info .hash {
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.torrent .info .name {
+	font-size: 1.2rem;
+}
+
+.torrent .info .hash {
+	font-size: 0.75rem;
+}
+
+.torrent .status {
+	padding-top: 10px;
+	display: inline;
+}
+
+.torrent .status > div {
+	display: inline-block;
+}
+
+.torrent .status .muted {
+	color: lightgray;
+}
+
+.torrent .controls.column > div {
+	/*padding-top: 5px;*/
+	text-align: right;
+}
+
+.torrent .stopped.row .column {
+	padding: 0 100px;
+	text-align: center;
+	font-size: 0.75rem;
+}
+
+.torrent .download.file .name {
+	position: relative;
+	overflow: hidden;
+}
+
+.torrent .download.file .progress {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	opacity: 0.75;
+	z-index: 0;
+	padding: 4px;
+	margin: 0;
+	height: 100%;
+	border: none;
+}
+.torrent .download.file .progress .bar {
+	height: 100%;
+}
+
+.torrent .downloads tfoot tr th {
+	font-weight: bold;
+	font-size: 0.85rem;
+}
+
+.nodownloads, .nouploads {
+	text-align: center;
+}
+
+table.tcld .name {
+	text-align: right !important;
+	word-break: break-all;
+}
+
+.uploads .upload .size {
+	width: 100px;
+}
