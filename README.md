@@ -1,5 +1,5 @@
 
-:warning: This project is currently documentation only. This project is may be seen version 2 of the [Node cloud torrent](https://github.com/jpillora/node-torrent-cloud).
+:warning: This project is in progress. This project is may be seen version 2 of the [Node cloud torrent](https://github.com/jpillora/node-torrent-cloud).
 
 ---
 

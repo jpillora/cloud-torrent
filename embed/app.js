@@ -1,23 +1,5 @@
 var window = this;
 
-//special angular merge
-var merge = function(x, y) {
-	if (!x || typeof x !== "object" ||
-		!y || typeof y !== "object")
-		return y;
-	var k;
-	if (x instanceof Array && y instanceof Array)
-		while (x.length > y.length)
-			x.pop();
-	else
-		for (k in x)
-			if (k[0] !== "$" && !(k in y))
-				delete x[k];
-	for (k in y)
-		x[k] = merge(x[k], y[k]);
-	return x;
-};
-
 var app = window.angular.module('app', []);
 
 app.filter('keys', function() {
@@ -333,44 +315,8 @@ app.run(function($rootScope, request) {
 		return (/\.([^\.]+)$/).test(path) ? RegExp.$1 : null;
 	};
 
-	var ws;
-	//websocket keep alive
-	setInterval(function() {
-		if (ws && ws.readyState === window.WebSocket.OPEN)
-			ws.send("ping");
-	}, 30 * 1000);
-	//websocket auto reconnect
-	(function reconnect() {
+	var rt = realtime();
+	rt.sync("state", $scope.data);
+	//handle disconnects/re-tries
 
-		//reset backoff timer
-		if(!reconnect.t) 
-			reconnect.t = 100;
-
-		var url = window.location.origin.replace("http", "ws");
-		ws = new window.WebSocket(url);
-		ws.onmessage = function(e) {
-			if (e.data === "ping") return;
-			var data = JSON.parse(e.data);
-			merge($scope.data, data);
-			$scope.$apply();
-		};
-		ws.onerror = function(err) {
-			//noop
-		};
-		ws.onopen = function() {
-			console.log("connected");
-			$scope.$apply(function() {
-				$scope.connected = true;
-			});
-			reconnect.t = 100;
-		};
-		ws.onclose = function() {
-			$scope.$apply(function() {
-				$scope.connected = false;
-			});
-			reconnect.t *= 2;
-			setTimeout(reconnect, reconnect.t);
-			console.log("disconnected, reconnecting in %sms",reconnect.t);
-		};
-	})();
 });
