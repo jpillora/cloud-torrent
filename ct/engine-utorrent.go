@@ -1,3 +1,3 @@
-package ctserver
+package ct
 
 //the uTorrent engine

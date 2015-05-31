@@ -1,4 +1,4 @@
-package ctserver
+package ct
 
 //cloud torrent specific torrent structs
 

@@ -315,8 +315,8 @@ app.run(function($rootScope, request) {
 		return (/\.([^\.]+)$/).test(path) ? RegExp.$1 : null;
 	};
 
-	var rt = realtime();
-	rt.sync("state", $scope.data);
+	var rt = window.realtime();
+	rt.sync($scope.data);
 	//handle disconnects/re-tries
 
 });

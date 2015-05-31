@@ -18,12 +18,6 @@ Cloud Torrent is a multi-backend torrent client in the cloud.
 
 ![overview](https://docs.google.com/drawings/d/1ekyeGiehwQRyi6YfFA4_tQaaEpUaS8qihwJ-s3FT_VU/pub?w=606&h=405)
 
-### Web UI
-
-#### https://jpillora.com/cloud-torrent
-
-This is hosted on Github Pages and has no backend.
-
 #### MIT License
 
 Copyright © 2015 Jaime Pillora &lt;dev@jpillora.com&gt;

@@ -3,14 +3,14 @@ package main
 import (
 	"log"
 
-	"github.com/jpillora/cloud-torrent/ctserver"
+	"github.com/jpillora/cloud-torrent/ct"
 	"github.com/jpillora/opts"
 )
 
 var VERSION = "0.0.0"
 
 func main() {
-	s := ctserver.Server{
+	s := ct.Server{
 		Port: 3000,
 	}
 

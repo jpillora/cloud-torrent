@@ -1,4 +1,4 @@
-package ctserver
+package ct
 
 //the common engine interface
 type Engine interface {

@@ -1,4 +1,4 @@
-package ctserver
+package ct
 
 import (
 	"fmt"
@@ -7,21 +7,23 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jpillora/cloud-torrent/ctserver/embed"
+	"github.com/jpillora/cloud-torrent/ct/embed"
 	"github.com/jpillora/go-realtime"
 )
 
 //Server is the "State" portion of the diagram
 type Server struct {
 	//config
-	Port     int    `help:"Listening port"`
-	Host     string `help:"Listening interface (default all)"`
-	AuthUser string `help:"Optional HTTP Auth"`
-	AuthPass string `help:"Optional HTTP Auth"`
+	Port int    `help:"Listening port"`
+	Host string `help:"Listening interface (default all)"`
+	Auth string `help:"Optional basic auth in form user:password"`
 	//state
 	fs      http.Handler
 	engines map[string]Engine
 	rt      *realtime.Realtime
+	state   struct {
+		A, B int
+	}
 }
 
 func (s *Server) init() error {
@@ -35,7 +37,7 @@ func (s *Server) init() error {
 		}
 	}
 	//realtime
-	s.rt = realtime.New(realtime.Config{})
+	s.rt = realtime.Sync(&s.state)
 	//ready
 	return nil
 }
@@ -58,6 +60,17 @@ func (s *Server) Run() error {
 }
 
 func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
+
+	//basic auth
+	if s.Auth != "" {
+		u, p, _ := r.BasicAuth()
+		if s.Auth != u+":"+p {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Access Denied"))
+			return
+		}
+	}
+
 	//handle realtime client connections
 	if p := r.Header.Get("Sec-Websocket-Protocol"); p != "" {
 		s.rt.ServeHTTP(w, r)
@@ -65,9 +78,7 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	//handle realtime javascript
 	if strings.HasSuffix(r.URL.Path, "realtime.js") {
-		w.Header().Set("Content-Encoding", "gzip")
-		w.Header().Set("Content-Type", "text/javascript")
-		w.Write(realtime.JS)
+		realtime.JS.ServeHTTP(w, r)
 		return
 	}
 	//no match, assume static file
