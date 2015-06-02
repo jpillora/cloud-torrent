@@ -19,6 +19,11 @@ html, body {
 		padding-top: 0;
     }
 }
+@media (max-width: 480px) {
+	body .title a {
+		font-size: 1.65rem;
+	}
+}
 
 html body .muted {
 	color: gray;

@@ -2,17 +2,17 @@
 	<head>
 		<title>Cloud Torrent</title>
     	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/semantic-ui/1.7.3/semantic.min.css">
+		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/semantic-ui/1.12.2/semantic.min.css">
 		<link rel="stylesheet" type="text/css" href="app.css">
 		<link rel="icon" href="cloud-favicon.png" type="image/x-icon" />
 		<style type="text/css">[ng-cloak]{display: none;}</style>
 	</head>
 	<body ng-app="app"><div ng-cloak class="cage">
-
 		<!-- TITLE ===================== -->
 		<div class="title">
 			<h2>
-				<a href="https://github.com/jpillora/cloud-torrent" target="_blank"
+				<a href="https://github.com/jpillora/cloud-torrent"
+					target="_blank"
 					ng-init="logoHover = false"
 					ng-mouseover="logoHover = true"
 					ng-mouseleave="logoHover = false">
@@ -20,29 +20,27 @@
 				</a>
 			</h2>
 			<div class="status">
-
-				<i ng-click="$root.omni.omni = 'magnet:?xt=urn:btih:'; $root.omni.edit = true;"
-					class="ui circular magnet icon" style="font-size: 14px;"></i>
-
 				<i ng-show="request.count > 0"
 					class="ui circular loading repeat icon"></i>
-
-				<i class="ui circular lightning icon" ng-class="{
-					green: connected,
-					red: !connected
-				}"></i>
+				<i ng-click="$root.engineChooser = !$root.engineChooser;" ng-class="{green: $root.engineChooser}"
+					class="ui circular server icon" style="font-size: 14px;"></i>
+				<i ng-click="$root.omni.edit = !$root.omni.edit;"
+					ng-class="{green: $root.omni.edit}"
+					class="ui circular magnet icon" style="font-size: 14px;"></i>
+				<i class="ui circular lightning icon"
+					ng-class="{ green: connected, red: !connected }"></i>
 			</div>
 		</div>
-
 		<!-- GLOBAL ERROR MESSAGE ===================== -->
 		<div ng-if="err" class="ui error message">
 			<i class="close icon" ng-click="$root.err = null"></i>
-			<div class="header">
-			Error
-			</div>
+			<div class="header">Error</div>
 			<p>{{err}}</p>
 		</div>
-
+		<!-- ENGINE ================================= -->
+		<div class="engine" ng-show="$root.engineChooser">
+			test
+		</div>
 		<!-- OMNI INPUT/EDITOR ===================== -->
 		<div class="omni" ng-controller="OmniController">
 
@@ -51,10 +49,10 @@
 					placeholder="Enter search query, torrent URL or magnet URI"
 					ng-model="omni"
 					ng-change="parse()"
-					ng-enter="magnet && torrentsAPI('load', {magnet:omni}) || searchList()"/>
-				<i ng-class="{search: search, magnet: magnet || torrent,
-								help: !search && !magnet && !torrent}"
-					class="icon"></i>
+					ng-enter="omniSubmit()"/>
+				<i class="icon"
+					ng-class="{search: mode.search, magnet: mode.magnet || mode.torrent,
+								help: !mode.search && !mode.magnet && !mode.torrent}"></i>
 			</div>
 
 			<form ng-show="edit" class="ui edit form">
@@ -102,7 +100,7 @@
 
 				<div ng-click="searchList()"
 					class="ui tiny blue button"
-					ng-class="{loading: request.to('search/list'),
+					ng-class="{loading: searching,
 						disabled: noResults || hasMore && results && results.length > 0
 					}">
 					<span ng-show="noResults">No results!</span>
@@ -110,11 +108,11 @@
 				</div>
 			</div>
 
-			<div class="ui error message" ng-show="search && !provider">
+			<div class="ui error message" ng-show="mode.search && !provider">
 				<p>You have no search providers</p>
 			</div>
 
-			<div class="results" ng-show="search && results && results.length > 0" >
+			<div class="results" ng-show="mode.search && results && results.length > 0" >
 				<table class="ui unstackable compact striped tcld table">
 					<tr ng-repeat="r in results">
 						<td class="name">
@@ -135,7 +133,7 @@
 						<td class="loadmore" colspan="10">
 							<div ng-click="searchList()"
 								class="ui tiny blue button"
-								ng-class="{loading: request.to('search/list')}">
+								ng-class="{loading: searching}">
 								Load more
 							</div>
 						</td>
@@ -143,22 +141,22 @@
 				</table>
 			</div>
 
-			<div class="magnet buttons" ng-show="magnet">
-				<div ng-show="magnet"
+			<div class="magnet buttons" ng-show="mode.magnet">
+				<div ng-show="mode.magnet"
 					ng-click="edit = !edit"
 					ng-class="{green: edit}"
 					class="ui tiny button">Edit</div>
-				<div ng-click="torrentsAPI('load', {magnet: omni})"
+				<div ng-click="api('load', {magnet: omni})"
 					class="ui tiny blue button"
-					ng-class="{loading: request.to('torrent/load')}">
+					ng-class="{loading: apiing}">
 					Load Magnet
 				</div>
 			</div>
 
 			<div class="buttons" ng-show="torrent">
-				<div ng-click="torrentsAPI('load', {torrent: omni})"
+				<div ng-click="api('load', {torrent: omni})"
 					class="ui tiny blue button"
-					ng-class="{loading: request.to('torrent/load')}">
+					ng-class="{loading: apiing}">
 					Load Torrent
 				</div>
 			</div>
@@ -221,26 +219,26 @@
 								</div>
 								 -->
 							</div>
-
+							<!--
 							<a class="ui green label"
 								ng-class="{disabled: uploaded(t.name+'.zip')}"
-								ng-click="!uploaded(t.name+'.zip') && torrentsAPI('zipAll', {hash: t.hash })">
+								ng-click="!uploaded(t.name+'.zip') && api('zipAll', {hash: t.hash })">
 								<i class="save icon"></i> Zip
 							</a>
-
+							-->
 							<a class="ui red label"
-								ng-click="torrentsAPI('close', {hash: t.hash })">
+								ng-click="api('close', {hash: t.hash })">
 								<i class="stop icon"></i> Stop
 							</a>
 						</div>
 						<div class="closed" ng-show="!t.open">
 							<a class="ui green label"
-								ng-click="torrentsAPI('open', {hash: t.hash })">
+								ng-click="api('open', {hash: t.hash })">
 								<i class="play icon"></i> Start
 							</a>
 
 							<a class="ui red label"
-								ng-click="torrentsAPI('remove', {hash: t.hash })">
+								ng-click="api('remove', {hash: t.hash })">
 								<i class="trash icon"></i> Remove
 							</a>
 						</div>
@@ -293,10 +291,10 @@
 								</td>
 								<td class="controls">
 									<i ng-class="{disabled: t.zipping || f.uploading || uploaded(f) || f.downloading}"
-										ng-click="!uploaded(f) && !f.downloading && torrentsAPI('downloadFile', {hash: t.hash, path: f.path})"
+										ng-click="!uploaded(f) && !f.downloading && api('downloadFile', {hash: t.hash, path: f.path})"
 										class="green cloud download icon"></i>
 									<i ng-show="f.downloading"
-										ng-click="f.downloading && torrentsAPI('cancelFile', {hash: t.hash, path: f.path})"
+										ng-click="f.downloading && api('cancelFile', {hash: t.hash, path: f.path})"
 										class="red stop icon"></i>
 								</td>
 							</tr>
@@ -377,7 +375,7 @@
 						<i ng-show="!f.$confirm" ng-click="f.$confirm = true"
 							class="red trash icon"></i>
 						<i ng-show="!f.$deleting && f.$confirm"
-							ng-click="f.$deleting = true; torrentsAPI('trash', {path: path})"
+							ng-click="f.$deleting = true; api('trash', {path: path})"
 							ng-class="{red: !f.$deleting, grey: f.$deleting}"
 							class="check icon"></i>
 						<i ng-show="f.$deleting" class="grey notched circle loading icon"></i>
@@ -389,7 +387,6 @@
 		<script src="//cdn.rawgit.com/sindresorhus/query-string/0.2.0/query-string.js"></script>
 		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
 		<script src="/realtime.js"></script>
-		<!-- <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/3.1.0/lodash.min.js"></script> -->
 		<script src="app.js"></script>
 	</div></body>
 </html>
