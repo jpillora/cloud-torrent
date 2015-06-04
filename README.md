@@ -7,10 +7,9 @@
 
 A torrent client in the cloud
 
-<!-- 
-cross platform open - https://github.com/skratchdot/open-golang
--->
+### Core feature progress
 
+See https://github.com/jpillora/cloud-torrent/labels/core-feature numbered by implementation order. Please comment with suggestions and ideas.
 
 ### Overview
 

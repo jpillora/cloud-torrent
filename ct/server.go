@@ -21,13 +21,15 @@ type Server struct {
 	Host   string `help:"Listening interface (default all)"`
 	Auth   string `help:"Optional basic auth (in form user:password)"`
 	Config string `help:"Configuration file path"`
-	//state
+	//http handlers
 	fs       http.Handler
 	scraper  *scraper.Handler
 	scraperh http.Handler
-	engines  map[engineID]Engine
-	rt       *realtime.Realtime
-	state    struct {
+	//enabled torrent engines
+	engines map[engineID]Engine
+	//realtime state (sync'd with browser immediately)
+	rt    *realtime.Realtime
+	state struct {
 		Configs  map[engineID]interface{}
 		Torrents map[engineID]torrents
 	}
@@ -84,6 +86,9 @@ func (s *Server) Run() error {
 	if err := s.init(); err != nil {
 		return err
 	}
+
+	// cross platform open - https://github.com/skratchdot/open-golang
+
 	log.Printf("Listening on %d...", s.Port)
 	http.ListenAndServe(s.Host+":"+strconv.Itoa(s.Port), http.HandlerFunc(s.handle))
 	return nil
