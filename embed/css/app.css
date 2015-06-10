@@ -65,6 +65,14 @@ html body .muted {
 	right: 10px;
 }
 
+.engine {
+	margin-bottom: 30px;
+}
+
+.engine .buttons {
+	text-align: center;
+}
+
 .omni {
 	margin-top: 5px; 
 }

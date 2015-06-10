@@ -8,12 +8,6 @@ import (
 	"github.com/jpillora/cloud-torrent/ct/shared"
 )
 
-//trick json into allowing torrent.Config to be parsed
-type config struct {
-	torrent.Config
-	TorrentDataOpener string `json:",omitempty"` //masks func
-}
-
 //the native Cloud Torrent engine, backed by anacrolix/torrent
 type Native struct {
 	config   *config
@@ -24,13 +18,14 @@ type Native struct {
 func (n *Native) Name() string {
 	return "Native"
 }
-func (n *Native) GetConfig() interface{} {
+func (n *Native) NewConfig() interface{} {
 	config := &config{
 		Config: torrent.Config{
 			//apply defaults
 			DataDir: ".",
 		},
 	}
+	//store reference!
 	n.config = config
 	return config
 }
@@ -96,4 +91,10 @@ func (n *Native) Fetch(t2 *shared.Torrent) error {
 	}
 
 	return nil
+}
+
+//mask over TorrentDataOpener to allow torrent.Config to be parsed
+type config struct {
+	torrent.Config
+	TorrentDataOpener string `json:",omitempty"` //masks func
 }

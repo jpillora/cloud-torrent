@@ -2,8 +2,9 @@
 	<head>
 		<title>Cloud Torrent</title>
     	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/semantic-ui/1.12.2/semantic.min.css">
-		<link rel="stylesheet" type="text/css" href="app.css">
+		<link rel="stylesheet" type="text/css" href="css/Lato/Lato.css">
+		<link rel="stylesheet" type="text/css" href="css/semantic.min.css">
+		<link rel="stylesheet" type="text/css" href="css/app.css">
 		<link rel="icon" href="cloud-favicon.png" type="image/x-icon" />
 		<style type="text/css">[ng-cloak]{display: none;}</style>
 	</head>
@@ -22,7 +23,7 @@
 			<div class="status">
 				<i ng-show="request.count > 0"
 					class="ui circular loading repeat icon"></i>
-				<i ng-click="$root.engineChooser = !$root.engineChooser;" ng-class="{green: $root.engineChooser}"
+				<i ng-click="$root.engine.edit = !$root.engine.edit;" ng-class="{green: $root.engine.edit}"
 					class="ui circular server icon" style="font-size: 14px;"></i>
 				<i ng-click="$root.omni.edit = !$root.omni.edit;"
 					ng-class="{green: $root.omni.edit}"
@@ -38,8 +39,48 @@
 			<p>{{err}}</p>
 		</div>
 		<!-- ENGINE ================================= -->
-		<div class="engine" ng-show="$root.engineChooser">
-			test
+		<div class="engine" ng-controller="EngineController"
+			ng-show="edit">
+			
+			<form class="ui segment form">
+				<h4 class="ui dividing header">Engine</h4>
+
+				<div class="field">
+				<select class="ui huge blue button" ng-model="engineID"
+					ng-options="id as e.Name for (id, e) in $root.data.Engines">
+				</select>
+				</div>
+
+				<h4 class="ui dividing header">Configuration</h4>
+				<div class="field"
+					ng-repeat="(k,v) in $root.data.Engines[engineID].Config"
+					ng-init="type = inputType(v)">
+
+					<div ng-if="type == 'check'">
+						<checkbox type="toggle"
+							ng-model="$root.data.Engines[engineID].Config[k]">{{ k | addspaces }}</checkbox>
+					</div>
+					<div ng-if="type != 'check'">
+						<label>{{ k | addspaces }}</label>
+						<input type="{{type}}" ng-model="$root.data.Engines[engineID].Config[k]"></input>
+					</div>
+				</div>
+
+				<h4 class="ui dividing header"></h4>
+
+				<div class="buttons">
+					<div class="ui blue button" 
+						ng-class="{loading: apiing}"
+						ng-click="submitConfig()">
+						Save Configuration
+					</div>
+					<div class="ui grey button" ng-click="edit = false">
+						Cancel
+					</div>
+				</div>
+
+
+			</form>
 		</div>
 		<!-- OMNI INPUT/EDITOR ===================== -->
 		<div class="omni" ng-controller="OmniController">
@@ -55,6 +96,7 @@
 								help: !mode.search && !mode.magnet && !mode.torrent}"></i>
 			</div>
 
+			<!-- MAGNET EDITOR -->
 			<form ng-show="edit" class="ui edit form">
 				<div class="ui divider"></div>
 				<div class="field">
@@ -88,11 +130,13 @@
 				</div>
 			</form>
 
+			<!-- MAGNET FIELD ERROR -->
 			<div ng-show="omnierr" class="ui error message">
 				<p>{{omnierr}}</p>
 			</div>
 
-			<div class="search buttons" ng-show="search && provider">
+			<!-- SEARCH BUTTONS -->
+			<div class="search buttons" ng-show="mode.search && provider">
 
 				<select class="ui green button" ng-model="provider"
 					ng-options="id as label for (id, label) in data.providers">
@@ -112,6 +156,7 @@
 				<p>You have no search providers</p>
 			</div>
 
+			<!-- SEARCH RESULTS -->
 			<div class="results" ng-show="mode.search && results && results.length > 0" >
 				<table class="ui unstackable compact striped tcld table">
 					<tr ng-repeat="r in results">
@@ -141,20 +186,22 @@
 				</table>
 			</div>
 
+			<!-- MAGNET BUTTONS -->
 			<div class="magnet buttons" ng-show="mode.magnet">
-				<div ng-show="mode.magnet"
-					ng-click="edit = !edit"
-					ng-class="{green: edit}"
-					class="ui tiny button">Edit</div>
-				<div ng-click="api('load', {magnet: omni})"
+				<div ng-click="submitTorrent()"
 					class="ui tiny blue button"
 					ng-class="{loading: apiing}">
 					Load Magnet
 				</div>
+				<div ng-show="mode.magnet"
+					ng-click="edit = !edit"
+					ng-class="{green: edit}"
+					class="ui tiny button">Edit</div>
 			</div>
 
+			<!-- TORRENT BUTTON -->
 			<div class="buttons" ng-show="torrent">
-				<div ng-click="api('load', {torrent: omni})"
+				<div ng-click="submitTorrent()"
 					class="ui tiny blue button"
 					ng-class="{loading: apiing}">
 					Load Torrent
@@ -384,9 +431,14 @@
 			</tbody>
 		</table>
 
-		<script src="//cdn.rawgit.com/sindresorhus/query-string/0.2.0/query-string.js"></script>
-		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+		<script src="js/vendor/query-string.js"></script>
+		<script src="js/vendor/angular.min.js"></script>
 		<script src="/realtime.js"></script>
-		<script src="app.js"></script>
+		<script>window.app = window.angular.module('app', []);</script>
+		<script src="js/engine-controller.js"></script>
+		<script src="js/omni-controller.js"></script>
+		<script src="js/utils.js"></script>
+		<script src="js/semantic-checkbox.js"></script>
+		<script src="js/run.js"></script>
 	</div></body>
 </html>

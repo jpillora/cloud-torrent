@@ -8,7 +8,7 @@ type engineID string
 //the common engine interface
 type Engine interface {
 	Name() string           //name (lower(name)->id)
-	GetConfig() interface{} //*Config object
+	NewConfig() interface{} //*Config object
 	SetConfig() error
 	Magnet(uri string) error
 	List() ([]*shared.Torrent, error) //get a list of all Torrents

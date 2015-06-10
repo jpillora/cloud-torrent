@@ -19,6 +19,7 @@ type request struct {
 	URL    string
 }
 
+//path matcher ->                        engine id/action type
 var pathRe = regexp.MustCompile(`^\/api\/([a-z]+)\/([a-z]+)$`)
 
 func (s *Server) api(r *http.Request) error {
@@ -53,6 +54,7 @@ func (s *Server) api(r *http.Request) error {
 		if err != nil {
 			return fmt.Errorf("Invalid remote torrent URL: %s (%s)", err, url)
 		}
+		//TODO enforce max body size (32k?)
 		data, err = ioutil.ReadAll(remote.Body)
 		if err != nil {
 			return fmt.Errorf("Failed to download remote torrent: %s", err)
@@ -85,6 +87,10 @@ func (s *Server) api(r *http.Request) error {
 
 	//interface with engine
 	switch action {
+	case "configure":
+		if err := s.loadConfig(data); err != nil {
+			return fmt.Errorf("Configure error: %s", err)
+		}
 	case "magnet":
 		uri := string(data)
 		if err := e.Magnet(uri); err != nil {

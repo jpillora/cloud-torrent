@@ -1,3 +1,3 @@
 package ct
 
-//the uTorrent engine
+//TODO the uTorrent engine (drives uTorrent via HTTP API)

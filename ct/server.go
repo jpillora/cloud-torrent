@@ -17,10 +17,10 @@ import (
 //Server is the "State" portion of the diagram
 type Server struct {
 	//config
-	Port   int    `help:"Listening port"`
-	Host   string `help:"Listening interface (default all)"`
-	Auth   string `help:"Optional basic auth (in form user:password)"`
-	Config string `help:"Configuration file path"`
+	Port       int    `help:"Listening port"`
+	Host       string `help:"Listening interface (default all)"`
+	Auth       string `help:"Optional basic auth (in form user:password)"`
+	ConfigPath string `help:"Configuration file path"`
 	//http handlers
 	fs       http.Handler
 	scraper  *scraper.Handler
@@ -30,14 +30,20 @@ type Server struct {
 	//realtime state (sync'd with browser immediately)
 	rt    *realtime.Realtime
 	state struct {
-		Configs  map[engineID]interface{}
+		Engines  map[engineID]engineState
 		Torrents map[engineID]torrents
 	}
 }
 
+//engine state shared with clients
+type engineState struct {
+	Name   string
+	Config interface{}
+}
+
 func (s *Server) init() error {
 	//init maps
-	s.state.Configs = map[engineID]interface{}{}
+	s.state.Engines = map[engineID]engineState{}
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
 	s.fs = embed.FileSystemHandler()
 	s.scraper = &scraper.Handler{}
@@ -51,18 +57,21 @@ func (s *Server) init() error {
 	}
 	//realtime
 	if rt, err := realtime.Sync(&s.state); err != nil {
-		log.Fatalf("State not syncable: %s", err)
+		log.Fatalf("State object not syncable: %s", err)
 	} else {
 		s.rt = rt
 	}
 	//initial config provided
 	var cfg []byte = nil
-	if s.Config != "" {
+	if s.ConfigPath != "" {
 		var err error
-		if cfg, err = ioutil.ReadFile(s.Config); err != nil {
+		if cfg, err = ioutil.ReadFile(s.ConfigPath); err != nil {
 			return err
 		}
+	} else {
+		cfg = s.defaultConfig()
 	}
+
 	//load default or provided
 	if err := s.loadConfig(cfg); err != nil {
 		return err
@@ -78,7 +87,7 @@ func (s *Server) AddEngine(e Engine) error {
 		return fmt.Errorf("Engine %s already exists", id)
 	}
 	s.engines[id] = e
-	s.state.Configs[id] = e.GetConfig()
+	s.state.Engines[id] = engineState{name, e.NewConfig()}
 	return nil
 }
 
@@ -86,9 +95,9 @@ func (s *Server) Run() error {
 	if err := s.init(); err != nil {
 		return err
 	}
-
+	// TODO if Open {
 	// cross platform open - https://github.com/skratchdot/open-golang
-
+	// }
 	log.Printf("Listening on %d...", s.Port)
 	http.ListenAndServe(s.Host+":"+strconv.Itoa(s.Port), http.HandlerFunc(s.handle))
 	return nil
@@ -123,10 +132,10 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		//only pass request in, expect error out
 		if err := s.api(r); err == nil {
-			w.WriteHeader(200)
+			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
 		} else {
-			w.WriteHeader(400)
+			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
 		}
 		return
@@ -135,15 +144,38 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	s.fs.ServeHTTP(w, r)
 }
 
-func (s *Server) loadConfig(b []byte) error {
-	if len(b) > 0 {
-		if err := json.Unmarshal(b, &s.state.Configs); err != nil {
-			return err
-		}
+//generates the default configuration for all engines
+func (s *Server) defaultConfig() []byte {
+	configs := map[engineID]interface{}{}
+	for id, e := range s.state.Engines {
+		configs[id] = e.Config
 	}
-	for _, e := range s.engines {
+	b, _ := json.Marshal(configs)
+	return b
+}
+
+//load a json configuration
+func (s *Server) loadConfig(b []byte) error {
+
+	//batch alter configuration
+	configs := map[engineID]json.RawMessage{}
+	if err := json.Unmarshal(b, &configs); err != nil {
+		return err
+	}
+
+	for id, msg := range configs {
+		e, ok := s.engines[id]
+		if !ok {
+			return fmt.Errorf("engine: %s: missing", id)
+		}
+
+		c := s.state.Engines[id].Config
+		if err := json.Unmarshal(msg, &c); err != nil {
+			return fmt.Errorf("engine: %s: replace config failed: %s", id, err)
+		}
+
 		if err := e.SetConfig(); err != nil {
-			return err
+			return fmt.Errorf("engine: %s: apply config failed: %s", id, err)
 		}
 	}
 	s.rt.Update()
