@@ -72,7 +72,7 @@ func (n *Native) pollTorrents() {
 			files := t.Files()
 			st.Files = make([]*shared.File, len(files))
 			for i, f1 := range files {
-				peices := f1.Progress()
+				peices := f1.State()
 				f2 := &shared.File{
 					Path:      f1.Path(),
 					Size:      f1.Length(),
@@ -80,7 +80,7 @@ func (n *Native) pollTorrents() {
 					Completed: 0,
 				}
 				for _, p := range peices {
-					if p.State == 'C' {
+					if p.Complete {
 						f2.Completed++
 					}
 				}
