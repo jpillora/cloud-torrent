@@ -2,22 +2,22 @@
 
 app.controller("EngineController", function($scope, $rootScope, storage, api) {
   $rootScope.engine = $scope;
-  $scope.edit = true;
-  $scope.engineID = "native";
+  $scope.edit = false;
+  $scope.id = "native";
 
   $scope.submitConfig = function() {
 
     if(!$rootScope.data.Engines)
       return;
-    if(!$scope.engineID)
+    if(!$scope.id)
       return;
 
-    var e = $rootScope.data.Engines[$scope.engineID];
+    var e = $rootScope.data.Engines[$scope.id];
     if(!e)
       return;
 
     var update = {};
-    update[$scope.engineID] = JSON.stringify(e.Config, null, 2);
+    update[$scope.id] = JSON.stringify(e.Config, null, 2);
 
     api.configure(update);
   };

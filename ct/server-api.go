@@ -9,6 +9,7 @@ import (
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
+	"github.com/jpillora/cloud-torrent/ct/engines"
 	"github.com/jpillora/cloud-torrent/ct/shared"
 )
 
@@ -34,7 +35,7 @@ func (s *Server) api(r *http.Request) error {
 		return fmt.Errorf("Invalid request URL")
 	}
 
-	eid := engineID(m[1])
+	eid := engine.ID(m[1])
 	e, ok := s.engines[eid]
 	if !ok {
 		return fmt.Errorf("Invalid engine ID: %s", eid)
@@ -96,25 +97,25 @@ func (s *Server) api(r *http.Request) error {
 		if err := e.Magnet(uri); err != nil {
 			return fmt.Errorf("Magnet error: %s", err)
 		}
-	case "list":
-		torrents, err := e.List()
-		if err != nil {
-			return fmt.Errorf("List error: %s", err)
-		}
-		etorrents := s.state.Torrents[eid]
-		for _, t := range torrents {
-			etorrents[t.InfoHash] = t
-		}
-		s.rt.Update() //state change
-	case "fetch":
-		ih := string(data)
-		t, ok := s.state.Torrents[eid][ih]
-		if !ok {
-			return fmt.Errorf("Invalid torrent: %s", ih)
-		}
-		if err := e.Fetch(t); err != nil {
-			return fmt.Errorf("Fetch error: %s", err)
-		}
+	// case "list":
+	// 	torrents, err := e.List()
+	// 	if err != nil {
+	// 		return fmt.Errorf("List error: %s", err)
+	// 	}
+	// 	for _, t := range torrents {
+	// 		s.state.Torrents[eid][t.InfoHash] = t
+	// 	}
+	// 	s.rt.Update() //state change
+	// case "fetch":
+	// 	ih := string(data)
+	// 	t, ok := s.state.Torrents[eid][ih]
+	// 	if !ok {
+	// 		return fmt.Errorf("Invalid torrent: %s", ih)
+	// 	}
+	// 	if err := e.Fetch(t); err != nil {
+	// 		return fmt.Errorf("Fetch error: %s", err)
+	// 	}
+	// 	s.rt.Update() //state change
 	default:
 		return fmt.Errorf("Invalid action: %s", action)
 	}

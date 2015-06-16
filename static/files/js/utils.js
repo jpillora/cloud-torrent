@@ -1,8 +1,9 @@
 /* globals app,window */
 
 app.factory('api', function($rootScope, $http, reqerr) {
+  window.http = $http;
   var request = function(action, data) {
-    var url = "/api/"+$rootScope.engineID+"/"+action;
+    var url = "/api/"+$rootScope.engine.id+"/"+action;
     $rootScope.apiing = true;
     return $http.post(url, data).error(reqerr).finally(function() {
       $rootScope.apiing = false;
@@ -17,13 +18,28 @@ app.factory('api', function($rootScope, $http, reqerr) {
 });
 
 app.factory('search', function($rootScope, $http, reqerr) {
-  return function(suffix, params) {
-    var opts = { params: params };
-    var url = "/search/"+$rootScope.omni.provider+(suffix||"");
-    $rootScope.searching = true;
-    return $http.get(url, opts).error(reqerr).finally(function() {
-      $rootScope.searching = false;
-    });
+  return {
+    all: function(provider, query, page) {
+      var params = {query:query};
+      if(page !== undefined) params.page = page;
+      $rootScope.searching = true;
+      var req = $http.get("/search/"+provider, { params: params });
+      req.error(reqerr);
+      req.finally(function() {
+        $rootScope.searching = false;
+      });
+      return req;
+    },
+    one: function(provider, path) {
+      var opts = { params: { path:path } };
+      $rootScope.searching = true;
+      var req = $http.get("/search/"+provider+"-item", opts);
+      req.error(reqerr);
+      req.finally(function() {
+        $rootScope.searching = false;
+      });
+      return req;
+    }
   };
 });
 
@@ -32,8 +48,8 @@ app.factory('storage', function() {
 });
 
 app.factory('reqerr', function() {
-  return function(err) {
-    console.error("req-error", err);
+  return function(err, status) {
+    console.error("request error '%s' (%s)", err, status);
   };
 });
 

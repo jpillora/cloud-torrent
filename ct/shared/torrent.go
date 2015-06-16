@@ -4,6 +4,7 @@ package shared
 
 type Torrent struct {
 	Name     string
+	Loaded   bool
 	Progress int64
 	Size     int64
 	InfoHash string //hash of torrent

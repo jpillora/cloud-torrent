@@ -1,0 +1,40 @@
+
+<form ng-show="edit" class="ui segment form">
+  <h4 class="ui dividing header">Engine</h4>
+
+  <div class="field">
+  <select class="ui huge blue button" ng-model="id"
+    ng-options="id as e.Name for (id, e) in $root.data.Engines">
+  </select>
+  </div>
+
+  <h4 class="ui dividing header">Configuration</h4>
+  <div class="field"
+    ng-repeat="(k,v) in $root.data.Engines[id].Config"
+    ng-init="type = inputType(v)">
+
+    <div ng-if="type == 'check'">
+      <checkbox type="toggle"
+        ng-model="$root.data.Engines[id].Config[k]">{{ k | addspaces }}</checkbox>
+    </div>
+    <div ng-if="type != 'check'">
+      <label>{{ k | addspaces }}</label>
+      <input type="{{type}}" ng-model="$root.data.Engines[id].Config[k]"></input>
+    </div>
+  </div>
+
+  <h4 class="ui dividing header"></h4>
+
+  <div class="buttons">
+    <div class="ui blue button" 
+      ng-class="{loading: apiing}"
+      ng-click="submitConfig()">
+      Save Configuration
+    </div>
+    <div class="ui grey button" ng-click="edit = false">
+      Cancel
+    </div>
+  </div>
+
+
+</form>

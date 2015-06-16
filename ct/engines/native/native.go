@@ -1,8 +1,8 @@
 package native
 
 import (
-	"encoding/hex"
 	"fmt"
+	"time"
 
 	"github.com/anacrolix/torrent"
 	"github.com/jpillora/cloud-torrent/ct/shared"
@@ -10,32 +10,36 @@ import (
 
 //the native Cloud Torrent engine, backed by anacrolix/torrent
 type Native struct {
-	config   *config
-	client   *torrent.Client
-	torrents []*torrent.Torrent
+	config *config
+	client *torrent.Client
+	queue  chan *shared.Torrent
 }
 
 func (n *Native) Name() string {
 	return "Native"
 }
 func (n *Native) NewConfig() interface{} {
-	config := &config{
+	//default config
+	return &config{
 		Config: torrent.Config{
 			//apply defaults
 			DataDir: ".",
 		},
 	}
-	//store reference!
-	n.config = config
-	return config
 }
 
-func (n *Native) SetConfig() error {
-	c, err := torrent.NewClient(&n.config.Config)
+func (n *Native) SetConfig(obj interface{}) error {
+	//recieve config
+	c, ok := obj.(*config)
+	if !ok {
+		return fmt.Errorf("Invalid config")
+	}
+
+	client, err := torrent.NewClient(&c.Config)
 	if err != nil {
 		return err
 	}
-	n.client = c
+	n.client = client
 	return nil
 }
 
@@ -47,50 +51,46 @@ func (n *Native) Magnet(uri string) error {
 	return nil
 }
 
-func (n *Native) List() ([]*shared.Torrent, error) {
-	t1 := n.client.Torrents()
-	t2 := make([]*shared.Torrent, len(t1))
-	for i, t := range t1 {
-		t2[i] = &shared.Torrent{
-			Name:     t.Name(),
-			Progress: t.BytesCompleted(),
-			Size:     t.Length(),
-		}
-	}
-	return t2, nil
+func (n *Native) Torrents() <-chan *shared.Torrent {
+	n.queue = make(chan *shared.Torrent)
+	go n.pollTorrents()
+	return n.queue
 }
 
-func (n *Native) Fetch(t2 *shared.Torrent) error {
-
-	var ih torrent.InfoHash
-	if _, err := hex.Decode(ih[:], []byte(t2.InfoHash)); err != nil {
-		return err
-	}
-
-	t1, ok := n.client.Torrent(ih)
-	if !ok {
-		return fmt.Errorf("Torrent not found: %s", t2.InfoHash)
-	}
-
-	t1fs := t1.Files()
-	t2.Files = make([]*shared.File, len(t1fs))
-	for i, f1 := range t1fs {
-		peices := f1.Progress()
-		f2 := &shared.File{
-			Path:      f1.Path(),
-			Size:      f1.Length(),
-			Chunks:    len(peices),
-			Completed: 0,
-		}
-		for _, p := range peices {
-			if p.State == 'C' {
-				f2.Completed++
+func (n *Native) pollTorrents() {
+	for {
+		for _, t := range n.client.Torrents() {
+			//copy torrent info
+			st := &shared.Torrent{
+				Name:     t.Name(),
+				Loaded:   t.Info() != nil,
+				InfoHash: t.InfoHash.HexString(),
+				Progress: t.BytesCompleted(),
+				Size:     t.Length(),
 			}
+			//copy files info
+			files := t.Files()
+			st.Files = make([]*shared.File, len(files))
+			for i, f1 := range files {
+				peices := f1.Progress()
+				f2 := &shared.File{
+					Path:      f1.Path(),
+					Size:      f1.Length(),
+					Chunks:    len(peices),
+					Completed: 0,
+				}
+				for _, p := range peices {
+					if p.State == 'C' {
+						f2.Completed++
+					}
+				}
+				st.Files[i] = f2
+			}
+			//enqueue update
+			n.queue <- st
 		}
-		t2.Files[i] = f2
+		time.Sleep(time.Second)
 	}
-
-	return nil
 }
 
 //mask over TorrentDataOpener to allow torrent.Config to be parsed

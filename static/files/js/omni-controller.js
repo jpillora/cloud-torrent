@@ -1,21 +1,27 @@
 /* globals app,window */
 
-app.controller("OmniController", function($scope, $rootScope, storage, api) {
+app.controller("OmniController", function($scope, $rootScope, storage, api, search) {
   $rootScope.omni = $scope;
   $scope.omni = storage.tcOmni || "";
   //edit fields
   $scope.edit = false;
   $scope.trackers = [{ v: "" }];
-  $scope.provider = storage.tcProvider || "";
+  $scope.provider = storage.tcProvider || "tpb";
+  $scope.providers = {};
   $scope.$watch("provider", function(p) {
-    if(p)  storage.tcProvider = p;
+    if(p) storage.tcProvider = p;
     $scope.parse();
   });
   //if unset, set to first provider
-  $rootScope.$watch("data.providers", function(providers) {
-    if ($scope.provider) return;
-    for (var id in providers) break;
-    $scope.provider = id;
+  $rootScope.$watch("data.SearchProviders", function(searchProviders) {
+    //remove last set
+    if(!searchProviders)
+      return;
+    //filter
+    for(var id in searchProviders) {
+      if(/-item$/.test(id)) continue;
+      $scope.providers[id] = searchProviders[id];
+    }
     $scope.parse();
   });
 
@@ -122,13 +128,7 @@ app.controller("OmniController", function($scope, $rootScope, storage, api) {
   };
 
   $scope.submitSearch = function() {
-    $scope.searchAPI("list", {
-      provider: $scope.provider,
-      query: $scope.omni,
-      page: $scope.page
-    }, function(err, results) {
-      if (err)
-        return $scope.omnierr = err;
+    search.all($scope.provider, $scope.omni, $scope.page).success(function(results) {
       if (results.length === 0) {
         $scope.noResults = true;
         $scope.hasMore = false;
@@ -139,41 +139,35 @@ app.controller("OmniController", function($scope, $rootScope, storage, api) {
       }
       $scope.page++;
     });
+
   };
 
   $scope.submitSearchItem = function(result) {
     //if search item has magnet, download now!
     if (result.magnet) {
-      $scope.torrentsAPI("load", {
-        magnet: result.magnet
-      });
+      api.magnet(result.magnet);
       return;
     }
     //else, look it up via url
-    if (!result.url)
+    if (!result.path)
       return $scope.omnierr = "No URL found";
 
-    $scope.searchAPI("item", {
-      provider: $scope.provider,
-      url: result.url
-    }, function(err, data) {
+    search.one($scope.provider, result.path).success(function(err, data) {
       if (err)
         return $scope.omnierr = err;
 
-      var load = {};
+      var magnet;
 
       if (data.magnet) {
-        load.magnet = data.magnet;
+        magnet = data.magnet;
       } else if (data.infohash) {
-        load.magnet = magnetURI(result.name, data.infohash, [{
-          v: data.tracker
-        }]);
+        magnet = magnetURI(result.name, data.infohash, [{v: data.tracker }]);
       } else {
         $scope.omnierr = "No magnet or infohash found";
         return;
       }
 
-      $scope.torrentsAPI("load", load);
+      api.magnet(magnet);
     });
   };
 });

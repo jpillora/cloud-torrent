@@ -1,0 +1,65 @@
+<h3 class="ui header">Downloads</h3>
+
+<div ng-if="!data.uploads || (data.uploads | keys).length == 0" class="ui message nodownloads">
+  <p>Download files above</p>
+</div>
+
+<table ng-if="data.uploads && (data.uploads | keys).length > 0" class="ui unstackable compact striped uploads tcld table">
+  <thead>
+    <tr>
+      <th class="name">File</th>
+      <th class="size">Size</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="upload file" ng-repeat="(path, f) in data.uploads">
+      <td class="name">
+        <a ng-href="{{ f.url }}" target="_blank" class="path">
+          {{ path | filename }}
+          <i class="ui external link icon"></i>
+        </a>
+        <!-- preview button -->
+        <i ng-show="ext(f.url) == ext(path) &&
+                    (ext(path) == 'mp4' ||
+              ext(path) == 'mp3' ||
+              ext(path) == 'pdf')"
+          ng-click="previews[path] = !previews[path]"
+          class="video play icon"
+          ng-class="{outline: previews[path]}"></i>
+        <!-- previewers -->
+        <div ng-if="previews[path]" ng-switch="ext(path)">
+          <div ng-switch-when="mp4">
+            <video width="100%" controls>
+              <source jp-src="f.url" type="video/mp4">
+            </video>
+          </div>
+          <div ng-switch-when="mp3">
+            <audio controls>
+              <source jp-src="f.url" type="audio/mpeg; codecs='mp3'">
+            </audio>
+          </div>
+          <div ng-switch-when="pdf">
+            <object data="{{ f.url }}" type="application/pdf"
+                width="100%" height="300px">
+              <embed jp-src="f.url" type="application/pdf" />
+            </object>
+          </div>
+        </div>
+
+      </td>
+      <td class="size">
+        {{ f.Size | bytes }}
+      </td>
+      <td class="controls">
+        <i ng-show="!f.$confirm" ng-click="f.$confirm = true"
+          class="red trash icon"></i>
+        <i ng-show="!f.$deleting && f.$confirm"
+          ng-click="f.$deleting = true; api('trash', {path: path})"
+          ng-class="{red: !f.$deleting, grey: f.$deleting}"
+          class="check icon"></i>
+        <i ng-show="f.$deleting" class="grey notched circle loading icon"></i>
+      </td>
+    </tr>
+  </tbody>
+</table>

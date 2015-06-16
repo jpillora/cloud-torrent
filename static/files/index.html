@@ -1,0 +1,59 @@
+<html>
+	<head>
+		<title>Cloud Torrent</title>
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+		<link rel="stylesheet" type="text/css" href="css/Lato/Lato.css">
+		<link rel="stylesheet" type="text/css" href="css/semantic.min.css">
+		<link rel="stylesheet" type="text/css" href="css/app.css">
+		<link rel="icon" href="cloud-favicon.png" type="image/x-icon" />
+		<style type="text/css">[ng-cloak]{display: none;}</style>
+	</head>
+	<body ng-app="app"><div ng-cloak class="cage">
+		<!-- TITLE ===================== -->
+		<div class="title">
+			<h2>
+				<a href="https://github.com/jpillora/cloud-torrent"
+					target="_blank"
+					ng-init="logoHover = false"
+					ng-mouseover="logoHover = true"
+					ng-mouseleave="logoHover = false">
+					<i class="blue icon" ng-class="{cloud:!logoHover, github: logoHover}"></i> Cloud Torrent
+				</a>
+			</h2>
+			<div class="status">
+				<i ng-show="request.count > 0"
+					class="ui circular loading repeat icon"></i>
+				<i ng-click="$root.engine.edit = !$root.engine.edit;" ng-class="{green: $root.engine.edit}"
+					class="ui circular server icon" style="font-size: 14px;"></i>
+				<i ng-click="$root.omni.edit = !$root.omni.edit;"
+					ng-class="{green: $root.omni.edit}"
+					class="ui circular magnet icon" style="font-size: 14px;"></i>
+				<i class="ui circular lightning icon"
+					ng-class="{ green: connected, red: !connected }"></i>
+			</div>
+		</div>
+		<!-- GLOBAL ERROR MESSAGE ===================== -->
+		<div ng-if="err" class="ui error message">
+			<i class="close icon" ng-click="$root.err = null"></i>
+			<div class="header">Error</div>
+			<p>{{err}}</p>
+		</div>
+
+		<div class="engine" ng-controller="EngineController" ng-include src="'template/engine.html'"></div>
+		<div class="omni" ng-controller="OmniController" ng-include src="'template/omni.html'"></div>
+		<div class="torrents" ng-controller="TorrentsController" ng-include src="'template/torrents.html'"></div>
+		<div class="downloads" ng-controller="DownloadsController" ng-include src="'template/downloads.html'"></div>
+
+		<script src="js/vendor/query-string.js"></script>
+		<script src="js/vendor/angular.min.js"></script>
+		<script src="/realtime.js"></script>
+		<script>window.app = window.angular.module('app', []);</script>
+		<script src="js/engine-controller.js"></script>
+		<script src="js/omni-controller.js"></script>
+		<script src="js/torrents-controller.js"></script>
+		<script src="js/downloads-controller.js"></script>
+		<script src="js/utils.js"></script>
+		<script src="js/semantic-checkbox.js"></script>
+		<script src="js/run.js"></script>
+	</div></body>
+</html>

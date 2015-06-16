@@ -1,0 +1,153 @@
+
+<div class="torrents-header">
+  <h3 class="ui header">
+    Torrents
+  </h3>
+  <h5 class="ui files downloading header">
+    Downloading {{ data.filesDownloading || 0 }} files
+  </h5>
+</div>
+<!-- 
+<div ng-if="!data.torrents || data.torrents.length == 0" class="ui message nodownloads">
+  <p>Add torrents above</p>
+</div>
+-->
+<div ng-repeat="(hash, t) in data.Engines[engine.id].Torrents"
+  ng-class="{open: t.open}"
+   class="ui torrent segment">
+
+  <div ng-if="!t.Loaded" class="ui active inverted dimmer">
+    <div class="ui text loader">Loading</div>
+  </div>
+
+  <div class="ui stackable grid">
+    <div class="two column row">
+      <div class="info column">
+        <div class="name">
+          <span ng-show="!uploaded(t.Name+'.zip')">
+            {{ t.Name }}
+          </span>
+          <a ng-show="uploaded(t.Name+'.zip')"
+            ng-href="{{ uploaded(t.Name+'.zip').url }}">
+            {{ t.Name }}
+          </a>
+        </div>
+        <div class="hash">#{{ t.InfoHash }}</div>
+      </div>
+      <div class="controls column">
+        <div class="open" ng-show="t.open">
+
+          <div class="status">
+            <div class="down">
+              <span ng-class="{muted:t.status.down == 0}">{{t.status.down | bytes}}</span>
+              <span ng-class="{muted:t.status.downps == 0}"> ({{t.status.downps | bytes}}/s)
+                <i class="ui arrow down icon"></i>
+              </span>
+            </div>
+            <!-- DISABLED UPLOAD
+            <div class="up">
+              <span ng-class="{muted:t.status.up == 0}">{{t.status.up | bytes}}</span>
+              <span ng-class="{muted:t.status.upps == 0}"> ({{t.status.upps | bytes}}/s)
+                <i class="ui arrow up icon"></i>
+              </span>
+            </div>
+             -->
+          </div>
+          <!--
+          <a class="ui green label"
+            ng-class="{disabled: uploaded(t.Name+'.zip')}"
+            ng-click="!uploaded(t.Name+'.zip') && api('zipAll', {hash: t.InfoHash })">
+            <i class="save icon"></i> Zip
+          </a>
+          -->
+          <a class="ui red label"
+            ng-click="api('close', {hash: t.InfoHash })">
+            <i class="stop icon"></i> Stop
+          </a>
+        </div>
+        <div class="closed" ng-show="!t.open">
+          
+          <a class="ui green label"
+            ng-click="api('open', {hash: t.InfoHash })">
+            <i class="play icon"></i> Start
+          </a>
+
+          <a class="ui red label"
+            ng-click="api('remove', {hash: t.InfoHash })">
+            <i class="trash icon"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+    <!-- 
+    <div ng-if="!t.open" class="row stopped"><div class="column">
+      This torrent is inactive. Press the green power button to reactivate or the red trash can to remove it.
+    </div></div>
+     -->
+    <div class="row" ng-show="t.Loaded"><div class="column">
+      <table class="ui unstackable compact striped downloads tcld table">
+        <thead>
+          <tr>
+            <th class="name">File</th>
+            <th class="size">Size</th>
+            <th>&nbsp;</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-if="!t.Files || t.Files.length == 0">
+            <td colspan="3" class="muted">No files</td>
+          </tr>
+          <tr class="download file" ng-repeat="f in t.Files">
+            <td class="name">
+              <div>
+                <span ng-show="!uploaded(f)">
+                  {{ f.Path | filename }}
+                </span>
+                <a ng-show="uploaded(f)"
+                  ng-href="{{ uploaded(f).url }}">
+                  {{ f.Path | filename }}
+                </a>
+              </div>
+              <div ng-show="f.downloading || f.uploading"
+                 class="ui blue active progress">
+                <div class="bar" ng-style="{width: (f.downloadLength/f.Size)*90 +
+                              (!f.uploading && 10 || 0) + '%'}">
+                  <div class="progress"></div>
+                </div>
+              </div>
+              <div ng-if="f.downloadError"
+                class="ui error message">
+                <i class="close icon" ng-click="f.downloadError = null"></i>
+                <p>{{f.downloadError}}</p>
+              </div>
+            </td>
+            <td class="size">
+              {{ f.Size | bytes }}
+            </td>
+            <td class="controls">
+              <i ng-class="{disabled: t.zipping || f.uploading || uploaded(f) || f.downloading}"
+                ng-click="!uploaded(f) && !f.downloading && api('downloadFile', {hash: t.InfoHash, path: f.Path})"
+                class="green cloud download icon"></i>
+              <i ng-show="f.downloading"
+                ng-click="f.downloading && api('cancelFile', {hash: t.InfoHash, path: f.Path})"
+                class="red stop icon"></i>
+            </td>
+          </tr>
+        </tbody>
+        <tfoot ng-if="t.Files.length > 1">
+          <tr>
+            <th class="name">
+              {{ t.Files.length }} Files
+            </th>
+            <th>
+              {{ sumFiles(t) | bytes }} Total
+            </th>
+            <th>
+              &nbsp;
+            </th>
+          </tr>
+        </tfoot>
+      </table>
+    </div></div>
+  </div>
+</div>

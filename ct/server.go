@@ -9,7 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jpillora/cloud-torrent/ct/embed"
+	"github.com/jpillora/cloud-torrent/ct/engines"
+	"github.com/jpillora/cloud-torrent/ct/shared"
+	"github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/go-realtime"
 	"github.com/jpillora/scraper/lib"
 )
@@ -26,41 +28,53 @@ type Server struct {
 	scraper  *scraper.Handler
 	scraperh http.Handler
 	//enabled torrent engines
-	engines map[engineID]Engine
+	engines map[engine.ID]engine.Engine
 	//realtime state (sync'd with browser immediately)
 	rt    *realtime.Realtime
 	state struct {
-		Engines  map[engineID]engineState
-		Torrents map[engineID]torrents
+		Engines         map[engine.ID]engineState
+		SearchProviders scraper.Config
+		Users           map[string]realtime.User
 	}
 }
 
 //engine state shared with clients
 type engineState struct {
-	Name   string
-	Config interface{}
+	Name     string
+	Config   interface{}
+	Torrents torrents
 }
 
 func (s *Server) init() error {
 	//init maps
-	s.state.Engines = map[engineID]engineState{}
+	s.state.Engines = map[engine.ID]engineState{}
+	s.state.Users = map[string]realtime.User{}
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
-	s.fs = embed.FileSystemHandler()
-	s.scraper = &scraper.Handler{}
+	s.fs = ctstatic.FileSystemHandler()
+	s.scraper = &scraper.Handler{Log: true}
+	if err := s.scraper.LoadConfig(defaultSearchConfig); err != nil {
+		log.Fatal(err)
+	}
+	s.state.SearchProviders = s.scraper.Config //share scraper config
 	s.scraperh = http.StripPrefix("/search", s.scraper)
+
 	//prepare all torrent engines
-	s.engines = map[engineID]Engine{}
-	for _, e := range bundledEngines {
+	s.engines = map[engine.ID]engine.Engine{}
+	for _, e := range engine.Bundled {
 		if err := s.AddEngine(e); err != nil {
 			return err
 		}
 	}
 	//realtime
-	if rt, err := realtime.Sync(&s.state); err != nil {
+	rt, err := realtime.Sync(&s.state)
+	if err != nil {
 		log.Fatalf("State object not syncable: %s", err)
-	} else {
-		s.rt = rt
 	}
+	s.rt = rt
+
+	//check users every second
+	go s.userWatch()
+
 	//initial config provided
 	var cfg []byte = nil
 	if s.ConfigPath != "" {
@@ -76,18 +90,8 @@ func (s *Server) init() error {
 	if err := s.loadConfig(cfg); err != nil {
 		return err
 	}
-	//ready
-	return nil
-}
 
-func (s *Server) AddEngine(e Engine) error {
-	name := e.Name()
-	id := engineID(strings.ToLower(name))
-	if _, ok := s.engines[id]; ok {
-		return fmt.Errorf("Engine %s already exists", id)
-	}
-	s.engines[id] = e
-	s.state.Engines[id] = engineState{name, e.NewConfig()}
+	//ready
 	return nil
 }
 
@@ -101,6 +105,44 @@ func (s *Server) Run() error {
 	log.Printf("Listening on %d...", s.Port)
 	http.ListenAndServe(s.Host+":"+strconv.Itoa(s.Port), http.HandlerFunc(s.handle))
 	return nil
+}
+
+func (s *Server) AddEngine(e engine.Engine) error {
+	name := e.Name()
+	id := engine.ID(strings.ToLower(name))
+	if _, ok := s.engines[id]; ok {
+		return fmt.Errorf("engine.Engine %s already exists", id)
+	}
+	s.engines[id] = e
+	torrents := torrents{}
+	s.state.Engines[id] = engineState{
+		Name:     name,
+		Config:   e.NewConfig(),
+		Torrents: torrents,
+	}
+	go s.torrentsWatch(torrents, e.Torrents())
+	return nil
+}
+
+func (s *Server) torrentsWatch(torrents torrents, queue <-chan *shared.Torrent) {
+	for t := range queue {
+		torrents[t.InfoHash] = t
+		s.rt.Update()
+	}
+}
+
+//runs in a go routine
+func (s *Server) userWatch() {
+	//TODO poll engines when users connected
+	for user := range s.rt.Changes() {
+		log.Printf("user %+v", user)
+		if user.Connected {
+			s.state.Users[user.Address] = user
+		} else {
+			delete(s.state.Users, user.Address)
+		}
+		s.rt.Update()
+	}
 }
 
 func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
@@ -124,7 +166,7 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//search
-	if strings.HasPrefix(r.URL.Path, "/search/") {
+	if strings.HasPrefix(r.URL.Path, "/search") {
 		s.scraperh.ServeHTTP(w, r)
 		return
 	}
@@ -146,7 +188,7 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 
 //generates the default configuration for all engines
 func (s *Server) defaultConfig() []byte {
-	configs := map[engineID]interface{}{}
+	configs := map[engine.ID]interface{}{}
 	for id, e := range s.state.Engines {
 		configs[id] = e.Config
 	}
@@ -158,7 +200,7 @@ func (s *Server) defaultConfig() []byte {
 func (s *Server) loadConfig(b []byte) error {
 
 	//batch alter configuration
-	configs := map[engineID]json.RawMessage{}
+	configs := map[engine.ID]json.RawMessage{}
 	if err := json.Unmarshal(b, &configs); err != nil {
 		return err
 	}
@@ -174,7 +216,7 @@ func (s *Server) loadConfig(b []byte) error {
 			return fmt.Errorf("engine: %s: replace config failed: %s", id, err)
 		}
 
-		if err := e.SetConfig(); err != nil {
+		if err := e.SetConfig(c); err != nil {
 			return fmt.Errorf("engine: %s: apply config failed: %s", id, err)
 		}
 	}
