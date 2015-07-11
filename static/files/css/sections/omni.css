@@ -1,0 +1,58 @@
+
+
+.omni {
+	margin-top: 5px; 
+}
+
+.omni .buttons {
+	margin-top: 5px;
+	text-align: center;
+}
+
+.omni .results {
+	max-height: 200px;
+	overflow-y: auto;
+	border: 1px solid rgba(0,0,0,.15);
+	margin-top: 5px;
+	border-radius: 4px;
+}
+
+.omni .results .name {
+	/*font-size: .75em;*/
+	text-align: right;
+}
+
+.omni .results .users {
+	width: 75px;
+	text-align: center;
+}
+.omni .results .seeds {
+	color: #5bbd72;
+}
+
+.omni .results .peers {
+	color: rgb(176, 127, 20);
+}
+
+.omni .results .loadmore {
+	text-align: right;
+}
+
+.omni .search select {
+	padding: 0 10px;
+	margin-top: 0px;
+	border-radius: 4px;
+	background: #D58686;
+	color: #888;
+	border: none;
+	outline: none;
+	height: 31px;
+	display: inline-block;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	cursor: pointer;
+}
+.omni .form {
+	margin-top: 5px;
+}

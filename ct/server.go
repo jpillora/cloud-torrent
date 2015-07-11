@@ -120,7 +120,7 @@ func (s *Server) AddEngine(e engine.Engine) error {
 		Config:   e.NewConfig(),
 		Torrents: torrents,
 	}
-	go s.torrentsWatch(torrents, e.Torrents())
+	go s.torrentsWatch(torrents, e.GetTorrents())
 	return nil
 }
 

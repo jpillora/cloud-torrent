@@ -2,13 +2,15 @@
 
 app.controller("OmniController", function($scope, $rootScope, storage, api, search) {
   $rootScope.omni = $scope;
-  $scope.omni = storage.tcOmni || "";
+  $scope.inputs = {
+    omni: storage.tcOmni || "",
+    provider: storage.tcProvider || "tpb"
+  };
   //edit fields
   $scope.edit = false;
   $scope.trackers = [{ v: "" }];
-  $scope.provider = storage.tcProvider || "tpb";
   $scope.providers = {};
-  $scope.$watch("provider", function(p) {
+  $scope.$watch("inputs.provider", function(p) {
     if(p) storage.tcProvider = p;
     $scope.parse();
   });
@@ -64,7 +66,7 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
   };
 
   $scope.parse = function() {
-    storage.tcOmni = $scope.omni;
+    storage.tcOmni = $scope.inputs.omni;
     $scope.omnierr = null;
     //set all 3 to false,
     //one will set to be true
@@ -78,11 +80,11 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
     $scope.noResults = false;
     $scope.results = [];
 
-    if (/^https?:\/\//.test($scope.omni))
+    if (/^https?:\/\//.test($scope.inputs.omni))
       parseTorrent();
-    else if (/^magnet:\?(.+)$/.test($scope.omni))
+    else if (/^magnet:\?(.+)$/.test($scope.inputs.omni))
       parseMagnet(RegExp.$1);
-    else if ($scope.omni)
+    else if ($scope.inputs.omni)
       parseSearch();
     else
       $scope.edit = false;
@@ -112,30 +114,49 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
       else
         i++;
 
-    $scope.omni = magnetURI($scope.name, $scope.infohash, $scope.trackers);
+    $scope.inputs.omni = magnetURI($scope.name, $scope.infohash, $scope.trackers);
     $scope.trackers.push({ v: "" });
     $scope.parse();
   };
 
+  $scope.submitOmni = function() {
+    if($scope.mode.search) {
+      $scope.submitSearch();
+    } else {
+      $scope.submitTorrent();
+    }
+  };
+
   $scope.submitTorrent = function() {
     if($scope.mode.torrent) {
-      api.url($scope.omni);
+      api.url($scope.inputs.omni);
     } else if($scope.mode.magnet) {
-      api.magnet($scope.omni);
+      api.magnet($scope.inputs.omni);
     } else {
       window.alert("UI Bug");
     }
   };
 
   $scope.submitSearch = function() {
-    search.all($scope.provider, $scope.omni, $scope.page).success(function(results) {
+
+    //lookup provider's origin
+    var provider = $scope.data.SearchProviders[$scope.inputs.provider];
+    if(!provider) return;
+    var origin = /(https?:\/\/[^\/]+)/.test(provider.url) && RegExp.$1;
+
+    search.all($scope.inputs.provider, $scope.inputs.omni, $scope.page).success(function(results) {
       if (results.length === 0) {
         $scope.noResults = true;
         $scope.hasMore = false;
         return;
       }
       for (var i = 0; i < results.length; i++) {
-        $scope.results.push(results[i]);
+        var r = results[i];
+        //add origin to absolute urls
+        if(r.url && /^\//.test(r.url)) {
+          r.url = origin + r.url;
+        }
+        $scope.results.push(r);
       }
       $scope.page++;
     });
@@ -152,7 +173,7 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
     if (!result.path)
       return $scope.omnierr = "No URL found";
 
-    search.one($scope.provider, result.path).success(function(err, data) {
+    search.one($scope.inputs.provider, result.path).success(function(err, data) {
       if (err)
         return $scope.omnierr = err;
 

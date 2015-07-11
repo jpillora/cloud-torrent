@@ -7,11 +7,11 @@
     Downloading {{ data.filesDownloading || 0 }} files
   </h5>
 </div>
-<!-- 
-<div ng-if="!data.torrents || data.torrents.length == 0" class="ui message nodownloads">
+ 
+<div ng-if="isEmpty(data.Engines[engine.id].Torrents)" class="ui message nodownloads">
   <p>Add torrents above</p>
 </div>
--->
+
 <div ng-repeat="(hash, t) in data.Engines[engine.id].Torrents"
   ng-class="{open: t.open}"
    class="ui torrent segment">
@@ -24,11 +24,11 @@
     <div class="two column row">
       <div class="info column">
         <div class="name">
-          <span ng-show="!uploaded(t.Name+'.zip')">
+          <span ng-show="!ready(t.Name+'.zip')">
             {{ t.Name }}
           </span>
-          <a ng-show="uploaded(t.Name+'.zip')"
-            ng-href="{{ uploaded(t.Name+'.zip').url }}">
+          <a ng-show="ready(t.Name+'.zip')"
+            ng-href="{{ ready(t.Name+'.zip').url }}">
             {{ t.Name }}
           </a>
         </div>
@@ -55,8 +55,8 @@
           </div>
           <!--
           <a class="ui green label"
-            ng-class="{disabled: uploaded(t.Name+'.zip')}"
-            ng-click="!uploaded(t.Name+'.zip') && api('zipAll', {hash: t.InfoHash })">
+            ng-class="{disabled: ready(t.Name+'.zip')}"
+            ng-click="!ready(t.Name+'.zip') && api('zipAll', {hash: t.InfoHash })">
             <i class="save icon"></i> Zip
           </a>
           -->
@@ -66,15 +66,13 @@
           </a>
         </div>
         <div class="closed" ng-show="!t.open">
-          
           <a class="ui green label"
-            ng-click="api('open', {hash: t.InfoHash })">
+            ng-click="submitTorrent('start', t)">
             <i class="play icon"></i> Start
           </a>
-
           <a class="ui red label"
-            ng-click="api('remove', {hash: t.InfoHash })">
-            <i class="trash icon"></i>
+            ng-click="submitTorrent('delete', t)">
+            <i class="trash icon"></i> Delete
           </a>
         </div>
       </div>
@@ -100,18 +98,17 @@
           <tr class="download file" ng-repeat="f in t.Files">
             <td class="name">
               <div>
-                <span ng-show="!uploaded(f)">
+                <span ng-show="!ready(f)">
                   {{ f.Path | filename }}
                 </span>
-                <a ng-show="uploaded(f)"
-                  ng-href="{{ uploaded(f).url }}">
+                <a ng-show="ready(f)"
+                  ng-href="{{ ready(f).url }}">
                   {{ f.Path | filename }}
                 </a>
               </div>
-              <div ng-show="f.downloading || f.uploading"
+              <div ng-show="downloading(f)"
                  class="ui blue active progress">
-                <div class="bar" ng-style="{width: (f.downloadLength/f.Size)*90 +
-                              (!f.uploading && 10 || 0) + '%'}">
+                <div class="bar" ng-style="{width: (f.Completed/f.Chunks)*100 + '%'}">
                   <div class="progress"></div>
                 </div>
               </div>
@@ -125,11 +122,11 @@
               {{ f.Size | bytes }}
             </td>
             <td class="controls">
-              <i ng-class="{disabled: t.zipping || f.uploading || uploaded(f) || f.downloading}"
-                ng-click="!uploaded(f) && !f.downloading && api('downloadFile', {hash: t.InfoHash, path: f.Path})"
+              <i ng-class="{disabled: ready(f) || downloading(f)}"
+                ng-click="!ready(f) && !downloading(f) && submitFile('start', t, f)"
                 class="green cloud download icon"></i>
-              <i ng-show="f.downloading"
-                ng-click="f.downloading && api('cancelFile', {hash: t.InfoHash, path: f.Path})"
+              <i ng-show="downloading(f)"
+                ng-click="downloading(f) && submitFile('stop', t, f)"
                 class="red stop icon"></i>
             </td>
           </tr>
@@ -140,7 +137,7 @@
               {{ t.Files.length }} Files
             </th>
             <th>
-              {{ sumFiles(t) | bytes }} Total
+              {{ t.Size | bytes }} Total
             </th>
             <th>
               &nbsp;

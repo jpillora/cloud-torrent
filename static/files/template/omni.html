@@ -2,9 +2,9 @@
 <div class="omni ui fluid icon input">
   <input
     placeholder="Enter search query, torrent URL or magnet URI"
-    ng-model="omni"
+    ng-model="inputs.omni"
     ng-change="parse()"
-    ng-enter="omniSubmit()"/>
+    ng-enter="submitOmni()"/>
   <i class="icon"
     ng-class="{search: mode.search, magnet: mode.magnet || mode.torrent,
           help: !mode.search && !mode.magnet && !mode.torrent}"></i>
@@ -50,9 +50,9 @@
 </div>
 
 <!-- SEARCH BUTTONS -->
-<div class="search buttons" ng-show="mode.search && provider">
+<div class="search buttons" ng-show="mode.search && inputs.provider">
 
-  <select class="ui green button" ng-model="provider"
+  <select class="ui green button" ng-model="inputs.provider"
     ng-options="id as s.name for (id, s) in providers">
   </select>
 
@@ -66,7 +66,7 @@
   </div>
 </div>
 
-<div class="ui error message" ng-show="mode.search && !provider">
+<div class="ui error message" ng-show="mode.search && !inputs.provider">
   <p>You have no search providers</p>
 </div>
 
@@ -81,7 +81,7 @@
         {{ r.size }}
       </td>
       <td class="users">
-        <span class="seeds">{{ r.seeds }}</span>
+        <span class="seeds">{{ r.seeds }}</span><br/>
         <span class="peers"> {{ r.peers }}</span>
       <td class="controls">
         <i ng-click="submitSearchItem(r)"

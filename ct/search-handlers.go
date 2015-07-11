@@ -1,15 +1,8 @@
 package ct
 
+//see github.com/jpillora/scraper for config specification
+//cloud-torrent uses "<id>-item" handlers
 var defaultSearchConfig = []byte(`{
-	"google": {
-		"name": "Google Search",
-		"url": "https://www.google.com/search?q={{q}}",
-		"list": "#search ol > li",
-		"result": {
-			"title": "li > h3 a",
-			"url": ["li > h3 a", "@href", "/^\\/url\\?q=([^&]+)/"]
-		}
-	},
 	"kat": {
 		"name": "Kickass Torrents",
 		"url": "https://kat.cr/usearch/{{query}}/{{page:1}}/?field=seeders&sorder=desc",

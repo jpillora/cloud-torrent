@@ -32,17 +32,19 @@ app.run(function($rootScope, search, api) {
     return "text";
   };
 
-  $scope.uploaded = function(f) {
+  $scope.ready = function(f) {
     var path = typeof f === "object" ? f.path : f;
     return $scope.data.uploads && $scope.data.uploads[path];
-  };
-
-  $scope.sumFiles = function(t) {
-    return t.files ? t.files.reduce(function(s, f) { return s+f.length; }, 0) : 0;
   };
 
   $scope.previews = {};
   $scope.ext = function(path) {
     return (/\.([^\.]+)$/).test(path) ? RegExp.$1 : null;
+  };
+
+  $scope.isEmpty = function(obj) {
+    if(!obj)
+      return true;
+    return Object.keys(obj).length === 0;
   };
 });

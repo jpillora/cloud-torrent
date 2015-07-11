@@ -10,14 +10,20 @@ type Engine interface {
 	Name() string           //name (lower(name)->id)
 	NewConfig() interface{} //*Config object
 	SetConfig(interface{}) error
-	Magnet(uri string) error
-	Torrents() <-chan *shared.Torrent
+	NewTorrent(magnetURI string) error
+	StartTorrent(infohash string) error
+	StopTorrent(infohash string) error
+	DeleteTorrent(infohash string) error
+	StartFile(infohash, filepath string) error
+	StopFile(infohash, filepath string) error
+	GetTorrents() <-chan *shared.Torrent
 }
 
 //TODO engines which require polling
 type EnginePoller interface {
+	//Polls the status of all torrents and all files, passes updated torrents
+	//down the Torrents channel
 	Poll() error
-	PollTorrent(*shared.Torrent) error
 }
 
 //insert each of the cloud-torrent bundled engines

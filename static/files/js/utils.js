@@ -10,7 +10,7 @@ app.factory('api', function($rootScope, $http, reqerr) {
     });
   };
   var api = {};
-  var actions = ["configure","magnet","url","list","fetch"];
+  var actions = ["configure","magnet","url","torrent","file"];
   actions.forEach(function(action) {
     api[action] = request.bind(null, action);
   });

@@ -11,8 +11,6 @@ import (
 
 // all static/ files embedded as a Go library
 func FileSystemHandler() http.Handler {
-	// mime.AddExtensionType(".woff", "application/x-font-woff")
-	// mime.AddExtensionType(".woff2", "font/woff2")
 	var h http.Handler
 	if info, err := os.Stat("static/files/"); err == nil && info.IsDir() {
 		h = http.FileServer(http.Dir("static/files/"))

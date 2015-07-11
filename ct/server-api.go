@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
@@ -64,7 +66,7 @@ func (s *Server) api(r *http.Request) error {
 	}
 
 	//convert torrent bytes into magnet
-	if action == "torrent" {
+	if action == "torrentfile" {
 		reader := bytes.NewBuffer(data)
 		info, err := metainfo.Load(reader)
 		if err != nil {
@@ -94,28 +96,51 @@ func (s *Server) api(r *http.Request) error {
 		}
 	case "magnet":
 		uri := string(data)
-		if err := e.Magnet(uri); err != nil {
+		if err := e.NewTorrent(uri); err != nil {
 			return fmt.Errorf("Magnet error: %s", err)
 		}
-	// case "list":
-	// 	torrents, err := e.List()
-	// 	if err != nil {
-	// 		return fmt.Errorf("List error: %s", err)
-	// 	}
-	// 	for _, t := range torrents {
-	// 		s.state.Torrents[eid][t.InfoHash] = t
-	// 	}
-	// 	s.rt.Update() //state change
-	// case "fetch":
-	// 	ih := string(data)
-	// 	t, ok := s.state.Torrents[eid][ih]
-	// 	if !ok {
-	// 		return fmt.Errorf("Invalid torrent: %s", ih)
-	// 	}
-	// 	if err := e.Fetch(t); err != nil {
-	// 		return fmt.Errorf("Fetch error: %s", err)
-	// 	}
-	// 	s.rt.Update() //state change
+	case "torrent":
+		cmd := strings.SplitN(string(data), ":", 2)
+		if len(cmd) != 2 {
+			return fmt.Errorf("Invalid request")
+		}
+		state := cmd[0]
+		infohash := cmd[1]
+		log.Printf("torrent api: %s -> %s", state, infohash)
+		if state == "start" {
+			if err := e.StartTorrent(infohash); err != nil {
+				return err
+			}
+		} else if state == "stop" {
+			if err := e.StopTorrent(infohash); err != nil {
+				return err
+			}
+		} else if state == "delete" {
+			if err := e.DeleteTorrent(infohash); err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("Invalid state: %s", state)
+		}
+	case "file":
+		cmd := strings.SplitN(string(data), ":", 3)
+		if len(cmd) != 3 {
+			return fmt.Errorf("Invalid request")
+		}
+		state := cmd[0]
+		infohash := cmd[1]
+		filepath := cmd[2]
+		if state == "start" {
+			if err := e.StartFile(infohash, filepath); err != nil {
+				return err
+			}
+		} else if state == "stop" {
+			if err := e.StopFile(infohash, filepath); err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("Invalid state: %s", state)
+		}
 	default:
 		return fmt.Errorf("Invalid action: %s", action)
 	}
