@@ -13,9 +13,9 @@ See https://github.com/jpillora/cloud-torrent/labels/core-feature numbered by im
 
 ### Overview
 
-Cloud Torrent is a multi-backend torrent client in the cloud.
+Cloud Torrent is a torrent client for the cloud.
 
-![overview](https://docs.google.com/drawings/d/1ekyeGiehwQRyi6YfFA4_tQaaEpUaS8qihwJ-s3FT_VU/pub?w=606&h=405)
+![overview](https://docs.google.com/drawings/d/1ekyeGiehwQRyi6YfFA4_tQaaEpUaS8qihwJ-s3FT_VU/pub?w=606&h=305)
 
 #### MIT License
 
