@@ -1,0 +1,208 @@
+package engine
+
+import (
+	"encoding/hex"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"sync"
+
+	"github.com/anacrolix/torrent"
+)
+
+type Config struct {
+	DownloadDirectory string
+	EnableUpload      bool
+	EnableSeeding     bool
+}
+
+//the Engine Cloud Torrent engine, backed by anacrolix/torrent
+type Engine struct {
+	mut      sync.Mutex
+	cacheDir string
+	client   *torrent.Client
+	ts       map[string]*Torrent
+}
+
+func New() *Engine {
+	return &Engine{ts: map[string]*Torrent{}}
+}
+
+func (e *Engine) Configure(c Config) error {
+	//recieve config
+	if e.client != nil {
+		e.client.Close()
+	}
+	tc := torrent.Config{
+		DataDir:   c.DownloadDirectory,
+		ConfigDir: filepath.Join(c.DownloadDirectory, ".config"),
+		NoUpload:  !c.EnableUpload,
+		Seed:      c.EnableSeeding,
+	}
+	client, err := torrent.NewClient(&tc)
+	if err != nil {
+		return err
+	}
+	e.mut.Lock()
+	e.cacheDir = filepath.Join(tc.ConfigDir, "torrents")
+	if files, err := ioutil.ReadDir(e.cacheDir); err == nil {
+		for _, f := range files {
+			if filepath.Ext(f.Name()) != ".torrent" {
+				continue
+			}
+			client.AddTorrentFromFile(filepath.Join(e.cacheDir, f.Name()))
+		}
+	}
+	e.client = client
+	e.mut.Unlock()
+	//reset
+	e.GetTorrents()
+	return nil
+}
+
+func (e *Engine) NewTorrent(magnetURI string) error {
+	//adds the torrent but does not start it
+	_, err := e.client.AddMagnet(magnetURI)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//GetTorrents moves torrents out of the anacrolix/torrent
+//and into the local cache
+func (e *Engine) GetTorrents() map[string]*Torrent {
+	if e.client == nil {
+		return nil
+	}
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	for _, t := range e.client.Torrents() {
+		ih := t.InfoHash().HexString()
+		torrent, ok := e.ts[ih]
+		if !ok {
+			torrent = &Torrent{InfoHash: ih}
+			e.ts[ih] = torrent
+		}
+		//update torrent fields using underlying torrent
+		torrent.Update(&t)
+	}
+	return e.ts
+}
+
+func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
+	ih, err := str2ih(infohash)
+	if err != nil {
+		return nil, err
+	}
+	t, ok := e.ts[ih.HexString()]
+	if !ok {
+		return t, fmt.Errorf("Missing torrent %x", ih)
+	}
+	return t, nil
+}
+
+func (e *Engine) getOpenTorrent(infohash string) (*Torrent, error) {
+	t, err := e.getTorrent(infohash)
+	if err != nil {
+		return nil, err
+	}
+	if t.t == nil {
+		newt, err := e.client.AddTorrentFromFile(filepath.Join(e.cacheDir, infohash+".torrent"))
+		if err != nil {
+			return t, fmt.Errorf("Failed to open torrent %s", err)
+		}
+		t.t = &newt
+	}
+	return t, nil
+}
+
+func (e *Engine) StartTorrent(infohash string) error {
+	t, err := e.getOpenTorrent(infohash)
+	if err != nil {
+		return err
+	}
+	if t.Started {
+		return fmt.Errorf("Already started")
+	}
+	t.Started = true
+	for _, f := range t.Files {
+		f.Started = true
+	}
+	t.t.DownloadAll()
+	return nil
+}
+
+func (e *Engine) StopTorrent(infohash string) error {
+	t, err := e.getTorrent(infohash)
+	if err != nil {
+		return err
+	}
+	if !t.Started {
+		return fmt.Errorf("Already stopped")
+	}
+	//there is no stop - kill underlying torrent
+	t.t.Drop()
+	t.Started = false
+	for _, f := range t.Files {
+		f.Started = false
+	}
+	t.t = nil
+	return nil
+}
+
+func (e *Engine) DeleteTorrent(infohash string) error {
+	t, err := e.getTorrent(infohash)
+	if err != nil {
+		return err
+	}
+	os.Remove(filepath.Join(e.cacheDir, infohash+".torrent"))
+	delete(e.ts, t.InfoHash)
+	if t.t != nil {
+		t.t.Drop()
+	}
+	return nil
+}
+
+func (e *Engine) StartFile(infohash, filepath string) error {
+	t, err := e.getOpenTorrent(infohash)
+	if err != nil {
+		return err
+	}
+	var f *File
+	for _, file := range t.Files {
+		if file.Path == filepath {
+			f = file
+			break
+		}
+	}
+	if f == nil {
+		return fmt.Errorf("Missing file %s", filepath)
+	}
+	if f.Started {
+		return fmt.Errorf("Already started")
+	}
+	t.Started = true
+	f.Started = true
+	log.Printf("prioritze %s %d", f.Path, f.Size)
+	f.f.PrioritizeRegion(0, f.Size)
+	return nil
+}
+
+func (e *Engine) StopFile(infohash, filepath string) error {
+	return fmt.Errorf("Unsupported")
+}
+
+func str2ih(str string) (torrent.InfoHash, error) {
+	var ih torrent.InfoHash
+	e, err := hex.Decode(ih[:], []byte(str))
+	if err != nil {
+		return ih, fmt.Errorf("Invalid hex string")
+	}
+	if e != 20 {
+		return ih, fmt.Errorf("Invalid length")
+	}
+	return ih, nil
+}

@@ -5,18 +5,17 @@ app.run(function($rootScope, search, api) {
 
   var $scope = window.scope = $rootScope;
 
-  //setup realtime data
-  $scope.data = {};
-  $scope.data.$onupdate = function() {
-    //TODO throttle $applys
-    $scope.$apply();
-  };
-
-  var rt = window.realtime.sync($scope.data);
-  rt.onstatus = function(isConnected) {
-    $scope.connected = isConnected;
-    $scope.$apply();
-  };
+  //link up to angular
+	var rt = realtime("/realtime");
+	$scope.state = {};
+	rt.add("state", $scope.state, function() {
+		$scope.$apply();
+	});
+	rt.onstatus = function(online) {
+		$scope.$apply(function() {
+			$scope.connected = online;
+		});
+	};
 
   //expose services
   $scope.search = search;
@@ -34,7 +33,7 @@ app.run(function($rootScope, search, api) {
 
   $scope.ready = function(f) {
     var path = typeof f === "object" ? f.path : f;
-    return $scope.data.uploads && $scope.data.uploads[path];
+    return $scope.state.Uploads && $scope.state.Uploads[path];
   };
 
   $scope.previews = {};
@@ -43,8 +42,10 @@ app.run(function($rootScope, search, api) {
   };
 
   $scope.isEmpty = function(obj) {
-    if(!obj)
-      return true;
-    return Object.keys(obj).length === 0;
+    return $scope.numKeys(obj) === 0;
+  };
+
+  $scope.numKeys = function(obj) {
+    return obj ? Object.keys(obj).length : 0;
   };
 });

@@ -3,7 +3,7 @@
 app.factory('api', function($rootScope, $http, reqerr) {
   window.http = $http;
   var request = function(action, data) {
-    var url = "/api/"+$rootScope.engine.id+"/"+action;
+    var url = "/api/"+action;
     $rootScope.apiing = true;
     return $http.post(url, data).error(reqerr).finally(function() {
       $rootScope.apiing = false;
@@ -49,6 +49,7 @@ app.factory('storage', function() {
 
 app.factory('reqerr', function() {
   return function(err, status) {
+    alert(err);
     console.error("request error '%s' (%s)", err, status);
   };
 });

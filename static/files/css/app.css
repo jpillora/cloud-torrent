@@ -52,7 +52,7 @@ html body .muted {
 	font-size: 1.2em;
 }
 
-/* 
+/*
 	================
 	app styles
 */
@@ -69,11 +69,13 @@ html body .muted {
 	right: 10px;
 }
 
-.engine {
-	margin-bottom: 30px;
+.app .config form.edit {
+	margin-bottom: 1rem;
 }
-
-.engine .buttons {
+.app .config form.edit input {
+	font-family: monospace;
+}
+.app .config form.edit .buttons {
 	text-align: center;
 }
 

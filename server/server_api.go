@@ -1,54 +1,30 @@
-package ct
+package server
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
-	"github.com/jpillora/cloud-torrent/ct/engines"
-	"github.com/jpillora/cloud-torrent/ct/shared"
+	"github.com/jpillora/cloud-torrent/engine"
 )
 
-type torrents map[string]*shared.Torrent
-
-type request struct {
-	Engine string
-	URL    string
-}
-
-//path matcher ->                        engine id/action type
-var pathRe = regexp.MustCompile(`^\/api\/([a-z]+)\/([a-z]+)$`)
-
 func (s *Server) api(r *http.Request) error {
-
 	defer r.Body.Close()
 	if r.Method != "POST" {
 		return fmt.Errorf("Invalid request method (expecting POST)")
 	}
 
-	m := pathRe.FindStringSubmatch(r.URL.Path)
-	if len(m) == 0 {
-		return fmt.Errorf("Invalid request URL")
-	}
-
-	eid := engine.ID(m[1])
-	e, ok := s.engines[eid]
-	if !ok {
-		return fmt.Errorf("Invalid engine ID: %s", eid)
-	}
+	action := strings.TrimPrefix(r.URL.Path, "/api/")
 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return fmt.Errorf("Failed to download request body")
 	}
-
-	action := m[2]
 
 	//convert url into torrent bytes
 	if action == "url" {
@@ -88,15 +64,22 @@ func (s *Server) api(r *http.Request) error {
 		action = "magnet"
 	}
 
+	//update after action completes
+	defer s.state.Update()
+
 	//interface with engine
 	switch action {
 	case "configure":
-		if err := s.loadConfig(data); err != nil {
-			return fmt.Errorf("Configure error: %s", err)
+		c := engine.Config{}
+		if err := json.Unmarshal(data, &c); err != nil {
+			return err
+		}
+		if err := s.reconfigure(c); err != nil {
+			return err
 		}
 	case "magnet":
 		uri := string(data)
-		if err := e.NewTorrent(uri); err != nil {
+		if err := s.engine.NewTorrent(uri); err != nil {
 			return fmt.Errorf("Magnet error: %s", err)
 		}
 	case "torrent":
@@ -106,17 +89,16 @@ func (s *Server) api(r *http.Request) error {
 		}
 		state := cmd[0]
 		infohash := cmd[1]
-		log.Printf("torrent api: %s -> %s", state, infohash)
 		if state == "start" {
-			if err := e.StartTorrent(infohash); err != nil {
+			if err := s.engine.StartTorrent(infohash); err != nil {
 				return err
 			}
 		} else if state == "stop" {
-			if err := e.StopTorrent(infohash); err != nil {
+			if err := s.engine.StopTorrent(infohash); err != nil {
 				return err
 			}
 		} else if state == "delete" {
-			if err := e.DeleteTorrent(infohash); err != nil {
+			if err := s.engine.DeleteTorrent(infohash); err != nil {
 				return err
 			}
 		} else {
@@ -131,11 +113,11 @@ func (s *Server) api(r *http.Request) error {
 		infohash := cmd[1]
 		filepath := cmd[2]
 		if state == "start" {
-			if err := e.StartFile(infohash, filepath); err != nil {
+			if err := s.engine.StartFile(infohash, filepath); err != nil {
 				return err
 			}
 		} else if state == "stop" {
-			if err := e.StopFile(infohash, filepath); err != nil {
+			if err := s.engine.StopFile(infohash, filepath); err != nil {
 				return err
 			}
 		} else {

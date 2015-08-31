@@ -1,9 +1,18 @@
 <h3 class="ui header">Downloads</h3>
 
-<div ng-if="!data.uploads || (data.uploads | keys).length == 0" class="ui message nodownloads">
+<div ng-if="numDownloads() == 0" class="ui message nodownloads">
   <p>Download files above</p>
 </div>
 
+<div ng-if="numDownloads() > 0" class="ui segment">
+  <div class="ui list">
+    <div class="item" ng-repeat="node in state.Downloads.Children"
+        ng-controller="NodeController"
+        ng-include src="'template/download-tree.html'"></div>
+  </div>
+</div>
+
+<!--
 <table ng-if="data.uploads && (data.uploads | keys).length > 0" class="ui unstackable compact striped uploads tcld table">
   <thead>
     <tr>
@@ -19,7 +28,6 @@
           {{ path | filename }}
           <i class="ui external link icon"></i>
         </a>
-        <!-- preview button -->
         <i ng-show="ext(f.url) == ext(path) &&
                     (ext(path) == 'mp4' ||
               ext(path) == 'mp3' ||
@@ -27,7 +35,6 @@
           ng-click="previews[path] = !previews[path]"
           class="video play icon"
           ng-class="{outline: previews[path]}"></i>
-        <!-- previewers -->
         <div ng-if="previews[path]" ng-switch="ext(path)">
           <div ng-switch-when="mp4">
             <video width="100%" controls>
@@ -62,4 +69,5 @@
       </td>
     </tr>
   </tbody>
-</table>
+
+</table> -->

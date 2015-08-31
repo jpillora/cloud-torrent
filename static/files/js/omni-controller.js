@@ -8,14 +8,16 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
   };
   //edit fields
   $scope.edit = false;
-  $scope.trackers = [{ v: "" }];
+  $scope.magnet = {
+    trackers: [{ v: "" }]
+  };
   $scope.providers = {};
   $scope.$watch("inputs.provider", function(p) {
     if(p) storage.tcProvider = p;
     $scope.parse();
   });
   //if unset, set to first provider
-  $rootScope.$watch("data.SearchProviders", function(searchProviders) {
+  $rootScope.$watch("state.SearchProviders", function(searchProviders) {
     //remove last set
     if(!searchProviders)
       return;
@@ -40,23 +42,23 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
       return;
     }
 
-    $scope.infohash = RegExp.$1;
-    $scope.name = m.dn || "";
+    console.log("parse magnet", m);
+
+    $scope.magnet.infohash = RegExp.$1;
+    $scope.magnet.name = m.dn || "";
     //no trackers :O
-    if (!m.tr)
-      return;
+    if (!m.tr) m.tr = [];
     //force array
-    if (!(m.tr instanceof Array))
-      m.tr = [m.tr];
+    if (!(m.tr instanceof Array)) m.tr = [m.tr];
 
     //in place map
     for (var i = 0; i < m.tr.length; i++)
-      $scope.trackers[i] = { v: m.tr[i] };
+      $scope.magnet.trackers[i] = { v: m.tr[i] };
 
-    while ($scope.trackers.length > m.tr.length)
-      $scope.trackers.pop();
+    while ($scope.magnet.trackers.length > m.tr.length)
+      $scope.magnet.trackers.pop();
 
-    $scope.trackers.push({ v: "" });
+    $scope.magnet.trackers.push({ v: "" });
   };
 
   var parseSearch = function() {
@@ -100,23 +102,22 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
       }).join('');
   };
 
-  $scope.stringify = function() {
+  $scope.parseMagnetString = function() {
     $scope.omnierr = null;
 
-    if (!/^[A-Za-z0-9]+$/.test($scope.infohash)) {
+    if (!/^[A-Za-z0-9]+$/.test($scope.magnet.infohash)) {
       $scope.omnierr = "Invalid Info Hash";
       return;
     }
 
-    for (var i = 0; i < $scope.trackers.length;)
-      if (!$scope.trackers[i].v)
-        $scope.trackers.splice(i, 1);
+    for (var i = 0; i < $scope.magnet.trackers.length;)
+      if (!$scope.magnet.trackers[i].v)
+        $scope.magnet.trackers.splice(i, 1);
       else
         i++;
-
-    $scope.inputs.omni = magnetURI($scope.name, $scope.infohash, $scope.trackers);
-    $scope.trackers.push({ v: "" });
-    $scope.parse();
+    console.log($scope.magnet);
+    $scope.inputs.omni = magnetURI($scope.magnet.name, $scope.magnet.infohash, $scope.magnet.trackers);
+    $scope.magnet.trackers.push({ v: "" });
   };
 
   $scope.submitOmni = function() {
@@ -140,12 +141,12 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
   $scope.submitSearch = function() {
 
     //lookup provider's origin
-    var provider = $scope.data.SearchProviders[$scope.inputs.provider];
+    var provider = $scope.state.SearchProviders[$scope.inputs.provider];
     if(!provider) return;
     var origin = /(https?:\/\/[^\/]+)/.test(provider.url) && RegExp.$1;
 
     search.all($scope.inputs.provider, $scope.inputs.omni, $scope.page).success(function(results) {
-      if (results.length === 0) {
+      if (!results || results.length === 0) {
         $scope.noResults = true;
         $scope.hasMore = false;
         return;

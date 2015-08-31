@@ -1,3 +1,41 @@
+
+
+<!-- MAGNET EDITOR -->
+<div class="ui segment" ng-show="edit" >
+  <form class="ui edit form">
+    <h4 class="ui dividing header">Magnet URI Editor</h4>
+    <div class="field">
+      <label>Name</label>
+      <div class="field">
+        <input type="text"
+        ng-model="magnet.name"
+        ng-change="parseMagnetString()"
+        placeholder="Name">
+      </div>
+    </div>
+    <div class="field">
+      <label>Info Hash</label>
+      <div class="field">
+        <input type="text"
+        ng-model="magnet.infohash"
+        ng-change="parseMagnetString()"
+        placeholder="Info Hash">
+      </div>
+    </div>
+    <div class="field">
+      <label>Trackers</label>
+    </div>
+    <div>
+      <div class="field" ng-repeat="t in magnet.trackers">
+        <input type="text"
+        ng-model="t.v"
+        ng-change="parseMagnetString()"
+        placeholder="Tracker">
+      </div>
+    </div>
+  </form>
+</div>
+
 <!-- OMNI BAR -->
 <div class="omni ui fluid icon input">
   <input
@@ -9,40 +47,6 @@
     ng-class="{search: mode.search, magnet: mode.magnet || mode.torrent,
           help: !mode.search && !mode.magnet && !mode.torrent}"></i>
 </div>
-
-<!-- MAGNET EDITOR -->
-<form ng-show="edit" class="ui edit form">
-  <div class="ui divider"></div>
-  <div class="field">
-    <label>Name</label>
-    <div class="field">
-      <input type="text"
-      ng-model="name"
-      ng-change="stringify()"
-      placeholder="Name">
-    </div>
-  </div>
-  <div class="field">
-    <label>Info Hash</label>
-    <div class="field">
-      <input type="text"
-      ng-model="infohash"
-      ng-change="stringify()"
-      placeholder="Info Hash">
-    </div>
-  </div>
-  <div class="field">
-    <label>Trackers</label>
-  </div>
-  <div>
-    <div class="field" ng-repeat="t in trackers">
-      <input type="text"
-      ng-model="t.v"
-      ng-change="stringify()"
-      placeholder="Tracker">
-    </div>
-  </div>
-</form>
 
 <!-- MAGNET FIELD ERROR -->
 <div ng-show="omnierr" class="ui error message">

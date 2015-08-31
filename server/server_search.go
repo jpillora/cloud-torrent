@@ -1,4 +1,4 @@
-package ct
+package server
 
 //see github.com/jpillora/scraper for config specification
 //cloud-torrent uses "<id>-item" handlers
@@ -18,7 +18,7 @@ var defaultSearchConfig = []byte(`{
 	},
 	"tpb": {
 		"name": "The Pirate Bay",
-		"url": "https://thepiratebay.se/search/{{query}}/{{page:0}}/7//",
+		"url": "https://thepiratebay.gd/search/{{query}}/{{page:0}}/7//",
 		"list": "#searchResult > tbody > tr",
 		"result": {
 			"name":"a.detLink",

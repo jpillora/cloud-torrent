@@ -4,15 +4,15 @@
     Torrents
   </h3>
   <h5 class="ui files downloading header">
-    Downloading {{ data.filesDownloading || 0 }} files
+    {{ numKeys(state.Torrents) }} torrents
   </h5>
 </div>
- 
-<div ng-if="isEmpty(data.Engines[engine.id].Torrents)" class="ui message nodownloads">
+
+<div ng-if="isEmpty(state.Torrents)" class="ui message nodownloads">
   <p>Add torrents above</p>
 </div>
 
-<div ng-repeat="(hash, t) in data.Engines[engine.id].Torrents"
+<div ng-repeat="(hash, t) in state.Torrents"
   ng-class="{open: t.open}"
    class="ui torrent segment">
 
@@ -35,49 +35,27 @@
         <div class="hash">#{{ t.InfoHash }}</div>
       </div>
       <div class="controls column">
-        <div class="open" ng-show="t.open">
-
-          <div class="status">
-            <div class="down">
-              <span ng-class="{muted:t.status.down == 0}">{{t.status.down | bytes}}</span>
-              <span ng-class="{muted:t.status.downps == 0}"> ({{t.status.downps | bytes}}/s)
-                <i class="ui arrow down icon"></i>
-              </span>
-            </div>
-            <!-- DISABLED UPLOAD
-            <div class="up">
-              <span ng-class="{muted:t.status.up == 0}">{{t.status.up | bytes}}</span>
-              <span ng-class="{muted:t.status.upps == 0}"> ({{t.status.upps | bytes}}/s)
-                <i class="ui arrow up icon"></i>
-              </span>
-            </div>
-             -->
-          </div>
-          <!--
-          <a class="ui green label"
-            ng-class="{disabled: ready(t.Name+'.zip')}"
-            ng-click="!ready(t.Name+'.zip') && api('zipAll', {hash: t.InfoHash })">
-            <i class="save icon"></i> Zip
-          </a>
-          -->
-          <a class="ui red label"
-            ng-click="api('close', {hash: t.InfoHash })">
-            <i class="stop icon"></i> Stop
-          </a>
-        </div>
-        <div class="closed" ng-show="!t.open">
-          <a class="ui green label"
-            ng-click="submitTorrent('start', t)">
-            <i class="play icon"></i> Start
-          </a>
-          <a class="ui red label"
-            ng-click="submitTorrent('delete', t)">
-            <i class="trash icon"></i> Delete
-          </a>
-        </div>
+        <span ng-if="t.Started" class="status download">
+          <span ng-class="{muted:t.Downloaded == 0}">{{t.Downloaded | bytes}}</span>
+          <span ng-class="{muted:t.DownloadRate == 0}"> ({{t.DownloadRate | bytes}}/s)
+            <!-- <i class="ui arrow down icon"></i> -->
+          </span>
+        </span>
+        <a ng-if="!t.Started" class="ui green label"
+          ng-click="submitTorrent('start', t)">
+          <i class="cloud download icon"></i> Start
+        </a>
+        <a ng-if="t.Started" class="ui red label"
+          ng-click="submitTorrent('stop', t)">
+          <i class="stop icon"></i> Stop
+        </a>
+        <a ng-if="!t.Started" class="ui red label"
+          ng-click="submitTorrent('delete', t)">
+          <i class="trash icon"></i> Remove
+        </a>
       </div>
     </div>
-    <!-- 
+    <!--
     <div ng-if="!t.open" class="row stopped"><div class="column">
       This torrent is inactive. Press the green power button to reactivate or the red trash can to remove it.
     </div></div>
@@ -88,7 +66,8 @@
           <tr>
             <th class="name">File</th>
             <th class="size">Size</th>
-            <th>&nbsp;</th>
+            <th class="percent">Progress</th>
+            <!-- <th>&nbsp;</th> -->
           </tr>
         </thead>
         <tbody>
@@ -98,19 +77,12 @@
           <tr class="download file" ng-repeat="f in t.Files">
             <td class="name">
               <div>
-                <span ng-show="!ready(f)">
+                <span ng-show="f.Percent < 100">
                   {{ f.Path | filename }}
                 </span>
-                <a ng-show="ready(f)"
-                  ng-href="{{ ready(f).url }}">
+                <a ng-show="f.Percent == 100" ng-href="{{ f.Path }}">
                   {{ f.Path | filename }}
                 </a>
-              </div>
-              <div ng-show="downloading(f)"
-                 class="ui blue active progress">
-                <div class="bar" ng-style="{width: (f.Completed/f.Chunks)*100 + '%'}">
-                  <div class="progress"></div>
-                </div>
               </div>
               <div ng-if="f.downloadError"
                 class="ui error message">
@@ -121,20 +93,27 @@
             <td class="size">
               {{ f.Size | bytes }}
             </td>
-            <td class="controls">
-              <i ng-class="{disabled: ready(f) || downloading(f)}"
-                ng-click="!ready(f) && !downloading(f) && submitFile('start', t, f)"
-                class="green cloud download icon"></i>
-              <i ng-show="downloading(f)"
-                ng-click="downloading(f) && submitFile('stop', t, f)"
-                class="red stop icon"></i>
+            <td class="percent">
+              <span class="text">{{ f.Percent }}%</span>
+              <div ng-show="f.Percent > 0 && f.Percent < 100"
+                 class="ui blue active progress">
+                <div class="bar" ng-style="{width: f.Percent + '%'}">
+                  <div class="progress"></div>
+                </div>
+              </div>
             </td>
+            <!-- <td class="controls">
+              <i ng-class="{disabled: f.Started}"
+                ng-click="!f.Started && submitFile('start', t, f)"
+                class="green cloud download icon"></i>
+            </td>
+             -->
           </tr>
         </tbody>
-        <tfoot ng-if="t.Files.length > 1">
+        <tfoot ng-if="numKeys(t.Files) > 1">
           <tr>
             <th class="name">
-              {{ t.Files.length }} Files
+              {{ numKeys(t.Files) }} Files
             </th>
             <th>
               {{ t.Size | bytes }} Total

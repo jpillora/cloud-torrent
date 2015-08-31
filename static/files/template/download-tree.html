@@ -1,0 +1,20 @@
+
+<i ng-if="isdir()" ng-class="icon()" ng-click="toggle()"></i>
+<i ng-if="isfile()" ng-class="icon()"></i>
+<div class="content">
+  <div class="header">
+    <span ng-if="isdir()">{{ node.Name }}</span>
+    <a ng-if="isfile()" ng-href="/download/{{ node.$path }}">{{ node.Name }}</a>
+    <span class="controls">
+      <i ng-show="!confirm" ng-click="confirm = true" class="red trash icon"></i>
+      <i ng-show="!deleting && confirm" ng-click="deleting = true; remove();" class="red check icon"></i>
+      <i ng-show="deleting" class="grey notched circle loading icon"></i>
+    </span>
+  </div>
+  <div class="description">{{ node.Size | bytes }}</div>
+  <div class="list" ng-if="isdir() && !closed()">
+    <div class="item" ng-repeat="node in node.Children"
+        ng-controller="NodeController"
+        ng-include src="'template/download-tree.html'"></div>
+  </div>
+</div>

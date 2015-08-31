@@ -31,15 +31,11 @@ section.torrents {
 	display: inline;
 }
 
-.torrent .status > div {
-	display: inline-block;
-}
-
 .torrent .status .muted {
 	color: lightgray;
 }
 
-.torrent .controls.column > div {
+.torrent .controls.column {
 	/*padding-top: 5px;*/
 	text-align: right;
 }
@@ -50,7 +46,8 @@ section.torrents {
 	font-size: 0.75rem;
 }
 
-.torrent .download.file .name {
+.torrent .download.file .name,
+.torrent .download.file .percent {
 	position: relative;
 	overflow: hidden;
 }

@@ -1,0 +1,25 @@
+<form ng-show="edit" class="ui segment edit form">
+  <h4 class="ui dividing header">Configuration</h4>
+  <div class="field"
+    ng-repeat="(k,v) in state.Config"
+    ng-init="type = inputType(v)">
+    <div ng-if="type == 'check'">
+      <checkbox type="toggle"
+        ng-model="state.Config[k]">{{ k | addspaces }}</checkbox>
+    </div>
+    <div ng-if="type != 'check'">
+      <label>{{ k | addspaces }}</label>
+      <input type="{{type}}" ng-model="state.Config[k]"></input>
+    </div>
+  </div>
+  <div class="buttons">
+    <div class="ui blue button"
+      ng-class="{loading: apiing}"
+      ng-click="submitConfig()">
+      Save
+    </div>
+    <div class="ui grey button" ng-click="toggle()">
+      Cancel
+    </div>
+  </div>
+</form>

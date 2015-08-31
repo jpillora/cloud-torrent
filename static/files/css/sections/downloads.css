@@ -3,3 +3,15 @@
 .nodownloads, .nouploads {
 	text-align: center;
 }
+
+.downloads .ui.list .content {
+	width: 100%;
+}
+
+.downloads .ui.list .item .controls {
+	opacity: 0;
+	transition: opacity .3s ease-in-out;
+}
+.downloads .ui.list .item:hover > .content > .header > .controls {
+	opacity: 1;
+}

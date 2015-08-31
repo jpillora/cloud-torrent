@@ -8,7 +8,7 @@
 		<link rel="icon" href="cloud-favicon.png" type="image/x-icon" />
 		<style type="text/css">[ng-cloak]{display: none;}</style>
 	</head>
-	<body ng-app="app"><div ng-cloak class="cage">
+	<body ng-app="app" class="app"><div ng-cloak class="cage">
 		<!-- TITLE ===================== -->
 		<div class="title">
 			<h2>
@@ -23,7 +23,7 @@
 			<div class="status">
 				<i ng-show="request.count > 0"
 					class="ui circular loading repeat icon"></i>
-				<i ng-click="$root.engine.edit = !$root.engine.edit;" ng-class="{green: $root.engine.edit}"
+				<i ng-click="$root.config.edit = !$root.config.edit;" ng-class="{green: $root.config.edit}"
 					class="ui circular server icon" style="font-size: 14px;"></i>
 				<i ng-click="$root.omni.edit = !$root.omni.edit;"
 					ng-class="{green: $root.omni.edit}"
@@ -39,16 +39,17 @@
 			<p>{{err}}</p>
 		</div>
 
-		<section class="engine" ng-controller="EngineController" ng-include src="'template/engine.html'"></section>
+		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html'"></section>
 		<section class="omni" ng-controller="OmniController" ng-include src="'template/omni.html'"></section>
 		<section class="torrents" ng-controller="TorrentsController" ng-include src="'template/torrents.html'"></section>
 		<section class="downloads" ng-controller="DownloadsController" ng-include src="'template/downloads.html'"></section>
 
 		<script src="js/vendor/query-string.js"></script>
 		<script src="js/vendor/angular.min.js"></script>
-		<script src="/realtime.js"></script>
+		<!-- <script src="/realtime"></script> -->
+		<script src="http://localhost:5000/realtime.js"></script>
 		<script>window.app = window.angular.module('app', []);</script>
-		<script src="js/engine-controller.js"></script>
+		<script src="js/config-controller.js"></script>
 		<script src="js/omni-controller.js"></script>
 		<script src="js/torrents-controller.js"></script>
 		<script src="js/downloads-controller.js"></script>
