@@ -14,10 +14,14 @@ app.controller("NodeController", function($scope, $rootScope, $http) {
   var n = $scope.node;
   var path = [n.Name];
   if($scope.$parent && $scope.$parent.$parent && $scope.$parent.$parent.node) {
-    var pnode = $scope.$parent.$parent.node;
-    path.unshift(pnode.$path);
+    var parentNode = $scope.$parent.$parent.node;
+    path.unshift(parentNode.$path);
+    n.$depth = parentNode.$depth + 1;
+  } else {
+    n.$depth = 1;
   }
   n.$path = path.join("/");
+  n.$closed = $scope.agoHrs(n.Modified) > 24;
 
   //defaults
   $scope.closed = function() { return n.$closed; };

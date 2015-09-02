@@ -16,9 +16,10 @@ type Torrent struct {
 	Files      []*File
 	//cloud torrent
 	Started      bool
+	Dropped      bool
 	Percent      float32
 	DownloadRate float32
-	t            *torrent.Torrent
+	t            torrent.Torrent
 	updatedAt    time.Time
 }
 
@@ -31,10 +32,10 @@ type File struct {
 	//cloud torrent
 	Started bool
 	Percent float32
-	f       *torrent.File
+	f       torrent.File
 }
 
-func (torrent *Torrent) Update(t *torrent.Torrent) {
+func (torrent *Torrent) Update(t torrent.Torrent) {
 	torrent.Name = t.Name()
 	torrent.Loaded = t.Info() != nil
 	torrent.Size = t.Length()
@@ -66,7 +67,7 @@ func (torrent *Torrent) Update(t *torrent.Torrent) {
 		}
 		file.Completed = completed
 		file.Percent = percent(file.Completed, file.Chunks)
-		file.f = &f
+		file.f = f
 
 		totalChunks += file.Chunks
 		totalCompleted += file.Completed
@@ -83,7 +84,7 @@ func (torrent *Torrent) Update(t *torrent.Torrent) {
 	}
 	torrent.Downloaded = bytes
 	torrent.updatedAt = now
-
+	torrent.t = t
 }
 
 func percent(n, total int) float32 {

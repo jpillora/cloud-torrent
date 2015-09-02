@@ -12,17 +12,12 @@ import (
 	"github.com/anacrolix/torrent"
 )
 
-type Config struct {
-	DownloadDirectory string
-	EnableUpload      bool
-	EnableSeeding     bool
-}
-
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
 type Engine struct {
 	mut      sync.Mutex
 	cacheDir string
 	client   *torrent.Client
+	config   Config
 	ts       map[string]*Torrent
 }
 
@@ -52,9 +47,13 @@ func (e *Engine) Configure(c Config) error {
 			if filepath.Ext(f.Name()) != ".torrent" {
 				continue
 			}
-			client.AddTorrentFromFile(filepath.Join(e.cacheDir, f.Name()))
+			tt, err := client.AddTorrentFromFile(filepath.Join(e.cacheDir, f.Name()))
+			if err == nil {
+				e.upsertTorrent(tt)
+			}
 		}
 	}
+	e.config = c
 	e.client = client
 	e.mut.Unlock()
 	//reset
@@ -64,32 +63,49 @@ func (e *Engine) Configure(c Config) error {
 
 func (e *Engine) NewTorrent(magnetURI string) error {
 	//adds the torrent but does not start it
-	_, err := e.client.AddMagnet(magnetURI)
+	tt, err := e.client.AddMagnet(magnetURI)
 	if err != nil {
 		return err
 	}
+	t := e.upsertTorrent(tt)
+
+	go func() {
+		<-t.t.GotInfo()
+
+		// if e.config.AutoStart && !loaded && torrent.Loaded && !torrent.Started {
+		e.StartTorrent(t.InfoHash)
+		// }
+
+	}()
+
 	return nil
 }
 
 //GetTorrents moves torrents out of the anacrolix/torrent
 //and into the local cache
 func (e *Engine) GetTorrents() map[string]*Torrent {
+	e.mut.Lock()
+	defer e.mut.Unlock()
+
 	if e.client == nil {
 		return nil
 	}
-	e.mut.Lock()
-	defer e.mut.Unlock()
-	for _, t := range e.client.Torrents() {
-		ih := t.InfoHash().HexString()
-		torrent, ok := e.ts[ih]
-		if !ok {
-			torrent = &Torrent{InfoHash: ih}
-			e.ts[ih] = torrent
-		}
-		//update torrent fields using underlying torrent
-		torrent.Update(&t)
+	for _, tt := range e.client.Torrents() {
+		e.upsertTorrent(tt)
 	}
 	return e.ts
+}
+
+func (e *Engine) upsertTorrent(tt torrent.Torrent) *Torrent {
+	ih := tt.InfoHash().HexString()
+	torrent, ok := e.ts[ih]
+	if !ok {
+		torrent = &Torrent{InfoHash: ih}
+		e.ts[ih] = torrent
+	}
+	//update torrent fields using underlying torrent
+	torrent.Update(tt)
+	return torrent
 }
 
 func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
@@ -109,13 +125,13 @@ func (e *Engine) getOpenTorrent(infohash string) (*Torrent, error) {
 	if err != nil {
 		return nil, err
 	}
-	if t.t == nil {
-		newt, err := e.client.AddTorrentFromFile(filepath.Join(e.cacheDir, infohash+".torrent"))
-		if err != nil {
-			return t, fmt.Errorf("Failed to open torrent %s", err)
-		}
-		t.t = &newt
-	}
+	// if t.t == nil {
+	// 	newt, err := e.client.AddTorrentFromFile(filepath.Join(e.cacheDir, infohash+".torrent"))
+	// 	if err != nil {
+	// 		return t, fmt.Errorf("Failed to open torrent %s", err)
+	// 	}
+	// 	t.t = &newt
+	// }
 	return t, nil
 }
 
@@ -131,7 +147,9 @@ func (e *Engine) StartTorrent(infohash string) error {
 	for _, f := range t.Files {
 		f.Started = true
 	}
-	t.t.DownloadAll()
+	if t.t.Info() != nil {
+		t.t.DownloadAll()
+	}
 	return nil
 }
 
@@ -149,7 +167,6 @@ func (e *Engine) StopTorrent(infohash string) error {
 	for _, f := range t.Files {
 		f.Started = false
 	}
-	t.t = nil
 	return nil
 }
 
@@ -160,8 +177,9 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	}
 	os.Remove(filepath.Join(e.cacheDir, infohash+".torrent"))
 	delete(e.ts, t.InfoHash)
-	if t.t != nil {
-		t.t.Drop()
+	ih, _ := str2ih(infohash)
+	if tt, ok := e.client.Torrent(ih); ok {
+		tt.Drop()
 	}
 	return nil
 }

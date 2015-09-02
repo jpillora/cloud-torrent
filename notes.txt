@@ -1,0 +1,5 @@
+* Total bytes uploaded
+* Change priority (skip, normal, high)
+* Check torrent (check only priority?)
+* Stop torrent (instead of Drop)
+* Monotonic time alternate (remove C deps)

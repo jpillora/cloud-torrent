@@ -48,4 +48,16 @@ app.run(function($rootScope, search, api) {
   $scope.numKeys = function(obj) {
     return obj ? Object.keys(obj).length : 0;
   };
+
+	$scope.ago = function(t) {
+		return moment(t).fromNow();
+	};
+
+  $scope.agoHrs = function(t) {
+    return moment().diff(moment(t), 'hours');
+  };
+
+  $scope.withHrs = function(t, hrs) {
+    return $scope.agoHrs(t) <= hrs;
+  };
 });

@@ -8,11 +8,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type fsNode struct {
 	Name     string
 	Size     int64
+	Modified time.Time
 	Children []*fsNode
 }
 
@@ -60,6 +62,7 @@ func list(path string, info os.FileInfo, node *fsNode) error {
 	}
 	node.Name = info.Name()
 	node.Size = info.Size()
+	node.Modified = info.ModTime()
 	if !info.IsDir() {
 		return nil
 	}

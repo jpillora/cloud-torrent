@@ -81,7 +81,8 @@ func (s *Server) init() error {
 	c := engine.Config{
 		DownloadDirectory: "./downloads",
 		EnableUpload:      true,
-		EnableSeeding:     true,
+		EnableSeeding:     false,
+		AutoStart:         true,
 	}
 	if _, err := os.Stat(s.ConfigPath); err == nil {
 		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {
