@@ -143,11 +143,13 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	if s.Auth != "" {
 		u, p, _ := r.BasicAuth()
 		if s.Auth != u+":"+p {
+			w.Header().Set("WWW-Authenticate", "Basic")
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte("Access Denied"))
 			return
 		}
 	}
+
 	//handle realtime client connections
 	if r.URL.Path == "/realtime" {
 		s.rt.ServeHTTP(w, r)
