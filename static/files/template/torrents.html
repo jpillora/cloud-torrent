@@ -77,12 +77,14 @@
           <tr class="download file" ng-repeat="f in t.Files">
             <td class="name">
               <div>
-                <span ng-show="f.Percent < 100">
+                <span>
                   {{ f.Path | filename }}
                 </span>
+                <!-- 
                 <a ng-show="f.Percent == 100" ng-href="{{ f.Path }}">
                   {{ f.Path | filename }}
                 </a>
+                 -->
               </div>
               <div ng-if="f.downloadError"
                 class="ui error message">

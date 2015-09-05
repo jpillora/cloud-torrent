@@ -152,7 +152,10 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//handle realtime client connections
-	if r.URL.Path == "/realtime" {
+	if r.URL.Path == "/realtime.js" {
+		realtime.JS.ServeHTTP(w, r)
+		return
+	} else if r.URL.Path == "/realtime" {
 		s.rt.ServeHTTP(w, r)
 		return
 	}

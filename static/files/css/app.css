@@ -52,6 +52,18 @@ html body .muted {
 	font-size: 1.2em;
 }
 
+.app .connect-warning {
+	padding-top: 50px;
+	position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,1);
+    opacity: 0.95;
+}
+
 /*
 	================
 	app styles

@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -204,7 +203,6 @@ func (e *Engine) StartFile(infohash, filepath string) error {
 	}
 	t.Started = true
 	f.Started = true
-	log.Printf("prioritze %s %d", f.Path, f.Size)
 	f.f.PrioritizeRegion(0, f.Size)
 	return nil
 }

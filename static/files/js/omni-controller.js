@@ -97,7 +97,9 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
     return "magnet:?" +
       "xt=urn:btih:" + (infohash || '') + "&" +
       "dn=" + (name || '').replace(/\W/g, '').replace(/\s+/g, '+') +
-      (trackers || []).map(function(t) {
+      (trackers || []).filter(function(t) {
+        return !!t.v;
+      }).map(function(t) {
         return "&tr=" + encodeURIComponent(t.v);
       }).join('');
   };
@@ -174,12 +176,11 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
     if (!result.path)
       return $scope.omnierr = "No URL found";
 
-    search.one($scope.inputs.provider, result.path).success(function(err, data) {
-      if (err)
-        return $scope.omnierr = err;
-
+    search.one($scope.inputs.provider, result.path).then(function(resp) {
+      var data = resp.data;
+      if (!data)
+        return $scope.omnierr = "No response";
       var magnet;
-
       if (data.magnet) {
         magnet = data.magnet;
       } else if (data.infohash) {
@@ -188,8 +189,10 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
         $scope.omnierr = "No magnet or infohash found";
         return;
       }
-
+      console.log("start magnet", magnet);
       api.magnet(magnet);
+    }, function(err) {
+      $scope.omnierr = err;
     });
   };
 });

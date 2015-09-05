@@ -42,7 +42,7 @@ var defaultSearchConfig = []byte(`{
 	},
 	"abb-item": {
 		"name": "The Audiobook Bay (Item)",
-		"url": "http://audiobookbay.co/{{path}}",
+		"url": "http://audiobookbay.co{{path}}",
 		"result": {
 			"infohash": "/td>([a-f0-9]+)</",
 			"tracker": "table tr:nth-child(1) > td:nth-child(2)"

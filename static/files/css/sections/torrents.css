@@ -62,7 +62,7 @@ section.torrents {
 	padding: 4px;
 	margin: 0;
 	height: 100%;
-	border: none;
+	background: none;
 }
 .torrent .download.file .progress .bar {
 	height: 100%;

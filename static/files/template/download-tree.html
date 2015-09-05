@@ -1,12 +1,18 @@
 
-<i ng-if="isdir()" ng-class="icon()" ng-click="toggle()"></i>
-<i ng-if="isfile()" ng-class="icon()"></i>
+<!-- <div class="icon-container"> -->
+<i class="wrapper icon">
+  <i ng-if="isdir()" ng-class="icon()" ng-click="toggle()"></i>
+  <i ng-if="isfile()" ng-class="icon()"></i>
+</i>
+<!-- </div> -->
+
 <div class="content">
   <div class="header">
     <span ng-if="isdir()">{{ node.Name }}</span>
-    <a ng-if="isfile()" ng-href="/download/{{ node.$path }}">{{ node.Name }}</a>
-    <span class="controls">
-      <i ng-show="!confirm" ng-click="confirm = true" class="red trash icon"></i>
+    <a ng-if="isfile() && !isdownloading()" ng-href="/download/{{ node.$path }}">{{ node.Name }}</a>
+    <span ng-if="isfile() && isdownloading()">{{ node.Name }}</span>
+    <span ng-if="!isdownloading()" class="controls">
+      <i ng-show="!confirm" ng-click="preremove()" class="red trash icon"></i>
       <i ng-show="!deleting && confirm" ng-click="deleting = true; remove();" class="red check icon"></i>
       <i ng-show="deleting" class="grey notched circle loading icon"></i>
     </span>

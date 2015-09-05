@@ -9,6 +9,16 @@
 		<style type="text/css">[ng-cloak]{display: none;}</style>
 	</head>
 	<body ng-app="app" class="app"><div ng-cloak class="cage">
+		<div ng-if="!connected" class="connect-warning ui inverted vertical masthead center aligned segment">
+			<div class="ui text container">
+			<h1 class="ui inverted header">
+				Disconnected
+			</h1>
+			<h1 class="ui inverted header">
+				<i class="red lightning icon"></i>
+			</h1>
+			</div>
+		</div>
 		<!-- TITLE ===================== -->
 		<div class="title">
 			<h2>
@@ -47,7 +57,7 @@
 		<script src="js/vendor/query-string.js"></script>
 		<script src="js/vendor/angular.min.js"></script>
 		<script src="js/vendor/moment.min.js"></script>
-		<script src="/realtime"></script>
+		<script src="/realtime.js"></script>
 		<script>window.app = window.angular.module('app', []);</script>
 		<script src="js/config-controller.js"></script>
 		<script src="js/omni-controller.js"></script>
