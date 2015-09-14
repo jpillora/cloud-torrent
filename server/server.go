@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -44,6 +45,11 @@ type Server struct {
 		Downloads       *fsNode
 		Torrents        map[string]*engine.Torrent
 		Users           map[string]*realtime.User
+		Stats           struct {
+			Version string
+			Runtime string
+			Uptime  time.Time
+		}
 	}
 }
 
@@ -130,7 +136,12 @@ func (s *Server) reconfigure(c engine.Config) error {
 	return nil
 }
 
-func (s *Server) Run() error {
+func (s *Server) Run(version string) error {
+
+	s.state.Stats.Version = version
+	s.state.Stats.Runtime = strings.TrimPrefix(runtime.Version(), "go")
+	s.state.Stats.Uptime = time.Now()
+
 	if err := s.init(); err != nil {
 		return err
 	}

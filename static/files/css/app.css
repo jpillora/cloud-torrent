@@ -33,6 +33,18 @@ html body .muted {
 	color: gray;
 }
 
+footer {
+	text-align: right;
+	color: grey;
+	font-style: italic;
+	font-size: 0.8em;
+	opacity: 0.25;
+	transition: opacity .3s ease-in-out;
+}
+footer:hover {
+	opacity: 1;
+}
+
 .ellipsis {
 	display: inline-block;
 	overflow: hidden;

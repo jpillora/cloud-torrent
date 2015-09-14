@@ -7,7 +7,7 @@ import (
 	"github.com/jpillora/opts"
 )
 
-var VERSION = "0.0.0" //set with ldflags
+var VERSION = "0.0.0-src" //set with ldflags
 
 func main() {
 	s := server.Server{
@@ -20,7 +20,7 @@ func main() {
 		PkgRepo().
 		Parse()
 
-	if err := s.Run(); err != nil {
+	if err := s.Run(VERSION); err != nil {
 		log.Fatal(err)
 	}
 }
