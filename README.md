@@ -26,6 +26,30 @@ Click
 
 [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
+### Usage
+
+```
+$ cloud-torrent --help
+
+  Usage: cloud-torrent [options]
+
+  Options:
+  --port, -p        Listening port (default 3000, env PORT)
+  --host, -h        Listening interface (default all)
+  --auth, -a        Optional basic auth (in form user:password) (env AUTH)
+  --configpath, -c  Configuration file path (default cloud-torrent.json)
+  --log, -l         Enable request logging
+  --help
+  --version, -v
+
+  Version:
+    0.8.1
+
+  Read more:
+    https://github.com/jpillora/cloud-torrent
+
+```
+
 ### Overview
 
 Cloud torrent is a hosted torrent client written in Go (golang). This project is the version 2 rewrite of the original [Node version](https://github.com/jpillora/node-torrent-cloud).
