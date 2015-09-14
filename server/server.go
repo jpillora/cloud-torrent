@@ -16,7 +16,8 @@ import (
 	"github.com/jpillora/cloud-torrent/engine"
 	"github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/go-realtime"
-	"github.com/jpillora/scraper/lib"
+	"github.com/jpillora/requestlog"
+	"github.com/jpillora/scraper/scraper"
 )
 
 //Server is the "State" portion of the diagram
@@ -26,6 +27,7 @@ type Server struct {
 	Host       string `help:"Listening interface (default all)"`
 	Auth       string `help:"Optional basic auth (in form user:password)"`
 	ConfigPath string `help:"Configuration file path"`
+	Log        bool   `help:"Enable request logging"`
 	//http handlers
 	files, static http.Handler
 	scraper       *scraper.Handler
@@ -51,7 +53,7 @@ func (s *Server) init() error {
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
 	s.files = http.HandlerFunc(s.serveFiles)
 	s.static = ctstatic.FileSystemHandler()
-	s.scraper = &scraper.Handler{Log: true}
+	s.scraper = &scraper.Handler{Log: false}
 	if err := s.scraper.LoadConfig(defaultSearchConfig); err != nil {
 		log.Fatal(err)
 	}
@@ -104,7 +106,7 @@ func (s *Server) init() error {
 			// log.Printf("torrents #%d files #%d", len(s.state.Torrents), len(s.state.Downloads.Children))
 			s.state.Unlock()
 			s.state.Update()
-			time.Sleep(1 * time.Second)
+			time.Sleep(2 * time.Second)
 		}
 	}()
 
@@ -135,8 +137,12 @@ func (s *Server) Run() error {
 	// TODO if Open {
 	//    cross platform open - https://github.com/skratchdot/open-golang
 	// }
+	h := http.Handler(http.HandlerFunc(s.handle))
+	if s.Log {
+		h = requestlog.Wrap(h)
+	}
 	log.Printf("Listening on %d...", s.Port)
-	return http.ListenAndServe(s.Host+":"+strconv.Itoa(s.Port), http.HandlerFunc(s.handle))
+	return http.ListenAndServe(s.Host+":"+strconv.Itoa(s.Port), h)
 }
 
 func (s *Server) handle(w http.ResponseWriter, r *http.Request) {

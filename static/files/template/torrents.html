@@ -33,26 +33,40 @@
           </a>
         </div>
         <div class="hash">#{{ t.InfoHash }}</div>
+        <div class="ui blue progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
+          <div class="bar" ng-style="{width: t.Percent + '%'}">
+            <div class="progress"></div>
+          </div>
+        </div>
       </div>
       <div class="controls column">
-        <span ng-if="t.Started" class="status download">
+        <div>
+          <div class="ui mini buttons">
+            <a class="ui button" ng-class="{blue: t.$showFiles}"
+              ng-click="t.$showFiles = !t.$showFiles">
+              <i class="file icon"></i> Files
+            </a>
+            <a ng-disabled="t.Started" class="ui button" ng-class="{green: !t.Started}"
+              ng-click="submitTorrent('start', t)">
+              <i class="cloud download icon"></i> Start
+            </a>
+            <a ng-if="t.Started" class="ui red button"
+              ng-click="submitTorrent('stop', t)">
+              <i class="stop icon"></i> Stop
+            </a>
+            <a ng-if="!t.Started" class="ui red button"
+              ng-click="submitTorrent('delete', t)">
+              <i class="trash icon"></i> Remove
+            </a>
+          </div>
+        </div>
+
+        <div ng-if="t.Started" class="status download">
           <span ng-class="{muted:t.Downloaded == 0}">{{t.Downloaded | bytes}}</span>
-          <span ng-class="{muted:t.DownloadRate == 0}"> ({{t.DownloadRate | bytes}}/s)
-            <!-- <i class="ui arrow down icon"></i> -->
-          </span>
-        </span>
-        <a ng-if="!t.Started" class="ui green label"
-          ng-click="submitTorrent('start', t)">
-          <i class="cloud download icon"></i> Start
-        </a>
-        <a ng-if="t.Started" class="ui red label"
-          ng-click="submitTorrent('stop', t)">
-          <i class="stop icon"></i> Stop
-        </a>
-        <a ng-if="!t.Started" class="ui red label"
-          ng-click="submitTorrent('delete', t)">
-          <i class="trash icon"></i> Remove
-        </a>
+          <span> / {{t.Size | bytes}}</span>
+          <span> - {{t.Percent }}% </span>
+          <span style="font-weight:bold" ng-class="{muted:t.DownloadRate == 0}"> - {{t.DownloadRate | bytes}}/s</span>
+        </div>
       </div>
     </div>
     <!--
@@ -60,27 +74,31 @@
       This torrent is inactive. Press the green power button to reactivate or the red trash can to remove it.
     </div></div>
      -->
-    <div class="row" ng-show="t.Loaded"><div class="column">
+    <div class="row" ng-show="t.$showFiles && t.Loaded"><div class="column">
       <table class="ui unstackable compact striped downloads tcld table">
         <thead>
           <tr>
             <th class="name">File</th>
             <th class="size">Size</th>
-            <th class="percent">Progress</th>
             <!-- <th>&nbsp;</th> -->
           </tr>
         </thead>
         <tbody>
           <tr ng-if="!t.Files || t.Files.length == 0">
-            <td colspan="3" class="muted">No files</td>
+            <td colspan="2" class="muted">No files</td>
           </tr>
           <tr class="download file" ng-repeat="f in t.Files">
             <td class="name">
               <div>
-                <span>
-                  {{ f.Path | filename }}
-                </span>
-                <!-- 
+                <span>{{ f.Path | filename }}</span>
+                <span class="percent" ng-if="f.Percent > 0 && f.Percent < 100">{{ f.Percent }}% </span>
+                <div ng-if="f.Percent > 0 && f.Percent < 100"
+                   class="ui blue active progress">
+                  <div class="bar" ng-style="{width: f.Percent + '%'}">
+                    <div class="progress"></div>
+                  </div>
+                </div>
+                <!--
                 <a ng-show="f.Percent == 100" ng-href="{{ f.Path }}">
                   {{ f.Path | filename }}
                 </a>
@@ -93,23 +111,8 @@
               </div>
             </td>
             <td class="size">
-              {{ f.Size | bytes }}
+              {{ f.Size | bytes }} <i ng-if="f.Percent == 100" class="green check icon"></i>
             </td>
-            <td class="percent">
-              <span class="text">{{ f.Percent }}%</span>
-              <div ng-show="f.Percent > 0 && f.Percent < 100"
-                 class="ui blue active progress">
-                <div class="bar" ng-style="{width: f.Percent + '%'}">
-                  <div class="progress"></div>
-                </div>
-              </div>
-            </td>
-            <!-- <td class="controls">
-              <i ng-class="{disabled: f.Started}"
-                ng-click="!f.Started && submitFile('start', t, f)"
-                class="green cloud download icon"></i>
-            </td>
-             -->
           </tr>
         </tbody>
         <tfoot ng-if="numKeys(t.Files) > 1">
@@ -119,9 +122,6 @@
             </th>
             <th>
               {{ t.Size | bytes }} Total
-            </th>
-            <th>
-              &nbsp;
             </th>
           </tr>
         </tfoot>

@@ -66,17 +66,17 @@ func (torrent *Torrent) Update(t torrent.Torrent) {
 			}
 		}
 		file.Completed = completed
-		file.Percent = percent(file.Completed, file.Chunks)
+		file.Percent = percent(int64(file.Completed), int64(file.Chunks))
 		file.f = f
 
 		totalChunks += file.Chunks
 		totalCompleted += file.Completed
 	}
 
-	torrent.Percent = percent(totalChunks, totalCompleted)
 	//cacluate rate
 	now := time.Now()
 	bytes := t.BytesCompleted()
+	torrent.Percent = percent(bytes, torrent.Size)
 	if !torrent.updatedAt.IsZero() {
 		dt := float32(now.Sub(torrent.updatedAt))
 		db := float32(bytes - torrent.Downloaded)
@@ -87,9 +87,9 @@ func (torrent *Torrent) Update(t torrent.Torrent) {
 	torrent.t = t
 }
 
-func percent(n, total int) float32 {
+func percent(n, total int64) float32 {
 	if total == 0 {
 		return float32(0)
 	}
-	return float32(int(float32(10000)*(float32(n)/float32(total)))) / 100
+	return float32(int(float64(10000)*(float64(n)/float64(total)))) / 100
 }

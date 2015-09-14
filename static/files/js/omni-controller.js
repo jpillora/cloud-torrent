@@ -155,9 +155,9 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
       }
       for (var i = 0; i < results.length; i++) {
         var r = results[i];
-        //add origin to absolute urls
-        if(r.url && /^\//.test(r.url)) {
-          r.url = origin + r.url;
+        //add origin to path to create urls
+        if(r.path && /^\//.test(r.path)) {
+          r.url = origin + r.path;
         }
         $scope.results.push(r);
       }
@@ -184,7 +184,11 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
       if (data.magnet) {
         magnet = data.magnet;
       } else if (data.infohash) {
-        magnet = magnetURI(result.name, data.infohash, [{v: data.tracker }]);
+        //get urls from the comma separated list
+        var trackers = (data.tracker || "").split(",").filter(function(s){
+          return /^(http|udp):\/\//.test(s);
+        }).map(function(v) { return {v:v}; });
+        magnet = magnetURI(result.name, data.infohash, trackers);
       } else {
         $scope.omnierr = "No magnet or infohash found";
         return;

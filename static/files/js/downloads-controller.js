@@ -31,11 +31,13 @@ app.controller("NodeController", function($scope, $rootScope, $http, $timeout) {
   if($scope.isfile() && torrents) {
     for(var ih in torrents) {
       var files = torrents[ih].Files;
-      for (var i = 0; i < files.length; i++) {
-        var f = files[i];
-        if(f.Path === path) {
-          n.$file = f;
-          break;
+      if(files) {
+        for (var i = 0; i < files.length; i++) {
+          var f = files[i];
+          if(f.Path === path) {
+            n.$file = f;
+            break;
+          }
         }
       }
       if(n.$file)

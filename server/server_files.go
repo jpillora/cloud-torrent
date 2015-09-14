@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,6 +11,8 @@ import (
 	"strings"
 	"time"
 )
+
+const fileNumberLimit = 1000
 
 type fsNode struct {
 	Name     string
@@ -22,7 +25,7 @@ func (s *Server) listFiles() *fsNode {
 	rootDir := s.state.Config.DownloadDirectory
 	root := &fsNode{}
 	if info, err := os.Stat(rootDir); err == nil {
-		if err := list(rootDir, info, root); err != nil {
+		if err := list(rootDir, info, root, new(int)); err != nil {
 			log.Printf("File listing failed: %s", err)
 		}
 	}
@@ -56,9 +59,13 @@ func (s *Server) serveFiles(w http.ResponseWriter, r *http.Request) {
 
 //custom directory walk
 
-func list(path string, info os.FileInfo, node *fsNode) error {
+func list(path string, info os.FileInfo, node *fsNode, n *int) error {
 	if (!info.IsDir() && !info.Mode().IsRegular()) || strings.HasPrefix(info.Name(), ".") {
-		return fmt.Errorf("Non-regular file")
+		return errors.New("Non-regular file")
+	}
+	(*n)++
+	if (*n) > fileNumberLimit {
+		return errors.New("Over file limit") //limit number of files walked
 	}
 	node.Name = info.Name()
 	node.Size = info.Size()
@@ -74,7 +81,7 @@ func list(path string, info os.FileInfo, node *fsNode) error {
 	for _, i := range children {
 		c := &fsNode{}
 		p := filepath.Join(path, i.Name())
-		if err := list(p, i, c); err != nil {
+		if err := list(p, i, c, n); err != nil {
 			continue
 		}
 		node.Size += c.Size

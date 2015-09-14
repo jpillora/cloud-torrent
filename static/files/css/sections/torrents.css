@@ -26,9 +26,16 @@ section.torrents {
 	font-size: 0.75rem;
 }
 
+.torrent .info .progress {
+	margin: 0;
+}
+.torrent .info .progress .bar {
+	height: 10px;
+}
+
 .torrent .status {
-	padding-top: 10px;
-	display: inline;
+	padding: 5px;
+	display: inline-block;
 }
 
 .torrent .status .muted {
@@ -46,18 +53,31 @@ section.torrents {
 	font-size: 0.75rem;
 }
 
+
+
+.torrent .download.file .name span {
+	position: relative;
+	z-index: 1;
+}
+
+.torrent .download.file .name .percent {
+	display: inline-block;
+	width: 60px;
+}
+
+
 .torrent .download.file .name,
 .torrent .download.file .percent {
 	position: relative;
 	overflow: hidden;
 }
 
-.torrent .download.file .progress {
+.torrent .downloads .progress {
 	position: absolute;
 	top: 0;
 	left: 0;
 	width: 100%;
-	opacity: 0.75;
+	opacity: 0.55;
 	z-index: 0;
 	padding: 4px;
 	margin: 0;
@@ -68,6 +88,9 @@ section.torrents {
 	height: 100%;
 }
 
+.torrent .downloads thead tr th.size {
+	width: 110px;
+}
 .torrent .downloads tfoot tr th {
 	font-weight: bold;
 	font-size: 0.85rem;
