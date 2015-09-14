@@ -1,19 +1,39 @@
 
-:warning: This project is in progress. This project is the Go rewrite of the [Node](https://github.com/jpillora/node-torrent-cloud) version, with goals of being more stable, cross-platform, single-binary for distribution, auto-upgradable and finally - after these foundations have been laid - add more features.
-
----
-
 # Cloud Torrent
 
-A torrent client in the cloud
+A hosted torrent client written in Go
 
-### Core feature progress
+![screen shot 2015-09-15 at 1 10 09 am](https://cloud.githubusercontent.com/assets/633843/9853417/d561f7d4-5b46-11e5-8438-6aa8ab944cb2.png)
 
-See https://github.com/jpillora/cloud-torrent/labels/core-feature numbered by implementation order. Please comment with suggestions and ideas.
+### Features
+
+* Single binary
+* Cross platform
+* Embedded search
+* Serve download directory
+* [*More features coming soon*](https://github.com/jpillora/cloud-torrent/labels/core-feature)
+
+### Install
+
+**Binaries**
+
+See [the latest release](https://github.com/jpillora/chisel/releases/latest)
+
+**Source**
+
+``` sh
+$ go get -v github.com/jpillora/cloud-torrent
+```
+
+**Heroku**
+
+Click [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
 ### Overview
 
-Cloud Torrent is a torrent client for the cloud.
+This project is the Go (golang) rewrite of this [Node version of cloud torrent](https://github.com/jpillora/node-torrent-cloud).
+
+It has the following components
 
 ![overview](https://docs.google.com/drawings/d/1ekyeGiehwQRyi6YfFA4_tQaaEpUaS8qihwJ-s3FT_VU/pub?w=606&h=305)
 

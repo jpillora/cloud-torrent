@@ -17,7 +17,7 @@
       <i ng-show="deleting" class="grey notched circle loading icon"></i>
     </span>
   </div>
-  <div class="description">{{ node.Size | bytes }} created {{ ago(node.Modified) }}</div>
+  <div class="description">{{ node.Size | bytes }} updated {{ ago(node.Modified) }}</div>
   <div class="list" ng-if="isdir() && !closed()">
     <div class="item" ng-repeat="node in node.Children"
         ng-controller="NodeController"

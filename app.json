@@ -1,0 +1,11 @@
+{
+	"name": "cloud-torrent",
+	"website": "https://github.com/jpillora/cloud-torrent",
+	"repository": "https://github.com/jpillora/cloud-torrent",
+	"env": {
+		"AUTH": {
+			"description": "Optional HTTP authentication in the form user:password",
+			"required": false
+		}
+	}
+}

@@ -122,14 +122,6 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
     $scope.magnet.trackers.push({ v: "" });
   };
 
-  $scope.submitOmni = function() {
-    if($scope.mode.search) {
-      $scope.submitSearch();
-    } else {
-      $scope.submitTorrent();
-    }
-  };
-
   $scope.submitTorrent = function() {
     if($scope.mode.torrent) {
       api.url($scope.inputs.omni);

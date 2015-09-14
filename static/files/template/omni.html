@@ -53,13 +53,21 @@
   <p>{{omnierr}}</p>
 </div>
 
+<!-- START TORRENT BUTTONS -->
+<div class="search buttons" ng-show="mode.torrent || mode.magnet">
+  <div ng-click="submitTorrent()"
+    class="ui tiny blue button"
+    ng-class="{loading: apiing, disabled: apiing }">
+    <span ng-show="mode.torrent">Start Torrent</span>
+    <span ng-show="mode.magnet">Start Magnet</span>
+  </div>
+</div>
+
 <!-- SEARCH BUTTONS -->
 <div class="search buttons" ng-show="mode.search && inputs.provider">
-
   <select class="ui green button" ng-model="inputs.provider"
     ng-options="id as s.name for (id, s) in providers">
   </select>
-
   <div ng-click="submitSearch()"
     class="ui tiny blue button"
     ng-class="{loading: searching,

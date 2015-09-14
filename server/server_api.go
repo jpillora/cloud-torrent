@@ -38,7 +38,7 @@ func (s *Server) api(r *http.Request) error {
 		if err != nil {
 			return fmt.Errorf("Failed to download remote torrent: %s", err)
 		}
-		action = "torrent"
+		action = "torrentfile"
 	}
 
 	//convert torrent bytes into magnet

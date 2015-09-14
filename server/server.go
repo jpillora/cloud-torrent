@@ -23,9 +23,9 @@ import (
 //Server is the "State" portion of the diagram
 type Server struct {
 	//config
-	Port       int    `help:"Listening port"`
+	Port       int    `help:"Listening port" env:"PORT"`
 	Host       string `help:"Listening interface (default all)"`
-	Auth       string `help:"Optional basic auth (in form user:password)"`
+	Auth       string `help:"Optional basic auth (in form user:password)" env:"AUTH"`
 	ConfigPath string `help:"Configuration file path"`
 	Log        bool   `help:"Enable request logging"`
 	//http handlers

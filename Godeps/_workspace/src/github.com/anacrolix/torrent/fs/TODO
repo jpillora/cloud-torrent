@@ -1,0 +1,1 @@
+ * Reinstate InitAsyncRead, or find out if it's worth it. Upstream made it a PITA to apply it automatically.
