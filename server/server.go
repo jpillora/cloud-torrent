@@ -106,7 +106,7 @@ func (s *Server) init() error {
 			// log.Printf("torrents #%d files #%d", len(s.state.Torrents), len(s.state.Downloads.Children))
 			s.state.Unlock()
 			s.state.Update()
-			time.Sleep(2 * time.Second)
+			time.Sleep(1 * time.Second)
 		}
 	}()
 
