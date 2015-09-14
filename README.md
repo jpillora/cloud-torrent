@@ -1,8 +1,3 @@
-
-# Cloud Torrent
-
-A hosted torrent client written in Go
-
 ![screen shot 2015-09-15 at 1 10 09 am](https://cloud.githubusercontent.com/assets/633843/9853417/d561f7d4-5b46-11e5-8438-6aa8ab944cb2.png)
 
 ### Features
@@ -27,11 +22,13 @@ $ go get -v github.com/jpillora/cloud-torrent
 
 **Heroku**
 
-Click [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+Click
+
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
 ### Overview
 
-This project is the Go (golang) rewrite of this [Node version of cloud torrent](https://github.com/jpillora/node-torrent-cloud).
+Cloud torrent is a hosted torrent client written in Go (golang). This project is a version 2 rewrite of the [Node version](https://github.com/jpillora/node-torrent-cloud).
 
 It has the following components
 
