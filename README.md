@@ -1,4 +1,4 @@
-![screen shot 2015-09-15 at 1 10 09 am](https://cloud.githubusercontent.com/assets/633843/9853417/d561f7d4-5b46-11e5-8438-6aa8ab944cb2.png)
+<img src="https://cloud.githubusercontent.com/assets/633843/9855504/f30a715c-5b51-11e5-83f3-f4fab03e5459.png" alt="screenshot"/>
 
 ### Features
 
@@ -12,7 +12,7 @@
 
 **Binaries**
 
-See [the latest release](https://github.com/jpillora/chisel/releases/latest)
+See [the latest release](https://github.com/jpillora/cloud-torrent/releases/latest) or download it now with `curl i.jpillora.com/cloud-torrent | bash`
 
 **Source**
 
@@ -28,9 +28,7 @@ Click
 
 ### Overview
 
-Cloud torrent is a hosted torrent client written in Go (golang). This project is a version 2 rewrite of the [Node version](https://github.com/jpillora/node-torrent-cloud).
-
-It has the following components
+Cloud torrent is a hosted torrent client written in Go (golang). This project is the version 2 rewrite of the original [Node version](https://github.com/jpillora/node-torrent-cloud).
 
 ![overview](https://docs.google.com/drawings/d/1ekyeGiehwQRyi6YfFA4_tQaaEpUaS8qihwJ-s3FT_VU/pub?w=606&h=305)
 
