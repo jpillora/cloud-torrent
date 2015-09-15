@@ -1,11 +1,15 @@
 <img src="https://cloud.githubusercontent.com/assets/633843/9855504/f30a715c-5b51-11e5-83f3-f4fab03e5459.png" alt="screenshot"/>
 
+**Cloud torrent** is a a self-hosted remote torrent client, written in Go (golang). You start a torrents remotely, which are downloaded as sets of files on the local disk of the server, which are then retreivable and streamable via HTTP.
+
 ### Features
 
 * Single binary
 * Cross platform
-* Embedded search
-* Serve download directory
+* Embedded torrent search
+* Real-time updates
+* Mobile-friendly
+* Fast [content server](http://golang.org/pkg/net/http/#ServeContent)
 * [*More features coming soon*](https://github.com/jpillora/cloud-torrent/labels/core-feature)
 
 ### Install
@@ -15,6 +19,8 @@
 See [the latest release](https://github.com/jpillora/cloud-torrent/releases/latest) or download it now with `curl i.jpillora.com/cloud-torrent | bash`
 
 **Source**
+
+*[Go](https://golang.org/dl/) is required to install from source*
 
 ``` sh
 $ go get -v github.com/jpillora/cloud-torrent
@@ -50,11 +56,13 @@ $ cloud-torrent --help
 
 ```
 
-### Overview
+### Notes
 
-Cloud torrent is a hosted torrent client written in Go (golang). This project is the version 2 rewrite of the original [Node version](https://github.com/jpillora/node-torrent-cloud).
+This project is the version 2 rewrite of the original [Node version](https://github.com/jpillora/node-torrent-cloud).
 
 ![overview](https://docs.google.com/drawings/d/1ekyeGiehwQRyi6YfFA4_tQaaEpUaS8qihwJ-s3FT_VU/pub?w=606&h=305)
+
+Credits to @anacrolix for https://github.com/anacrolix/torrent
 
 #### MIT License
 
