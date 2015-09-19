@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -19,16 +18,21 @@ import (
 	"github.com/jpillora/go-realtime"
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/scraper/scraper"
+	"github.com/skratchdot/open-golang/open"
 )
 
 //Server is the "State" portion of the diagram
 type Server struct {
 	//config
+	Title      string `help:"Title of this instance" env:"TITLE"`
 	Port       int    `help:"Listening port" env:"PORT"`
 	Host       string `help:"Listening interface (default all)"`
-	Auth       string `help:"Optional basic auth (in form user:password)" env:"AUTH"`
+	Auth       string `help:"Optional basic auth in form 'user:password'" env:"AUTH"`
 	ConfigPath string `help:"Configuration file path"`
+	KeyPath    string `help:"TLS Key file path"`
+	CertPath   string `help:"TLS Certicate file path" short:"r"`
 	Log        bool   `help:"Enable request logging"`
+	Open       bool   `help:"Open now with your default browser"`
 	//http handlers
 	files, static http.Handler
 	scraper       *scraper.Handler
@@ -46,6 +50,7 @@ type Server struct {
 		Torrents        map[string]*engine.Torrent
 		Users           map[string]*realtime.User
 		Stats           struct {
+			Title   string
 			Version string
 			Runtime string
 			Uptime  time.Time
@@ -53,7 +58,18 @@ type Server struct {
 	}
 }
 
-func (s *Server) init() error {
+func (s *Server) Run(version string) error {
+
+	tls := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
+	if tls && (s.CertPath == "" || s.KeyPath == "") {
+		return fmt.Errorf("You must provide both key and cert paths")
+	}
+
+	s.state.Stats.Title = s.Title
+	s.state.Stats.Version = version
+	s.state.Stats.Runtime = strings.TrimPrefix(runtime.Version(), "go")
+	s.state.Stats.Uptime = time.Now()
+
 	//init maps
 	s.state.Users = map[string]*realtime.User{}
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
@@ -116,8 +132,38 @@ func (s *Server) init() error {
 		}
 	}()
 
-	//ready
-	return nil
+	host := s.Host
+	if host == "" {
+		host = "0.0.0.0"
+	}
+	addr := fmt.Sprintf("%s:%d", host, s.Port)
+	proto := "http"
+	if tls {
+		proto += "s"
+	}
+	log.Printf("Listening at %s://%s", proto, addr)
+
+	if s.Open {
+		openhost := host
+		if openhost == "0.0.0.0" {
+			openhost = "localhost"
+		}
+		go func() {
+			time.Sleep(1 * time.Second)
+			open.Run(fmt.Sprintf("%s://%s:%d", proto, openhost, s.Port))
+		}()
+	}
+
+	h := http.Handler(http.HandlerFunc(s.handle))
+	if s.Log {
+		h = requestlog.Wrap(h)
+	}
+
+	if tls {
+		return http.ListenAndServeTLS(addr, s.CertPath, s.KeyPath, h)
+	} else {
+		return http.ListenAndServe(addr, h)
+	}
 }
 
 func (s *Server) reconfigure(c engine.Config) error {
@@ -134,26 +180,6 @@ func (s *Server) reconfigure(c engine.Config) error {
 	s.state.Config = c
 	s.state.Update()
 	return nil
-}
-
-func (s *Server) Run(version string) error {
-
-	s.state.Stats.Version = version
-	s.state.Stats.Runtime = strings.TrimPrefix(runtime.Version(), "go")
-	s.state.Stats.Uptime = time.Now()
-
-	if err := s.init(); err != nil {
-		return err
-	}
-	// TODO if Open {
-	//    cross platform open - https://github.com/skratchdot/open-golang
-	// }
-	h := http.Handler(http.HandlerFunc(s.handle))
-	if s.Log {
-		h = requestlog.Wrap(h)
-	}
-	log.Printf("Listening on %d...", s.Port)
-	return http.ListenAndServe(s.Host+":"+strconv.Itoa(s.Port), h)
 }
 
 func (s *Server) handle(w http.ResponseWriter, r *http.Request) {

@@ -53,7 +53,7 @@
 		},
 		{
 			"ImportPath": "github.com/jpillora/opts",
-			"Rev": "019b00bcdc616f881fc1f669d040aea7c74c295d"
+			"Rev": "c5abde5b29df260a64d212596657d491dd80c7b0"
 		},
 		{
 			"ImportPath": "github.com/jpillora/requestlog",
@@ -79,6 +79,10 @@
 		{
 			"ImportPath": "github.com/ryszard/goskiplist/skiplist",
 			"Rev": "2dfbae5fcf46374f166f8969cb07e167f1be6273"
+		},
+		{
+			"ImportPath": "github.com/skratchdot/open-golang/open",
+			"Rev": "c8748311a7528d0ba7330d302adbc5a677ef9c9e"
 		},
 		{
 			"ImportPath": "github.com/spacemonkeygo/monotime",
