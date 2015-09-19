@@ -144,7 +144,9 @@ func (e *Engine) StartTorrent(infohash string) error {
 	}
 	t.Started = true
 	for _, f := range t.Files {
-		f.Started = true
+		if f != nil {
+			f.Started = true
+		}
 	}
 	if t.t.Info() != nil {
 		t.t.DownloadAll()
@@ -164,7 +166,9 @@ func (e *Engine) StopTorrent(infohash string) error {
 	t.t.Drop()
 	t.Started = false
 	for _, f := range t.Files {
-		f.Started = false
+		if f != nil {
+			f.Started = false
+		}
 	}
 	return nil
 }

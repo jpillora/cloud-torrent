@@ -53,7 +53,7 @@ $ cloud-torrent --help
   --version, -v
 
   Version:
-    0.8.2
+    0.8.3
 
   Read more:
     https://github.com/jpillora/cloud-torrent
