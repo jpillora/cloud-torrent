@@ -183,6 +183,16 @@ func (s *Server) reconfigure(c engine.Config) error {
 }
 
 func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
+
+	//handle realtime client connections
+	if r.URL.Path == "/realtime.js" {
+		realtime.JS.ServeHTTP(w, r)
+		return
+	} else if r.URL.Path == "/realtime" {
+		s.rt.ServeHTTP(w, r)
+		return
+	}
+
 	//basic auth
 	if s.Auth != "" {
 		u, p, _ := r.BasicAuth()
@@ -192,15 +202,6 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Access Denied"))
 			return
 		}
-	}
-
-	//handle realtime client connections
-	if r.URL.Path == "/realtime.js" {
-		realtime.JS.ServeHTTP(w, r)
-		return
-	} else if r.URL.Path == "/realtime" {
-		s.rt.ServeHTTP(w, r)
-		return
 	}
 	//search
 	if strings.HasPrefix(r.URL.Path, "/search") {
