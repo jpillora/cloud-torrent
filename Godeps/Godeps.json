@@ -49,7 +49,7 @@
 		},
 		{
 			"ImportPath": "github.com/jpillora/go-realtime",
-			"Rev": "a650bfc79f1085b3604527840cf386f80a6f3265"
+			"Rev": "d90e3bf978366faf40a3392432f60975442ff29a"
 		},
 		{
 			"ImportPath": "github.com/jpillora/opts",

@@ -131,8 +131,8 @@ func (r *Handler) Update(k string) {
 }
 
 func (r *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if req.Header.Get("Connection") == "Upgrade" &&
-		req.Header.Get("Upgrade") == "websocket" {
+	if req.Header.Get("Upgrade") == "websocket" ||
+		req.Header.Get("Sec-WebSocket-Key") != "" {
 		r.ws.ServeHTTP(w, req)
 	} else {
 		JS.ServeHTTP(w, req)
