@@ -54,9 +54,10 @@
               ng-click="submitTorrent('stop', t)">
               <i class="stop icon"></i> Stop
             </a>
-            <a ng-if="!t.Started" class="ui red button"
+            <a ng-if="!t.Started" class="ui red button" style="z-index: 99999;"
               ng-click="submitTorrent('delete', t)">
-              <i class="trash icon"></i> Remove
+              <i class="ban icon" ng-if="!t.Loaded"></i> Cancel
+              <i class="trash icon" ng-if="t.Loaded"></i> Remove
             </a>
           </div>
         </div>
