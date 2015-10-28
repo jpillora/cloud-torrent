@@ -106,18 +106,15 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
 
   $scope.parseMagnetString = function() {
     $scope.omnierr = null;
-
     if (!/^[A-Za-z0-9]+$/.test($scope.magnet.infohash)) {
       $scope.omnierr = "Invalid Info Hash";
       return;
     }
-
     for (var i = 0; i < $scope.magnet.trackers.length;)
       if (!$scope.magnet.trackers[i].v)
         $scope.magnet.trackers.splice(i, 1);
       else
         i++;
-    console.log($scope.magnet);
     $scope.inputs.omni = magnetURI($scope.magnet.name, $scope.magnet.infohash, $scope.magnet.trackers);
     $scope.magnet.trackers.push({ v: "" });
   };
@@ -193,7 +190,6 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
         $scope.omnierr = "No magnet or infohash found";
         return;
       }
-      console.log("start magnet", magnet);
       api.magnet(magnet);
     }, function(err) {
       $scope.omnierr = err;

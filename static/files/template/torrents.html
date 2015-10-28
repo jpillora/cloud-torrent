@@ -87,7 +87,7 @@
           <tr ng-if="!t.Files || t.Files.length == 0">
             <td colspan="2" class="muted">No files</td>
           </tr>
-          <tr class="download file" ng-repeat="f in t.Files">
+          <tr class="download file" ng-repeat="f in t.Files | orderBy:'Path'">
             <td class="name">
               <div>
                 <span>{{ f.Path | filename }}</span>

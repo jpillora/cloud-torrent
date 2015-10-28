@@ -9,7 +9,7 @@ var defaultSearchConfig = []byte(`{
 		"list": "#mainSearchTable table tr[id]",
 		"result": {
 			"name":".cellMainLink",
-			"url":[".cellMainLink", "@href"],
+			"path":[".cellMainLink", "@href"],
 			"magnet": ["a[title=Torrent\\ magnet\\ link]", "@href"],
 			"size": "td.nobr.center",
 			"seeds": ".green.center",
@@ -22,7 +22,7 @@ var defaultSearchConfig = []byte(`{
 		"list": "#searchResult > tbody > tr",
 		"result": {
 			"name":"a.detLink",
-			"url":["a.detLink","@href"],
+			"path":["a.detLink","@href"],
 			"magnet": ["a[title=Download\\ this\\ torrent\\ using\\ magnet]","@href"],
 			"size": "/Size (\\d+(\\.\\d+).[KMG]iB)/",
 			"seeds": "td:nth-child(3)",

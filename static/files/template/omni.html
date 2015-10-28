@@ -54,12 +54,11 @@
 </div>
 
 <!-- START TORRENT BUTTONS -->
-<div class="search buttons" ng-show="mode.torrent || mode.magnet">
+<div class="search buttons" ng-show="mode.torrent">
   <div ng-click="submitTorrent()"
     class="ui tiny blue button"
     ng-class="{loading: apiing, disabled: apiing }">
     <span ng-show="mode.torrent">Start Torrent</span>
-    <span ng-show="mode.magnet">Start Magnet</span>
   </div>
 </div>
 
