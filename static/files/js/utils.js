@@ -49,7 +49,7 @@ app.factory('storage', function() {
 
 app.factory('reqerr', function() {
   return function(err, status) {
-    alert(err);
+    alert(err.error || err);
     console.error("request error '%s' (%s)", err, status);
   };
 });

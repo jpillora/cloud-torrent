@@ -105,15 +105,19 @@ func (s *Server) Run(version string) error {
 	c := engine.Config{
 		DownloadDirectory: "./downloads",
 		EnableUpload:      true,
-		EnableSeeding:     false,
 		AutoStart:         true,
 	}
 	if _, err := os.Stat(s.ConfigPath); err == nil {
 		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {
 			return fmt.Errorf("Read configuration error: %s", err)
+		} else if len(b) == 0 {
+			//ignore empty file
 		} else if err := json.Unmarshal(b, &c); err != nil {
 			return fmt.Errorf("Malformed configuration: %s", err)
 		}
+	}
+	if c.IncomingPort <= 0 || c.IncomingPort >= 65535 {
+		c.IncomingPort = 50007
 	}
 	if err := s.reconfigure(c); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)

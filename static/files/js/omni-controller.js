@@ -42,8 +42,6 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
       return;
     }
 
-    console.log("parse magnet", m);
-
     $scope.magnet.infohash = RegExp.$1;
     $scope.magnet.name = m.dn || "";
     //no trackers :O

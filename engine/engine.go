@@ -6,7 +6,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
+	"time"
 
 	"github.com/anacrolix/torrent"
 )
@@ -28,12 +30,18 @@ func (e *Engine) Configure(c Config) error {
 	//recieve config
 	if e.client != nil {
 		e.client.Close()
+		time.Sleep(1 * time.Second)
+	}
+	if c.IncomingPort <= 0 {
+		return fmt.Errorf("Invalid incoming port (%d)", c.IncomingPort)
 	}
 	tc := torrent.Config{
-		DataDir:   c.DownloadDirectory,
-		ConfigDir: filepath.Join(c.DownloadDirectory, ".config"),
-		NoUpload:  !c.EnableUpload,
-		Seed:      c.EnableSeeding,
+		DataDir:           c.DownloadDirectory,
+		ListenAddr:        "0.0.0.0:" + strconv.Itoa(c.IncomingPort),
+		ConfigDir:         filepath.Join(c.DownloadDirectory, ".config"),
+		NoUpload:          !c.EnableUpload,
+		Seed:              c.EnableSeeding,
+		DisableEncryption: c.DisableEncryption,
 	}
 	client, err := torrent.NewClient(&tc)
 	if err != nil {
