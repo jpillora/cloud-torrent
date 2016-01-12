@@ -15,7 +15,7 @@ func FileSystemHandler() http.Handler {
 	if info, err := os.Stat("static/files/"); err == nil && info.IsDir() {
 		h = http.FileServer(http.Dir("static/files/"))
 	} else {
-		h = http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: "files"})
+		h = http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "files"})
 	}
 	return h
 }
