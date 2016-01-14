@@ -80,7 +80,10 @@ func (torrent *Torrent) Update(t torrent.Torrent) {
 	if !torrent.updatedAt.IsZero() {
 		dt := float32(now.Sub(torrent.updatedAt))
 		db := float32(bytes - torrent.Downloaded)
-		torrent.DownloadRate = db * (float32(time.Second) / dt)
+		rate := db * (float32(time.Second) / dt)
+		if rate >= 0 {
+			torrent.DownloadRate = rate
+		}
 	}
 	torrent.Downloaded = bytes
 	torrent.updatedAt = now
