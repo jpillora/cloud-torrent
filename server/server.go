@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/jpillora/cloud-torrent/engine"
 	"github.com/jpillora/cloud-torrent/static"
+	"github.com/jpillora/cloud-torrent/storage"
 	"github.com/jpillora/go-realtime"
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/scraper/scraper"
@@ -37,6 +37,8 @@ type Server struct {
 	files, static http.Handler
 	scraper       *scraper.Handler
 	scraperh      http.Handler
+	//torrent storage
+	storage *storage.Storage
 	//torrent engine
 	engine *engine.Engine
 	//realtime state (sync'd with browser immediately)
@@ -44,9 +46,9 @@ type Server struct {
 	state struct {
 		realtime.Object
 		sync.Mutex
-		Config          engine.Config
+		Config          Config
 		SearchProviders scraper.Config
-		Downloads       *fsNode
+		Downloads       map[string]*storage.Node
 		Torrents        map[string]*engine.Torrent
 		Users           map[string]*realtime.User
 		Stats           struct {
@@ -59,19 +61,18 @@ type Server struct {
 }
 
 func (s *Server) Run(version string) error {
-
 	tls := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
 	if tls && (s.CertPath == "" || s.KeyPath == "") {
 		return fmt.Errorf("You must provide both key and cert paths")
 	}
-
+	//stats
 	s.state.Stats.Title = s.Title
 	s.state.Stats.Version = version
 	s.state.Stats.Runtime = strings.TrimPrefix(runtime.Version(), "go")
 	s.state.Stats.Uptime = time.Now()
-
 	//init maps
 	s.state.Users = map[string]*realtime.User{}
+	s.state.Downloads = map[string]*storage.Node{}
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
 	s.files = http.HandlerFunc(s.serveFiles)
 	s.static = ctstatic.FileSystemHandler()
@@ -81,9 +82,10 @@ func (s *Server) Run(version string) error {
 	}
 	s.state.SearchProviders = s.scraper.Config //share scraper config
 	s.scraperh = http.StripPrefix("/search", s.scraper)
-
-	s.engine = engine.New()
-
+	//torrent storage
+	s.storage = storage.New()
+	//torrent engine
+	s.engine = engine.New(s.storage)
 	//realtime
 	s.rt = realtime.NewHandler()
 	if err := s.rt.Add("state", &s.state); err != nil {
@@ -100,12 +102,14 @@ func (s *Server) Run(version string) error {
 			s.state.Update()
 		}
 	}()
-
 	//configure engine
-	c := engine.Config{
-		DownloadDirectory: "./downloads",
-		EnableUpload:      true,
-		AutoStart:         true,
+	c := Config{
+		Torrent: engine.Config{
+			DownloadDirectory: "./downloads",
+			EnableUpload:      true,
+			EnableEncryption:  true,
+			AutoStart:         true,
+		},
 	}
 	if _, err := os.Stat(s.ConfigPath); err == nil {
 		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {
@@ -116,9 +120,7 @@ func (s *Server) Run(version string) error {
 			return fmt.Errorf("Malformed configuration: %s", err)
 		}
 	}
-	if c.IncomingPort <= 0 || c.IncomingPort >= 65535 {
-		c.IncomingPort = 50007
-	}
+	//initial configure
 	if err := s.reconfigure(c); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)
 	}
@@ -128,13 +130,18 @@ func (s *Server) Run(version string) error {
 		for {
 			s.state.Lock()
 			s.state.Torrents = s.engine.GetTorrents()
-			s.state.Downloads = s.listFiles()
 			// log.Printf("torrents #%d files #%d", len(s.state.Torrents), len(s.state.Downloads.Children))
 			s.state.Unlock()
 			s.state.Update()
 			time.Sleep(1 * time.Second)
 		}
 	}()
+
+	for _, name := range s.storage.FSNames() {
+		if root, err := s.storage.List(name); err != nil {
+			s.state.Downloads[name] = root
+		}
+	}
 
 	host := s.Host
 	if host == "" {
@@ -170,15 +177,14 @@ func (s *Server) Run(version string) error {
 	}
 }
 
-func (s *Server) reconfigure(c engine.Config) error {
-	dldir, err := filepath.Abs(c.DownloadDirectory)
-	if err != nil {
-		return fmt.Errorf("Invalid path")
-	}
-	c.DownloadDirectory = dldir
-	if err := s.engine.Configure(c); err != nil {
+func (s *Server) reconfigure(c Config) error {
+	if err := s.engine.Configure(&c.Torrent); err != nil {
 		return err
 	}
+	if err := s.storage.Configure(c.Storage); err != nil {
+		return err
+	}
+
 	b, _ := json.MarshalIndent(&c, "", "  ")
 	ioutil.WriteFile(s.ConfigPath, b, 0755)
 	s.state.Config = c

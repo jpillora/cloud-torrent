@@ -3,7 +3,9 @@ package engine
 import (
 	"encoding/hex"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -11,6 +13,8 @@ import (
 	"time"
 
 	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
+	"github.com/jpillora/cloud-torrent/storage"
 )
 
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
@@ -18,30 +22,39 @@ type Engine struct {
 	mut      sync.Mutex
 	cacheDir string
 	client   *torrent.Client
-	config   Config
 	ts       map[string]*Torrent
+	storage  *storage.Storage
 }
 
-func New() *Engine {
-	return &Engine{ts: map[string]*Torrent{}}
+func New(storage *storage.Storage) *Engine {
+	return &Engine{
+		ts:      map[string]*Torrent{},
+		storage: storage,
+	}
 }
 
-func (e *Engine) Configure(c Config) error {
+func (e *Engine) Configure(c *Config) error {
+	if c.IncomingPort <= 0 || c.IncomingPort >= 65535 {
+		c.IncomingPort = 50007
+	}
+	if dir, err := filepath.Abs(c.DownloadDirectory); err != nil {
+		return fmt.Errorf("Invalid path")
+	} else {
+		c.DownloadDirectory = dir
+	}
 	//recieve config
 	if e.client != nil {
 		e.client.Close()
 		time.Sleep(1 * time.Second)
 	}
-	if c.IncomingPort <= 0 {
-		return fmt.Errorf("Invalid incoming port (%d)", c.IncomingPort)
-	}
 	tc := torrent.Config{
 		DataDir:           c.DownloadDirectory,
-		ListenAddr:        "0.0.0.0:" + strconv.Itoa(c.IncomingPort),
 		ConfigDir:         filepath.Join(c.DownloadDirectory, ".config"),
+		ListenAddr:        "0.0.0.0:" + strconv.Itoa(c.IncomingPort),
 		NoUpload:          !c.EnableUpload,
 		Seed:              c.EnableSeeding,
-		DisableEncryption: c.DisableEncryption,
+		DisableEncryption: !c.EnableEncryption,
+		TorrentDataOpener: e.CreateStream,
 	}
 	client, err := torrent.NewClient(&tc)
 	if err != nil {
@@ -60,7 +73,6 @@ func (e *Engine) Configure(c Config) error {
 			}
 		}
 	}
-	e.config = c
 	e.client = client
 	e.mut.Unlock()
 	//reset
@@ -68,27 +80,34 @@ func (e *Engine) Configure(c Config) error {
 	return nil
 }
 
-func (e *Engine) NewTorrent(magnetURI string) error {
-	//adds the torrent but does not start it
-	tt, err := e.client.AddMagnet(magnetURI)
-	if err != nil {
-		return err
-	}
-	t := e.upsertTorrent(tt)
-
-	go func() {
-		<-t.t.GotInfo()
-
-		// if e.config.AutoStart && !loaded && torrent.Loaded && !torrent.Started {
-		e.StartTorrent(t.InfoHash)
-		// }
-
-	}()
-
+func (e *Engine) CreateStream(info *metainfo.Info) torrent.Data {
+	log.Printf("stream torrent: %s", info.Name)
 	return nil
 }
 
-//GetTorrents moves torrents out of the anacrolix/torrent
+func (e *Engine) StartMagnet(magnetURI string) error {
+	if tt, err := e.client.AddMagnet(magnetURI); err != nil {
+		return err
+	} else {
+		e.upsertTorrent(tt)
+		return nil
+	}
+}
+
+func (e *Engine) StartTorrentFile(body io.Reader) error {
+	info, err := metainfo.Load(body)
+	if err != nil {
+		return err
+	}
+	if tt, err := e.client.AddTorrent(info); err != nil {
+		return err
+	} else {
+		e.upsertTorrent(tt)
+		return nil
+	}
+}
+
+//GetTorrents copies torrents out of anacrolix/torrent
 //and into the local cache
 func (e *Engine) GetTorrents() map[string]*Torrent {
 	e.mut.Lock()
@@ -112,6 +131,13 @@ func (e *Engine) upsertTorrent(tt torrent.Torrent) *Torrent {
 	}
 	//update torrent fields using underlying torrent
 	torrent.Update(tt)
+	// go func() {
+	// 	if tt.Info() != nil {
+	// 		return
+	// 	}
+	// 	<-tt.GotInfo()
+	// 	e.StartTorrent(tt.InfoHash)
+	// }()
 	return torrent
 }
 
@@ -195,10 +221,10 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	return nil
 }
 
-func (e *Engine) StartFile(infohash, filepath string) error {
+func (e *Engine) getFile(infohash, filepath string) (*File, error) {
 	t, err := e.getOpenTorrent(infohash)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var f *File
 	for _, file := range t.Files {
@@ -208,19 +234,35 @@ func (e *Engine) StartFile(infohash, filepath string) error {
 		}
 	}
 	if f == nil {
-		return fmt.Errorf("Missing file %s", filepath)
+		return nil, fmt.Errorf("Missing file %s", filepath)
+	}
+	return f, nil
+}
+
+func (e *Engine) StartFile(infohash, filepath string) error {
+	f, err := e.getFile(infohash, filepath)
+	if err != nil {
+		return err
 	}
 	if f.Started {
 		return fmt.Errorf("Already started")
 	}
-	t.Started = true
 	f.Started = true
-	f.f.PrioritizeRegion(0, f.Size)
+	f.f.PrioritizeRegionTo(0, f.Size, torrent.PiecePriorityNormal)
 	return nil
 }
 
 func (e *Engine) StopFile(infohash, filepath string) error {
-	return fmt.Errorf("Unsupported")
+	f, err := e.getFile(infohash, filepath)
+	if err != nil {
+		return err
+	}
+	if !f.Started {
+		return fmt.Errorf("Already stopped")
+	}
+	f.Started = false
+	f.f.PrioritizeRegionTo(0, f.Size, torrent.PiecePriorityNone)
+	return nil
 }
 
 func str2ih(str string) (torrent.InfoHash, error) {

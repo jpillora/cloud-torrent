@@ -7,10 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-
-	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/metainfo"
-	"github.com/jpillora/cloud-torrent/engine"
 )
 
 func (s *Server) api(r *http.Request) error {
@@ -33,35 +29,11 @@ func (s *Server) api(r *http.Request) error {
 		if err != nil {
 			return fmt.Errorf("Invalid remote torrent URL: %s (%s)", err, url)
 		}
-		//TODO enforce max body size (32k?)
 		data, err = ioutil.ReadAll(remote.Body)
 		if err != nil {
 			return fmt.Errorf("Failed to download remote torrent: %s", err)
 		}
 		action = "torrentfile"
-	}
-
-	//convert torrent bytes into magnet
-	if action == "torrentfile" {
-		reader := bytes.NewBuffer(data)
-		info, err := metainfo.Load(reader)
-		if err != nil {
-			return err
-		}
-		ts := torrent.TorrentSpecFromMetaInfo(info)
-		trackers := []string{}
-		for _, tier := range ts.Trackers {
-			for _, t := range tier {
-				trackers = append(trackers, t)
-			}
-		}
-		m := torrent.Magnet{
-			InfoHash:    ts.InfoHash,
-			Trackers:    trackers,
-			DisplayName: ts.DisplayName,
-		}
-		data = []byte(m.String())
-		action = "magnet"
 	}
 
 	//update after action completes
@@ -70,7 +42,7 @@ func (s *Server) api(r *http.Request) error {
 	//interface with engine
 	switch action {
 	case "configure":
-		c := engine.Config{}
+		c := Config{}
 		if err := json.Unmarshal(data, &c); err != nil {
 			return err
 		}
@@ -79,9 +51,14 @@ func (s *Server) api(r *http.Request) error {
 		}
 	case "magnet":
 		uri := string(data)
-		if err := s.engine.NewTorrent(uri); err != nil {
+		if err := s.engine.StartMagnet(uri); err != nil {
 			return fmt.Errorf("Magnet error: %s", err)
 		}
+	case "torrentfile":
+		if len(data) > 1024*1024 {
+			return fmt.Errorf("Invalid torrent: too large")
+		}
+		return s.engine.StartTorrentFile(bytes.NewBuffer(data))
 	case "torrent":
 		cmd := strings.SplitN(string(data), ":", 2)
 		if len(cmd) != 2 {
@@ -89,19 +66,20 @@ func (s *Server) api(r *http.Request) error {
 		}
 		state := cmd[0]
 		infohash := cmd[1]
-		if state == "start" {
+		switch state {
+		case "start":
 			if err := s.engine.StartTorrent(infohash); err != nil {
 				return err
 			}
-		} else if state == "stop" {
+		case "stop":
 			if err := s.engine.StopTorrent(infohash); err != nil {
 				return err
 			}
-		} else if state == "delete" {
+		case "delete":
 			if err := s.engine.DeleteTorrent(infohash); err != nil {
 				return err
 			}
-		} else {
+		default:
 			return fmt.Errorf("Invalid state: %s", state)
 		}
 	case "file":
@@ -112,15 +90,16 @@ func (s *Server) api(r *http.Request) error {
 		state := cmd[0]
 		infohash := cmd[1]
 		filepath := cmd[2]
-		if state == "start" {
+		switch state {
+		case "start":
 			if err := s.engine.StartFile(infohash, filepath); err != nil {
 				return err
 			}
-		} else if state == "stop" {
+		case "stop":
 			if err := s.engine.StopFile(infohash, filepath); err != nil {
 				return err
 			}
-		} else {
+		default:
 			return fmt.Errorf("Invalid state: %s", state)
 		}
 	default:
