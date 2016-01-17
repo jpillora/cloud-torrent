@@ -2,8 +2,14 @@ package metainfo
 
 import (
 	"crypto/sha1"
+	"errors"
+	"fmt"
 	"io"
+	"log"
 	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/anacrolix/torrent/bencode"
 )
@@ -46,6 +52,90 @@ type Info struct {
 	Files       []FileInfo `bencode:"files,omitempty"`
 }
 
+func (info *Info) BuildFromFilePath(root string) (err error) {
+	info.Name = filepath.Base(root)
+	info.Files = nil
+	err = filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
+		log.Println(path, root, err)
+		if fi.IsDir() {
+			// Directories are implicit in torrent files.
+			return nil
+		} else if path == root {
+			// The root is a file.
+			info.Length = fi.Size()
+			return nil
+		}
+		relPath, err := filepath.Rel(root, path)
+		log.Println(relPath, err)
+		if err != nil {
+			return fmt.Errorf("error getting relative path: %s", err)
+		}
+		info.Files = append(info.Files, FileInfo{
+			Path:   strings.Split(relPath, string(filepath.Separator)),
+			Length: fi.Size(),
+		})
+		return nil
+	})
+	if err != nil {
+		return
+	}
+	err = info.GeneratePieces(func(fi FileInfo) (io.ReadCloser, error) {
+		return os.Open(filepath.Join(root, strings.Join(fi.Path, string(filepath.Separator))))
+	})
+	if err != nil {
+		err = fmt.Errorf("error generating pieces: %s", err)
+	}
+	return
+}
+
+func (info *Info) writeFiles(w io.Writer, open func(fi FileInfo) (io.ReadCloser, error)) error {
+	for _, fi := range info.UpvertedFiles() {
+		r, err := open(fi)
+		if err != nil {
+			return fmt.Errorf("error opening %s: %s", fi, err)
+		}
+		wn, err := io.CopyN(w, r, fi.Length)
+		r.Close()
+		if wn != fi.Length || err != nil {
+			return fmt.Errorf("error hashing %s: %s", fi, err)
+		}
+	}
+	return nil
+}
+
+// Set info.Pieces by hashing info.Files.
+func (info *Info) GeneratePieces(open func(fi FileInfo) (io.ReadCloser, error)) error {
+	if info.PieceLength == 0 {
+		return errors.New("piece length must be non-zero")
+	}
+	pr, pw := io.Pipe()
+	go func() {
+		err := info.writeFiles(pw, open)
+		pw.CloseWithError(err)
+	}()
+	defer pr.Close()
+	var pieces []byte
+	for {
+		hasher := sha1.New()
+		wn, err := io.CopyN(hasher, pr, info.PieceLength)
+		if err == io.EOF {
+			err = nil
+		}
+		if err != nil {
+			return err
+		}
+		if wn == 0 {
+			break
+		}
+		pieces = hasher.Sum(pieces)
+		if wn < info.PieceLength {
+			break
+		}
+	}
+	info.Pieces = pieces
+	return nil
+}
+
 func (me *Info) TotalLength() (ret int64) {
 	if me.IsDir() {
 		for _, fi := range me.Files {
@@ -58,37 +148,34 @@ func (me *Info) TotalLength() (ret int64) {
 }
 
 func (me *Info) NumPieces() int {
+	if len(me.Pieces)%20 != 0 {
+		panic(len(me.Pieces))
+	}
 	return len(me.Pieces) / 20
 }
 
-type Piece interface {
-	Hash() []byte
-	Length() int64
-	Offset() int64
-}
-
-type piece struct {
+type Piece struct {
 	Info *Info
 	i    int
 }
 
-func (me piece) Length() int64 {
+func (me Piece) Length() int64 {
 	if me.i == me.Info.NumPieces()-1 {
 		return me.Info.TotalLength() - int64(me.i)*me.Info.PieceLength
 	}
 	return me.Info.PieceLength
 }
 
-func (me piece) Offset() int64 {
+func (me Piece) Offset() int64 {
 	return int64(me.i) * me.Info.PieceLength
 }
 
-func (me piece) Hash() []byte {
+func (me Piece) Hash() []byte {
 	return me.Info.Pieces[me.i*20 : (me.i+1)*20]
 }
 
-func (me *Info) Piece(i int) piece {
-	return piece{me, i}
+func (me *Info) Piece(i int) Piece {
+	return Piece{me, i}
 }
 
 func (i *Info) IsDir() bool {
@@ -152,4 +239,17 @@ type MetaInfo struct {
 	CreatedBy    string      `bencode:"created by,omitempty"`
 	Encoding     string      `bencode:"encoding,omitempty"`
 	URLList      interface{} `bencode:"url-list,omitempty"`
+}
+
+// Encode to bencoded form.
+func (mi *MetaInfo) Write(w io.Writer) error {
+	return bencode.NewEncoder(w).Encode(mi)
+}
+
+// Set good default values in preparation for creating a new MetaInfo file.
+func (mi *MetaInfo) SetDefaults() {
+	mi.Comment = "yoloham"
+	mi.CreatedBy = "github.com/anacrolix/torrent"
+	mi.CreationDate = time.Now().Unix()
+	mi.Info.PieceLength = 256 * 1024
 }

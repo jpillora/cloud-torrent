@@ -3,31 +3,31 @@
 package realtime
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
-	"golang.org/x/net/websocket"
+	"github.com/gorilla/websocket"
 )
 
 var proto = "v1"
 
 type Config struct {
-	Throttle time.Duration
+	Throttle    time.Duration
+	CheckOrigin bool
 }
 
 type Handler struct {
-	config Config
-	ws     http.Handler
-	mut    sync.Mutex //protects object and user maps
-	objs   map[key]*Object
-	users  map[string]*User
+	config   Config
+	upgrader websocket.Upgrader
+	ws       http.Handler
+	mut      sync.Mutex //protects object and user maps
+	objs     map[key]*Object
+	users    map[string]*User
 
 	watchingUsers bool
 	userEvents    chan *User
@@ -43,7 +43,16 @@ func NewHandlerConfig(c Config) *Handler {
 		c.Throttle = 200 * time.Millisecond
 	}
 	r := &Handler{config: c}
-	r.ws = websocket.Handler(r.serveWS)
+
+	r.upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+	if !c.CheckOrigin {
+		r.upgrader.CheckOrigin = func(r *http.Request) bool {
+			return true
+		}
+	}
 	r.objs = map[key]*Object{}
 	r.users = map[string]*User{}
 	r.userEvents = make(chan *User)
@@ -131,11 +140,17 @@ func (r *Handler) Update(k string) {
 }
 
 func (r *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if req.Header.Get("Upgrade") == "websocket" ||
-		req.Header.Get("Sec-WebSocket-Key") != "" {
-		r.ws.ServeHTTP(w, req)
+	if req.Header.Get("Upgrade") == "websocket" {
+		conn, err := r.upgrader.Upgrade(w, req, nil)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		r.serveWS(conn)
+	} else if strings.Contains(req.Header.Get("Accept-Encoding"), "gzip") {
+		JS.ServeHTTP(w, req) //gziped realtime.js script file
 	} else {
-		JS.ServeHTTP(w, req)
+		http.NotFound(w, req)
 	}
 }
 
@@ -144,18 +159,21 @@ func (r *Handler) serveWS(conn *websocket.Conn) {
 		Protocol       string
 		ObjectVersions objectVersions
 	}{}
+
 	//first message is the rt handshake
-	if err := json.NewDecoder(conn).Decode(&handshake); err != nil {
-		conn.Write([]byte("Invalid rt handshake"))
+	if err := conn.ReadJSON(&handshake); err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte("Invalid rt handshake"))
+		conn.Close()
 		return
 	}
 	if handshake.Protocol != proto {
-		conn.Write([]byte("Invalid rt protocol version"))
+		conn.WriteMessage(websocket.TextMessage, []byte("Invalid rt protocol version"))
+		conn.Close()
 		return
 	}
 	//ready
 	u := &User{
-		ID:        conn.Request().RemoteAddr,
+		ID:        conn.RemoteAddr().String(),
 		Connected: true,
 		uptime:    time.Now(),
 		conn:      conn,
@@ -167,7 +185,7 @@ func (r *Handler) serveWS(conn *websocket.Conn) {
 	r.mut.Lock()
 	for k := range u.versions {
 		if _, ok := r.objs[k]; !ok {
-			conn.Write([]byte("missing object: " + k))
+			conn.WriteMessage(websocket.TextMessage, []byte("missing object: "+k))
 			r.mut.Unlock()
 			return
 		}
@@ -187,10 +205,17 @@ func (r *Handler) serveWS(conn *websocket.Conn) {
 	}
 	r.mut.Unlock()
 
-	//block here during connection - pipe to null
-	io.Copy(ioutil.Discard, conn)
+	//loop here during connection
+	for {
+		//msgType, msgBytes, err
+		_, _, err := conn.ReadMessage()
+		if err != nil {
+			break
+		}
+		//TODO(jpillora): allow changing of subscriptions
+	}
+	conn.Close() //ensure closed
 	u.Connected = false
-
 	//remove user and unsubscribe to each obj
 	r.mut.Lock()
 	delete(r.users, u.ID)

@@ -2,18 +2,20 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"os"
 
+	"github.com/anacrolix/tagflag"
 	"github.com/willf/bloom"
 )
 
 func main() {
-	m := flag.Uint("m", 0, "")
-	k := flag.Uint("k", 0, "")
-	flag.Parse()
-	filter := bloom.New(*m, *k)
+	var args struct {
+		M uint `help:"num bits"`
+		K uint `help:"num hashing functions"`
+	}
+	tagflag.Parse(&args, tagflag.Description("adds lines from stdin to a bloom filter with the given configuration, and gives collision stats at EOF"))
+	filter := bloom.New(args.M, args.K)
 	scanner := bufio.NewScanner(os.Stdin)
 	n := 0
 	collisions := 0

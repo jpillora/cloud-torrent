@@ -1,13 +1,15 @@
 package main
 
 import (
-	"flag"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
+	"strings"
 
-	torrent "github.com/anacrolix/torrent/metainfo"
+	"github.com/docopt/docopt-go"
+
+	"github.com/anacrolix/torrent/metainfo"
 )
 
 var (
@@ -18,50 +20,28 @@ var (
 	}
 )
 
-func init() {
-	flag.Parse()
-	runtime.GOMAXPROCS(runtime.NumCPU())
-}
-
 func main() {
-	b := torrent.Builder{}
-	for _, filename := range flag.Args() {
-		if err := filepath.Walk(filename, func(path string, info os.FileInfo, err error) error {
-			if _, err := os.Stat(path); os.IsNotExist(err) {
-				return err
-			}
-			log.Print(path)
-			if info.IsDir() {
-				return nil
-			}
-			b.AddFile(path)
-			return nil
-		}); err != nil {
-			log.Print(err)
-		}
+	opts, err := docopt.Parse("Usage: torrent-create <root>", nil, true, "", true)
+	if err != nil {
+		panic(err)
 	}
-	for _, group := range builtinAnnounceList {
-		b.AddAnnounceGroup(group)
+	root := opts["<root>"].(string)
+	mi := metainfo.MetaInfo{
+		AnnounceList: builtinAnnounceList,
 	}
-	batch, err := b.Submit()
+	mi.SetDefaults()
+	err = mi.Info.BuildFromFilePath(root)
 	if err != nil {
 		log.Fatal(err)
 	}
-	errs, status := batch.Start(os.Stdout, runtime.NumCPU())
-	lastProgress := int64(-1)
-	for {
-		select {
-		case err, ok := <-errs:
-			if !ok || err == nil {
-				return
-			}
-			log.Print(err)
-		case bytesDone := <-status:
-			progress := 100 * bytesDone / batch.TotalSize()
-			if progress != lastProgress {
-				log.Printf("%d%%", progress)
-				lastProgress = progress
-			}
-		}
+	err = mi.Info.GeneratePieces(func(fi metainfo.FileInfo) (io.ReadCloser, error) {
+		return os.Open(filepath.Join(root, strings.Join(fi.Path, string(filepath.Separator))))
+	})
+	if err != nil {
+		log.Fatalf("error generating pieces: %s", err)
+	}
+	err = mi.Write(os.Stdout)
+	if err != nil {
+		log.Fatal(err)
 	}
 }

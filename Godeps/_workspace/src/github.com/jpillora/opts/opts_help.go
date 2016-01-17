@@ -18,7 +18,7 @@ type data struct {
 	ArgList      *datum
 	Opts         []*datum
 	Args         []*datum
-	Subcmds      []*datum
+	Cmds         []*datum
 	Order        []string
 	Version      string
 	Repo, Author string
@@ -38,7 +38,7 @@ var DefaultOrder = []string{
 	"args",
 	"arglist",
 	"options",
-	"subcmds",
+	"cmds",
 	"author",
 	"version",
 	"repo",
@@ -55,11 +55,11 @@ var DefaultTemplates = map[string]string{
 		`{{template "usageoptions" .}}` +
 		`{{template "usageargs" .}}` +
 		`{{template "usagearglist" .}}` +
-		`{{template "usagesubcmd" .}}` + "\n",
+		`{{template "usagecmd" .}}` + "\n",
 	"usageoptions": `{{if .Opts}} [options]{{end}}`,
 	"usageargs":    `{{range .Args}} {{.Name}}{{end}}`,
 	"usagearglist": `{{if .ArgList}} {{.ArgList.Name}}{{end}}`,
-	"usagesubcmd":  `{{if .Subcmds}} <subcommand>{{end}}`,
+	"usagecmd":     `{{if .Cmds}} <command>{{end}}`,
 	//extra help text
 	"helpextra": `{{if .Def}}default {{.Def}}{{end}}` +
 		`{{if and .Def .Env}}, {{end}}` +
@@ -72,10 +72,10 @@ var DefaultTemplates = map[string]string{
 	"options": `{{if .Opts}}` + "\nOptions:\n" +
 		`{{ range $opt := .Opts}}{{template "option" $opt}}{{end}}{{end}}`,
 	"option": `{{.Name}}{{if .Help}}{{.Pad}}{{.Help}}{{end}}` + "\n",
-	//subcmds
-	"subcmds": "{{if .Subcmds}}\nSubcommands:\n" +
-		`{{ range $sub := .Subcmds}}{{template "subcmd" $sub}}{{end}}{{end}}`,
-	"subcmd": "* {{ .Name }}{{if .Help}} - {{ .Help }}{{end}}\n",
+	//cmds
+	"cmds": "{{if .Cmds}}\nCommands:\n" +
+		`{{ range $sub := .Cmds}}{{template "cmd" $sub}}{{end}}{{end}}`,
+	"cmd": "• {{ .Name }}{{if .Help}} - {{ .Help }}{{end}}\n",
 	//extras
 	"version": "{{if .Version}}\nVersion:\n{{.Pad}}{{.Version}}\n{{end}}",
 	"repo":    "{{if .Repo}}\nRead more:\n{{.Pad}}{{.Repo}}\n{{end}}",
@@ -83,6 +83,9 @@ var DefaultTemplates = map[string]string{
 	"errmsg":  "{{if .ErrMsg}}\nError:\n{{.Pad}}{{.ErrMsg}}\n{{end}}",
 }
 
+var trailingSpaces = regexp.MustCompile(`(?m)\ +$`)
+
+//Help renders the help text as a string
 func (o *Opts) Help() string {
 	var err error
 
@@ -142,12 +145,23 @@ func (o *Opts) Help() string {
 	out := b.String()
 
 	if o.PadAll {
+		/*
+			"foo
+			bar"
+			becomes
+			"
+			  foo
+			  bar
+			"
+		*/
 		lines := strings.Split(out, "\n")
 		for i, l := range lines {
 			lines[i] = tf.Pad + l
 		}
-		out = "\n" + strings.Join(lines, "\n") + "\n"
+		out = "\n" + strings.Join(lines, "\n")
 	}
+
+	out = trailingSpaces.ReplaceAllString(out, "")
 
 	return out
 }
@@ -246,10 +260,10 @@ func convert(o *Opts) *data {
 		to.Help = strings.Join(lines, "\n")
 	}
 
-	//subcommands
-	subs := make([]*datum, len(o.subcmds))
+	//commands
+	subs := make([]*datum, len(o.cmds))
 	i := 0
-	for _, s := range o.subcmds {
+	for _, s := range o.cmds {
 		subs[i] = &datum{
 			Name: s.name,
 			Help: s.help,
@@ -273,7 +287,7 @@ func convert(o *Opts) *data {
 		Args:    args,
 		ArgList: arglist,
 		Opts:    opts,
-		Subcmds: subs,
+		Cmds:    subs,
 		Order:   o.order,
 		Version: o.version,
 		Repo:    o.repo,

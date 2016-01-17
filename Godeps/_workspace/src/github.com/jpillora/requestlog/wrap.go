@@ -21,7 +21,7 @@ type Colors struct {
 	Grey, Green, Cyan, Yellow, Red, Reset string
 }
 
-var basicColors = &Colors{string(ansi.BlackBytes), string(ansi.GreenBytes), string(ansi.CyanBytes), string(ansi.YellowBytes), string(ansi.YellowBytes), string(ansi.ResetBytes)}
+var basicColors = &Colors{string(ansi.Reset), string(ansi.GreenBytes), string(ansi.CyanBytes), string(ansi.YellowBytes), string(ansi.YellowBytes), string(ansi.ResetBytes)}
 var noColors = &Colors{} //no colors
 
 type Options struct {
@@ -35,10 +35,10 @@ type Options struct {
 var DefaultOptions = Options{
 	Writer:     os.Stdout,
 	TimeFormat: "2006/01/02 15:04:05.000",
-	Format: `{{ .Grey }}{{ if .Timestamp }}{{ .Timestamp }} {{end}}` +
-		`{{ .Method }} {{ .Path }} {{ .CodeColor }}{{ .Code }}{{ .Grey }} ` +
+	Format: `{{ if .Timestamp }}{{ .Timestamp }} {{end}}` +
+		`{{ .Method }} {{ .Path }} {{ .CodeColor }}{{ .Code }}{{ .Reset }} ` +
 		`{{ .Duration }}{{ if .Size }} {{ .Size }}{{end}}` +
-		`{{ if .IP }} ({{ .IP }}){{end}}{{ .Reset }}` + "\n",
+		`{{ if .IP }} ({{ .IP }}){{end}}` + "\n",
 	Colors: defaultColors(),
 }
 

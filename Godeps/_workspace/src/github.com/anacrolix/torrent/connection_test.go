@@ -71,22 +71,22 @@ func TestPieceRequestOrder(t *testing.T) {
 		piecePriorities:   []int{1, 4, 0, 3, 2},
 	}
 	testRequestOrder(nil, c.pieceRequestOrder, t)
-	c.pendPiece(2, PiecePriorityNone)
+	c.pendPiece(2, PiecePriorityNone, nil)
 	testRequestOrder(nil, c.pieceRequestOrder, t)
-	c.pendPiece(1, PiecePriorityNormal)
-	c.pendPiece(2, PiecePriorityNormal)
+	c.pendPiece(1, PiecePriorityNormal, nil)
+	c.pendPiece(2, PiecePriorityNormal, nil)
 	testRequestOrder([]int{2, 1}, c.pieceRequestOrder, t)
-	c.pendPiece(0, PiecePriorityNormal)
+	c.pendPiece(0, PiecePriorityNormal, nil)
 	testRequestOrder([]int{2, 0, 1}, c.pieceRequestOrder, t)
-	c.pendPiece(1, PiecePriorityReadahead)
+	c.pendPiece(1, PiecePriorityReadahead, nil)
 	testRequestOrder([]int{1, 2, 0}, c.pieceRequestOrder, t)
-	c.pendPiece(4, PiecePriorityNow)
+	c.pendPiece(4, PiecePriorityNow, nil)
 	// now(4), r(1), normal(0, 2)
 	testRequestOrder([]int{4, 1, 2, 0}, c.pieceRequestOrder, t)
-	c.pendPiece(2, PiecePriorityReadahead)
+	c.pendPiece(2, PiecePriorityReadahead, nil)
 	// N(4), R(1, 2), N(0)
 	testRequestOrder([]int{4, 2, 1, 0}, c.pieceRequestOrder, t)
-	c.pendPiece(1, PiecePriorityNow)
+	c.pendPiece(1, PiecePriorityNow, nil)
 	// now(4, 1), readahead(2), normal(0)
 	// in the same order, the keys will be: -15+6, -15+12, -5, 1
 	// so we test that a very low priority (for this connection), "now"
@@ -94,7 +94,7 @@ func TestPieceRequestOrder(t *testing.T) {
 	testRequestOrder([]int{4, 2, 1, 0}, c.pieceRequestOrder, t)
 	// Note this intentially sets to None a piece that's not in the order.
 	for i := range iter.N(5) {
-		c.pendPiece(i, PiecePriorityNone)
+		c.pendPiece(i, PiecePriorityNone, nil)
 	}
 	testRequestOrder(nil, c.pieceRequestOrder, t)
 }

@@ -89,12 +89,16 @@ func (me *Instance) DeletePiece(piece int) {
 }
 
 // Returns the piece with the lowest key.
-func (me Instance) First() Element {
+func (me *Instance) First() Element {
 	i := me.sl.SeekToFirst()
 	if i == nil {
 		return nil
 	}
 	return &element{i, i.Value().([]int)}
+}
+
+func (me *Instance) Empty() bool {
+	return me.sl.Len() == 0
 }
 
 type Element interface {
@@ -120,6 +124,6 @@ func (e *element) Next() Element {
 	return e
 }
 
-func (e element) Piece() int {
+func (e *element) Piece() int {
 	return e.sl[0]
 }

@@ -1,16 +1,19 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 
+	"github.com/anacrolix/tagflag"
 	"github.com/anacrolix/torrent/metainfo"
 )
 
 func main() {
-	flag.Parse()
-	for _, arg := range flag.Args() {
+	var args struct {
+		Files []string `arity:"+" type:"pos"`
+	}
+	tagflag.Parse(&args)
+	for _, arg := range args.Files {
 		mi, err := metainfo.LoadFromFile(arg)
 		if err != nil {
 			log.Fatal(err)

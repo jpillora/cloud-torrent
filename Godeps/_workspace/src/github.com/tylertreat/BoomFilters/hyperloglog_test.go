@@ -18,10 +18,12 @@ package boom
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"math"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -105,6 +107,133 @@ func TestNewDefaultHyperLogLog(t *testing.T) {
 	if hll.m != 128 {
 		t.Errorf("expected 128, got %d", hll.m)
 	}
+}
+
+func TestHyperLogLogSerialization(t *testing.T) {
+	hll, err := NewDefaultHyperLogLog(0.1)
+	if err != nil {
+		t.Fatalf("can't make NewDefaultHyperLogLog(0.1): %v", err)
+	}
+	ppl := []string{"frank", "alice", "bob"}
+	for _, v := range ppl {
+		hll.Add([]byte(v))
+		if v == "bob" || v == "frank" {
+			hll.Add([]byte(v))
+		}
+	}
+
+	buf := new(bytes.Buffer)
+	// serialize
+	wn, err := hll.WriteDataTo(buf)
+	if err != nil {
+		t.Error("unexpected error bytes written %d", err, wn)
+	}
+	hll.Reset()
+
+	newHll, err := NewDefaultHyperLogLog(0.1)
+	if err != nil {
+		t.Error("unexpected error", err)
+	}
+
+	rn, err := newHll.ReadDataFrom(buf)
+	if err != nil {
+		t.Errorf("readfrom err %s bytes read %d", err, rn)
+	}
+
+	if count := newHll.Count(); count != uint64(len(ppl)) {
+		t.Errorf("expected %d, got %d\n", len(ppl), count)
+	}
+
+	wrongHll, err := NewDefaultHyperLogLog(0.01)
+	if err != nil {
+		t.Error("unexpected error", err)
+	}
+	_, err = newHll.WriteDataTo(buf)
+	if err != nil {
+		t.Error("unexpected error", err)
+	}
+	newHll.Reset()
+
+	// hll register number should be same with serialized hll
+	_, err = wrongHll.ReadDataFrom(buf)
+
+	if !strings.Contains(err.Error(), "hll register") {
+		t.Error("unexpected error %s", err)
+	}
+
+}
+
+func BenchmarkHllWriteDataTo(b *testing.B) {
+	b.StopTimer()
+	hll, err := NewDefaultHyperLogLog(0.1)
+	if err != nil {
+		b.Errorf("unexpected error %s\n", err)
+	}
+	ppl := [][]byte{[]byte("frank"), []byte("alice"), []byte("bob")}
+	for _, v := range ppl {
+		hll.Add(v)
+		if string(v) == string(ppl[2]) {
+			hll.Add(v)
+		}
+
+	}
+	var buf bytes.Buffer
+	b.StartTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_, err := hll.WriteDataTo(&buf)
+		if err != nil {
+			b.Errorf("unexpected error %s\n", err)
+		}
+	}
+
+}
+
+func BenchmarkHllReadDataFrom(b *testing.B) {
+	b.StopTimer()
+	buf := new(bytes.Buffer)
+	b.N = 10000
+
+	hll, err := NewDefaultHyperLogLog(0.1)
+	if err != nil {
+		b.Errorf("unexpected error %s\n", err)
+	}
+	// add data to hll
+	ppl := [][]byte{[]byte("frank"), []byte("alice"), []byte("bob")}
+	for _, v := range ppl {
+		hll.Add(v)
+		if string(v) == string(ppl[2]) {
+			hll.Add(v)
+		}
+
+	}
+	// serialize
+	_, err = hll.WriteDataTo(buf)
+	if err != nil {
+		b.Errorf("unexpected error %s\n", err)
+	}
+	// prepare buffer with data to read
+	data := make([]byte, 0)
+	for i := 0; i < b.N; i++ {
+		data = append(data, buf.Bytes()...)
+	}
+
+	rd := bytes.NewReader(data)
+	newHll, err := NewDefaultHyperLogLog(0.1)
+	if err != nil {
+		b.Errorf("unexpected error %s\n", err)
+	}
+
+	b.StartTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		// deserialize hll
+		_, err := newHll.ReadDataFrom(rd)
+		if err != nil {
+			b.Errorf("unexpected error %s\n", err)
+		}
+	}
+
 }
 
 func benchmarkCount(b *testing.B, registers int) {

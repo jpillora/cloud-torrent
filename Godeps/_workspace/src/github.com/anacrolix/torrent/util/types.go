@@ -4,6 +4,7 @@ import (
 	"encoding"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"net"
 
 	"github.com/bradfitz/iter"
@@ -46,6 +47,22 @@ type CompactPeer struct {
 	Port int
 }
 
+var (
+	_ bencode.Marshaler   = &CompactPeer{}
+	_ bencode.Unmarshaler = &CompactPeer{}
+)
+
+func (me CompactPeer) MarshalBencode() (ret []byte, err error) {
+	ip := me.IP
+	if ip4 := ip.To4(); ip4 != nil {
+		ip = ip4
+	}
+	ret = make([]byte, len(ip)+2)
+	copy(ret, ip)
+	binary.BigEndian.PutUint16(ret[len(ip):], uint16(me.Port))
+	return bencode.Marshal(ret)
+}
+
 func (me *CompactPeer) UnmarshalBinary(b []byte) error {
 	switch len(b) {
 	case 18:
@@ -53,12 +70,21 @@ func (me *CompactPeer) UnmarshalBinary(b []byte) error {
 	case 6:
 		me.IP = make([]byte, 4)
 	default:
-		return errors.New("bad length")
+		return fmt.Errorf("bad compact peer string: %q", b)
 	}
 	copy(me.IP, b)
 	b = b[len(me.IP):]
 	me.Port = int(binary.BigEndian.Uint16(b))
 	return nil
+}
+
+func (me *CompactPeer) UnmarshalBencode(b []byte) (err error) {
+	var _b []byte
+	err = bencode.Unmarshal(b, &_b)
+	if err != nil {
+		return
+	}
+	return me.UnmarshalBinary(_b)
 }
 
 func UnmarshalIPv4CompactPeers(b []byte) (ret []CompactPeer, err error) {

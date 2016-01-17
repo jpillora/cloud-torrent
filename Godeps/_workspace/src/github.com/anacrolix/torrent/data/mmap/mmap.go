@@ -5,18 +5,34 @@ import (
 	"os"
 	"path/filepath"
 
-	"launchpad.net/gommap"
+	"github.com/edsrzf/mmap-go"
 
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/mmap_span"
 )
 
-func TorrentData(md *metainfo.Info, location string) (mms *mmap_span.MMapSpan, err error) {
-	mms = &mmap_span.MMapSpan{}
+type torrentData struct {
+	// Supports non-torrent specific data operations for the torrent.Data
+	// interface.
+	mmap_span.MMapSpan
+
+	completed []bool
+}
+
+func (me *torrentData) PieceComplete(piece int) bool {
+	return me.completed[piece]
+}
+
+func (me *torrentData) PieceCompleted(piece int) error {
+	me.completed[piece] = true
+	return nil
+}
+
+func TorrentData(md *metainfo.Info, location string) (ret *torrentData, err error) {
+	var mms mmap_span.MMapSpan
 	defer func() {
 		if err != nil {
 			mms.Close()
-			mms = nil
 		}
 	}()
 	for _, miFile := range md.UpvertedFiles() {
@@ -48,8 +64,10 @@ func TorrentData(md *metainfo.Info, location string) (mms *mmap_span.MMapSpan, e
 				// Can't mmap() regions with length 0.
 				return
 			}
-			var mMap gommap.MMap
-			mMap, err = gommap.MapRegion(file.Fd(), 0, miFile.Length, gommap.PROT_READ|gommap.PROT_WRITE, gommap.MAP_SHARED)
+			var mMap mmap.MMap
+			mMap, err = mmap.MapRegion(file,
+				int(miFile.Length), // Probably not great on <64 bit systems.
+				mmap.RDWR, 0, 0)
 			if err != nil {
 				err = fmt.Errorf("error mapping file %q, length %d: %s", file.Name(), miFile.Length, err)
 				return
@@ -62,6 +80,10 @@ func TorrentData(md *metainfo.Info, location string) (mms *mmap_span.MMapSpan, e
 		if err != nil {
 			return
 		}
+	}
+	ret = &torrentData{
+		MMapSpan:  mms,
+		completed: make([]bool, md.NumPieces()),
 	}
 	return
 }

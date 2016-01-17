@@ -12,6 +12,14 @@ import (
 	"sort"
 )
 
+// An abstraction of IP list implementations.
+type Ranger interface {
+	// Return a Range containing the IP.
+	Lookup(net.IP) (r Range, ok bool)
+	// If your ranges hurt, use this.
+	NumRanges() int
+}
+
 type IPList struct {
 	ranges []Range
 }
@@ -42,17 +50,17 @@ func (me *IPList) NumRanges() int {
 }
 
 // Return the range the given IP is in. Returns nil if no range is found.
-func (me *IPList) Lookup(ip net.IP) (r *Range) {
+func (me *IPList) Lookup(ip net.IP) (r Range, ok bool) {
 	if me == nil {
-		return nil
+		return
 	}
 	// TODO: Perhaps all addresses should be converted to IPv6, if the future
 	// of IP is to always be backwards compatible. But this will cost 4x the
 	// memory for IPv4 addresses?
 	v4 := ip.To4()
 	if v4 != nil {
-		r = me.lookup(v4)
-		if r != nil {
+		r, ok = me.lookup(v4)
+		if ok {
 			return
 		}
 	}
@@ -61,31 +69,46 @@ func (me *IPList) Lookup(ip net.IP) (r *Range) {
 		return me.lookup(v6)
 	}
 	if v4 == nil && v6 == nil {
-		return &Range{
-			Description: fmt.Sprintf("unsupported IP: %s", ip),
+		r = Range{
+			Description: "bad IP",
 		}
+		ok = true
 	}
-	return nil
+	return
+}
+
+// Return a range that contains ip, or nil.
+func lookup(
+	first func(i int) net.IP,
+	full func(i int) Range,
+	n int,
+	ip net.IP,
+) (
+	r Range, ok bool,
+) {
+	// Find the index of the first range for which the following range exceeds
+	// it.
+	i := sort.Search(n, func(i int) bool {
+		if i+1 >= n {
+			return true
+		}
+		return bytes.Compare(ip, first(i+1)) < 0
+	})
+	if i == n {
+		return
+	}
+	r = full(i)
+	ok = bytes.Compare(r.First, ip) <= 0 && bytes.Compare(ip, r.Last) <= 0
+	return
 }
 
 // Return the range the given IP is in. Returns nil if no range is found.
-func (me *IPList) lookup(ip net.IP) (r *Range) {
-	// Find the index of the first range for which the following range exceeds
-	// it.
-	i := sort.Search(len(me.ranges), func(i int) bool {
-		if i+1 >= len(me.ranges) {
-			return true
-		}
-		return bytes.Compare(ip, me.ranges[i+1].First) < 0
-	})
-	if i == len(me.ranges) {
-		return
-	}
-	r = &me.ranges[i]
-	if bytes.Compare(ip, r.First) < 0 || bytes.Compare(ip, r.Last) > 0 {
-		r = nil
-	}
-	return
+func (me *IPList) lookup(ip net.IP) (Range, bool) {
+	return lookup(func(i int) net.IP {
+		return me.ranges[i].First
+	}, func(i int) Range {
+		return me.ranges[i]
+	}, len(me.ranges), ip)
 }
 
 func minifyIP(ip *net.IP) {

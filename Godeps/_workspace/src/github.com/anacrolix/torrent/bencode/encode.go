@@ -1,28 +1,18 @@
 package bencode
 
-import "bufio"
-import "reflect"
-import "runtime"
-import "strconv"
-import "sync"
-import "sort"
+import (
+	"bufio"
+	"reflect"
+	"runtime"
+	"sort"
+	"strconv"
+	"sync"
+
+	"github.com/anacrolix/missinggo"
+)
 
 func is_empty_value(v reflect.Value) bool {
-	switch v.Kind() {
-	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
-		return v.Len() == 0
-	case reflect.Bool:
-		return !v.Bool()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return v.Int() == 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return v.Uint() == 0
-	case reflect.Float32, reflect.Float64:
-		return v.Float() == 0
-	case reflect.Interface, reflect.Ptr:
-		return v.IsNil()
-	}
-	return false
+	return missinggo.IsEmptyValue(v)
 }
 
 type encoder struct {
@@ -31,12 +21,19 @@ type encoder struct {
 }
 
 func (e *encoder) encode(v interface{}) (err error) {
+	if v == nil {
+		return
+	}
 	defer func() {
 		if e := recover(); e != nil {
 			if _, ok := e.(runtime.Error); ok {
 				panic(e)
 			}
-			err = e.(error)
+			var ok bool
+			err, ok = e.(error)
+			if !ok {
+				panic(e)
+			}
 		}
 	}()
 	e.reflect_value(reflect.ValueOf(v))
@@ -104,9 +101,6 @@ func (e *encoder) reflect_marshaler(v reflect.Value) bool {
 }
 
 func (e *encoder) reflect_value(v reflect.Value) {
-	if !v.IsValid() {
-		return
-	}
 
 	if e.reflect_marshaler(v) {
 		return
@@ -138,7 +132,6 @@ func (e *encoder) reflect_value(v reflect.Value) {
 			if ef.omit_empty && is_empty_value(field_value) {
 				continue
 			}
-
 			e.reflect_string(ef.tag)
 			e.reflect_value(field_value)
 		}
@@ -176,11 +169,15 @@ func (e *encoder) reflect_value(v reflect.Value) {
 			e.reflect_value(v.Index(i))
 		}
 		e.write_string("e")
-	case reflect.Interface, reflect.Ptr:
-		if v.IsNil() {
-			break
-		}
+	case reflect.Interface:
 		e.reflect_value(v.Elem())
+	case reflect.Ptr:
+		if v.IsNil() {
+			v = reflect.Zero(v.Type().Elem())
+		} else {
+			v = v.Elem()
+		}
+		e.reflect_value(v)
 	default:
 		panic(&MarshalTypeError{v.Type()})
 	}
@@ -236,7 +233,9 @@ func encode_fields(t reflect.Type) []encode_field {
 				continue
 			}
 			name, opts := parse_tag(tv)
-			ef.tag = name
+			if name != "" {
+				ef.tag = name
+			}
 			ef.omit_empty = opts.contains("omitempty")
 		}
 		fs = append(fs, ef)

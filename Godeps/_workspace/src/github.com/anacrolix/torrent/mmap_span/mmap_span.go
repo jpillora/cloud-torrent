@@ -3,28 +3,28 @@ package mmap_span
 import (
 	"io"
 
-	"launchpad.net/gommap"
+	"github.com/edsrzf/mmap-go"
 )
 
 type segment struct {
-	gommap.MMap
+	*mmap.MMap
 }
 
 func (me segment) Size() int64 {
-	return int64(len(me.MMap))
+	return int64(len(*me.MMap))
 }
 
 type MMapSpan struct {
 	span
 }
 
-func (me *MMapSpan) Append(mmap gommap.MMap) {
-	me.span = append(me.span, segment{mmap})
+func (me *MMapSpan) Append(mmap mmap.MMap) {
+	me.span = append(me.span, segment{&mmap})
 }
 
 func (me MMapSpan) Close() {
 	for _, mMap := range me.span {
-		mMap.(segment).UnsafeUnmap()
+		mMap.(segment).Unmap()
 	}
 }
 
@@ -37,7 +37,7 @@ func (me MMapSpan) Size() (ret int64) {
 
 func (me MMapSpan) ReadAt(p []byte, off int64) (n int, err error) {
 	me.ApplyTo(off, func(intervalOffset int64, interval sizer) (stop bool) {
-		_n := copy(p, interval.(segment).MMap[intervalOffset:])
+		_n := copy(p, (*interval.(segment).MMap)[intervalOffset:])
 		p = p[_n:]
 		n += _n
 		return len(p) == 0
@@ -51,7 +51,7 @@ func (me MMapSpan) ReadAt(p []byte, off int64) (n int, err error) {
 func (me MMapSpan) WriteSectionTo(w io.Writer, off, n int64) (written int64, err error) {
 	me.ApplyTo(off, func(intervalOffset int64, interval sizer) (stop bool) {
 		var _n int
-		p := interval.(segment).MMap[intervalOffset:]
+		p := (*interval.(segment).MMap)[intervalOffset:]
 		if n < int64(len(p)) {
 			p = p[:n]
 		}
@@ -69,7 +69,7 @@ func (me MMapSpan) WriteSectionTo(w io.Writer, off, n int64) (written int64, err
 func (me MMapSpan) WriteAt(p []byte, off int64) (n int, err error) {
 	me.ApplyTo(off, func(iOff int64, i sizer) (stop bool) {
 		mMap := i.(segment)
-		_n := copy(mMap.MMap[iOff:], p)
+		_n := copy((*mMap.MMap)[iOff:], p)
 		// err = mMap.Sync(gommap.MS_ASYNC)
 		// if err != nil {
 		// 	return true

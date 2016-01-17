@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/jpillora/cloud-torrent",
-	"GoVersion": "go1.5.1",
+	"GoVersion": "go1.5.2",
 	"Deps": [
 		{
 			"ImportPath": "github.com/PuerkitoBio/goquery",
@@ -9,23 +9,23 @@
 		},
 		{
 			"ImportPath": "github.com/anacrolix/jitter",
-			"Rev": "2ea5c18645100745b24e9f5cfc9b3f6f7eac51ef"
+			"Rev": "92923cc3f46b286365effc2cbe72e5d736df820c"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo",
-			"Rev": "671c3b49f613d974a3e33bde86b72b5e68c48901"
+			"Rev": "38794c07dedcd957a6edc4a261a67da0913f6054"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/sync",
-			"Rev": "8e5bf735a088dca7805a66575f384fa479651d75"
+			"Rev": "812602587b72df6a2a4f6e30536adc75394a374b"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent",
-			"Rev": "e735aeeee381426631e3fd8b01a30203236e9417"
+			"Rev": "8bbfcfcaa4b2fba8ab67f836718af2f85d16aaed"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/utp",
-			"Rev": "bf70a191f2141056f162964af711e93b8a32b6b1"
+			"Rev": "165b1751e0193a9d0354ce0d592de9b295a0263d"
 		},
 		{
 			"ImportPath": "github.com/andrew-d/go-termutil",
@@ -40,8 +40,16 @@
 			"Rev": "454541ec3da2a73fc34fd049b19ee5777bf19345"
 		},
 		{
+			"ImportPath": "github.com/edsrzf/mmap-go",
+			"Rev": "903d080718bd2877583fe1bd0a19c9cd3e2906ff"
+		},
+		{
 			"ImportPath": "github.com/elazarl/go-bindata-assetfs",
-			"Rev": "d5cac425555ca5cf00694df246e04f05e6a55150"
+			"Rev": "57eb5e1fc594ad4b0b1dbea7b286d299e0cb43c2"
+		},
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Rev": "b6ab76f1fe9803ee1d59e7e5b2a797c1fe897ce5"
 		},
 		{
 			"ImportPath": "github.com/jpillora/ansi",
@@ -49,15 +57,15 @@
 		},
 		{
 			"ImportPath": "github.com/jpillora/go-realtime",
-			"Rev": "d90e3bf978366faf40a3392432f60975442ff29a"
+			"Rev": "742df9e052d11655fa039dd67412299f06f591ea"
 		},
 		{
 			"ImportPath": "github.com/jpillora/opts",
-			"Rev": "c5abde5b29df260a64d212596657d491dd80c7b0"
+			"Rev": "c092f648492b4671c0c848cf1501feef432a365f"
 		},
 		{
 			"ImportPath": "github.com/jpillora/requestlog",
-			"Rev": "99966d3e6200c1af2526d6146b10c94b43c5ad27"
+			"Rev": "d2406296bf0d641fa186acf16b79b9dee0e7a219"
 		},
 		{
 			"ImportPath": "github.com/jpillora/scraper/scraper",
@@ -70,7 +78,7 @@
 		},
 		{
 			"ImportPath": "github.com/kardianos/osext",
-			"Rev": "6e7f843663477789fac7c02def0d0909e969b4e5"
+			"Rev": "29ae4ffbc9a6fe9fb2bc5029050ce6996ea1d3bc"
 		},
 		{
 			"ImportPath": "github.com/mattbaird/jsonpatch",
@@ -85,29 +93,21 @@
 			"Rev": "c8748311a7528d0ba7330d302adbc5a677ef9c9e"
 		},
 		{
-			"ImportPath": "github.com/spacemonkeygo/monotime",
-			"Rev": "7a1ce30a80e7104dbb48fed297f42a8dea1d91c5"
-		},
-		{
 			"ImportPath": "github.com/tylertreat/BoomFilters",
-			"Rev": "64f141c7adb244eefd6e604eb47de3aa53fc4479"
+			"Rev": "e1259fd17ae4453c811d57eb97119b90d46e1db4"
 		},
 		{
 			"ImportPath": "github.com/willf/bitset",
-			"Comment": "v1.0.0-19-g28a4168",
-			"Rev": "28a4168144bb8ac95454e1f51c84da1933681ad4"
+			"Comment": "v1.0.0-22-gbb0da37",
+			"Rev": "bb0da3785c4fe9d26f6029c77c8fce2aa4d0b291"
 		},
 		{
 			"ImportPath": "github.com/willf/bloom",
-			"Comment": "v1.0.0-38-g270f902",
-			"Rev": "270f902f15edc2c6ae171c30f1de3ce3ae59d30c"
+			"Comment": "v1.0.0-48-g73320a6",
+			"Rev": "73320a6e73f3e139842058d7e4886e09ca83ac9b"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html",
-			"Rev": "db8e4de5b2d6653f66aea53094624468caad15d2"
-		},
-		{
-			"ImportPath": "golang.org/x/net/websocket",
 			"Rev": "db8e4de5b2d6653f66aea53094624468caad15d2"
 		}
 	]

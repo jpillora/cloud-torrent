@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
 
 	"github.com/anacrolix/envpprof"
 
@@ -39,7 +40,14 @@ func main() {
 		}
 	}
 	defer conn.Close()
+	go func() {
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, os.Interrupt)
+		<-sig
+		conn.Close()
+	}()
 	writerDone := make(chan struct{})
+	readerDone := make(chan struct{})
 	go func() {
 		defer close(writerDone)
 		written, err := io.Copy(conn, os.Stdin)
@@ -50,10 +58,19 @@ func main() {
 		log.Printf("wrote %d bytes", written)
 		conn.Close()
 	}()
-	n, err := io.Copy(os.Stdout, conn)
-	if err != nil {
-		log.Fatal(err)
+	go func() {
+		defer close(readerDone)
+		n, err := io.Copy(os.Stdout, conn)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("received %d bytes", n)
+	}()
+	// Technically we should wait until both reading and writing are done. But
+	// ucat-style binaries terminate abrubtly when read or write is completed,
+	// and no state remains to clean-up the peer neatly.
+	select {
+	case <-writerDone:
+	case <-readerDone:
 	}
-	log.Printf("received %d bytes", n)
-	// <-writerDone
 }

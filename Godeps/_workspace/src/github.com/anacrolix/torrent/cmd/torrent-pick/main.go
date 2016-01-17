@@ -159,19 +159,17 @@ func main() {
 		}
 
 		go func() {
+			defer close(done)
 			<-t.GotInfo()
-			files := t.Files()
-			for _, file := range files {
-				if file.Path() == rootGroup.Pick {
-
-					log.Printf("Downloading file: %s", file.Path())
-
-					srcReader := io.NewSectionReader(t.NewReader(), file.Offset(), file.Length())
-					io.Copy(dstWriter, srcReader)
-					close(done)
-					break
+			for _, file := range t.Files() {
+				if file.DisplayPath() != rootGroup.Pick {
+					continue
 				}
+				srcReader := io.NewSectionReader(t.NewReader(), file.Offset(), file.Length())
+				io.Copy(dstWriter, srcReader)
+				return
 			}
+			log.Print("file not found")
 		}()
 	}
 

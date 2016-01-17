@@ -18,26 +18,26 @@ positives. The art is to choose _k_ and _m_ correctly.
 
 In this implementation, the hashing functions used is a local version of FNV, 
 a non-cryptographic hashing function, seeded with the index number of 
-the kth hashing function.
+the k<sup>th</sup> hashing function.
     
-This implementation accepts keys for setting as testing as []byte. Thus, to 
-add a string item, "Love":
+This implementation accepts keys for setting and testing as `[]byte`. Thus, to 
+add a string item, `"Love"`:
 
     uint n = 1000
     filter := bloom.New(20*n, 5) // load of 20, 5 keys
     filter.Add([]byte("Love"))
     
-Similarly, to test if "Love" is in bloom:
+Similarly, to test if `"Love"` is in bloom:
 
     if filter.Test([]byte("Love"))
     
 For numeric data, I recommend that you look into the binary/encoding library. But,
-for example, to add a uint32 to the filter:
+for example, to add a `uint32` to the filter:
 
     i := uint32(100)
-    n1 := make([]byte,4)
-    binary.BigEndian.PutUint32(n1,i)
-    f.Add(n1)
+    n1 := make([]byte, 4)
+    binary.BigEndian.PutUint32(n1, i)
+    filter.Add(n1)
 
 Finally, there is a method to estimate the false positive rate of a particular
 bloom filter for a set of size _n_:
@@ -49,4 +49,4 @@ that estimating the FP rate will clear the Bloom filter.
                                                          
 Discussion here: [Bloom filter](https://groups.google.com/d/topic/golang-nuts/6MktecKi1bE/discussion)
 
-Godoc documentation at https://godoc.org/github.com/willf/bloom
+Godoc documentation: https://godoc.org/github.com/willf/bloom

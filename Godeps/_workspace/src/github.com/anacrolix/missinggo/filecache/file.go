@@ -102,3 +102,16 @@ func (me *File) Read(b []byte) (n int, err error) {
 	}()
 	return me.f.Read(b)
 }
+
+func (me *File) ReadAt(b []byte, off int64) (n int, err error) {
+	err = me.goneErr()
+	if err != nil {
+		return
+	}
+	defer func() {
+		me.c.mu.Lock()
+		defer me.c.mu.Unlock()
+		me.c.statItem(me.path, time.Now())
+	}()
+	return me.f.ReadAt(b, off)
+}

@@ -1,5 +1,3 @@
-// +build !arm
-
 package missinggo
 
 import (

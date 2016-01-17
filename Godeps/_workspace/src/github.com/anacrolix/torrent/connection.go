@@ -23,6 +23,7 @@ var optimizedCancels = expvar.NewInt("optimizedCancels")
 type peerSource byte
 
 const (
+	peerSourceTracker  = '\x00' // It's the default.
 	peerSourceIncoming = 'I'
 	peerSourceDHT      = 'H'
 	peerSourcePEX      = 'X'
@@ -63,6 +64,7 @@ type connection struct {
 	// Indexed by metadata piece, set to true if posted and pending a
 	// response.
 	metadataRequests []bool
+	sentHaves        []bool
 
 	// Stuff controlled by the remote peer.
 	PeerID             [20]byte
@@ -105,10 +107,13 @@ func (cn *connection) localAddr() net.Addr {
 
 // Adjust piece position in the request order for this connection based on the
 // given piece priority.
-func (cn *connection) pendPiece(piece int, priority piecePriority) {
+func (cn *connection) pendPiece(piece int, priority piecePriority, t *torrent) {
 	if priority == PiecePriorityNone {
 		cn.pieceRequestOrder.DeletePiece(piece)
 		return
+	}
+	if cn.piecePriorities == nil {
+		cn.piecePriorities = t.newConnPiecePriorities()
 	}
 	pp := cn.piecePriorities[piece]
 	// Priority regions not to scale. Within each region, piece is randomized
@@ -546,4 +551,29 @@ func (conn *connection) writeOptimizer(keepAliveDelay time.Duration) {
 			return
 		}
 	}
+}
+
+func (cn *connection) Have(piece int) {
+	for piece >= len(cn.sentHaves) {
+		cn.sentHaves = append(cn.sentHaves, false)
+	}
+	if cn.sentHaves[piece] {
+		return
+	}
+	cn.Post(pp.Message{
+		Type:  pp.Have,
+		Index: pp.Integer(piece),
+	})
+	cn.sentHaves[piece] = true
+}
+
+func (cn *connection) Bitfield(haves []bool) {
+	if cn.sentHaves != nil {
+		panic("bitfield must be first have-related message sent")
+	}
+	cn.Post(pp.Message{
+		Type:     pp.Bitfield,
+		Bitfield: haves,
+	})
+	cn.sentHaves = haves
 }

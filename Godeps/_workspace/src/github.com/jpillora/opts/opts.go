@@ -20,7 +20,7 @@ type Opts struct {
 	//embed item since an Opts can also be an item
 	item
 	parent       *Opts
-	subcmds      map[string]*Opts
+	cmds         map[string]*Opts
 	opts         []*item
 	args         []*item
 	arglist      *argumentlist
@@ -37,10 +37,16 @@ type Opts struct {
 	cmdname               *reflect.Value
 	repo, author, version string
 	pkgrepo, pkgauthor    string
-	//public format settings
-	LineWidth int  //42
-	PadAll    bool //true
-	PadWidth  int  //2
+	//LineWidth defines where new-lines
+	//are inserted into the help text
+	//(defaults to 42)
+	LineWidth int
+	//PadAll enables padding around the
+	//help text (defaults to true)
+	PadAll bool
+	//PadWidth defines the amount padding
+	//when rendering help text (defaults to 2)
+	PadWidth int
 }
 
 //argumentlist represends a
@@ -61,11 +67,6 @@ type item struct {
 	typeName  string
 	help      string
 	defstr    string
-}
-
-//Creates a new Opts instance and Parses it
-func Parse(config interface{}) *Opts {
-	return New(config).Parse()
 }
 
 //New creates a new Opts instance
@@ -93,8 +94,13 @@ func New(config interface{}) *Opts {
 	return o
 }
 
+//Parse(&config) is shorthand for New(&config).Parse()
+func Parse(config interface{}) *Opts {
+	return New(config).Parse()
+}
+
 func fork(parent *Opts, val reflect.Value) *Opts {
-	//TODO allow order and template per subcmd
+	//TODO allow order and template per cmd
 	//for now, there is only the root
 	var order []string = nil
 	var tmpls map[string]string = nil
@@ -113,10 +119,10 @@ func fork(parent *Opts, val reflect.Value) *Opts {
 			val: val,
 		},
 		parent: parent,
-		//each cmd/subcmd has its own set of names
+		//each cmd/cmd has its own set of names
 		optnames: map[string]bool{},
 		envnames: map[string]bool{},
-		subcmds:  map[string]*Opts{},
+		cmds:     map[string]*Opts{},
 		opts:     []*item{},
 		//these are only set at the root
 		order:     order,
@@ -170,7 +176,7 @@ func (o *Opts) addFields(c reflect.Value) *Opts {
 			if sf.Tag.Get("type") == "embedded" {
 				o.addFields(val)
 			} else {
-				o.addSubcmd(sf, val)
+				o.addCmd(sf, val)
 			}
 		case reflect.Slice:
 			if sf.Type.Elem().Kind() != reflect.String {
@@ -205,10 +211,10 @@ func (o *Opts) errorf(format string, args ...interface{}) *Opts {
 	return o
 }
 
-func (o *Opts) addSubcmd(sf reflect.StructField, val reflect.Value) {
+func (o *Opts) addCmd(sf reflect.StructField, val reflect.Value) {
 
 	if o.arglist != nil {
-		o.errorf("argslists and subcommands cannot be used together")
+		o.errorf("argslists and commands cannot be used together")
 		return
 	}
 
@@ -228,17 +234,17 @@ func (o *Opts) addSubcmd(sf reflect.StructField, val reflect.Value) {
 	if name == "" || name == "!" {
 		name = camel2dash(sf.Name) //default to struct field name
 	}
-	// log.Printf("define subcmd: %s =====", subname)
+	// log.Printf("define cmd: %s =====", subname)
 	sub := fork(o, val)
 	sub.name = name
 	sub.help = sf.Tag.Get("help")
-	o.subcmds[name] = sub
+	o.cmds[name] = sub
 }
 
 func (o *Opts) addArgs(sf reflect.StructField, val reflect.Value) {
 
-	if len(o.subcmds) > 0 {
-		o.errorf("argslists and subcommands cannot be used together")
+	if len(o.cmds) > 0 {
+		o.errorf("argslists and commands cannot be used together")
 		return
 	}
 	if o.arglist != nil {
@@ -351,11 +357,14 @@ func (o *Opts) addOptArg(sf reflect.StructField, val reflect.Value) {
 	}
 }
 
+//Name sets the name of the program
 func (o *Opts) Name(name string) *Opts {
 	o.name = name
 	return o
 }
 
+//Version sets the version of the program
+//and renders the 'version' template in the help text
 func (o *Opts) Version(version string) *Opts {
 	//add version option
 	g := reflect.ValueOf(&o.internalOpts).Elem()
@@ -364,6 +373,16 @@ func (o *Opts) Version(version string) *Opts {
 	return o
 }
 
+//Repo sets the repository link of the program
+//and renders the 'repo' template in the help text
+func (o *Opts) Repo(repo string) *Opts {
+	o.repo = repo
+	return o
+}
+
+//PkgRepo infers the repository link of the program
+//from the package import path of the struct (So note,
+//this will not work for 'main' packages)
 func (o *Opts) PkgRepo() *Opts {
 	if o.pkgrepo == "" {
 		return o.errorf("Package repository could not be infered")
@@ -372,21 +391,21 @@ func (o *Opts) PkgRepo() *Opts {
 	return o
 }
 
-func (o *Opts) Repo(repo string) *Opts {
-	o.repo = repo
+//Author sets the author of the program
+//and renders the 'author' template in the help text
+func (o *Opts) Author(author string) *Opts {
+	o.author = author
 	return o
 }
 
+//PkgRepo infers the repository link of the program
+//from the package import path of the struct (So note,
+//this will not work for 'main' packages)
 func (o *Opts) PkgAuthor() *Opts {
 	if o.pkgrepo == "" {
 		return o.errorf("Package author could not be infered")
 	}
 	o.Author(o.pkgauthor)
-	return o
-}
-
-func (o *Opts) Author(author string) *Opts {
-	o.author = author
 	return o
 }
 
@@ -441,9 +460,10 @@ func (o *Opts) ConfigPath(path string) *Opts {
 	return o
 }
 
-//ConfigPath defines a path to a JSON file which matches
-//the structure of the provided config. Environment variables
-//override JSON Config variables.
+//UseEnv enables an implicit "env" struct tag option on
+//all struct fields, the name of the field is converted
+//into an environment variable with the transform
+//`FooBar` -> `FOO_BAR`.
 func (o *Opts) UseEnv() *Opts {
 	o.useEnv = true
 	return o
@@ -467,9 +487,9 @@ func (o *Opts) ParseArgs(args []string) *Opts {
 //it returns an error on failure
 func (o *Opts) Process(args []string) error {
 
-	//cannot be processed - already encountered error
+	//cannot be processed - already encountered error - programmer error
 	if o.erred != nil {
-		return o.erred
+		return fmt.Errorf("Process error: %s", o.erred)
 	}
 
 	//1. set config via JSON file
@@ -479,7 +499,8 @@ func (o *Opts) Process(args []string) error {
 			v := o.val.Interface() //*struct
 			err = json.Unmarshal(b, v)
 			if err != nil {
-				return fmt.Errorf("Invalid config file: %s", err)
+				o.erred = fmt.Errorf("Invalid config file: %s", err)
+				return errors.New(o.Help())
 			}
 		}
 	}
@@ -490,12 +511,14 @@ func (o *Opts) Process(args []string) error {
 	//pre-loop through the options and
 	//add shortnames and env names where possible
 	for _, opt := range o.opts {
-		short := opt.name[0:1]
-		if !o.optnames[short] {
-			opt.shortName = short
-			o.optnames[short] = true
+		//should generate shortname?
+		if len(opt.name) >= 3 && opt.shortName == "" {
+			//not already taken?
+			if s := opt.name[0:1]; !o.optnames[s] {
+				opt.shortName = s
+				o.optnames[s] = true
+			}
 		}
-
 		env := camel2const(opt.name)
 		if o.useEnv && (opt.envName == "" || opt.envName == "!") &&
 			opt.name != "help" && opt.name != "version" &&
@@ -558,7 +581,7 @@ func (o *Opts) Process(args []string) error {
 		o.internalOpts.Help = true
 	}
 
-	//internal opts
+	//internal opts (--help and --version)
 	if o.internalOpts.Help {
 		return errors.New(o.Help())
 	} else if o.internalOpts.Version {
@@ -580,11 +603,11 @@ func (o *Opts) Process(args []string) error {
 		}
 	}
 
-	//use subcommand? peek at args
-	if len(o.subcmds) > 0 && len(args) > 0 {
+	//use command? peek at args
+	if len(o.cmds) > 0 && len(args) > 0 {
 		a := args[0]
-		//matching subcommand, use it
-		if sub, exists := o.subcmds[a]; exists {
+		//matching command, use it
+		if sub, exists := o.cmds[a]; exists {
 			//user wants name to be set
 			if o.cmdname != nil {
 				o.cmdname.SetString(a)
@@ -603,8 +626,8 @@ func (o *Opts) Process(args []string) error {
 		args = nil
 	}
 
-	//we *should* have consumed all args
-	//prevents:  ./foo --bar 42 -z 21 ping --pong 7
+	//we *should* have consumed all args at this point.
+	//this prevents:  ./foo --bar 42 -z 21 ping --pong 7
 	//where --pong 7 is ignored
 	if len(args) != 0 {
 		o.erred = fmt.Errorf("Unexpected arguments: %+v", args)

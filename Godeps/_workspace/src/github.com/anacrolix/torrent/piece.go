@@ -4,6 +4,8 @@ import (
 	"math/rand"
 	"sync"
 
+	"github.com/bradfitz/iter"
+
 	pp "github.com/anacrolix/torrent/peer_protocol"
 )
 
@@ -22,14 +24,14 @@ const (
 type piece struct {
 	// The completed piece SHA1 hash, from the metainfo "pieces" field.
 	Hash pieceSum
-	// Chunks we don't have. The offset and length can be determined by the
-	// request chunkSize in use.
-	PendingChunkSpecs []bool
-	Hashing           bool
-	QueuedForHash     bool
-	EverHashed        bool
-	Event             sync.Cond
-	Priority          piecePriority
+	// Chunks we've written to since the last check. The chunk offset and
+	// length can be determined by the request chunkSize in use.
+	DirtyChunks      []bool
+	Hashing          bool
+	QueuedForHash    bool
+	EverHashed       bool
+	Priority         piecePriority
+	PublicPieceState PieceState
 
 	pendingWritesMutex sync.Mutex
 	pendingWrites      int
@@ -37,15 +39,16 @@ type piece struct {
 }
 
 func (p *piece) pendingChunk(cs chunkSpec, chunkSize pp.Integer) bool {
-	if p.PendingChunkSpecs == nil {
-		return false
+	ci := chunkIndex(cs, chunkSize)
+	if ci >= len(p.DirtyChunks) {
+		return true
 	}
-	return p.PendingChunkSpecs[chunkIndex(cs, chunkSize)]
+	return !p.DirtyChunks[ci]
 }
 
-func (p *piece) numPendingChunks() (ret int) {
-	for _, pending := range p.PendingChunkSpecs {
-		if pending {
+func (p *piece) numDirtyChunks() (ret int) {
+	for _, dirty := range p.DirtyChunks {
+		if dirty {
 			ret++
 		}
 	}
@@ -53,10 +56,10 @@ func (p *piece) numPendingChunks() (ret int) {
 }
 
 func (p *piece) unpendChunkIndex(i int) {
-	if p.PendingChunkSpecs == nil {
-		return
+	for i >= len(p.DirtyChunks) {
+		p.DirtyChunks = append(p.DirtyChunks, false)
 	}
-	p.PendingChunkSpecs[i] = false
+	p.DirtyChunks[i] = true
 }
 
 func chunkIndexSpec(index int, pieceLength, chunkSize pp.Integer) chunkSpec {
@@ -67,14 +70,18 @@ func chunkIndexSpec(index int, pieceLength, chunkSize pp.Integer) chunkSpec {
 	return ret
 }
 
-func (p *piece) shuffledPendingChunkSpecs(pieceLength, chunkSize pp.Integer) (css []chunkSpec) {
-	if p.numPendingChunks() == 0 {
+func (p *piece) shuffledPendingChunkSpecs(t *torrent, piece int) (css []chunkSpec) {
+	// defer func() {
+	// 	log.Println(piece, css)
+	// }()
+	numPending := t.pieceNumPendingChunks(piece)
+	if numPending == 0 {
 		return
 	}
-	css = make([]chunkSpec, 0, p.numPendingChunks())
-	for i, pending := range p.PendingChunkSpecs {
-		if pending {
-			css = append(css, chunkIndexSpec(i, pieceLength, chunkSize))
+	css = make([]chunkSpec, 0, numPending)
+	for ci := range iter.N(t.pieceNumChunks(piece)) {
+		if ci >= len(p.DirtyChunks) || !p.DirtyChunks[ci] {
+			css = append(css, t.chunkIndexSpec(ci, piece))
 		}
 	}
 	if len(css) <= 1 {

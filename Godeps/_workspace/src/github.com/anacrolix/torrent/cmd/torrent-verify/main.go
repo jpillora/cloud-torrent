@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"launchpad.net/gommap"
+	"github.com/edsrzf/mmap-go"
 
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/anacrolix/torrent/mmap_span"
@@ -20,13 +20,12 @@ var (
 	dataPath    = flag.String("path", "/torrent/data", "path of the torrent data")
 )
 
-func fileToMmap(filename string, length int64, devZero *os.File) gommap.MMap {
+func fileToMmap(filename string, length int64, devZero *os.File) mmap.MMap {
 	osFile, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
-	mmapFd := osFile.Fd()
-	goMMap, err := gommap.MapRegion(mmapFd, 0, length, gommap.PROT_READ, gommap.MAP_PRIVATE)
+	goMMap, err := mmap.MapRegion(osFile, int(length), mmap.RDONLY, mmap.COPY, 0)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -11,6 +11,9 @@ import (
 
 type key string
 
+//an Object is embedded into a parent marshallable struct.
+//an Object has N subscribers.
+//when the parent changes, it is marshalled and sent to each subscriber.
 type Object struct {
 	mut         sync.Mutex //protects all object fields
 	added       bool
@@ -48,8 +51,8 @@ func (o *Object) Update() {
 
 type update struct {
 	Key     key
-	Delta   bool `json:",omitempty"`
-	Version int64
+	Delta   bool  `json:",omitempty"`
+	Version int64 //53 usable bits
 	Data    jsonBytes
 }
 

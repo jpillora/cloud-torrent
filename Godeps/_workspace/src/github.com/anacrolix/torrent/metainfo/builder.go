@@ -304,7 +304,7 @@ func (b *Batch) Start(w io.Writer, nworkers int) (<-chan error, <-chan int64) {
 
 		// prepare files for reading
 		fr := files_reader{files: b.files}
-		npieces := b.total_size/b.piece_length + 1
+		npieces := (b.total_size + b.piece_length - 1) / b.piece_length
 		b.pieces = make([]byte, 20*npieces)
 		hashed := int64(0)
 

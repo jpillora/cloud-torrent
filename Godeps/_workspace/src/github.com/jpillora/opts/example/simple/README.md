@@ -16,11 +16,8 @@ type Config struct {
 }
 
 func main() {
-
 	c := Config{}
-
 	opts.Parse(&c)
-
 	fmt.Println(c.Foo)
 	fmt.Println(c.Bar)
 }
@@ -42,12 +39,11 @@ $ simple --help
 ``` plain 
 
   Usage: simple [options]
-  
+
   Options:
-  --foo, -f 
-  --bar, -b 
+  --foo, -f
+  --bar, -b
   --help, -h
-  
 
 ```
 </tmpl>

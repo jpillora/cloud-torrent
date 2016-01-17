@@ -3,12 +3,13 @@
 [![Join the chat at https://gitter.im/anacrolix/torrent](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/anacrolix/torrent?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://drone.io/github.com/anacrolix/torrent/status.png)](https://drone.io/github.com/anacrolix/torrent/latest)
 [![GoDoc](https://godoc.org/github.com/anacrolix/torrent?status.svg)](https://godoc.org/github.com/anacrolix/torrent)
+[![Coverage](http://gocover.io/_badge/github.com/anacrolix/torrent)](http://gocover.io/github.com/anacrolix/torrent)
 
 This repository implements BitTorrent-related packages and command-line utilities in Go. The emphasis is on use as a library from other projects. It's been used 24/7 in production by a downstream, private service since late 2014.
 
 There is support for protocol encryption, DHT, PEX, uTP, and various extensions. See the package documentation for a more complete list. There are several data storage backends provided: blob, file, and mmap, and you can write your own, such as to store data on S3, or in a database. You can use the provided binaries in `./cmd`, or use `torrent` as a library for your own applications.
 
-Many of the sub-packages can be used for other purposes: dht, bencode, and tracker, in particular.
+Many of the sub-packages can be used for other purposes: [dht](https://godoc.org/github.com/anacrolix/torrent/dht), [bencode](https://godoc.org/github.com/anacrolix/torrent/bencode), and [tracker](https://godoc.org/github.com/anacrolix/torrent/tracker), in particular.
 
 ## Installation
 
@@ -18,11 +19,15 @@ Install the library package with `go get github.com/anacrolix/torrent`, or the p
 
 There is a small example in the [package documentation](https://godoc.org/github.com/anacrolix/torrent).
 
+## Other projects using Torrent
+
+ * [Go Peerflix](https://github.com/Sioro-Neoku/go-peerflix)
+
 ## Commands
 
 Here I'll describe what some of the provided commands in `./cmd` do.
 
-Note that [`godo`](https://github.com/anacrolix/godo) that I invoke in the following examples is a command that builds and executes a Go import path, like `go run`. It's easier to use this convention than to spell out the install/invoke cycle for every single example.
+Note that the [`godo`](https://github.com/anacrolix/godo) command which is invoked in the following examples builds and executes a Go import path, like `go run`. It's easier to use this convention than to spell out the install/invoke cycle for every single example.
 
 ### torrent
 

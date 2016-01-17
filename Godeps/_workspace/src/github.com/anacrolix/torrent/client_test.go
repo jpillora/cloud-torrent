@@ -15,14 +15,16 @@ import (
 
 	_ "github.com/anacrolix/envpprof"
 	"github.com/anacrolix/missinggo"
+	. "github.com/anacrolix/missinggo"
+	"github.com/anacrolix/missinggo/filecache"
 	"github.com/anacrolix/utp"
 	"github.com/bradfitz/iter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/anacrolix/torrent/bencode"
-	"github.com/anacrolix/torrent/data"
-	"github.com/anacrolix/torrent/data/blob"
+	"github.com/anacrolix/torrent/data/pieceStore"
+	"github.com/anacrolix/torrent/data/pieceStore/dataBackend/fileCache"
 	"github.com/anacrolix/torrent/dht"
 	"github.com/anacrolix/torrent/internal/testutil"
 	"github.com/anacrolix/torrent/iplist"
@@ -30,7 +32,7 @@ import (
 )
 
 func init() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.LstdFlags | log.Llongfile)
 }
 
 var TestingConfig = Config{
@@ -40,6 +42,9 @@ var TestingConfig = Config{
 	NoDefaultBlocklist:   true,
 	DisableMetainfoCache: true,
 	DataDir:              filepath.Join(os.TempDir(), "anacrolix"),
+	DHTConfig: dht.ServerConfig{
+		NoDefaultBootstrap: true,
+	},
 }
 
 func TestClientDefault(t *testing.T) {
@@ -97,16 +102,15 @@ func TestTorrentInitialState(t *testing.T) {
 		t.Fatal(err)
 	}
 	tor.chunkSize = 2
-	err = tor.setMetadata(&mi.Info.Info, mi.Info.Bytes, nil)
+	err = tor.setMetadata(&mi.Info.Info, mi.Info.Bytes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(tor.Pieces) != 3 {
 		t.Fatal("wrong number of pieces")
 	}
-	p := tor.Pieces[0]
 	tor.pendAllChunkSpecs(0)
-	assert.EqualValues(t, 3, p.numPendingChunks())
+	assert.EqualValues(t, 3, tor.pieceNumPendingChunks(0))
 	assert.EqualValues(t, chunkSpec{4, 1}, chunkIndexSpec(2, tor.pieceLength(0), tor.chunkSize))
 }
 
@@ -186,7 +190,7 @@ func TestUTPRawConn(t *testing.T) {
 		defer close(readerStopped)
 		b := make([]byte, 500)
 		for i := 0; i < N; i++ {
-			n, _, err := l.PacketConn().ReadFrom(b)
+			n, _, err := l.ReadFrom(b)
 			if err != nil {
 				t.Fatalf("error reading from raw conn: %s", err)
 			}
@@ -266,7 +270,18 @@ func TestClientTransfer(t *testing.T) {
 	// cfg.TorrentDataOpener = func(info *metainfo.Info) (data.Data, error) {
 	// 	return blob.TorrentData(info, leecherDataDir), nil
 	// }
-	cfg.TorrentDataOpener = blob.NewStore(leecherDataDir).OpenTorrent
+	// blobStore := blob.NewStore(leecherDataDir)
+	// cfg.TorrentDataOpener = func(info *metainfo.Info) Data {
+	// 	return blobStore.OpenTorrent(info)
+	// }
+	cfg.TorrentDataOpener = func() TorrentDataOpener {
+		fc, err := filecache.NewCache(leecherDataDir)
+		require.NoError(t, err)
+		store := pieceStore.New(fileCacheDataBackend.New(fc))
+		return func(mi *metainfo.Info) Data {
+			return store.OpenTorrentData(mi)
+		}
+	}()
 	leecher, _ := NewClient(&cfg)
 	defer leecher.Close()
 	leecherGreeting, _, _ := leecher.AddTorrentSpec(func() (ret *TorrentSpec) {
@@ -274,6 +289,16 @@ func TestClientTransfer(t *testing.T) {
 		ret.ChunkSize = 2
 		return
 	}())
+	// TODO: The piece state publishing is kinda jammed in here until I have a
+	// more thorough test.
+	go func() {
+		s := leecherGreeting.torrent.pieceStateChanges.Subscribe()
+		defer s.Close()
+		for i := range s.Values {
+			log.Print(i)
+		}
+		log.Print("finished")
+	}()
 	leecherGreeting.AddPeers([]Peer{
 		Peer{
 			IP:   missinggo.AddrIP(seeder.ListenAddr()),
@@ -387,12 +412,13 @@ func TestMergingTrackersByAddingSpecs(t *testing.T) {
 	if new {
 		t.FailNow()
 	}
-	assert.EqualValues(t, T.Trackers[0][0].URL(), "http://a")
-	assert.EqualValues(t, T.Trackers[1][0].URL(), "udp://b")
+	assert.EqualValues(t, T.torrent.Trackers[0][0].URL(), "http://a")
+	assert.EqualValues(t, T.torrent.Trackers[1][0].URL(), "udp://b")
 }
 
-type badData struct {
-}
+type badData struct{}
+
+func (me badData) Close() {}
 
 func (me badData) WriteAt(b []byte, off int64) (int, error) {
 	return 0, nil
@@ -419,12 +445,10 @@ func (me badData) ReadAt(b []byte, off int64) (n int, err error) {
 	return
 }
 
-var _ StatefulData = badData{}
-
 // We read from a piece which is marked completed, but is missing data.
 func TestCompletedPieceWrongSize(t *testing.T) {
 	cfg := TestingConfig
-	cfg.TorrentDataOpener = func(*metainfo.Info) data.Data {
+	cfg.TorrentDataOpener = func(*metainfo.Info) Data {
 		return badData{}
 	}
 	cl, _ := NewClient(&cfg)
@@ -514,13 +538,55 @@ func TestResponsive(t *testing.T) {
 	assert.EqualValues(t, "d\n", string(b))
 }
 
+func TestTorrentDroppedDuringResponsiveRead(t *testing.T) {
+	seederDataDir, mi := testutil.GreetingTestTorrent()
+	defer os.RemoveAll(seederDataDir)
+	cfg := TestingConfig
+	cfg.Seed = true
+	cfg.DataDir = seederDataDir
+	seeder, err := NewClient(&cfg)
+	require.Nil(t, err)
+	defer seeder.Close()
+	seeder.AddTorrentSpec(TorrentSpecFromMetaInfo(mi))
+	leecherDataDir, err := ioutil.TempDir("", "")
+	require.Nil(t, err)
+	defer os.RemoveAll(leecherDataDir)
+	cfg = TestingConfig
+	cfg.DataDir = leecherDataDir
+	leecher, err := NewClient(&cfg)
+	require.Nil(t, err)
+	defer leecher.Close()
+	leecherTorrent, _, _ := leecher.AddTorrentSpec(func() (ret *TorrentSpec) {
+		ret = TorrentSpecFromMetaInfo(mi)
+		ret.ChunkSize = 2
+		return
+	}())
+	leecherTorrent.AddPeers([]Peer{
+		Peer{
+			IP:   missinggo.AddrIP(seeder.ListenAddr()),
+			Port: missinggo.AddrPort(seeder.ListenAddr()),
+		},
+	})
+	reader := leecherTorrent.NewReader()
+	reader.SetReadahead(0)
+	reader.SetResponsive()
+	b := make([]byte, 2)
+	_, err = reader.ReadAt(b, 3)
+	assert.Nil(t, err)
+	assert.EqualValues(t, "lo", string(b))
+	go leecherTorrent.Drop()
+	n, err := reader.ReadAt(b, 11)
+	assert.EqualError(t, err, "torrent closed")
+	assert.EqualValues(t, 0, n)
+}
+
 func TestDHTInheritBlocklist(t *testing.T) {
 	ipl := iplist.New(nil)
 	require.NotNil(t, ipl)
-	cl, err := NewClient(&Config{
-		IPBlocklist: iplist.New(nil),
-		DHTConfig:   &dht.ServerConfig{},
-	})
+	cfg := TestingConfig
+	cfg.IPBlocklist = ipl
+	cfg.NoDHT = false
+	cl, err := NewClient(&cfg)
 	require.NoError(t, err)
 	defer cl.Close()
 	require.Equal(t, ipl, cl.DHT().IPBlocklist())
@@ -576,4 +642,21 @@ func TestAddTorrentMetainfoInCache(t *testing.T) {
 	require.True(t, new)
 	// Obtained from the metainfo cache.
 	require.NotNil(t, tt.Info())
+}
+
+func TestTorrentDroppedBeforeGotInfo(t *testing.T) {
+	dir, mi := testutil.GreetingTestTorrent()
+	os.RemoveAll(dir)
+	cl, _ := NewClient(&TestingConfig)
+	defer cl.Close()
+	var ts TorrentSpec
+	CopyExact(&ts.InfoHash, mi.Info.Hash)
+	tt, _, _ := cl.AddTorrentSpec(&ts)
+	tt.Drop()
+	assert.EqualValues(t, 0, len(cl.Torrents()))
+	select {
+	case <-tt.GotInfo():
+		t.FailNow()
+	default:
+	}
 }

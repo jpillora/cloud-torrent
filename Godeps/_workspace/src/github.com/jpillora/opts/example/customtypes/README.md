@@ -59,13 +59,12 @@ $ customtypes --help
 ``` plain 
 
   Usage: customtypes [options]
-  
+
   Options:
-  --foo, -f 
-  --bar, -b 
-  --bazz    
+  --foo, -f
+  --bar, -b
+  --bazz
   --help, -h
-  
 
 ```
 </tmpl>

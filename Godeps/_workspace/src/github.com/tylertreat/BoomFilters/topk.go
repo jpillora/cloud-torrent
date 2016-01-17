@@ -5,20 +5,20 @@ import (
 	"container/heap"
 )
 
-type element struct {
-	data []byte
-	freq uint64
+type Element struct {
+	Data []byte
+	Freq uint64
 }
 
 // An elementHeap is a min-heap of elements.
-type elementHeap []*element
+type elementHeap []*Element
 
 func (e elementHeap) Len() int           { return len(e) }
-func (e elementHeap) Less(i, j int) bool { return e[i].freq < e[j].freq }
+func (e elementHeap) Less(i, j int) bool { return e[i].Freq < e[j].Freq }
 func (e elementHeap) Swap(i, j int)      { e[i], e[j] = e[j], e[i] }
 
 func (e *elementHeap) Push(x interface{}) {
-	*e = append(*e, x.(*element))
+	*e = append(*e, x.(*Element))
 }
 
 func (e *elementHeap) Pop() interface{} {
@@ -66,18 +66,18 @@ func (t *TopK) Add(data []byte) *TopK {
 }
 
 // Elements returns the top-k elements from lowest to highest frequency.
-func (t *TopK) Elements() [][]byte {
+func (t *TopK) Elements() []*Element {
 	if t.elements.Len() == 0 {
-		return [][]byte{}
+		return make([]*Element, 0)
 	}
 
-	elements := make(elementHeap, t.k)
+	elements := make(elementHeap, t.elements.Len())
 	copy(elements, *t.elements)
 	heap.Init(&elements)
-	topK := make([][]byte, 0, t.k)
+	topK := make([]*Element, 0, t.k)
 
 	for elements.Len() > 0 {
-		topK = append(topK, heap.Pop(&elements).(*element).data)
+		topK = append(topK, heap.Pop(&elements).(*Element))
 	}
 
 	return topK
@@ -100,7 +100,7 @@ func (t *TopK) isTop(freq uint64) bool {
 		return true
 	}
 
-	return freq >= (*t.elements)[0].freq
+	return freq >= (*t.elements)[0].Freq
 }
 
 // insert adds the data to the top-k heap. If the data is already an element,
@@ -108,9 +108,9 @@ func (t *TopK) isTop(freq uint64) bool {
 // with the minimum frequency is removed.
 func (t *TopK) insert(data []byte, freq uint64) {
 	for _, element := range *t.elements {
-		if bytes.Compare(data, element.data) == 0 {
+		if bytes.Compare(data, element.Data) == 0 {
 			// Element already in top-k.
-			element.freq = freq
+			element.Freq = freq
 			return
 		}
 	}
@@ -121,5 +121,5 @@ func (t *TopK) insert(data []byte, freq uint64) {
 	}
 
 	// Add element to top-k.
-	heap.Push(t.elements, &element{data: data, freq: freq})
+	heap.Push(t.elements, &Element{Data: data, Freq: freq})
 }

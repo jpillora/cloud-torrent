@@ -1,5 +1,6 @@
 # utp
 [![GoDoc](https://godoc.org/github.com/anacrolix/utp?status.svg)](https://godoc.org/github.com/anacrolix/utp)
+[![Build Status](https://drone.io/github.com/anacrolix/utp/status.png)](https://drone.io/github.com/anacrolix/utp/latest)
 
 Package utp implements uTP, the micro transport protocol as used with Bittorrent. It opts for simplicity and reliability over strict adherence to the (poor) spec.
 

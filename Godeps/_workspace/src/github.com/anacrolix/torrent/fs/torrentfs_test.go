@@ -15,16 +15,14 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/anacrolix/envpprof"
-
 	"bazil.org/fuse"
 	fusefs "bazil.org/fuse/fs"
+	_ "github.com/anacrolix/envpprof"
 	"github.com/anacrolix/missinggo"
 	"github.com/stretchr/testify/assert"
 	netContext "golang.org/x/net/context"
 
 	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/data"
 	"github.com/anacrolix/torrent/data/mmap"
 	"github.com/anacrolix/torrent/internal/testutil"
 	"github.com/anacrolix/torrent/metainfo"
@@ -205,7 +203,7 @@ func TestDownloadOnDemand(t *testing.T) {
 
 		NoDefaultBlocklist: true,
 
-		TorrentDataOpener: func(info *metainfo.Info) data.Data {
+		TorrentDataOpener: func(info *metainfo.Info) torrent.Data {
 			ret, _ := mmap.TorrentData(info, filepath.Join(layout.BaseDir, "download"))
 			return ret
 		},

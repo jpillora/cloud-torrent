@@ -2,6 +2,7 @@ package iplist
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"net"
 	"strings"
@@ -9,14 +10,36 @@ import (
 
 	"github.com/anacrolix/missinggo"
 	"github.com/bradfitz/iter"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var sample = `
+var (
+	// Note the shared description "eff". The overlapping ranges at 1.2.8.2
+	// will cause problems. Don't overlap your ranges.
+	sample = `
 # List distributed by iblocklist.com
 
 a:1.2.4.0-1.2.4.255
 b:1.2.8.0-1.2.8.255
-something:more detail:86.59.95.195-86.59.95.195`
+eff:1.2.8.2-1.2.8.2
+something:more detail:86.59.95.195-86.59.95.195
+eff:127.0.0.0-127.0.0.1`
+	packedSample []byte
+)
+
+func init() {
+	var buf bytes.Buffer
+	list, err := NewFromReader(strings.NewReader(sample))
+	if err != nil {
+		panic(err)
+	}
+	err = list.WritePacked(&buf)
+	if err != nil {
+		panic(err)
+	}
+	packedSample = buf.Bytes()
+}
 
 func TestIPv4RangeLen(t *testing.T) {
 	ranges, _ := sampleRanges(t)
@@ -72,31 +95,25 @@ func connRemoteAddrIP(network, laddr string, dialHost string) net.IP {
 	return ret
 }
 
+func lookupOk(r Range, ok bool) bool {
+	return ok
+}
+
 func TestBadIP(t *testing.T) {
-	iplist := New(nil)
-	if iplist.Lookup(net.IP(make([]byte, 4))) != nil {
-		t.FailNow()
-	}
-	if iplist.Lookup(net.IP(make([]byte, 16))) != nil {
-		t.FailNow()
-	}
-	if iplist.Lookup(nil) == nil {
-		t.FailNow()
-	}
-	if iplist.Lookup(net.IP(make([]byte, 5))) == nil {
-		t.FailNow()
+	for _, iplist := range []Ranger{
+		New(nil),
+		NewFromPacked([]byte("\x00\x00\x00\x00\x00\x00\x00\x00")),
+	} {
+		assert.False(t, lookupOk(iplist.Lookup(net.IP(make([]byte, 4)))), "%v", iplist)
+		assert.False(t, lookupOk(iplist.Lookup(net.IP(make([]byte, 16)))))
+		r, ok := iplist.Lookup(nil)
+		assert.True(t, ok)
+		assert.Equal(t, r.Description, "bad IP")
+		assert.True(t, lookupOk(iplist.Lookup(net.IP(make([]byte, 5)))))
 	}
 }
 
-func TestSimple(t *testing.T) {
-	ranges, err := sampleRanges(t)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(ranges) != 3 {
-		t.Fatalf("expected 3 ranges but got %d", len(ranges))
-	}
-	iplist := New(ranges)
+func testLookuperSimple(t *testing.T, iplist Ranger) {
 	for _, _case := range []struct {
 		IP   string
 		Hit  bool
@@ -107,22 +124,26 @@ func TestSimple(t *testing.T) {
 		{"1.2.4.255", true, "a"},
 		// Try to roll over to the next octet on the parse. Note the final
 		// octet is overbounds. In the next case.
-		{"1.2.7.256", true, "unsupported IP: <nil>"},
-		{"1.2.8.254", true, "b"},
+		{"1.2.7.256", true, "bad IP"},
+		{"1.2.8.1", true, "b"},
+		{"1.2.8.2", true, "eff"},
 	} {
 		ip := net.ParseIP(_case.IP)
-		r := iplist.Lookup(ip)
+		r, ok := iplist.Lookup(ip)
+		assert.Equal(t, _case.Hit, ok, "%s", _case)
 		if !_case.Hit {
-			if r != nil {
-				t.Fatalf("got hit when none was expected: %s", ip)
-			}
 			continue
 		}
-		if r == nil {
-			t.Fatalf("expected hit for %q", _case.IP)
-		}
-		if r.Description != _case.Desc {
-			t.Fatalf("%q != %q", r.Description, _case.Desc)
-		}
+		assert.Equal(t, _case.Desc, r.Description, "%T", iplist)
 	}
+}
+
+func TestSimple(t *testing.T) {
+	ranges, err := sampleRanges(t)
+	require.NoError(t, err)
+	require.Len(t, ranges, 5)
+	iplist := New(ranges)
+	testLookuperSimple(t, iplist)
+	packed := NewFromPacked(packedSample)
+	testLookuperSimple(t, packed)
 }

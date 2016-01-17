@@ -44,12 +44,11 @@ $ defaults --help
 ``` plain 
 
   Usage: defaults [options]
-  
+
   Options:
-  --foo, -f 
+  --foo, -f
   --bar, -b   default moon
   --help, -h
-  
 
 ```
 </tmpl>

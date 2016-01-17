@@ -42,10 +42,9 @@ $ args --help
 ``` plain 
 
   Usage: args [options] bazzes...
-  
+
   Options:
   --help, -h
-  
 
 ```
 </tmpl>

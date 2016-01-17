@@ -7,6 +7,7 @@ import (
 
 // Ensures that TopK return the top-k most frequent elements.
 func TestTopK(t *testing.T) {
+
 	topk := NewTopK(0.001, 0.99, 5)
 
 	topk.Add([]byte(`bob`)).Add([]byte(`bob`)).Add([]byte(`bob`))
@@ -16,20 +17,35 @@ func TestTopK(t *testing.T) {
 	topk.Add([]byte(`james`))
 	topk.Add([]byte(`fred`))
 	topk.Add([]byte(`sara`)).Add([]byte(`sara`))
+
 	if topk.Add([]byte(`bill`)) != topk {
 		t.Error("Returned TopK should be the same instance")
 	}
+	// latest one also
+	expected := []struct {
+		name string
+		freq uint64
+	}{
+		{"bill", 1},
+		{"sara", 2},
+		{"bob", 3},
+		{"alice", 4},
+		{"tyler", 5},
+	}
 
-	expected := []string{"bill", "sara", "bob", "alice", "tyler"}
 	actual := topk.Elements()
 
 	if l := len(actual); l != 5 {
-		t.Errorf("Expected len 5, got %d", l)
+		t.Errorf("Expected len %d, got %d", 5, l)
 	}
 
 	for i, element := range actual {
-		if e := string(element); e != expected[i] {
-			t.Errorf("Expected %s, got %s", expected[i], e)
+		if e := string((*element).Data); e != expected[i].name {
+			t.Errorf("Expected %s, got %s", expected[i].name, e)
+		}
+		// freq check
+		if freq := element.Freq; freq != expected[i].freq {
+			t.Errorf("Expected %d, got %d", expected[i].freq, freq)
 		}
 	}
 

@@ -32,7 +32,7 @@ func loadTable() error {
 	defer f.Close()
 	added := 0
 	for {
-		b := make([]byte, dht.CompactNodeInfoLen)
+		b := make([]byte, dht.CompactIPv4NodeInfoLen)
 		_, err := io.ReadFull(f, b)
 		if err == io.EOF {
 			break
@@ -41,7 +41,7 @@ func loadTable() error {
 			return fmt.Errorf("error reading table file: %s", err)
 		}
 		var ni dht.NodeInfo
-		err = ni.UnmarshalCompact(b)
+		err = ni.UnmarshalCompactIPv4(b)
 		if err != nil {
 			return fmt.Errorf("error unmarshaling compact node info: %s", err)
 		}
@@ -84,7 +84,7 @@ func saveTable() error {
 	}
 	defer f.Close()
 	for _, nodeInfo := range goodNodes {
-		var b [dht.CompactNodeInfoLen]byte
+		var b [dht.CompactIPv4NodeInfoLen]byte
 		err := nodeInfo.PutCompact(b[:])
 		if err != nil {
 			return fmt.Errorf("error compacting node info: %s", err)

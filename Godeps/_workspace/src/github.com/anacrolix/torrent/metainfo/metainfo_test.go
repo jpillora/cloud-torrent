@@ -2,8 +2,13 @@ package metainfo
 
 import (
 	"bytes"
+	"io"
+	"io/ioutil"
 	"path"
 	"testing"
+
+	"github.com/anacrolix/missinggo"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/anacrolix/torrent/bencode"
 )
@@ -44,4 +49,29 @@ func TestFile(t *testing.T) {
 	test_file(t, "_testdata/continuum.torrent")
 	test_file(t, "_testdata/23516C72685E8DB0C8F15553382A927F185C4F01.torrent")
 	test_file(t, "_testdata/trackerless.torrent")
+}
+
+// Ensure that the correct number of pieces are generated when hashing files.
+func TestNumPieces(t *testing.T) {
+	for _, _case := range []struct {
+		PieceLength int64
+		Files       []FileInfo
+		NumPieces   int
+	}{
+		{256 * 1024, []FileInfo{{Length: 1024*1024 + -1}}, 4},
+		{256 * 1024, []FileInfo{{Length: 1024 * 1024}}, 4},
+		{256 * 1024, []FileInfo{{Length: 1024*1024 + 1}}, 5},
+		{5, []FileInfo{{Length: 1}, {Length: 12}}, 3},
+		{5, []FileInfo{{Length: 4}, {Length: 12}}, 4},
+	} {
+		info := Info{
+			Files:       _case.Files,
+			PieceLength: _case.PieceLength,
+		}
+		err := info.GeneratePieces(func(fi FileInfo) (io.ReadCloser, error) {
+			return ioutil.NopCloser(missinggo.ZeroReader{}), nil
+		})
+		assert.NoError(t, err)
+		assert.EqualValues(t, _case.NumPieces, info.NumPieces())
+	}
 }

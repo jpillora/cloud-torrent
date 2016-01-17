@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#executes the markdown templates
 for i in * ; do
   if [ -d "$i" ] && [ -f "$i/README.md" ]; then
   # if [ -d "$i" ] && [ -f "%i/README.md"]; then

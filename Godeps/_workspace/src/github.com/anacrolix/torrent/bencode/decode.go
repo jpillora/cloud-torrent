@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
+	"math/big"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -263,10 +265,7 @@ func (d *decoder) parse_dict(v reflect.Value) {
 			} else {
 				_, ok := d.parse_value_interface()
 				if !ok {
-					panic(&SyntaxError{
-						Offset: d.offset,
-						What:   errors.New("unexpected end of dict, no matching value for a given key"),
-					})
+					return
 				}
 				continue
 			}
@@ -274,10 +273,7 @@ func (d *decoder) parse_dict(v reflect.Value) {
 
 		// now we need to actually parse it
 		if !d.parse_value(valuev) {
-			panic(&SyntaxError{
-				Offset: d.offset,
-				What:   errors.New("unexpected end of dict, no matching value for a given key"),
-			})
+			return
 		}
 
 		if v.Kind() == reflect.Map {
@@ -376,11 +372,7 @@ func (d *decoder) read_one_value() bool {
 			break
 		}
 
-		// unknown value
-		panic(&SyntaxError{
-			Offset: d.offset - 1,
-			What:   errors.New("unknown value type (invalid bencode?)"),
-		})
+		d.raiseUnknownValueType(b, d.offset-1)
 	}
 
 	return true
@@ -413,8 +405,8 @@ func (d *decoder) parse_unmarshaler(v reflect.Value) bool {
 	return false
 }
 
-// returns true if there was a value and it's now stored in 'v', otherwise there
-// was an end symbol ("e") and no value was stored
+// Returns true if there was a value and it's now stored in 'v', otherwise
+// there was an end symbol ("e") and no value was stored.
 func (d *decoder) parse_value(v reflect.Value) bool {
 	// we support one level of indirection at the moment
 	if v.Kind() == reflect.Ptr {
@@ -461,14 +453,18 @@ func (d *decoder) parse_value(v reflect.Value) bool {
 			break
 		}
 
-		// unknown value
-		panic(&SyntaxError{
-			Offset: d.offset - 1,
-			What:   errors.New("unknown value type (invalid bencode?)"),
-		})
+		d.raiseUnknownValueType(b, d.offset-1)
 	}
 
 	return true
+}
+
+// An unknown bencode type character was encountered.
+func (d *decoder) raiseUnknownValueType(b byte, offset int64) {
+	panic(&SyntaxError{
+		Offset: offset,
+		What:   fmt.Errorf("unknown value type %+q", b),
+	})
 }
 
 func (d *decoder) parse_value_interface() (interface{}, bool) {
@@ -495,15 +491,12 @@ func (d *decoder) parse_value_interface() (interface{}, bool) {
 			return d.parse_string_interface(), true
 		}
 
-		// unknown value
-		panic(&SyntaxError{
-			Offset: d.offset - 1,
-			What:   errors.New("unknown value type (invalid bencode?)"),
-		})
+		d.raiseUnknownValueType(b, d.offset-1)
+		panic("unreachable")
 	}
 }
 
-func (d *decoder) parse_int_interface() interface{} {
+func (d *decoder) parse_int_interface() (ret interface{}) {
 	start := d.offset - 1
 	d.read_until('e')
 	if d.buf.Len() == 0 {
@@ -514,9 +507,23 @@ func (d *decoder) parse_int_interface() interface{} {
 	}
 
 	n, err := strconv.ParseInt(d.buf.String(), 10, 64)
-	check_for_int_parse_error(err, start)
+	if ne, ok := err.(*strconv.NumError); ok && ne.Err == strconv.ErrRange {
+		i := new(big.Int)
+		_, ok := i.SetString(d.buf.String(), 10)
+		if !ok {
+			panic(&SyntaxError{
+				Offset: start,
+				What:   errors.New("failed to parse integer"),
+			})
+		}
+		ret = i
+	} else {
+		check_for_int_parse_error(err, start)
+		ret = n
+	}
+
 	d.buf.Reset()
-	return n
+	return
 }
 
 func (d *decoder) parse_string_interface() interface{} {
@@ -561,10 +568,7 @@ func (d *decoder) parse_dict_interface() interface{} {
 
 		valuei, ok := d.parse_value_interface()
 		if !ok {
-			panic(&SyntaxError{
-				Offset: d.offset,
-				What:   errors.New("unexpected end of dict, no matching value for a given key"),
-			})
+			break
 		}
 
 		dict[key] = valuei

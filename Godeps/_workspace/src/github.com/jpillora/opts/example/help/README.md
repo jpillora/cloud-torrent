@@ -36,27 +36,26 @@ $ help --help
 ``` plain 
 
   Usage: help [options]
-  
+
   Options:
-  --zip, -z      zip is very lorem ipsum dolor sit amet, consectetur 
-                 adipiscing elit. Phasellus at commodo odio. Sed id tincidunt 
-                 purus. Cras vel felis dictum, lobortis metus a, tempus 
+  --zip, -z      zip is very lorem ipsum dolor sit amet, consectetur
+                 adipiscing elit. Phasellus at commodo odio. Sed id tincidunt
+                 purus. Cras vel felis dictum, lobortis metus a, tempus
                  tellus
   --foo, -f      this is help for foo (default 42)
   --bar, -b      and help for bar
-  --fizz         Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                 Phasellus at commodo odio. Sed id tincidunt purus. Cras 
+  --fizz         Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                 Phasellus at commodo odio. Sed id tincidunt purus. Cras
                  vel felis dictum, lobortis metus a, tempus tellus
   --buzz         and help for buzz
-  --help, -h   
+  --help, -h
   --version, -v
-  
+
   Version:
     1.0.0
-  
+
   Read more:
     https://github.com/jpillora/foo
-  
 
 ```
 </tmpl>

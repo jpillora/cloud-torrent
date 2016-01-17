@@ -17,9 +17,13 @@ included in all copies or substantial portions of the Software.
 package boom
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
+	"fmt"
 	"hash"
 	"hash/fnv"
+	"io"
 	"math"
 )
 
@@ -179,4 +183,71 @@ func calculateRho(val, max uint32) uint8 {
 		val <<= 1
 	}
 	return uint8(r)
+}
+
+// WriteDataTo writes a binary representation of the Hll data to
+// an io stream. It returns the number of bytes written and error
+func (h *HyperLogLog) WriteDataTo(stream io.Writer) (n int, err error) {
+	buf := new(bytes.Buffer)
+	// write register number first
+	err = binary.Write(buf, binary.LittleEndian, uint64(h.m))
+	if err != nil {
+		return
+	}
+
+	err = binary.Write(buf, binary.LittleEndian, h.b)
+	if err != nil {
+		return
+	}
+
+	err = binary.Write(buf, binary.LittleEndian, h.alpha)
+	if err != nil {
+		return
+	}
+
+	err = binary.Write(buf, binary.LittleEndian, h.registers)
+	if err != nil {
+		return
+	}
+
+	n, err = stream.Write(buf.Bytes())
+	return
+}
+
+// ReadDataFrom reads a binary representation of the Hll data written
+// by WriteDataTo() from io stream. It returns the number of bytes read
+// and error.
+// If serialized Hll configuration is different it returns error with expected params
+func (h *HyperLogLog) ReadDataFrom(stream io.Reader) (int, error) {
+	var m uint64
+	// read register number first
+	err := binary.Read(stream, binary.LittleEndian, &m)
+	if err != nil {
+		return 0, err
+	}
+	// check if register number is appropriate
+	// hll register number should be same with serialized hll
+	if uint64(h.m) != m {
+		return 0, fmt.Errorf("expected hll register number %d", m)
+	}
+	// set other values
+	err = binary.Read(stream, binary.LittleEndian, &h.b)
+	if err != nil {
+		return 0, err
+	}
+
+	err = binary.Read(stream, binary.LittleEndian, &h.alpha)
+	if err != nil {
+		return 0, err
+	}
+
+	err = binary.Read(stream, binary.LittleEndian, h.registers)
+	if err != nil {
+		return 0, err
+	}
+
+	// count size of data in registers + m, b, alpha
+	size := int(h.m)*binary.Size(uint8(0)) + binary.Size(uint64(0)) + binary.Size(uint32(0)) + binary.Size(float64(0))
+
+	return size, err
 }

@@ -46,6 +46,7 @@ func TestMarshalAnnounceResponse(t *testing.T) {
 
 // Failure to write an entire packet to UDP is expected to given an error.
 func TestLongWriteUDP(t *testing.T) {
+	t.Parallel()
 	l, err := net.ListenUDP("udp", nil)
 	defer l.Close()
 	if err != nil {
@@ -84,6 +85,7 @@ func TestConvertInt16ToInt(t *testing.T) {
 }
 
 func TestAnnounceLocalhost(t *testing.T) {
+	t.Parallel()
 	srv := server{
 		t: map[[20]byte]torrent{
 			[20]byte{0xa3, 0x56, 0x41, 0x43, 0x74, 0x23, 0xe6, 0x26, 0xd9, 0x38, 0x25, 0x4a, 0x6b, 0x80, 0x49, 0x10, 0xa6, 0x67, 0xa, 0xc1}: {
@@ -123,6 +125,7 @@ func TestAnnounceLocalhost(t *testing.T) {
 }
 
 func TestUDPTracker(t *testing.T) {
+	t.Parallel()
 	tr, err := New("udp://tracker.openbittorrent.com:80/announce")
 	require.NoError(t, err)
 	if testing.Short() {
@@ -154,6 +157,7 @@ func TestUDPTracker(t *testing.T) {
 }
 
 func TestAnnounceRandomInfoHashThirdParty(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		// This test involves contacting third party servers that may have
 		// unpreditable results.
@@ -207,11 +211,11 @@ func TestAnnounceRandomInfoHashThirdParty(t *testing.T) {
 		wg.Wait()
 		close(fail)
 	}()
-	// Bail as quickly as we can.
 	select {
 	case <-fail:
-		t.FailNow()
+		// It doesn't matter if they all fail, the servers could just be down.
 	case <-success:
+		// Bail as quickly as we can. One success is enough.
 	}
 }
 

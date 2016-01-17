@@ -20,7 +20,7 @@ type Config struct {
 	// Don't create a DHT.
 	NoDHT bool `long:"disable-dht"`
 	// Overrides the default DHT configuration.
-	DHTConfig *dht.ServerConfig
+	DHTConfig dht.ServerConfig
 	// Don't ever send chunks to peers.
 	NoUpload bool `long:"no-upload"`
 	// Upload even after there's nothing in it for us. By default uploading is
@@ -46,7 +46,7 @@ type Config struct {
 	DisableEncryption bool `long:"disable-encryption"`
 
 	IPBlocklist *iplist.IPList
-	DisableIPv6 bool
+	DisableIPv6 bool `long:"disable-ipv6"`
 	// Perform logging and any other behaviour that will help debug.
-	Debug bool
+	Debug bool `help:"enable debug logging"`
 }

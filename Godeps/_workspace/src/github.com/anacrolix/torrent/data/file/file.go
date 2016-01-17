@@ -9,12 +9,24 @@ import (
 )
 
 type data struct {
-	info *metainfo.Info
-	loc  string
+	info      *metainfo.Info
+	loc       string
+	completed []bool
 }
 
 func TorrentData(md *metainfo.Info, location string) data {
-	return data{md, location}
+	return data{md, location, make([]bool, md.NumPieces())}
+}
+
+func (me data) Close() {}
+
+func (me data) PieceComplete(piece int) bool {
+	return me.completed[piece]
+}
+
+func (me data) PieceCompleted(piece int) error {
+	me.completed[piece] = true
+	return nil
 }
 
 func (me data) ReadAt(p []byte, off int64) (n int, err error) {
@@ -91,21 +103,31 @@ func (me data) WriteSectionTo(w io.Writer, off, n int64) (written int64, err err
 		}
 		var f *os.File
 		f, err = os.Open(me.fileInfoName(fi))
+		if os.IsNotExist(err) {
+			err = io.ErrUnexpectedEOF
+		}
 		if err != nil {
 			return
 		}
-		n1, err = io.Copy(w, io.NewSectionReader(f, off, n1))
+		var w1 int64
+		w1, err = io.Copy(w, io.NewSectionReader(f, off, n1))
 		f.Close()
-		if err != nil {
+		written += w1
+		if w1 != n1 {
+			if err == nil || err == io.EOF {
+				err = io.ErrUnexpectedEOF
+			}
 			return
+		} else {
+			err = nil
 		}
-		written += n1
 		off = 0
 		n -= n1
 		if n == 0 {
-			break
+			return
 		}
 	}
+	err = io.EOF
 	return
 }
 

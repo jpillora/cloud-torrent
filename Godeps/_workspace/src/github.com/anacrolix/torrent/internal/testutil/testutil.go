@@ -26,16 +26,22 @@ func CreateDummyTorrentData(dirName string) string {
 
 // Writes to w, a metainfo containing the file at name.
 func CreateMetaInfo(name string, w io.Writer) {
-	builder := metainfo.Builder{}
-	builder.AddFile(name)
-	builder.AddAnnounceGroup([]string{"lol://cheezburger"})
-	builder.SetPieceLength(5)
-	batch, err := builder.Submit()
+	var mi metainfo.MetaInfo
+	mi.Info.Name = filepath.Base(name)
+	fi, _ := os.Stat(name)
+	mi.Info.Length = fi.Size()
+	mi.Announce = "lol://cheezburger"
+	mi.Info.PieceLength = 5
+	err := mi.Info.GeneratePieces(func(metainfo.FileInfo) (io.ReadCloser, error) {
+		return os.Open(name)
+	})
 	if err != nil {
 		panic(err)
 	}
-	errs, _ := batch.Start(w, 1)
-	<-errs
+	err = mi.Write(w)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Gives a temporary directory containing the completed "greeting" torrent,

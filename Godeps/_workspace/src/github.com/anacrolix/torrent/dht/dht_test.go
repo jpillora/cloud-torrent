@@ -6,9 +6,10 @@ import (
 	"math/rand"
 	"net"
 	"testing"
+	"time"
 
-	"github.com/anacrolix/missinggo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSetNilBigInt(t *testing.T) {
@@ -21,21 +22,15 @@ func TestMarshalCompactNodeInfo(t *testing.T) {
 		ID: [20]byte{'a', 'b', 'c'},
 	}
 	addr, err := net.ResolveUDPAddr("udp4", "1.2.3.4:5")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	cni.Addr = newDHTAddr(addr)
-	var b [CompactNodeInfoLen]byte
-	cni.PutCompact(b[:])
-	if err != nil {
-		t.Fatal(err)
-	}
+	var b [CompactIPv4NodeInfoLen]byte
+	err = cni.PutCompact(b[:])
+	require.NoError(t, err)
 	var bb [26]byte
 	copy(bb[:], []byte("abc"))
 	copy(bb[20:], []byte("\x01\x02\x03\x04\x00\x05"))
-	if b != bb {
-		t.FailNow()
-	}
+	assert.EqualValues(t, bb, b)
 }
 
 func recoverPanicOrDie(t *testing.T, f func()) {
@@ -105,46 +100,33 @@ func TestClosestNodes(t *testing.T) {
 	}
 }
 
-func TestUnmarshalGetPeersResponse(t *testing.T) {
-	gpr := Msg{
-		"r": map[string]interface{}{
-			"values": []interface{}{"\x01\x02\x03\x04\x05\x06", "\x07\x08\x09\x0a\x0b\x0c"},
-			"nodes":  "\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x02\x03\x04\x05\x06\x07\x08\x09\x02\x03\x04\x05\x06\x07" + "\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x02\x03\x04\x05\x06\x07\x08\x09\x02\x03\x04\x05\x06\x07",
-		},
-	}
-	assert.EqualValues(t, 2, len(gpr.Values()))
-	assert.EqualValues(t, 2, len(gpr.Nodes()))
-}
-
 func TestDHTDefaultConfig(t *testing.T) {
 	s, err := NewServer(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	s.Close()
 }
 
 func TestPing(t *testing.T) {
-	srv, err := NewServer(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	srv, err := NewServer(&ServerConfig{
+		Addr:               "127.0.0.1:5680",
+		NoDefaultBootstrap: true,
+	})
+	require.NoError(t, err)
 	defer srv.Close()
-	srv0, err := NewServer(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	srv0, err := NewServer(&ServerConfig{
+		Addr:           "127.0.0.1:5681",
+		BootstrapNodes: []string{"127.0.0.1:5680"},
+	})
+	require.NoError(t, err)
 	defer srv0.Close()
 	tn, err := srv.Ping(&net.UDPAddr{
 		IP:   []byte{127, 0, 0, 1},
 		Port: srv0.Addr().(*net.UDPAddr).Port,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	defer tn.Close()
 	ok := make(chan bool)
-	tn.SetResponseHandler(func(msg Msg) {
+	tn.SetResponseHandler(func(msg Msg, msgOk bool) {
 		ok <- msg.SenderID() == srv0.ID()
 	})
 	if !<-ok {
@@ -152,54 +134,86 @@ func TestPing(t *testing.T) {
 	}
 }
 
-func TestDHTSec(t *testing.T) {
-	for _, case_ := range []struct {
-		ipStr     string
-		nodeIDHex string
-		valid     bool
-	}{
-		// These 5 are from the spec example. They are all valid.
-		{"124.31.75.21", "5fbfbff10c5d6a4ec8a88e4c6ab4c28b95eee401", true},
-		{"21.75.31.124", "5a3ce9c14e7a08645677bbd1cfe7d8f956d53256", true},
-		{"65.23.51.170", "a5d43220bc8f112a3d426c84764f8c2a1150e616", true},
-		{"84.124.73.14", "1b0321dd1bb1fe518101ceef99462b947a01ff41", true},
-		{"43.213.53.83", "e56f6cbf5b7c4be0237986d5243b87aa6d51305a", true},
-		// spec[0] with one of the rand() bytes changed. Valid.
-		{"124.31.75.21", "5fbfbff10c5d7a4ec8a88e4c6ab4c28b95eee401", true},
-		// spec[1] with the 21st leading bit changed. Not Valid.
-		{"21.75.31.124", "5a3ce1c14e7a08645677bbd1cfe7d8f956d53256", false},
-		// spec[2] with the 22nd leading bit changed. Valid.
-		{"65.23.51.170", "a5d43620bc8f112a3d426c84764f8c2a1150e616", true},
-		// spec[3] with the 4th last bit changed. Valid.
-		{"84.124.73.14", "1b0321dd1bb1fe518101ceef99462b947a01fe01", true},
-		// spec[4] with the 3rd last bit changed. Not valid.
-		{"43.213.53.83", "e56f6cbf5b7c4be0237986d5243b87aa6d51303e", false},
-	} {
-		ip := net.ParseIP(case_.ipStr)
-		id, err := hex.DecodeString(case_.nodeIDHex)
-		if err != nil {
-			t.Fatal(err)
-		}
-		secure := NodeIdSecure(string(id), ip)
-		if secure != case_.valid {
-			t.Fatalf("case failed: %v", case_)
-		}
-		if !secure {
-			SecureNodeId(id, ip)
-			if !NodeIdSecure(string(id), ip) {
-				t.Fatal("failed to secure node id")
-			}
-		}
-	}
+func TestServerCustomNodeId(t *testing.T) {
+	customId := "5a3ce1c14e7a08645677bbd1cfe7d8f956d53256"
+	id, err := hex.DecodeString(customId)
+	assert.NoError(t, err)
+	// How to test custom *secure* Id when tester computers will have
+	// different Ids? Generate custom ids for local IPs and use
+	// mini-Id?
+	s, err := NewServer(&ServerConfig{
+		NodeIdHex:          customId,
+		NoDefaultBootstrap: true,
+	})
+	require.NoError(t, err)
+	defer s.Close()
+	assert.Equal(t, string(id), s.ID())
 }
 
-func TestServerDefaultNodeIdSecure(t *testing.T) {
-	s, err := NewServer(nil)
-	if err != nil {
-		t.Fatal(err)
+func TestAnnounceTimeout(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
-	defer s.Close()
-	if !NodeIdSecure(s.ID(), missinggo.AddrIP(s.Addr())) {
-		t.Fatal("not secure")
+	s, err := NewServer(&ServerConfig{
+		BootstrapNodes: []string{"1.2.3.4:5"},
+	})
+	require.NoError(t, err)
+	a, err := s.Announce("12341234123412341234", 0, true)
+	<-a.Peers
+	a.Close()
+	s.Close()
+}
+
+func TestEqualPointers(t *testing.T) {
+	assert.EqualValues(t, &Msg{R: &Return{}}, &Msg{R: &Return{}})
+}
+
+func TestHook(t *testing.T) {
+	t.Log("TestHook: Starting with Ping intercept/passthrough")
+	srv, err := NewServer(&ServerConfig{
+		Addr:               "127.0.0.1:5678",
+		NoDefaultBootstrap: true,
+	})
+	require.NoError(t, err)
+	defer srv.Close()
+	// Establish server with a hook attached to "ping"
+	hookCalled := make(chan bool)
+	srv0, err := NewServer(&ServerConfig{
+		Addr:           "127.0.0.1:5679",
+		BootstrapNodes: []string{"127.0.0.1:5678"},
+		OnQuery: func(m *Msg, addr net.Addr) bool {
+			if m.Q == "ping" {
+				hookCalled <- true
+			}
+			return true
+		},
+	})
+	require.NoError(t, err)
+	defer srv0.Close()
+	// Ping srv0 from srv to trigger hook. Should also receive a response.
+	t.Log("TestHook: Servers created, hook for ping established. Calling Ping.")
+	tn, err := srv.Ping(&net.UDPAddr{
+		IP:   []byte{127, 0, 0, 1},
+		Port: srv0.Addr().(*net.UDPAddr).Port,
+	})
+	assert.NoError(t, err)
+	defer tn.Close()
+	// Await response from hooked server
+	tn.SetResponseHandler(func(msg Msg, b bool) {
+		t.Log("TestHook: Sender received response from pinged hook server, so normal execution resumed.")
+	})
+	// Await signal that hook has been called.
+	select {
+	case <-hookCalled:
+		{
+			// Success, hook was triggered. Todo: Ensure that "ok" channel
+			// receives, also, indicating normal handling proceeded also.
+			t.Log("TestHook: Received ping, hook called and returned to normal execution!")
+			return
+		}
+	case <-time.After(time.Second * 1):
+		{
+			t.Error("Failed to see evidence of ping hook being called after 2 seconds.")
+		}
 	}
 }

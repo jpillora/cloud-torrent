@@ -53,6 +53,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math"
 
@@ -135,6 +136,29 @@ func (f *BloomFilter) Add(data []byte) *BloomFilter {
 	return f
 }
 
+// Merge the data from two Bloom Filters.
+func (f *BloomFilter) Merge(g *BloomFilter) error {
+	// Make sure the m's and k's are the same, otherwise merging has no real use.
+	if f.m != g.m {
+		return fmt.Errorf("m's don't match: %d != %d\n", f.m, g.m)
+	}
+
+	if f.k != g.k {
+		return fmt.Errorf("k's don't match: %d != %d\n", f.m, g.m)
+	}
+
+	f.b.InPlaceUnion(g.b)
+	return nil
+}
+
+// Create a copy of a bloom filter.
+func (f *BloomFilter) Copy() *BloomFilter {
+	fc := New(f.m, f.k)
+	fc.Merge(f)
+	return fc
+}
+
+// Tests for the presence of data in the Bloom filter
 // AddString to the Bloom Filter. Returns the filter (allows chaining)
 func (f *BloomFilter) AddString(data string) *BloomFilter {
 	return f.Add([]byte(data))

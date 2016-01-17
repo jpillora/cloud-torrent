@@ -1,9 +1,6 @@
 package missinggo
 
-import (
-	"io"
-	"net/http"
-)
+import "net/http"
 
 // A http.ResponseWriter that tracks the status of the response. The status
 // code, and number of bytes written for example.
@@ -11,13 +8,21 @@ type StatusResponseWriter struct {
 	RW           http.ResponseWriter
 	Code         int
 	BytesWritten int64
+	visible      interface {
+		http.Hijacker
+		http.CloseNotifier
+	}
 }
 
-var _ http.ResponseWriter = &StatusResponseWriter{}
-
-func (me *StatusResponseWriter) CloseNotify() <-chan bool {
-	return me.RW.(http.CloseNotifier).CloseNotify()
+func (me *StatusResponseWriter) Base() interface{} { return me.RW }
+func (me *StatusResponseWriter) Visible() interface{} {
+	return &me.visible
 }
+
+var (
+	_ http.ResponseWriter = &StatusResponseWriter{}
+	_ Inheriter           = &StatusResponseWriter{}
+)
 
 func (me *StatusResponseWriter) Header() http.Header {
 	return me.RW.Header()
@@ -35,16 +40,4 @@ func (me *StatusResponseWriter) Write(b []byte) (n int, err error) {
 func (me *StatusResponseWriter) WriteHeader(code int) {
 	me.RW.WriteHeader(code)
 	me.Code = code
-}
-
-type ReaderFromStatusResponseWriter struct {
-	StatusResponseWriter
-	io.ReaderFrom
-}
-
-func NewReaderFromStatusResponseWriter(w http.ResponseWriter) *ReaderFromStatusResponseWriter {
-	return &ReaderFromStatusResponseWriter{
-		StatusResponseWriter{RW: w},
-		w.(io.ReaderFrom),
-	}
 }

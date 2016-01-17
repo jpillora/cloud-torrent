@@ -187,7 +187,7 @@ func (c *udpClient) request(action Action, args interface{}, options []byte) (re
 		return
 	}
 	c.socket.SetReadDeadline(time.Now().Add(timeout(c.contiguousTimeouts)))
-	b := make([]byte, 0x10000) // IP limits packet size to 64KB
+	b := make([]byte, 0x800) // 2KiB
 	for {
 		var n int
 		n, err = c.socket.Read(b)

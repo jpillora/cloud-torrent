@@ -52,6 +52,7 @@ func (me *Cache) Info() (ret CacheInfo) {
 	return
 }
 
+// Setting a negative capacity means unlimited.
 func (me *Cache) SetCapacity(capacity int64) {
 	me.mu.Lock()
 	defer me.mu.Unlock()
@@ -140,9 +141,11 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 		os.MkdirAll(me.root, 0755)
 		os.MkdirAll(filepath.Dir(me.realpath(path)), 0755)
 		f, err = os.OpenFile(me.realpath(path), flag, 0644)
+		if err != nil {
+			me.pruneEmptyDirs(path)
+		}
 	}
 	if err != nil {
-		me.pruneEmptyDirs(path)
 		return
 	}
 	ret = &File{

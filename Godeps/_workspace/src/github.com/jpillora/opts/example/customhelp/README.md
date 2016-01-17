@@ -39,16 +39,15 @@ $ customhelp --help
 ``` plain 
 
   Usage: customhelp [options]
-  
+
   this is a some text!
-  
+
   Options:
-  --foo, -f 
-  --bar, -b 
+  --foo, -f
+  --bar, -b
   --help, -h
-  
+
   My awesome repo:
     myfoo.com/bar
-
 ```
 </tmpl>

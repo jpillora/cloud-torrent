@@ -142,10 +142,19 @@ func (me *Announce) closingCh() chan struct{} {
 	return me.stop
 }
 
-func (me *Announce) announcePeer(to dHTAddr, token string) {
+// Announce to a peer, if appropriate.
+func (me *Announce) maybeAnnouncePeer(to dHTAddr, token, peerId string) {
 	me.server.mu.Lock()
+	defer me.server.mu.Unlock()
+	if !me.server.config.NoSecurity {
+		if len(peerId) != 20 {
+			return
+		}
+		if !NodeIdSecure(peerId, to.IP()) {
+			return
+		}
+	}
 	err := me.server.announcePeer(to, me.infoHash, me.announcePort, token, me.announcePortImplied)
-	me.server.mu.Unlock()
 	if err != nil {
 		logonce.Stderr.Printf("error announcing peer: %s", err)
 	}
@@ -158,38 +167,35 @@ func (me *Announce) getPeers(addr dHTAddr) error {
 	if err != nil {
 		return err
 	}
-	t.SetResponseHandler(func(m Msg) {
+	t.SetResponseHandler(func(m Msg, ok bool) {
 		// Register suggested nodes closer to the target info-hash.
-		me.mu.Lock()
-		for _, n := range m.Nodes() {
-			me.responseNode(n)
-		}
-		me.mu.Unlock()
+		if m.R != nil {
+			me.mu.Lock()
+			for _, n := range m.R.Nodes {
+				me.responseNode(n)
+			}
+			me.mu.Unlock()
 
-		if vs := m.Values(); vs != nil {
-			for _, cp := range vs {
-				if cp.Port == 0 {
-					me.server.mu.Lock()
-					me.server.badNode(addr)
-					me.server.mu.Unlock()
-					return
+			if vs := m.R.Values; len(vs) != 0 {
+				nodeInfo := NodeInfo{
+					Addr: t.remoteAddr,
+				}
+				copy(nodeInfo.ID[:], m.SenderID())
+				select {
+				case me.values <- PeersValues{
+					Peers: func() (ret []Peer) {
+						for _, cp := range vs {
+							ret = append(ret, Peer(cp))
+						}
+						return
+					}(),
+					NodeInfo: nodeInfo,
+				}:
+				case <-me.stop:
 				}
 			}
-			nodeInfo := NodeInfo{
-				Addr: t.remoteAddr,
-			}
-			copy(nodeInfo.ID[:], m.SenderID())
-			select {
-			case me.values <- PeersValues{
-				Peers:    vs,
-				NodeInfo: nodeInfo,
-			}:
-			case <-me.stop:
-			}
-		}
 
-		if at, ok := m.AnnounceToken(); ok {
-			me.announcePeer(addr, at)
+			me.maybeAnnouncePeer(addr, m.R.Token, m.SenderID())
 		}
 
 		me.mu.Lock()

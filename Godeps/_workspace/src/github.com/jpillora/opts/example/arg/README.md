@@ -33,16 +33,15 @@ $ arg --foo hello --bar world
 ``` plain 
 
   Usage: arg [options] <foo>
-  
+
   foo is a very important argument
-  
+
   Options:
-  --bar, -b 
+  --bar, -b
   --help, -h
-  
+
   Error:
     flag provided but not defined: -foo
-  
 
 ```
 </tmpl>
@@ -53,13 +52,12 @@ $ arg --help
 ``` plain 
 
   Usage: arg [options] <foo>
-  
+
   foo is a very important argument
-  
+
   Options:
-  --bar, -b 
+  --bar, -b
   --help, -h
-  
 
 ```
 </tmpl>

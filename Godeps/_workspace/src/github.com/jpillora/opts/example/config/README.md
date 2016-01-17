@@ -54,12 +54,11 @@ $ config --help
 ``` plain 
 
   Usage: config [options]
-  
+
   Options:
-  --foo, -f 
-  --bar, -b 
+  --foo, -f
+  --bar, -b
   --help, -h
-  
 
 ```
 </tmpl>
