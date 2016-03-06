@@ -9,19 +9,16 @@ import (
 	"strings"
 )
 
-func (s *Server) api(r *http.Request) error {
+func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) error {
 	defer r.Body.Close()
 	if r.Method != "POST" {
 		return fmt.Errorf("Invalid request method (expecting POST)")
 	}
-
 	action := strings.TrimPrefix(r.URL.Path, "/api/")
-
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return fmt.Errorf("Failed to download request body")
 	}
-
 	//convert url into torrent bytes
 	if action == "url" {
 		url := string(data)
@@ -35,10 +32,8 @@ func (s *Server) api(r *http.Request) error {
 		}
 		action = "torrentfile"
 	}
-
 	//update after action completes
-	defer s.state.Update()
-
+	defer s.state.Push()
 	//interface with engine
 	switch action {
 	case "configure":
@@ -51,59 +46,79 @@ func (s *Server) api(r *http.Request) error {
 		}
 	case "magnet":
 		uri := string(data)
-		if err := s.engine.StartMagnet(uri); err != nil {
+		if err := s.engine.NewByMagnet(uri); err != nil {
 			return fmt.Errorf("Magnet error: %s", err)
 		}
 	case "torrentfile":
-		if len(data) > 1024*1024 {
+		if len(data) > 1*1024*1024 /*1MB*/ {
 			return fmt.Errorf("Invalid torrent: too large")
 		}
-		return s.engine.StartTorrentFile(bytes.NewBuffer(data))
+		if err := s.engine.NewByFile(bytes.NewBuffer(data)); err != nil {
+			return fmt.Errorf("File error: %s", err)
+		}
 	case "torrent":
-		cmd := strings.SplitN(string(data), ":", 2)
-		if len(cmd) != 2 {
-			return fmt.Errorf("Invalid request")
+		command := torrentCommand{}
+		if err := json.Unmarshal(data, &command); err != nil {
+			return fmt.Errorf("Invalid command: %s", err)
 		}
-		state := cmd[0]
-		infohash := cmd[1]
-		switch state {
-		case "start":
-			if err := s.engine.StartTorrent(infohash); err != nil {
-				return err
-			}
-		case "stop":
-			if err := s.engine.StopTorrent(infohash); err != nil {
-				return err
-			}
-		case "delete":
-			if err := s.engine.DeleteTorrent(infohash); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("Invalid state: %s", state)
-		}
-	case "file":
-		cmd := strings.SplitN(string(data), ":", 3)
-		if len(cmd) != 3 {
-			return fmt.Errorf("Invalid request")
-		}
-		state := cmd[0]
-		infohash := cmd[1]
-		filepath := cmd[2]
-		switch state {
-		case "start":
-			if err := s.engine.StartFile(infohash, filepath); err != nil {
-				return err
-			}
-		case "stop":
-			if err := s.engine.StopFile(infohash, filepath); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("Invalid state: %s", state)
-		}
+		return s.handleTorrentAPI(w, r, command)
 	default:
 		return fmt.Errorf("Invalid action: %s", action)
 	}
 	return nil
+}
+
+type torrentCommand struct {
+	State    string `json:"state"`
+	InfoHash string `json:"infohash"`
+	File     *struct {
+		Path      string `json:"path"`
+		StorageID string `json:"storageId"`
+		NewPath   string `json:"newPath"`
+	} `json:"file"`
+}
+
+func (s *Server) handleTorrentAPI(w http.ResponseWriter, r *http.Request, command torrentCommand) error {
+	if command.InfoHash == "" {
+		return fmt.Errorf("Invalid command: missing infohash")
+	}
+	torrent, ok := s.engine.Get(command.InfoHash)
+	if !ok {
+		return fmt.Errorf("Invalid torrent")
+	}
+	if command.File == nil {
+		switch command.State {
+		case "start":
+			return torrent.Start()
+		case "stop":
+			return torrent.Stop()
+		case "remove":
+			return s.engine.Remove(torrent)
+		default:
+			return fmt.Errorf("Invalid torrent state: %s", command.State)
+		}
+	}
+	if command.File.Path == "" {
+		return fmt.Errorf("Invalid file command: missing path")
+	}
+	file, ok := torrent.Get(command.File.Path)
+	if !ok {
+		return fmt.Errorf("Invalid file")
+	}
+	//override new path?
+	if command.File.NewPath != "" {
+		file.NewPath = command.File.NewPath
+	}
+	switch command.State {
+	case "start":
+		fs, ok := s.storage.Get(file.StorageID)
+		if !ok {
+			return fmt.Errorf("Invalid storage ID")
+		}
+		return file.Start(fs)
+	case "stop":
+		return file.Stop()
+	default:
+		return fmt.Errorf("Invalid file command: %s", command.State)
+	}
 }

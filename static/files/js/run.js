@@ -6,16 +6,12 @@ app.run(function($rootScope, search, api) {
   var $scope = window.scope = $rootScope;
 
   //link up to angular
-	var rt = realtime("/realtime");
-	$scope.state = {};
-	rt.add("state", $scope.state, function() {
-		$scope.$apply();
-	});
-	rt.onstatus = function(online) {
-		$scope.$apply(function() {
-			$scope.connected = online;
-		});
-	};
+  $scope.state = $scope.$new(false);
+  var v = $scope.v = velox.sse("/sync", $scope.state);
+  v.onconnect = v.ondisconnect = function() {
+    $scope.connected = v.connected;
+    $scope.$apply();
+  };
 
   //expose services
   $scope.search = search;

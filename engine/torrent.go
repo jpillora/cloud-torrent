@@ -1,12 +1,34 @@
 package engine
 
 import (
+	"errors"
+	"io"
+	"log"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
+	"github.com/jpillora/cloud-torrent/storage"
 )
 
+func NewTorrent(ih string, storage *storage.Storage, sortConfig *MediaSortConfig) *Torrent {
+	return &Torrent{
+		InfoHash:   ih,
+		storage:    storage,
+		sortConfig: sortConfig,
+	}
+}
+
+//Torrent is converted to JSON and sent to the frontend
 type Torrent struct {
+	id torrent.InfoHash
+	//cloud torrent
+	Started      bool
+	Dropped      bool
+	Percent      float32
+	DownloadRate float32
 	//anacrolix/torrent
 	InfoHash   string
 	Name       string
@@ -14,80 +36,89 @@ type Torrent struct {
 	Downloaded int64
 	Size       int64
 	Files      []*File
-	//cloud torrent
-	Started      bool
-	Dropped      bool
-	Percent      float32
-	DownloadRate float32
-	t            torrent.Torrent
-	updatedAt    time.Time
+	//state
+	files      map[string]*File
+	loadedMut  sync.Mutex
+	tt         torrent.Torrent
+	info       *metainfo.Info
+	updatedAt  time.Time
+	filesMut   sync.Mutex
+	storage    *storage.Storage
+	sortConfig *MediaSortConfig
 }
 
-type File struct {
-	//anacrolix/torrent
-	Path      string
-	Size      int64
-	Chunks    int
-	Completed int
-	//cloud torrent
-	Started bool
-	Percent float32
-	f       torrent.File
-}
-
-func (torrent *Torrent) Update(t torrent.Torrent) {
-	torrent.Name = t.Name()
-	torrent.Loaded = t.Info() != nil
-	torrent.Size = t.Length()
-
-	totalChunks := 0
-	totalCompleted := 0
-
-	tfiles := t.Files()
-	if len(tfiles) > 0 && torrent.Files == nil {
-		torrent.Files = make([]*File, len(tfiles))
+func (torrent *Torrent) init(info *metainfo.Info) {
+	torrent.loadedMut.Lock()
+	defer torrent.loadedMut.Unlock()
+	if torrent.Loaded {
+		return
 	}
-	//merge in files
-	for i, f := range tfiles {
-		path := f.Path()
-		file := torrent.Files[i]
-		if file == nil {
-			file = &File{Path: path}
+	torrent.InfoHash = torrent.id.HexString()
+	torrent.info = info
+	torrent.Name = info.Name
+	torrent.Size = info.TotalLength()
+	numFiles := len(info.Files)
+	torrent.files = map[string]*File{}
+	torrent.Files = make([]*File, numFiles)
+	wg := sync.WaitGroup{}
+	wg.Add(numFiles)
+	for i, f := range info.Files {
+		go func(i int, f metainfo.FileInfo) {
+			file := NewFile(strings.Join(f.Path, "/"), f.Length)
+			file.sort(torrent.sortConfig)
 			torrent.Files[i] = file
-		}
-		chunks := f.State()
-
-		file.Size = f.Length()
-		file.Chunks = len(chunks)
-		completed := 0
-		for _, p := range chunks {
-			if p.Complete {
-				completed++
-			}
-		}
-		file.Completed = completed
-		file.Percent = percent(int64(file.Completed), int64(file.Chunks))
-		file.f = f
-
-		totalChunks += file.Chunks
-		totalCompleted += file.Completed
+			torrent.files[file.Path] = file
+			wg.Done()
+		}(i, f)
 	}
+	wg.Wait()
+	torrent.Loaded = true
+}
 
+func (torrent *Torrent) Get(path string) (*File, bool) {
+	f, ok := torrent.files[path]
+	return f, ok
+}
+
+func (torrent *Torrent) Update(tt torrent.Torrent) {
+	if info := tt.Info(); info != nil {
+		torrent.init(info)
+	}
+	torrent.filesMut.Lock()
+	if torrent.Loaded {
+		//update file progress
+		for i, f := range tt.Files() {
+			file := torrent.Files[i]
+			chunks := f.State()
+			file.Chunks = len(chunks)
+			completed := 0
+			for _, p := range chunks {
+				if p.Complete {
+					completed++
+				}
+			}
+			file.Completed = completed
+			file.Percent = percent(int64(file.Completed), int64(file.Chunks))
+			file.f = f
+		}
+	}
 	//cacluate rate
 	now := time.Now()
-	bytes := t.BytesCompleted()
-	torrent.Percent = percent(bytes, torrent.Size)
+	bytesDownloaded := tt.BytesCompleted()
+	torrent.Percent = percent(bytesDownloaded, torrent.Size)
 	if !torrent.updatedAt.IsZero() {
 		dt := float32(now.Sub(torrent.updatedAt))
-		db := float32(bytes - torrent.Downloaded)
+		db := float32(bytesDownloaded - torrent.Downloaded)
 		rate := db * (float32(time.Second) / dt)
 		if rate >= 0 {
 			torrent.DownloadRate = rate
 		}
 	}
-	torrent.Downloaded = bytes
+	torrent.Downloaded = bytesDownloaded
 	torrent.updatedAt = now
-	torrent.t = t
+	torrent.tt = tt
+	torrent.filesMut.Unlock()
+	log.Printf("updated torrent %s (%s)", torrent.Name, torrent.InfoHash)
 }
 
 func percent(n, total int64) float32 {
@@ -95,4 +126,81 @@ func percent(n, total int64) float32 {
 		return float32(0)
 	}
 	return float32(int(float64(10000)*(float64(n)/float64(total)))) / 100
+}
+
+func (torrent *Torrent) Start() error {
+	return nil
+}
+
+func (torrent *Torrent) Stop() error {
+	return nil
+}
+
+func (torrent *Torrent) File(off int64) (*File, int64) {
+	n := int64(0)
+	for _, f := range torrent.Files {
+		if off > n && n+f.Size < off {
+			foff := off - n
+			return f, foff
+		}
+	}
+	return nil, 0
+}
+
+func (torrent *Torrent) ReadAt(p []byte, off int64) (n int, err error) {
+	f, foff := torrent.File(off)
+	if f == nil {
+		return 0, errors.New("missing file")
+	}
+	// log.Printf("[%s] read at", torrent.Name)
+	return f.ReadAt(p, foff)
+}
+
+func (torrent *Torrent) WriteAt(p []byte, off int64) (n int, err error) {
+	f, foff := torrent.File(off)
+	if f == nil {
+		return 0, errors.New("missing file")
+	}
+	// log.Printf("[%s] write at", torrent.Name)
+	return f.WriteAt(p, foff)
+}
+
+func (torrent *Torrent) Close() {
+	log.Printf("[%s] close requested", torrent.Name)
+	return
+}
+
+// If the data isn'tt available, err should be io.ErrUnexpectedEOF.
+func (torrent *Torrent) WriteSectionTo(w io.Writer, off, n int64) (written int64, err error) {
+	f, foff := torrent.File(off)
+	if f == nil {
+		return 0, errors.New("missing file")
+	}
+	log.Printf("[%s] write to section", torrent.Name)
+	return f.WriteSectionTo(w, foff, n)
+}
+
+// We believe the piece data will pass a hash check.
+func (torrent *Torrent) PieceCompleted(index int) error {
+	p := torrent.info.Piece(index)
+	f, off := torrent.File(p.Offset())
+	if f == nil {
+		return errors.New("missing file")
+	}
+	log.Printf("[%s] set complete '%s' %d", torrent.Name, f.Path, off)
+	return nil
+}
+
+// Returns true if the piece is complete.
+func (torrent *Torrent) PieceComplete(index int) bool {
+	if torrent.info == nil {
+		return false
+	}
+	p := torrent.info.Piece(index)
+	f, _ := torrent.File(p.Offset())
+	if f == nil {
+		return false
+	}
+	// log.Printf("[%s] is complete %d?", torrent.Name, index)
+	return false
 }

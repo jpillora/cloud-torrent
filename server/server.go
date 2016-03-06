@@ -18,6 +18,7 @@ import (
 	"github.com/jpillora/go-realtime"
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/scraper/scraper"
+	"github.com/jpillora/velox"
 	"github.com/skratchdot/open-golang/open"
 )
 
@@ -41,10 +42,9 @@ type Server struct {
 	storage *storage.Storage
 	//torrent engine
 	engine *engine.Engine
-	//realtime state (sync'd with browser immediately)
-	rt    *realtime.Handler
+	//velox state (sync'd with browser immediately)
 	state struct {
-		realtime.Object
+		velox.State
 		sync.Mutex
 		Config          Config
 		SearchProviders scraper.Config
@@ -61,10 +61,15 @@ type Server struct {
 }
 
 func (s *Server) Run(version string) error {
+	log.Printf("run...")
 	tls := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
 	if tls && (s.CertPath == "" || s.KeyPath == "") {
 		return fmt.Errorf("You must provide both key and cert paths")
 	}
+	//torrent storage
+	s.storage = storage.New()
+	//torrent engine
+	s.engine = engine.New(s.storage)
 	//stats
 	s.state.Stats.Title = s.Title
 	s.state.Stats.Version = version
@@ -73,6 +78,7 @@ func (s *Server) Run(version string) error {
 	//init maps
 	s.state.Users = map[string]*realtime.User{}
 	s.state.Downloads = map[string]*storage.Node{}
+	s.state.Torrents = s.engine.Torrents
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
 	s.files = http.HandlerFunc(s.serveFiles)
 	s.static = ctstatic.FileSystemHandler()
@@ -82,26 +88,6 @@ func (s *Server) Run(version string) error {
 	}
 	s.state.SearchProviders = s.scraper.Config //share scraper config
 	s.scraperh = http.StripPrefix("/search", s.scraper)
-	//torrent storage
-	s.storage = storage.New()
-	//torrent engine
-	s.engine = engine.New(s.storage)
-	//realtime
-	s.rt = realtime.NewHandler()
-	if err := s.rt.Add("state", &s.state); err != nil {
-		log.Fatalf("State object not syncable: %s", err)
-	}
-	//realtime user events
-	go func() {
-		for user := range s.rt.UserEvents() {
-			if user.Connected {
-				s.state.Users[user.ID] = user
-			} else {
-				delete(s.state.Users, user.ID)
-			}
-			s.state.Update()
-		}
-	}()
 	//configure engine
 	c := Config{
 		Torrent: engine.Config{
@@ -120,28 +106,35 @@ func (s *Server) Run(version string) error {
 			return fmt.Errorf("Malformed configuration: %s", err)
 		}
 	}
+	log.Printf("reconf...")
 	//initial configure
 	if err := s.reconfigure(c); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)
 	}
 
-	//poll torrents and files
+	log.Printf("poll...")
+	//poll torrents
 	go func() {
 		for {
 			s.state.Lock()
-			s.state.Torrents = s.engine.GetTorrents()
+			s.engine.Update()
 			// log.Printf("torrents #%d files #%d", len(s.state.Torrents), len(s.state.Downloads.Children))
 			s.state.Unlock()
-			s.state.Update()
+			s.state.Push()
 			time.Sleep(1 * time.Second)
 		}
 	}()
-
-	for _, name := range s.storage.FSNames() {
-		if root, err := s.storage.List(name); err != nil {
-			s.state.Downloads[name] = root
-		}
-	}
+	//poll downloads
+	// go func() {
+	// 	for {
+	// 		for name, fs := range s.storage.FileSystems {
+	// 			if root, err := fs.List(""); err != nil {
+	// 				s.state.Downloads[name] = root
+	// 			}
+	// 		}
+	// 		time.Sleep(1 * time.Second)
+	// 	}
+	// }()
 
 	host := s.Host
 	if host == "" {
@@ -184,25 +177,25 @@ func (s *Server) reconfigure(c Config) error {
 	if err := s.storage.Configure(c.Storage); err != nil {
 		return err
 	}
-
 	b, _ := json.MarshalIndent(&c, "", "  ")
 	ioutil.WriteFile(s.ConfigPath, b, 0755)
 	s.state.Config = c
-	s.state.Update()
+	s.state.Push()
+	log.Printf("reconfd")
 	return nil
 }
 
 func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
-
 	//handle realtime client connections
-	if r.URL.Path == "/realtime.js" {
-		realtime.JS.ServeHTTP(w, r)
+	if r.URL.Path == "/js/velox.js" {
+		velox.JS.ServeHTTP(w, r)
 		return
-	} else if r.URL.Path == "/realtime" {
-		s.rt.ServeHTTP(w, r)
+	} else if r.URL.Path == "/sync" {
+		if conn, err := velox.Sync(&s.state, w, r); err == nil {
+			conn.Wait()
+		}
 		return
 	}
-
 	//basic auth
 	if s.Auth != "" {
 		u, p, _ := r.BasicAuth()
@@ -221,10 +214,7 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	//api call
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		//only pass request in, expect error out
-		if err := s.api(r); err == nil {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
-		} else {
+		if err := s.handleAPI(w, r); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
 		}
