@@ -23,7 +23,8 @@ func NewTorrent(ih string, storage *storage.Storage, sortConfig *MediaSortConfig
 
 //Torrent is converted to JSON and sent to the frontend
 type Torrent struct {
-	id torrent.InfoHash
+	ihash IHash
+	id    torrent.InfoHash
 	//cloud torrent
 	Started      bool
 	Dropped      bool
@@ -118,7 +119,6 @@ func (torrent *Torrent) Update(tt torrent.Torrent) {
 	torrent.updatedAt = now
 	torrent.tt = tt
 	torrent.filesMut.Unlock()
-	log.Printf("updated torrent %s (%s)", torrent.Name, torrent.InfoHash)
 }
 
 func percent(n, total int64) float32 {
@@ -152,7 +152,8 @@ func (torrent *Torrent) ReadAt(p []byte, off int64) (n int, err error) {
 	if f == nil {
 		return 0, errors.New("missing file")
 	}
-	// log.Printf("[%s] read at", torrent.Name)
+	log.Printf("[%s] read at (%d)", torrent.Name, len(p))
+	time.Sleep(5 * time.Second)
 	return f.ReadAt(p, foff)
 }
 
@@ -161,7 +162,7 @@ func (torrent *Torrent) WriteAt(p []byte, off int64) (n int, err error) {
 	if f == nil {
 		return 0, errors.New("missing file")
 	}
-	// log.Printf("[%s] write at", torrent.Name)
+	log.Printf("[%s] write at", torrent.Name)
 	return f.WriteAt(p, foff)
 }
 

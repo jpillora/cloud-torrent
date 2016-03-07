@@ -6,8 +6,13 @@ import (
 
 	"github.com/anacrolix/torrent"
 	"github.com/jpillora/cloud-torrent/storage"
+	"github.com/jpillora/media-sort/search"
 	"github.com/jpillora/media-sort/sort"
 )
+
+func init() {
+	mediasearch.Info = false
+}
 
 func NewFile(path string, size int64) *File {
 	return &File{Path: path, Size: size}

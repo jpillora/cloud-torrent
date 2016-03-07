@@ -1,11 +1,11 @@
 package engine
 
 import (
+	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -18,6 +18,18 @@ import (
 	"github.com/jpillora/cloud-torrent/storage"
 )
 
+type IHash torrent.InfoHash
+
+func info2hash(info *metainfo.Info) IHash {
+	b, _ := bencode.Marshal(info)
+	ihash := IHash{}
+	h := sha1.New()
+	h.Write(b)
+	result := h.Sum(nil)
+	copy(ihash[:], result)
+	return ihash
+}
+
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
 type Engine struct {
 	//public torrents
@@ -28,6 +40,7 @@ type Engine struct {
 	configuring bool
 	client      *torrent.Client
 	ts          map[torrent.InfoHash]*Torrent
+	openned     map[IHash]*Torrent
 	lastConfig  Config
 }
 
@@ -35,6 +48,7 @@ func New(storage *storage.Storage) *Engine {
 	return &Engine{
 		Torrents: map[string]*Torrent{},
 		ts:       map[torrent.InfoHash]*Torrent{},
+		openned:  map[IHash]*Torrent{},
 	}
 }
 
@@ -91,7 +105,6 @@ func (e *Engine) Configure(c *Config) error {
 	e.lastConfig = *c
 	e.client = client
 	e.cacheDir = filepath.Join(tc.ConfigDir, "torrents")
-	log.Printf("torrent cache loading...")
 	if files, err := ioutil.ReadDir(e.cacheDir); err == nil {
 		for _, f := range files {
 			if filepath.Ext(f.Name()) != ".torrent" {
@@ -104,32 +117,20 @@ func (e *Engine) Configure(c *Config) error {
 			e.NewByFile(file)
 		}
 	}
-	log.Printf("torrent cache loaded")
 	return nil
 }
 
 //OpenTorrent implements the torrent.Openner interface
 //and Torrent implements the torrent.Data interface
 func (e *Engine) OpenTorrent(info *metainfo.Info) torrent.Data {
-
-	var ih torrent.InfoHash
-	//calculate infohash
-	b, err := bencode.Marshal(info)
-	if err != nil {
-		panic("invalid bencode")
-	}
-	ihx := metainfo.InfoEx{}
-	ihx.UnmarshalBencode(b)
-
-	copy(ih[:], ihx.Bytes)
-
+	ihash := info2hash(info)
 	//load by infohash (cant error - valid ih and upserting)
-	t, ok := e.ts[ih]
+	t, ok := e.openned[ihash]
 	if !ok {
-		t = e.newTorrent(ih)
+		t = &Torrent{}
+		e.openned[ihash] = t
 		t.init(info)
 	}
-	log.Printf("open torrent %s (%x)", info.Name, ihx.Hash)
 	//provide the torrent as its own "openner"
 	return t
 }
@@ -144,19 +145,23 @@ func (e *Engine) Update() {
 	}
 	for _, tt := range e.client.Torrents() {
 		ih := tt.InfoHash()
-		t, ok := e.ts[ih]
-		if !ok {
-			t = e.newTorrent(ih)
+		ihash := info2hash(tt.Info())
+		t, ok := e.openned[ihash]
+		if ok {
+			delete(e.openned, ihash)
+			t.InfoHash = ih.HexString()
+			e.ts[ih] = t
+			e.Torrents[t.InfoHash] = t
+		} else {
+			t, ok = e.ts[ih]
+			if !ok {
+				t = &Torrent{}
+				e.ts[ih] = t
+				e.Torrents[ih.HexString()] = t
+			}
 		}
 		t.Update(tt)
 	}
-}
-
-func (e *Engine) newTorrent(ih torrent.InfoHash) *Torrent {
-	t := &Torrent{}
-	e.ts[ih] = t
-	e.Torrents[ih.HexString()] = t
-	return t
 }
 
 func (e *Engine) Get(hex string) (*Torrent, bool) {
@@ -183,7 +188,6 @@ func (e *Engine) NewByFile(body io.Reader) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("new file HASH: %x", info.Info.Hash)
 	_, err = e.client.AddTorrent(info)
 	if err != nil {
 		return err
