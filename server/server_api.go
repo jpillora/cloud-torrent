@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
+
 	"github.com/jpillora/cloud-torrent/engine"
 )
 
@@ -48,19 +48,7 @@ func (s *Server) api(r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		ts := torrent.TorrentSpecFromMetaInfo(info)
-		trackers := []string{}
-		for _, tier := range ts.Trackers {
-			for _, t := range tier {
-				trackers = append(trackers, t)
-			}
-		}
-		m := torrent.Magnet{
-			InfoHash:    ts.InfoHash,
-			Trackers:    trackers,
-			DisplayName: ts.DisplayName,
-		}
-		data = []byte(m.String())
+		data = []byte(info.Magnet().String())
 		action = "magnet"
 	}
 

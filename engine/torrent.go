@@ -19,7 +19,7 @@ type Torrent struct {
 	Dropped      bool
 	Percent      float32
 	DownloadRate float32
-	t            torrent.Torrent
+	t            *torrent.Torrent
 	updatedAt    time.Time
 }
 
@@ -35,7 +35,7 @@ type File struct {
 	f       torrent.File
 }
 
-func (torrent *Torrent) Update(t torrent.Torrent) {
+func (torrent *Torrent) Update(t *torrent.Torrent) {
 	torrent.Name = t.Name()
 	torrent.Loaded = t.Info() != nil
 	torrent.Size = t.Length()

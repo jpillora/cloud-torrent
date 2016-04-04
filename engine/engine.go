@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
 )
 
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
@@ -103,7 +104,7 @@ func (e *Engine) GetTorrents() map[string]*Torrent {
 	return e.ts
 }
 
-func (e *Engine) upsertTorrent(tt torrent.Torrent) *Torrent {
+func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
 	ih := tt.InfoHash().HexString()
 	torrent, ok := e.ts[ih]
 	if !ok {
@@ -223,8 +224,8 @@ func (e *Engine) StopFile(infohash, filepath string) error {
 	return fmt.Errorf("Unsupported")
 }
 
-func str2ih(str string) (torrent.InfoHash, error) {
-	var ih torrent.InfoHash
+func str2ih(str string) (metainfo.Hash, error) {
+	var ih metainfo.Hash
 	e, err := hex.Decode(ih[:], []byte(str))
 	if err != nil {
 		return ih, fmt.Errorf("Invalid hex string")
