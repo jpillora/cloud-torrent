@@ -12,7 +12,6 @@ import (
 	"github.com/anacrolix/missinggo"
 	"github.com/go-fsnotify/fsnotify"
 
-	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
 
@@ -27,11 +26,11 @@ type Event struct {
 	MagnetURI string
 	Change
 	TorrentFilePath string
-	InfoHash        torrent.InfoHash
+	InfoHash        metainfo.Hash
 }
 
 type entity struct {
-	torrent.InfoHash
+	metainfo.Hash
 	MagnetURI       string
 	TorrentFilePath string
 }
@@ -40,7 +39,7 @@ type Instance struct {
 	w        *fsnotify.Watcher
 	dirName  string
 	Events   chan Event
-	dirState map[torrent.InfoHash]entity
+	dirState map[metainfo.Hash]entity
 }
 
 func (me *Instance) Close() {
@@ -65,7 +64,7 @@ func (me *Instance) handleErrors() {
 	}
 }
 
-func torrentFileInfoHash(fileName string) (ih torrent.InfoHash, ok bool) {
+func torrentFileInfoHash(fileName string) (ih metainfo.Hash, ok bool) {
 	mi, _ := metainfo.LoadFromFile(fileName)
 	if mi == nil {
 		return
@@ -75,7 +74,7 @@ func torrentFileInfoHash(fileName string) (ih torrent.InfoHash, ok bool) {
 	return
 }
 
-func scanDir(dirName string) (ee map[torrent.InfoHash]entity) {
+func scanDir(dirName string) (ee map[metainfo.Hash]entity) {
 	d, err := os.Open(dirName)
 	if err != nil {
 		log.Print(err)
@@ -87,15 +86,15 @@ func scanDir(dirName string) (ee map[torrent.InfoHash]entity) {
 		log.Print(err)
 		return
 	}
-	ee = make(map[torrent.InfoHash]entity, len(names))
+	ee = make(map[metainfo.Hash]entity, len(names))
 	addEntity := func(e entity) {
-		e0, ok := ee[e.InfoHash]
+		e0, ok := ee[e.Hash]
 		if ok {
 			if e0.MagnetURI == "" || len(e.MagnetURI) < len(e0.MagnetURI) {
 				return
 			}
 		}
-		ee[e.InfoHash] = e
+		ee[e.Hash] = e
 	}
 	for _, n := range names {
 		fullName := filepath.Join(dirName, n)
@@ -108,7 +107,7 @@ func scanDir(dirName string) (ee map[torrent.InfoHash]entity) {
 			e := entity{
 				TorrentFilePath: fullName,
 			}
-			missinggo.CopyExact(&e.InfoHash, ih)
+			missinggo.CopyExact(&e.Hash, ih)
 			addEntity(e)
 		case ".magnet":
 			uris, err := magnetFileURIs(fullName)
@@ -117,13 +116,13 @@ func scanDir(dirName string) (ee map[torrent.InfoHash]entity) {
 				break
 			}
 			for _, uri := range uris {
-				m, err := torrent.ParseMagnetURI(uri)
+				m, err := metainfo.ParseMagnetURI(uri)
 				if err != nil {
 					log.Printf("error parsing %q in file %q: %s", uri, fullName, err)
 					continue
 				}
 				addEntity(entity{
-					InfoHash:  m.InfoHash,
+					Hash:      m.InfoHash,
 					MagnetURI: uri,
 				})
 			}
@@ -151,7 +150,7 @@ func magnetFileURIs(name string) (uris []string, err error) {
 	return
 }
 
-func (me *Instance) torrentRemoved(ih torrent.InfoHash) {
+func (me *Instance) torrentRemoved(ih metainfo.Hash) {
 	me.Events <- Event{
 		InfoHash: ih,
 		Change:   Removed,
@@ -160,7 +159,7 @@ func (me *Instance) torrentRemoved(ih torrent.InfoHash) {
 
 func (me *Instance) torrentAdded(e entity) {
 	me.Events <- Event{
-		InfoHash:        e.InfoHash,
+		InfoHash:        e.Hash,
 		Change:          Added,
 		MagnetURI:       e.MagnetURI,
 		TorrentFilePath: e.TorrentFilePath,
@@ -203,7 +202,7 @@ func New(dirName string) (i *Instance, err error) {
 		w:        w,
 		dirName:  dirName,
 		Events:   make(chan Event),
-		dirState: make(map[torrent.InfoHash]entity, 0),
+		dirState: make(map[metainfo.Hash]entity, 0),
 	}
 	go func() {
 		i.refresh()

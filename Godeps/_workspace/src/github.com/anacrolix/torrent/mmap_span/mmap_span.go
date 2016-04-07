@@ -2,6 +2,7 @@ package mmap_span
 
 import (
 	"io"
+	"log"
 
 	"github.com/edsrzf/mmap-go"
 )
@@ -22,10 +23,14 @@ func (me *MMapSpan) Append(mmap mmap.MMap) {
 	me.span = append(me.span, segment{&mmap})
 }
 
-func (me MMapSpan) Close() {
+func (me MMapSpan) Close() error {
 	for _, mMap := range me.span {
-		mMap.(segment).Unmap()
+		err := mMap.(segment).Unmap()
+		if err != nil {
+			log.Print(err)
+		}
 	}
+	return nil
 }
 
 func (me MMapSpan) Size() (ret int64) {
@@ -45,24 +50,6 @@ func (me MMapSpan) ReadAt(p []byte, off int64) (n int, err error) {
 	if len(p) != 0 {
 		err = io.EOF
 	}
-	return
-}
-
-func (me MMapSpan) WriteSectionTo(w io.Writer, off, n int64) (written int64, err error) {
-	me.ApplyTo(off, func(intervalOffset int64, interval sizer) (stop bool) {
-		var _n int
-		p := (*interval.(segment).MMap)[intervalOffset:]
-		if n < int64(len(p)) {
-			p = p[:n]
-		}
-		_n, err = w.Write(p)
-		written += int64(_n)
-		n -= int64(_n)
-		if err != nil {
-			return true
-		}
-		return n == 0
-	})
 	return
 }
 

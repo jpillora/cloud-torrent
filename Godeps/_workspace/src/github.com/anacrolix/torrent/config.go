@@ -3,6 +3,7 @@ package torrent
 import (
 	"github.com/anacrolix/torrent/dht"
 	"github.com/anacrolix/torrent/iplist"
+	"github.com/anacrolix/torrent/storage"
 )
 
 // Override Client defaults.
@@ -32,20 +33,19 @@ type Config struct {
 	DisableUTP bool
 	// For the bittorrent protocol.
 	DisableTCP bool `long:"disable-tcp"`
-	// Don't automatically load "$ConfigDir/blocklist".
-	NoDefaultBlocklist bool
 	// Defaults to "$HOME/.config/torrent". This is where "blocklist",
-	// "torrents" and other operational files are stored.
+	// "torrents" and other operational files are stored. TODO: Dump this
+	// stuff, this is specific to the default cmd/torrent client only.
 	ConfigDir string
 	// Don't save or load to a cache of torrent files stored in
 	// "$ConfigDir/torrents".
 	DisableMetainfoCache bool
 	// Called to instantiate storage for each added torrent. Provided backends
 	// are in $REPO/data. If not set, the "file" implementation is used.
-	TorrentDataOpener
+	DefaultStorage    storage.I
 	DisableEncryption bool `long:"disable-encryption"`
 
-	IPBlocklist *iplist.IPList
+	IPBlocklist iplist.Ranger
 	DisableIPv6 bool `long:"disable-ipv6"`
 	// Perform logging and any other behaviour that will help debug.
 	Debug bool `help:"enable debug logging"`

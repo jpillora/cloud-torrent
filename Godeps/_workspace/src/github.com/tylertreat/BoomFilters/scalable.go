@@ -16,7 +16,10 @@ copies or substantial portions of the Software.
 package boom
 
 import (
+	"bytes"
+	"encoding/binary"
 	"hash"
+	"io"
 	"math"
 )
 
@@ -155,4 +158,102 @@ func (s *ScalableBloomFilter) SetHash(h hash.Hash64) {
 	for _, bf := range s.filters {
 		bf.SetHash(h)
 	}
+}
+
+// WriteTo writes a binary representation of the ScalableBloomFilter to an i/o stream.
+// It returns the number of bytes written.
+func (s *ScalableBloomFilter) WriteTo(stream io.Writer) (int64, error) {
+	err := binary.Write(stream, binary.BigEndian, s.r)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, s.fp)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, s.p)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, uint64(s.hint))
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, uint64(len(s.filters)))
+	if err != nil {
+		return 0, err
+	}
+	var numBytes int64
+	for _, filter := range s.filters {
+		num, err := filter.WriteTo(stream)
+		if err != nil {
+			return 0, err
+		}
+		numBytes += num
+	}
+	return numBytes + int64(5*binary.Size(uint64(0))), err
+}
+
+// ReadFrom reads a binary representation of ScalableBloomFilter (such as might
+// have been written by WriteTo()) from an i/o stream. It returns the number
+// of bytes read.
+func (s *ScalableBloomFilter) ReadFrom(stream io.Reader) (int64, error) {
+	var r, fp, p float64
+	var hint, len uint64
+	err := binary.Read(stream, binary.BigEndian, &r)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &fp)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &p)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &hint)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &len)
+	if err != nil {
+		return 0, err
+	}
+	var numBytes int64
+	filters := make([]*PartitionedBloomFilter, len)
+	for i, _ := range filters {
+		filter := NewPartitionedBloomFilter(0, fp)
+		num, err := filter.ReadFrom(stream)
+		if err != nil {
+			return 0, err
+		}
+		numBytes += num
+		filters[i] = filter
+	}
+	s.r = r
+	s.fp = fp
+	s.p = p
+	s.hint = uint(hint)
+	s.filters = filters
+	return numBytes + int64(5*binary.Size(uint64(0))), nil
+}
+
+// GobEncode implements gob.GobEncoder interface.
+func (s *ScalableBloomFilter) GobEncode() ([]byte, error) {
+	var buf bytes.Buffer
+	_, err := s.WriteTo(&buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// GobDecode implements gob.GobDecoder interface.
+func (s *ScalableBloomFilter) GobDecode(data []byte) error {
+	buf := bytes.NewBuffer(data)
+	_, err := s.ReadFrom(buf)
+
+	return err
 }

@@ -19,6 +19,11 @@ func (i *Integer) Read(r io.Reader) error {
 	return binary.Read(r, binary.BigEndian, i)
 }
 
+// It's perfectly fine to cast these to an int.
+func (i Integer) Int() int {
+	return int(i)
+}
+
 const (
 	Protocol = "\x13BitTorrent protocol"
 )

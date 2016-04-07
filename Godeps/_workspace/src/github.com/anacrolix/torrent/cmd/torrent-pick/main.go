@@ -15,6 +15,7 @@ import (
 	"time"
 
 	_ "github.com/anacrolix/envpprof"
+	"github.com/anacrolix/missinggo"
 	"github.com/dustin/go-humanize"
 	"github.com/jessevdk/go-flags"
 
@@ -90,7 +91,7 @@ func main() {
 	parser.Usage = "[OPTIONS] (magnet URI or .torrent file path)..."
 	posArgs, err := parser.Parse()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Download from the BitTorrent network.\n")
+		fmt.Fprintf(os.Stderr, "%s", "Download from the BitTorrent network.\n\n")
 		fmt.Println(err)
 		os.Exit(2)
 	}
@@ -134,7 +135,7 @@ func main() {
 
 	done := make(chan struct{})
 	for _, arg := range posArgs {
-		t := func() torrent.Torrent {
+		t := func() *torrent.Torrent {
 			if strings.HasPrefix(arg, "magnet:") {
 				t, err := client.AddMagnet(arg)
 				if err != nil {
@@ -165,7 +166,7 @@ func main() {
 				if file.DisplayPath() != rootGroup.Pick {
 					continue
 				}
-				srcReader := io.NewSectionReader(t.NewReader(), file.Offset(), file.Length())
+				srcReader := missinggo.NewSectionReadSeeker(t.NewReader(), file.Offset(), file.Length())
 				io.Copy(dstWriter, srcReader)
 				return
 			}

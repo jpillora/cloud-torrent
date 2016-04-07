@@ -4,10 +4,11 @@ import (
 	"net"
 	"testing"
 
-	"github.com/anacrolix/torrent/bencode"
-	"github.com/anacrolix/torrent/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/anacrolix/torrent/bencode"
+	"github.com/anacrolix/torrent/util"
 )
 
 func testMarshalUnmarshalMsg(t *testing.T, m Msg, expected string) {
@@ -45,7 +46,7 @@ func TestMarshalUnmarshalMsg(t *testing.T) {
 		R: &Return{
 			Nodes: CompactIPv4NodeInfo{
 				NodeInfo{
-					Addr: newDHTAddr(&net.UDPAddr{
+					Addr: NewAddr(&net.UDPAddr{
 						IP:   net.IPv4(1, 2, 3, 4).To4(),
 						Port: 0x1234,
 					}),
@@ -71,7 +72,10 @@ func TestMarshalUnmarshalMsg(t *testing.T) {
 		R: &Return{
 			ID: "\xeb\xff6isQ\xffJ\xec)ͺ\xab\xf2\xfb\xe3F|\xc2g",
 		},
-		IP: util.CompactPeer{net.IPv4(124, 168, 180, 8).To4(), 62844},
+		IP: util.CompactPeer{
+			IP:   net.IPv4(124, 168, 180, 8).To4(),
+			Port: 62844,
+		},
 	}, "d2:ip6:|\xa8\xb4\b\xf5|1:rd2:id20:\xeb\xff6isQ\xffJ\xec)ͺ\xab\xf2\xfb\xe3F|\xc2ge1:t1:\x031:y1:re")
 }
 

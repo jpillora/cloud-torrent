@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"math/rand"
 	"net"
 	"os"
@@ -26,7 +25,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anacrolix/jitter"
+	"github.com/anacrolix/missinggo"
+	"github.com/anacrolix/missinggo/pproffd"
 )
 
 const (
@@ -135,13 +135,15 @@ type connKey struct {
 // A Socket wraps a net.PacketConn, diverting uTP packets to its child uTP
 // Conns.
 type Socket struct {
-	mu      sync.RWMutex
-	event   sync.Cond
-	pc      net.PacketConn
-	conns   map[connKey]*Conn
-	backlog map[syn]struct{}
-	reads   chan read
-	closing bool
+	mu    sync.RWMutex
+	pc    net.PacketConn
+	conns map[connKey]*Conn
+
+	backlogNotEmpty missinggo.Event
+	backlog         map[syn]struct{}
+
+	reads  chan read
+	closed missinggo.Event
 
 	unusedReads chan read
 	connDeadlines
@@ -184,7 +186,7 @@ type header struct {
 
 var (
 	mu                         sync.RWMutex
-	sockets                    []*Socket
+	sockets                    = map[*Socket]struct{}{}
 	logLevel                   = 0
 	artificialPacketDropChance = 0.0
 )
@@ -373,7 +375,7 @@ type Conn struct {
 type send struct {
 	acked       bool // Closed with Conn lock.
 	payloadSize uint32
-	started     time.Time
+	started     missinggo.MonotonicTime
 	// This send was skipped in a selective ack.
 	resend   func()
 	timedOut func()
@@ -384,6 +386,8 @@ type send struct {
 	numResends  int
 }
 
+// first is true if this is the first time the send is acked. latency is
+// calculated for the first ack.
 func (s *send) Ack() (latency time.Duration, first bool) {
 	s.resendTimer.Stop()
 	if s.acked {
@@ -392,7 +396,7 @@ func (s *send) Ack() (latency time.Duration, first bool) {
 	s.acked = true
 	s.conn.event.Broadcast()
 	first = true
-	latency = time.Since(s.started)
+	latency = missinggo.MonotonicSince(s.started)
 	return
 }
 
@@ -426,9 +430,8 @@ func NewSocketFromPacketConn(pc net.PacketConn) (s *Socket, err error) {
 		unusedReads: make(chan read, 100),
 	}
 	mu.Lock()
-	sockets = append(sockets, s)
+	sockets[s] = struct{}{}
 	mu.Unlock()
-	s.event.L = &s.mu
 	go s.reader()
 	go s.dispatcher()
 	return
@@ -458,7 +461,7 @@ func (s *Socket) reader() {
 		n, addr, err := s.pc.ReadFrom(b[:])
 		if err != nil {
 			s.mu.Lock()
-			if !s.closing {
+			if !s.closed.IsSet() {
 				s.ReadErr = err
 			}
 			s.mu.Unlock()
@@ -500,7 +503,7 @@ func (s *Socket) pushBacklog(syn syn) {
 		s.reset(stringAddr(k.addr), k.seq_nr, k.conn_id)
 	}
 	s.backlog[syn] = struct{}{}
-	s.event.Broadcast()
+	s.backlogChanged()
 }
 
 func (s *Socket) dispatcher() {
@@ -605,6 +608,7 @@ func DialTimeout(addr string, timeout time.Duration) (nc net.Conn, err error) {
 	if err != nil {
 		return
 	}
+	defer s.Close()
 	return s.DialTimeout(addr, timeout)
 
 }
@@ -729,11 +733,11 @@ func (s *Socket) DialTimeout(addr string, timeout time.Duration) (nc net.Conn, e
 	case <-timeoutCh:
 		err = errTimeout
 	}
-	if err == nil {
-		nc = c
-	} else {
+	if err != nil {
 		c.Close()
+		return
 	}
+	nc = pproffd.WrapNetConn(c)
 	return
 }
 
@@ -823,7 +827,7 @@ func (me *Socket) writeTo(b []byte, addr net.Addr) (n int, err error) {
 }
 
 func (s *send) timeoutResend() {
-	if time.Since(s.started) >= writeTimeout {
+	if missinggo.MonotonicSince(s.started) >= writeTimeout {
 		s.timedOut()
 		return
 	}
@@ -870,7 +874,7 @@ func (c *Conn) write(_type st, connID uint16, payload []byte, seqNr uint16) (n i
 	}
 	send := &send{
 		payloadSize: uint32(len(payload)),
-		started:     time.Now(),
+		started:     missinggo.MonotonicNow(),
 		resend: func() {
 			c.mu.Lock()
 			err := c.send(_type, connID, payload, seqNr)
@@ -1005,7 +1009,7 @@ func (c *Conn) seqSend(seqNr uint16) *send {
 
 func (c *Conn) resendTimeout() time.Duration {
 	l := c.latency()
-	ret := jitter.Duration(3*l, l)
+	ret := missinggo.JitterDuration(3*l, l)
 	return ret
 }
 
@@ -1034,15 +1038,15 @@ func (c *Conn) deliver(h header, payload []byte) {
 }
 
 func (c *Conn) deliveryProcessor() {
-	timeout := time.NewTimer(math.MaxInt64)
 	for {
-		timeout.Reset(packetReadTimeout)
 		select {
 		case p, ok := <-c.packetsIn:
 			if !ok {
 				return
 			}
 			c.processDelivery(p.h, p.payload)
+			// Process a batch if they arrive in quick succession without
+			// acking them until there's a pause.
 			timeout := time.After(500 * time.Microsecond)
 		batched:
 			for {
@@ -1059,7 +1063,7 @@ func (c *Conn) deliveryProcessor() {
 			c.mu.Lock()
 			c.sendPendingState()
 			c.mu.Unlock()
-		case <-timeout.C:
+		case <-time.After(packetReadTimeout):
 			c.mu.Lock()
 			c.destroy(errors.New("no packet read timeout"))
 			c.mu.Unlock()
@@ -1222,8 +1226,7 @@ func (s *Socket) detacher(c *Conn, key connKey) {
 	}
 	delete(s.conns, key)
 	close(c.packetsIn)
-	s.event.Broadcast()
-	if s.closing {
+	if s.closed.IsSet() {
 		s.teardown()
 	}
 }
@@ -1242,20 +1245,33 @@ func (s *Socket) registerConn(recvID uint16, remoteAddr resolvedAddrStr, c *Conn
 	return true
 }
 
+func (s *Socket) backlogChanged() {
+	if len(s.backlog) != 0 {
+		s.backlogNotEmpty.Set()
+	} else {
+		s.backlogNotEmpty.Clear()
+	}
+}
+
 func (s *Socket) nextSyn() (syn syn, ok bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	for {
-		if s.closing {
+		select {
+		case <-s.closed.C():
 			return
+		case <-s.backlogNotEmpty.C():
+			s.mu.Lock()
+			for k := range s.backlog {
+				syn = k
+				delete(s.backlog, k)
+				ok = true
+				break
+			}
+			s.backlogChanged()
+			s.mu.Unlock()
+			if ok {
+				return
+			}
 		}
-		for k := range s.backlog {
-			syn = k
-			delete(s.backlog, k)
-			ok = true
-			return
-		}
-		s.event.Wait()
 	}
 }
 
@@ -1303,17 +1319,18 @@ func (s *Socket) Addr() net.Addr {
 func (s *Socket) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.closing = true
-	s.event.Broadcast()
+	s.closed.Set()
 	return s.teardown()
 }
 
-func (s *Socket) teardown() (err error) {
+func (s *Socket) teardown() error {
 	if len(s.conns) == 0 {
-		s.event.Broadcast()
-		err = s.pc.Close()
+		mu.Lock()
+		delete(sockets, s)
+		mu.Unlock()
+		return s.pc.Close()
 	}
-	return
+	return nil
 }
 
 func (s *Socket) LocalAddr() net.Addr {

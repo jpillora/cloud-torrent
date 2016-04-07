@@ -126,7 +126,7 @@ func (nid *nodeID) ByteString() string {
 }
 
 type node struct {
-	addr          dHTAddr
+	addr          Addr
 	id            nodeID
 	announceToken string
 
@@ -139,7 +139,7 @@ func (n *node) IsSecure() bool {
 	if n.id.IsUnset() {
 		return false
 	}
-	return NodeIdSecure(n.id.ByteString(), n.addr.IP())
+	return NodeIdSecure(n.id.ByteString(), n.addr.UDPAddr().IP)
 }
 
 func (n *node) idString() string {

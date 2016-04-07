@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anacrolix/missinggo"
+
 	"github.com/anacrolix/torrent/bencode"
 )
 
@@ -92,12 +94,12 @@ func (info *Info) writeFiles(w io.Writer, open func(fi FileInfo) (io.ReadCloser,
 	for _, fi := range info.UpvertedFiles() {
 		r, err := open(fi)
 		if err != nil {
-			return fmt.Errorf("error opening %s: %s", fi, err)
+			return fmt.Errorf("error opening %v: %s", fi, err)
 		}
 		wn, err := io.CopyN(w, r, fi.Length)
 		r.Close()
 		if wn != fi.Length || err != nil {
-			return fmt.Errorf("error hashing %s: %s", fi, err)
+			return fmt.Errorf("error hashing %v: %s", fi, err)
 		}
 	}
 	return nil
@@ -154,27 +156,7 @@ func (me *Info) NumPieces() int {
 	return len(me.Pieces) / 20
 }
 
-type Piece struct {
-	Info *Info
-	i    int
-}
-
-func (me Piece) Length() int64 {
-	if me.i == me.Info.NumPieces()-1 {
-		return me.Info.TotalLength() - int64(me.i)*me.Info.PieceLength
-	}
-	return me.Info.PieceLength
-}
-
-func (me Piece) Offset() int64 {
-	return int64(me.i) * me.Info.PieceLength
-}
-
-func (me Piece) Hash() []byte {
-	return me.Info.Pieces[me.i*20 : (me.i+1)*20]
-}
-
-func (me *Info) Piece(i int) Piece {
+func (me *InfoEx) Piece(i int) Piece {
 	return Piece{me, i}
 }
 
@@ -201,7 +183,7 @@ func (i *Info) UpvertedFiles() []FileInfo {
 // important to Bittorrent.
 type InfoEx struct {
 	Info
-	Hash  []byte
+	Hash  *Hash
 	Bytes []byte
 }
 
@@ -211,14 +193,14 @@ var (
 )
 
 func (this *InfoEx) UnmarshalBencode(data []byte) error {
-	this.Bytes = make([]byte, 0, len(data))
-	this.Bytes = append(this.Bytes, data...)
+	this.Bytes = append(make([]byte, 0, len(data)), data...)
 	h := sha1.New()
 	_, err := h.Write(this.Bytes)
 	if err != nil {
 		panic(err)
 	}
-	this.Hash = h.Sum(nil)
+	this.Hash = new(Hash)
+	missinggo.CopyExact(this.Hash, h.Sum(nil))
 	return bencode.Unmarshal(data, &this.Info)
 }
 
@@ -233,7 +215,7 @@ type MetaInfo struct {
 	Info         InfoEx      `bencode:"info"`
 	Announce     string      `bencode:"announce,omitempty"`
 	AnnounceList [][]string  `bencode:"announce-list,omitempty"`
-	Nodes        [][]string  `bencode:"nodes,omitempty"`
+	Nodes        []Node      `bencode:"nodes,omitempty"`
 	CreationDate int64       `bencode:"creation date,omitempty"`
 	Comment      string      `bencode:"comment,omitempty"`
 	CreatedBy    string      `bencode:"created by,omitempty"`
@@ -252,4 +234,16 @@ func (mi *MetaInfo) SetDefaults() {
 	mi.CreatedBy = "github.com/anacrolix/torrent"
 	mi.CreationDate = time.Now().Unix()
 	mi.Info.PieceLength = 256 * 1024
+}
+
+// Magnetize creates a Magnet from a MetaInfo
+func (mi *MetaInfo) Magnet() (m Magnet) {
+	for _, tier := range mi.AnnounceList {
+		for _, tracker := range tier {
+			m.Trackers = append(m.Trackers, tracker)
+		}
+	}
+	m.DisplayName = mi.Info.Name
+	m.InfoHash = *mi.Info.Hash
+	return
 }

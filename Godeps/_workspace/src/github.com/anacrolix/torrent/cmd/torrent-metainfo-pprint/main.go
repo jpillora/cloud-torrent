@@ -1,36 +1,55 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"os"
 
+	"github.com/anacrolix/tagflag"
+	"github.com/bradfitz/iter"
+
 	"github.com/anacrolix/torrent/metainfo"
 )
 
+var flags struct {
+	JustName    bool
+	PieceHashes bool
+	tagflag.StartPos
+	TorrentFiles []string
+}
+
 func main() {
-	name := flag.Bool("name", false, "print name")
-	flag.Parse()
-	for _, filename := range flag.Args() {
+	tagflag.Parse(&flags)
+	for _, filename := range flags.TorrentFiles {
 		metainfo, err := metainfo.LoadFromFile(filename)
 		if err != nil {
 			log.Print(err)
 			continue
 		}
-		if *name {
+		info := &metainfo.Info.Info
+		if flags.JustName {
 			fmt.Printf("%s\n", metainfo.Info.Name)
 			continue
 		}
 		d := map[string]interface{}{
-			"Name":      metainfo.Info.Name,
-			"NumPieces": metainfo.Info.NumPieces(),
+			"Name":        info.Name,
+			"NumPieces":   info.NumPieces(),
+			"PieceLength": info.PieceLength,
+		}
+		if flags.PieceHashes {
+			d["PieceHashes"] = func() (ret []string) {
+				for i := range iter.N(info.NumPieces()) {
+					ret = append(ret, hex.EncodeToString(info.Pieces[i*20:(i+1)*20]))
+				}
+				return
+			}()
 		}
 		b, _ := json.MarshalIndent(d, "", "  ")
 		os.Stdout.Write(b)
 	}
-	if !*name {
+	if !flags.JustName {
 		os.Stdout.WriteString("\n")
 	}
 }

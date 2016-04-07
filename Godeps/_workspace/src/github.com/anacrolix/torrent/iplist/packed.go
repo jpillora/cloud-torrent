@@ -4,6 +4,9 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
+	"os"
+
+	"github.com/edsrzf/mmap-go"
 )
 
 // The packed format is an 8 byte integer of the number of ranges. Then 20
@@ -109,4 +112,22 @@ func (me PackedIPList) Lookup(ip net.IP) (r Range, ok bool) {
 		return
 	}
 	return lookup(me.getFirst, me.getRange, me.len(), ip4)
+}
+
+func MMapPacked(filename string) (ret Ranger, err error) {
+	f, err := os.Open(filename)
+	if os.IsNotExist(err) {
+		err = nil
+		return
+	}
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	mm, err := mmap.Map(f, mmap.RDONLY, 0)
+	if err != nil {
+		return
+	}
+	ret = NewFromPacked(mm)
+	return
 }

@@ -7,10 +7,14 @@ package testutil
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/anacrolix/missinggo"
 
 	"github.com/anacrolix/torrent/metainfo"
 )
@@ -57,4 +61,17 @@ func GreetingTestTorrent() (tempDir string, metaInfo *metainfo.MetaInfo) {
 	CreateMetaInfo(name, w)
 	metaInfo, _ = metainfo.Load(w)
 	return
+}
+
+type StatusWriter interface {
+	WriteStatus(io.Writer)
+}
+
+func ExportStatusWriter(sw StatusWriter, path string) {
+	http.HandleFunc(
+		fmt.Sprintf("/%s/%s", missinggo.GetTestName(), path),
+		func(w http.ResponseWriter, r *http.Request) {
+			sw.WriteStatus(w)
+		},
+	)
 }

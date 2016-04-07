@@ -21,7 +21,7 @@ type Colors struct {
 	Grey, Green, Cyan, Yellow, Red, Reset string
 }
 
-var basicColors = &Colors{string(ansi.Reset), string(ansi.GreenBytes), string(ansi.CyanBytes), string(ansi.YellowBytes), string(ansi.YellowBytes), string(ansi.ResetBytes)}
+var basicColors = &Colors{string(ansi.ResetBytes), string(ansi.GreenBytes), string(ansi.CyanBytes), string(ansi.YellowBytes), string(ansi.YellowBytes), string(ansi.ResetBytes)}
 var noColors = &Colors{} //no colors
 
 type Options struct {

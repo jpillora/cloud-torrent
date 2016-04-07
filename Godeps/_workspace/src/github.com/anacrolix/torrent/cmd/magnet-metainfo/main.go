@@ -27,7 +27,7 @@ func main() {
 		go func() {
 			defer wg.Done()
 			<-t.GotInfo()
-			mi := t.MetaInfo()
+			mi := t.Metainfo()
 			t.Drop()
 			f, err := os.Create(mi.Info.Name + ".torrent")
 			if err != nil {

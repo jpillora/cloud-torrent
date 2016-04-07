@@ -1,0 +1,4 @@
+language: go
+
+install:
+  - go get github.com/willf/bitset

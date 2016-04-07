@@ -65,23 +65,23 @@ func (me *server) serveOne() (err error) {
 		return
 	}
 	switch h.Action {
-	case Connect:
+	case ActionConnect:
 		if h.ConnectionId != connectRequestConnectionId {
 			return
 		}
 		connId := me.newConn()
 		err = me.respond(addr, ResponseHeader{
-			Connect,
+			ActionConnect,
 			h.TransactionId,
 		}, ConnectionResponse{
 			connId,
 		})
 		return
-	case Announce:
+	case ActionAnnounce:
 		if _, ok := me.conns[h.ConnectionId]; !ok {
 			me.respond(addr, ResponseHeader{
 				TransactionId: h.TransactionId,
-				Action:        Error,
+				Action:        ActionError,
 			}, []byte("not connected"))
 			return
 		}
@@ -97,7 +97,7 @@ func (me *server) serveOne() (err error) {
 		}
 		err = me.respond(addr, ResponseHeader{
 			TransactionId: h.TransactionId,
-			Action:        Announce,
+			Action:        ActionAnnounce,
 		}, AnnounceResponseHeader{
 			Interval: 900,
 			Leechers: t.Leechers,
@@ -108,7 +108,7 @@ func (me *server) serveOne() (err error) {
 		err = fmt.Errorf("unhandled action: %d", h.Action)
 		me.respond(addr, ResponseHeader{
 			TransactionId: h.TransactionId,
-			Action:        Error,
+			Action:        ActionError,
 		}, []byte("unhandled action"))
 		return
 	}

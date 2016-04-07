@@ -5,10 +5,12 @@ import (
 	"crypto/sha1"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/bradfitz/iter"
 	"github.com/edsrzf/mmap-go"
 
 	"github.com/anacrolix/torrent/metainfo"
@@ -20,8 +22,11 @@ var (
 	dataPath    = flag.String("path", "/torrent/data", "path of the torrent data")
 )
 
-func fileToMmap(filename string, length int64, devZero *os.File) mmap.MMap {
+func fileToMmap(filename string, length int64) mmap.MMap {
 	osFile, err := os.Open(filename)
+	if os.IsNotExist(err) {
+		return nil
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,40 +43,34 @@ func fileToMmap(filename string, length int64, devZero *os.File) mmap.MMap {
 }
 
 func main() {
+	log.SetFlags(log.Flags() | log.Lshortfile)
 	flag.Parse()
 	metaInfo, err := metainfo.LoadFromFile(*torrentPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	devZero, err := os.Open("/dev/zero")
-	if err != nil {
-		log.Print(err)
-	}
-	defer devZero.Close()
 	mMapSpan := &mmap_span.MMapSpan{}
 	if len(metaInfo.Info.Files) > 0 {
 		for _, file := range metaInfo.Info.Files {
 			filename := filepath.Join(append([]string{*dataPath, metaInfo.Info.Name}, file.Path...)...)
-			goMMap := fileToMmap(filename, file.Length, devZero)
+			goMMap := fileToMmap(filename, file.Length)
 			mMapSpan.Append(goMMap)
 		}
 		log.Println(len(metaInfo.Info.Files))
 	} else {
-		goMMap := fileToMmap(*dataPath, metaInfo.Info.Length, devZero)
+		goMMap := fileToMmap(*dataPath, metaInfo.Info.Length)
 		mMapSpan.Append(goMMap)
 	}
 	log.Println(mMapSpan.Size())
 	log.Println(len(metaInfo.Info.Pieces))
-	for piece := 0; piece < (len(metaInfo.Info.Pieces)+sha1.Size-1)/sha1.Size; piece++ {
-		expectedHash := metaInfo.Info.Pieces[sha1.Size*piece : sha1.Size*(piece+1)]
-		if len(expectedHash) == 0 {
-			break
-		}
+	info := metaInfo.Info
+	for i := range iter.N(metaInfo.Info.NumPieces()) {
+		p := info.Piece(i)
 		hash := sha1.New()
-		_, err := mMapSpan.WriteSectionTo(hash, int64(piece)*metaInfo.Info.PieceLength, metaInfo.Info.PieceLength)
+		_, err := io.Copy(hash, io.NewSectionReader(mMapSpan, p.Offset(), p.Length()))
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(piece, bytes.Equal(hash.Sum(nil), expectedHash))
+		fmt.Printf("%d: %x: %v\n", i, p.Hash(), bytes.Equal(hash.Sum(nil), p.Hash().Bytes()))
 	}
 }

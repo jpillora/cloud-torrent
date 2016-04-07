@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+var flagValueType = reflect.TypeOf((*flag.Value)(nil)).Elem()
+
 //Opts is the main class, it contains
 //all parsing state for a single set of
 //arguments
@@ -171,6 +173,11 @@ func (o *Opts) addFields(c reflect.Value) *Opts {
 		}
 		sf := t.Field(i)
 		k := sf.Type.Kind()
+
+		if sf.Type.Implements(flagValueType) {
+			o.addOptArg(sf, val)
+			continue
+		}
 		switch k {
 		case reflect.Ptr, reflect.Struct:
 			if sf.Tag.Get("type") == "embedded" {
@@ -194,6 +201,9 @@ func (o *Opts) addFields(c reflect.Value) *Opts {
 			} else {
 				o.addOptArg(sf, val)
 			}
+		case reflect.Interface:
+			o.errorf("Struct field '%s' interface type must implement flag.Value", sf.Name)
+			return o
 		default:
 			o.errorf("Struct field '%s' has unsupported type: %s", sf.Name, k)
 			return o
@@ -286,13 +296,6 @@ func (o *Opts) addOptArg(sf reflect.StructField, val reflect.Value) {
 	i.name = sf.Tag.Get("name")
 	if i.name == "" {
 		i.name = camel2dash(sf.Name) //default to struct field name
-	}
-
-	//assume int64s are durations
-	if sf.Type.Kind() == reflect.Int64 &&
-		!sf.Type.AssignableTo(durationType) {
-		o.errorf("int64 field '%s' must be of type time.Duration", i.name)
-		return
 	}
 
 	//specific environment name

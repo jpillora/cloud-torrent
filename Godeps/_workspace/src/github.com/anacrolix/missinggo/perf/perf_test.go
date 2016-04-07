@@ -46,7 +46,7 @@ func TestExponent(t *testing.T) {
 		time.Sleep(c.d)
 		assert.Equal(t, c.e, bucketExponent(tr.Stop(fmt.Sprintf("%d", c.e))), "%s", c.d)
 	}
-	assert.Equal(t, `{"-1": 1}`, em.Get("-1").String())
-	assert.Equal(t, `{"-2": 2}`, em.Get("-2").String())
-	assert.Equal(t, `{"-3": 2}`, em.Get("-3").String())
+	assert.Equal(t, `{">10ms": 1}`, em.Get("-1").String())
+	assert.Equal(t, `{">1ms": 2}`, em.Get("-2").String())
+	assert.Equal(t, `{">100µs": 2}`, em.Get("-3").String())
 }

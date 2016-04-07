@@ -204,7 +204,7 @@ func compareArray(av, bv []interface{}, p string) []JsonPatchOperation {
 			}
 		}
 		if !found {
-			retval = append(retval, NewPatch("remove", makePath(p, i), v))
+			retval = append(retval, NewPatch("remove", makePath(p, i), nil))
 		}
 	}
 

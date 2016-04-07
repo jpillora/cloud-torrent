@@ -10,6 +10,12 @@ import (
 	"time"
 
 	"github.com/anacrolix/missinggo"
+	"github.com/anacrolix/missinggo/pproffd"
+)
+
+const (
+	dirPerm  = 0755
+	filePerm = 0644
 )
 
 type Cache struct {
@@ -130,17 +136,21 @@ var (
 	ErrIsDir   = errors.New("is directory")
 )
 
+func (me *Cache) StatFile(path string) (os.FileInfo, error) {
+	return os.Stat(me.realpath(sanitizePath(path)))
+}
+
 func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 	path = sanitizePath(path)
 	if path == "" {
 		err = ErrIsDir
 		return
 	}
-	f, err := os.OpenFile(me.realpath(path), flag, 0644)
+	f, err := os.OpenFile(me.realpath(path), flag, filePerm)
 	if flag&os.O_CREATE != 0 && os.IsNotExist(err) {
-		os.MkdirAll(me.root, 0755)
-		os.MkdirAll(filepath.Dir(me.realpath(path)), 0755)
-		f, err = os.OpenFile(me.realpath(path), flag, 0644)
+		os.MkdirAll(me.root, dirPerm)
+		os.MkdirAll(filepath.Dir(me.realpath(path)), dirPerm)
+		f, err = os.OpenFile(me.realpath(path), flag, filePerm)
 		if err != nil {
 			me.pruneEmptyDirs(path)
 		}
@@ -151,7 +161,7 @@ func (me *Cache) OpenFile(path string, flag int) (ret *File, err error) {
 	ret = &File{
 		c:    me,
 		path: path,
-		f:    f,
+		f:    pproffd.WrapOSFile(f),
 	}
 	me.mu.Lock()
 	go func() {
@@ -232,7 +242,7 @@ func (me *Cache) statItem(path string, access time.Time) {
 }
 
 func (me *Cache) realpath(path string) string {
-	return filepath.Join(me.root, filepath.FromSlash(path))
+	return filepath.Join(me.root, filepath.FromSlash(sanitizePath(path)))
 }
 
 func (me *Cache) TrimToCapacity() {
@@ -267,4 +277,31 @@ func (me *Cache) trimToCapacity() {
 
 func (me *Cache) pathInfo(p string) ItemInfo {
 	return me.paths[p]
+}
+
+func (me *Cache) Rename(from, to string) (err error) {
+	_from := sanitizePath(from)
+	_to := sanitizePath(to)
+	me.mu.Lock()
+	defer me.mu.Unlock()
+	err = os.MkdirAll(filepath.Dir(me.realpath(_to)), dirPerm)
+	if err != nil {
+		return
+	}
+	err = os.Rename(me.realpath(_from), me.realpath(_to))
+	if err != nil {
+		return
+	}
+	me.removeInfo(_from)
+	me.pruneEmptyDirs(_from)
+	me.statItem(_to, time.Now())
+	return
+}
+
+func (me *Cache) Stat(path string) (os.FileInfo, error) {
+	return os.Stat(me.realpath(path))
+}
+
+func (me *Cache) AsFileStore() missinggo.FileStore {
+	return fileStore{me}
 }

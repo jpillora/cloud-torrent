@@ -22,6 +22,7 @@ There is a small example in the [package documentation](https://godoc.org/github
 ## Other projects using Torrent
 
  * [Go Peerflix](https://github.com/Sioro-Neoku/go-peerflix)
+ * [Cloud Torrent](https://github.com/jpillora/cloud-torrent)
 
 ## Commands
 

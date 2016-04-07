@@ -1,5 +1,7 @@
 package filecache
 
+// TODO: Dump this file for orderedmap.
+
 import (
 	"container/list"
 	"io"
@@ -49,6 +51,7 @@ func newLRUItems() *lruItems {
 	})}
 }
 
+// TODO: Dumps this for orderedmap.
 type lruItems struct {
 	tree *b.Tree
 }

@@ -219,7 +219,7 @@ func TestCount2(t *testing.T) {
 
 // nil tests
 func TestNullTest(t *testing.T) {
-	var v *BitSet = nil
+	var v *BitSet
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("Checking bit of null reference should have caused a panic")
@@ -229,7 +229,7 @@ func TestNullTest(t *testing.T) {
 }
 
 func TestNullSet(t *testing.T) {
-	var v *BitSet = nil
+	var v *BitSet
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("Setting bit of null reference should have caused a panic")
@@ -239,7 +239,7 @@ func TestNullSet(t *testing.T) {
 }
 
 func TestNullClear(t *testing.T) {
-	var v *BitSet = nil
+	var v *BitSet
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("Clearning bit of null reference should have caused a panic")
@@ -249,7 +249,7 @@ func TestNullClear(t *testing.T) {
 }
 
 func TestNullCount(t *testing.T) {
-	var v *BitSet = nil
+	var v *BitSet
 	defer func() {
 		if r := recover(); r != nil {
 			t.Error("Counting null reference should not have caused a panic")
@@ -262,7 +262,7 @@ func TestNullCount(t *testing.T) {
 }
 
 func TestPanicDifferenceBNil(t *testing.T) {
-	var b *BitSet = nil
+	var b *BitSet
 	var compare = New(10)
 	defer func() {
 		if r := recover(); r == nil {
@@ -273,7 +273,7 @@ func TestPanicDifferenceBNil(t *testing.T) {
 }
 
 func TestPanicDifferenceCompareNil(t *testing.T) {
-	var compare *BitSet = nil
+	var compare *BitSet
 	var b = New(10)
 	defer func() {
 		if r := recover(); r == nil {
@@ -284,7 +284,7 @@ func TestPanicDifferenceCompareNil(t *testing.T) {
 }
 
 func TestPanicUnionBNil(t *testing.T) {
-	var b *BitSet = nil
+	var b *BitSet
 	var compare = New(10)
 	defer func() {
 		if r := recover(); r == nil {
@@ -295,7 +295,7 @@ func TestPanicUnionBNil(t *testing.T) {
 }
 
 func TestPanicUnionCompareNil(t *testing.T) {
-	var compare *BitSet = nil
+	var compare *BitSet
 	var b = New(10)
 	defer func() {
 		if r := recover(); r == nil {
@@ -306,7 +306,7 @@ func TestPanicUnionCompareNil(t *testing.T) {
 }
 
 func TestPanicIntersectionBNil(t *testing.T) {
-	var b *BitSet = nil
+	var b *BitSet
 	var compare = New(10)
 	defer func() {
 		if r := recover(); r == nil {
@@ -317,7 +317,7 @@ func TestPanicIntersectionBNil(t *testing.T) {
 }
 
 func TestPanicIntersectionCompareNil(t *testing.T) {
-	var compare *BitSet = nil
+	var compare *BitSet
 	var b = New(10)
 	defer func() {
 		if r := recover(); r == nil {
@@ -328,7 +328,7 @@ func TestPanicIntersectionCompareNil(t *testing.T) {
 }
 
 func TestPanicSymmetricDifferenceBNil(t *testing.T) {
-	var b *BitSet = nil
+	var b *BitSet
 	var compare = New(10)
 	defer func() {
 		if r := recover(); r == nil {
@@ -339,7 +339,7 @@ func TestPanicSymmetricDifferenceBNil(t *testing.T) {
 }
 
 func TestPanicSymmetricDifferenceCompareNil(t *testing.T) {
-	var compare *BitSet = nil
+	var compare *BitSet
 	var b = New(10)
 	defer func() {
 		if r := recover(); r == nil {
@@ -350,7 +350,7 @@ func TestPanicSymmetricDifferenceCompareNil(t *testing.T) {
 }
 
 func TestPanicComplementBNil(t *testing.T) {
-	var b *BitSet = nil
+	var b *BitSet
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("Nil should should have caused a panic")
@@ -360,7 +360,7 @@ func TestPanicComplementBNil(t *testing.T) {
 }
 
 func TestPanicAnytBNil(t *testing.T) {
-	var b *BitSet = nil
+	var b *BitSet
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("Nil should should have caused a panic")
@@ -370,7 +370,7 @@ func TestPanicAnytBNil(t *testing.T) {
 }
 
 func TestPanicNonetBNil(t *testing.T) {
-	var b *BitSet = nil
+	var b *BitSet
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("Nil should should have caused a panic")
@@ -380,7 +380,7 @@ func TestPanicNonetBNil(t *testing.T) {
 }
 
 func TestPanicAlltBNil(t *testing.T) {
-	var b *BitSet = nil
+	var b *BitSet
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("Nil should should have caused a panic")

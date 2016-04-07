@@ -1,6 +1,8 @@
 Bloom filters
 -------------
 
+[![Build Status](https://travis-ci.org/willf/bloom.svg?branch=master)](https://travis-ci.org/willf/bloom)
+
 A Bloom filter is a representation of a set of _n_ items, where the main
 requirement is to make membership queries; _i.e._, whether an item is a 
 member of a set.

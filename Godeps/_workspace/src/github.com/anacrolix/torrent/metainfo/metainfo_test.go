@@ -1,7 +1,6 @@
 package metainfo
 
 import (
-	"bytes"
 	"io"
 	"io/ioutil"
 	"path"
@@ -9,11 +8,12 @@ import (
 
 	"github.com/anacrolix/missinggo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/anacrolix/torrent/bencode"
 )
 
-func test_file(t *testing.T, filename string) {
+func testFile(t *testing.T, filename string) {
 	mi, err := LoadFromFile(filename)
 	if err != nil {
 		t.Fatal(err)
@@ -38,17 +38,15 @@ func test_file(t *testing.T, filename string) {
 	// }
 
 	b, err := bencode.Marshal(mi.Info)
-	if !bytes.Equal(b, mi.Info.Bytes) {
-		t.Logf("\n%q\n%q", b[len(b)-20:], mi.Info.Bytes[len(mi.Info.Bytes)-20:])
-		t.Fatal("encoded and decoded bytes don't match")
-	}
+	require.NoError(t, err)
+	assert.EqualValues(t, b, mi.Info.Bytes)
 }
 
 func TestFile(t *testing.T) {
-	test_file(t, "_testdata/archlinux-2011.08.19-netinstall-i686.iso.torrent")
-	test_file(t, "_testdata/continuum.torrent")
-	test_file(t, "_testdata/23516C72685E8DB0C8F15553382A927F185C4F01.torrent")
-	test_file(t, "_testdata/trackerless.torrent")
+	testFile(t, "testdata/archlinux-2011.08.19-netinstall-i686.iso.torrent")
+	testFile(t, "testdata/continuum.torrent")
+	testFile(t, "testdata/23516C72685E8DB0C8F15553382A927F185C4F01.torrent")
+	testFile(t, "testdata/trackerless.torrent")
 }
 
 // Ensure that the correct number of pieces are generated when hashing files.
@@ -69,7 +67,7 @@ func TestNumPieces(t *testing.T) {
 			PieceLength: _case.PieceLength,
 		}
 		err := info.GeneratePieces(func(fi FileInfo) (io.ReadCloser, error) {
-			return ioutil.NopCloser(missinggo.ZeroReader{}), nil
+			return ioutil.NopCloser(missinggo.ZeroReader), nil
 		})
 		assert.NoError(t, err)
 		assert.EqualValues(t, _case.NumPieces, info.NumPieces())

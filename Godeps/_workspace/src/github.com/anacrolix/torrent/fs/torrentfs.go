@@ -3,6 +3,7 @@ package torrentfs
 import (
 	"expvar"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"strings"
@@ -48,9 +49,9 @@ type rootNode struct {
 
 type node struct {
 	path     string
-	metadata *metainfo.Info
+	metadata *metainfo.InfoEx
 	FS       *TorrentFS
-	t        torrent.Torrent
+	t        *torrent.Torrent
 }
 
 type fileNode struct {
@@ -69,7 +70,7 @@ func (n *node) fsPath() string {
 	return "/" + n.metadata.Name + "/" + n.path
 }
 
-func blockingRead(ctx context.Context, fs *TorrentFS, t torrent.Torrent, off int64, p []byte) (n int, err error) {
+func blockingRead(ctx context.Context, fs *TorrentFS, t *torrent.Torrent, off int64, p []byte) (n int, err error) {
 	fs.mu.Lock()
 	fs.blockedReads++
 	fs.event.Broadcast()
@@ -80,10 +81,14 @@ func blockingRead(ctx context.Context, fs *TorrentFS, t torrent.Torrent, off int
 	)
 	readDone := make(chan struct{})
 	go func() {
+		defer close(readDone)
 		r := t.NewReader()
 		defer r.Close()
-		_n, _err = r.ReadAt(p, off)
-		close(readDone)
+		_, _err = r.Seek(off, os.SEEK_SET)
+		if _err != nil {
+			return
+		}
+		_n, _err = io.ReadFull(r, p)
 	}()
 	select {
 	case <-readDone:
@@ -101,7 +106,7 @@ func blockingRead(ctx context.Context, fs *TorrentFS, t torrent.Torrent, off int
 	return
 }
 
-func readFull(ctx context.Context, fs *TorrentFS, t torrent.Torrent, off int64, p []byte) (n int, err error) {
+func readFull(ctx context.Context, fs *TorrentFS, t *torrent.Torrent, off int64, p []byte) (n int, err error) {
 	for len(p) != 0 {
 		var nn int
 		nn, err = blockingRead(ctx, fs, t, off, p)

@@ -37,22 +37,12 @@ func main() {
 		ar.InfoHash = ts.InfoHash
 		for _, tier := range ts.Trackers {
 			for _, tURI := range tier {
-				tCl, err := tracker.New(tURI)
+				resp, err := tracker.Announce(tURI, &ar)
 				if err != nil {
 					log.Print(err)
 					continue
 				}
-				err = tCl.Connect()
-				if err != nil {
-					log.Print(err)
-					continue
-				}
-				resp, err := tCl.Announce(&ar)
-				if err != nil {
-					log.Print(err)
-					continue
-				}
-				log.Printf("%s: %#v", tCl, resp)
+				log.Printf("%q: %#v", tURI, resp)
 			}
 		}
 	}

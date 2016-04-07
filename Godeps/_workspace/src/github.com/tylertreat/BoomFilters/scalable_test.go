@@ -1,8 +1,12 @@
 package boom
 
 import (
+	"bytes"
+	"encoding/gob"
 	"strconv"
 	"testing"
+
+	"github.com/d4l3k/messagediff"
 )
 
 // Ensures that NewDefaultScalableBloomFilter creates a Scalable Bloom Filter
@@ -136,6 +140,28 @@ func TestScalableBloomReset(t *testing.T) {
 				t.Error("Expected all bits to be unset")
 			}
 		}
+	}
+}
+
+// Ensures that ScalableBloomFilter can be serialized and deserialized without errors.
+func TestScalableBloomGob(t *testing.T) {
+	f := NewScalableBloomFilter(10, 0.1, 0.8)
+	for i := 0; i < 1000; i++ {
+		f.Add([]byte(strconv.Itoa(i)))
+	}
+
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(f); err != nil {
+		t.Error(err)
+	}
+
+	f2 := NewScalableBloomFilter(10, 0.1, 0.8)
+	if err := gob.NewDecoder(&buf).Decode(f2); err != nil {
+		t.Error(err)
+	}
+
+	if diff, equal := messagediff.PrettyDiff(f, f2); !equal {
+		t.Errorf("ScalableBoomFilter Gob Encode and Decode = %+v; not %+v\n%s", f2, f, diff)
 	}
 }
 

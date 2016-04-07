@@ -60,14 +60,24 @@ type BitSet struct {
 	set    []uint64
 }
 
-// A BitSetError is used to distinguish errors (panics) generated in this package.
-type BitSetError string
+// Error is used to distinguish errors (panics) generated in this package.
+type Error string
 
 // safeSet will fixup b.set to be non-nil and return the field value
 func (b *BitSet) safeSet() []uint64 {
 	if b.set == nil {
 		b.set = make([]uint64, wordsNeeded(0))
 	}
+	return b.set
+}
+
+// From is a constructor used to create a BitSet from an array of integers
+func From(buf []uint64) *BitSet {
+	return &BitSet{uint(len(buf)) * 64, buf}
+}
+
+// Bytes returns the bitset as array of integers
+func (b *BitSet) Bytes() []uint64 {
 	return b.set
 }
 
@@ -260,7 +270,7 @@ func (b *BitSet) Equal(c *BitSet) bool {
 
 func panicIfNull(b *BitSet) {
 	if b == nil {
-		panic(BitSetError("BitSet must not be null"))
+		panic(Error("BitSet must not be null"))
 	}
 }
 

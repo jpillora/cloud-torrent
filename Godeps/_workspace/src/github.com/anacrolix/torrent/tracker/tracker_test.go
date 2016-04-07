@@ -6,7 +6,7 @@ import (
 
 func TestUnsupportedTrackerScheme(t *testing.T) {
 	t.Parallel()
-	_, err := New("lol://tracker.openbittorrent.com:80/announce")
+	_, err := Announce("lol://tracker.openbittorrent.com:80/announce", nil)
 	if err != ErrBadScheme {
 		t.Fatal(err)
 	}

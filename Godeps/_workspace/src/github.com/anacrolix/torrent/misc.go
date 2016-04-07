@@ -3,7 +3,6 @@ package torrent
 import (
 	"crypto"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/anacrolix/torrent/metainfo"
@@ -22,25 +21,6 @@ const (
 	minDialTimeout     = 5 * time.Second
 )
 
-type (
-	InfoHash [20]byte
-	pieceSum [20]byte
-)
-
-func (ih InfoHash) AsString() string {
-	return string(ih[:])
-}
-
-func (ih InfoHash) HexString() string {
-	return fmt.Sprintf("%x", ih[:])
-}
-
-func lastChunkSpec(pieceLength, chunkSize pp.Integer) (cs chunkSpec) {
-	cs.Begin = (pieceLength - 1) / chunkSize * chunkSize
-	cs.Length = pieceLength - cs.Begin
-	return
-}
-
 type chunkSpec struct {
 	Begin, Length pp.Integer
 }
@@ -54,11 +34,6 @@ func newRequest(index, begin, length pp.Integer) request {
 	return request{index, chunkSpec{begin, length}}
 }
 
-var (
-	// Requested data not yet available.
-	errDataNotReady = errors.New("data not ready")
-)
-
 // The size in bytes of a metadata extension piece.
 func metadataPieceSize(totalSize int, piece int) int {
 	ret := totalSize - piece*(1<<14)
@@ -66,21 +41,6 @@ func metadataPieceSize(totalSize int, piece int) int {
 		ret = 1 << 14
 	}
 	return ret
-}
-
-type superer interface {
-	Super() interface{}
-}
-
-// Returns ok if there's a parent, and it's not nil.
-func super(child interface{}) (parent interface{}, ok bool) {
-	s, ok := child.(superer)
-	if !ok {
-		return
-	}
-	parent = s.Super()
-	ok = parent != nil
-	return
 }
 
 // Return the request that would include the given offset into the torrent data.
@@ -120,4 +80,12 @@ func validateInfo(info *metainfo.Info) error {
 		return errors.New("piece count and file lengths are at odds")
 	}
 	return nil
+}
+
+func chunkIndexSpec(index int, pieceLength, chunkSize pp.Integer) chunkSpec {
+	ret := chunkSpec{pp.Integer(index) * chunkSize, chunkSize}
+	if ret.Begin+ret.Length > pieceLength {
+		ret.Length = pieceLength - ret.Begin
+	}
+	return ret
 }

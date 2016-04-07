@@ -64,6 +64,14 @@ func (m *monitorableWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return hj.Hijack()
 }
 
+func (m *monitorableWriter) Flush() {
+	m.w.(http.Flusher).Flush()
+}
+
+func (m *monitorableWriter) CloseNotify() <-chan bool {
+	return m.w.(http.CloseNotifier).CloseNotify()
+}
+
 var integerRegexp = regexp.MustCompile(`\.\d+`)
 
 //replace ResponseWriter with a monitorable one, return logger

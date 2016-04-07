@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"expvar"
 	"fmt"
-	"strconv"
+	"math"
 	"sync"
 	"time"
 
@@ -24,6 +24,7 @@ func NewTimer() Timer {
 	return Timer{time.Now()}
 }
 
+// The exponent is the upper bound of the duration in seconds.
 func bucketExponent(d time.Duration) int {
 	e := -9
 	for d != 0 {
@@ -48,6 +49,13 @@ func (me *buckets) Add(t time.Duration) {
 	me.mu.Unlock()
 }
 
+func humanExponent(e int) string {
+	if e == -9 {
+		return "<1ns"
+	}
+	return ">" + time.Duration(math.Pow10(e-1)).String()
+}
+
 func (me *buckets) String() string {
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "{")
@@ -62,8 +70,7 @@ func (me *buckets) String() string {
 		} else {
 			fmt.Fprintf(&b, ", ")
 		}
-		key := strconv.Itoa(i-9)
-		fmt.Fprintf(&b, "%q: %d", key, count)
+		fmt.Fprintf(&b, "%q: %d", humanExponent(i), count)
 	}
 	me.mu.Unlock()
 	fmt.Fprintf(&b, "}")

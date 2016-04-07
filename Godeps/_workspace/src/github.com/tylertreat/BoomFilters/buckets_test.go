@@ -1,6 +1,12 @@
 package boom
 
-import "testing"
+import (
+	"bytes"
+	"encoding/gob"
+	"testing"
+
+	"github.com/d4l3k/messagediff"
+)
 
 // Ensures that MaxBucketValue returns the correct maximum based on the bucket
 // size.
@@ -71,6 +77,28 @@ func TestBucketsReset(t *testing.T) {
 		if c := b.Get(uint(i)); c != 0 {
 			t.Errorf("Expected 0, got %d", c)
 		}
+	}
+}
+
+// Ensures that Buckets can be serialized and deserialized without errors.
+func TestBucketsGob(t *testing.T) {
+	b := NewBuckets(5, 2)
+	for i := 0; i < 5; i++ {
+		b.Increment(uint(i), 1)
+	}
+
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(b); err != nil {
+		t.Error(err)
+	}
+
+	b2 := NewBuckets(5, 2)
+	if err := gob.NewDecoder(&buf).Decode(b2); err != nil {
+		t.Error(err)
+	}
+
+	if diff, equal := messagediff.PrettyDiff(b, b2); !equal {
+		t.Errorf("Buckets Gob Encode and Decode = %+v; not %+v\n%s", b2, b, diff)
 	}
 }
 

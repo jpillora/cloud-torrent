@@ -16,8 +16,11 @@ copies or substantial portions of the Software.
 package boom
 
 import (
+	"bytes"
+	"encoding/binary"
 	"hash"
 	"hash/fnv"
+	"io"
 	"math"
 )
 
@@ -160,4 +163,101 @@ func (p *PartitionedBloomFilter) Reset() *PartitionedBloomFilter {
 // For the effect on false positive rates see: https://github.com/tylertreat/BoomFilters/pull/1
 func (p *PartitionedBloomFilter) SetHash(h hash.Hash64) {
 	p.hash = h
+}
+
+// WriteTo writes a binary representation of the PartitionedBloomFilter to an i/o stream.
+// It returns the number of bytes written.
+func (p *PartitionedBloomFilter) WriteTo(stream io.Writer) (int64, error) {
+	err := binary.Write(stream, binary.BigEndian, uint64(p.m))
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, uint64(p.k))
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, uint64(p.s))
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, uint64(p.count))
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, uint64(len(p.partitions)))
+	if err != nil {
+		return 0, err
+	}
+	var numBytes int64
+	for _, partition := range p.partitions {
+		num, err := partition.WriteTo(stream)
+		if err != nil {
+			return 0, err
+		}
+		numBytes += num
+	}
+	return numBytes + int64(5*binary.Size(uint64(0))), err
+}
+
+// ReadFrom reads a binary representation of PartitionedBloomFilter (such as might
+// have been written by WriteTo()) from an i/o stream. It returns the number
+// of bytes read.
+func (p *PartitionedBloomFilter) ReadFrom(stream io.Reader) (int64, error) {
+	var m, k, s, count, len uint64
+	err := binary.Read(stream, binary.BigEndian, &m)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &k)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &s)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &count)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &len)
+	if err != nil {
+		return 0, err
+	}
+	var numBytes int64
+	partitions := make([]*Buckets, len)
+	for i, _ := range partitions {
+		buckets := &Buckets{}
+		num, err := buckets.ReadFrom(stream)
+		if err != nil {
+			return 0, err
+		}
+		numBytes += num
+		partitions[i] = buckets
+	}
+	p.m = uint(m)
+	p.k = uint(k)
+	p.s = uint(s)
+	p.count = uint(count)
+	p.partitions = partitions
+	return numBytes + int64(5*binary.Size(uint64(0))), nil
+}
+
+// GobEncode implements gob.GobEncoder interface.
+func (p *PartitionedBloomFilter) GobEncode() ([]byte, error) {
+	var buf bytes.Buffer
+	_, err := p.WriteTo(&buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// GobDecode implements gob.GobDecoder interface.
+func (p *PartitionedBloomFilter) GobDecode(data []byte) error {
+	buf := bytes.NewBuffer(data)
+	_, err := p.ReadFrom(buf)
+
+	return err
 }

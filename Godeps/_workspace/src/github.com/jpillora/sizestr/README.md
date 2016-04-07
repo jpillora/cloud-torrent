@@ -2,7 +2,7 @@
 
 Convert `231938` into `232KB`
 
-[![GoDoc](https://godoc.org/github.com/jpillora/sizestr?status.svg)](https://godoc.org/github.com/jpillora/sizestr)
+[![GoDoc](https://godoc.org/github.com/jpillora/sizestr?status.svg)](https://godoc.org/github.com/jpillora/sizestr) [![Circle CI](https://circleci.com/gh/jpillora/sizestr.svg?style=svg)](https://circleci.com/gh/jpillora/sizestr)
 
 ### Usage
 
@@ -11,7 +11,13 @@ go get github.com/jpillora/sizestr
 ```
 
 ``` go
+//use directly
 sizestr.ToString(231938) //"232KB"
+sizestr.Parse("232KB") //232000
+sizestr.Parse("232KiB") //237568
+//use with pkg/flag
+var b sizestr.Bytes
+flag.Var(&b, "size", "the size of my file")
 ```
 
 #### Significant Figures

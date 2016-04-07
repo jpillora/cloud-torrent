@@ -17,8 +17,8 @@ import (
 	"github.com/gosuri/uiprogress"
 
 	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/data/mmap"
 	"github.com/anacrolix/torrent/metainfo"
+	"github.com/anacrolix/torrent/storage"
 )
 
 func resolvedPeerAddrs(ss []string) (ret []torrent.Peer, err error) {
@@ -36,7 +36,7 @@ func resolvedPeerAddrs(ss []string) (ret []torrent.Peer, err error) {
 	return
 }
 
-func torrentBar(t torrent.Torrent) {
+func torrentBar(t *torrent.Torrent) {
 	bar := uiprogress.AddBar(1)
 	bar.AppendCompleted()
 	bar.AppendFunc(func(*uiprogress.Bar) (ret string) {
@@ -69,7 +69,7 @@ func torrentBar(t torrent.Torrent) {
 
 func addTorrents(client *torrent.Client) {
 	for _, arg := range opts.Torrent {
-		t := func() torrent.Torrent {
+		t := func() *torrent.Torrent {
 			if strings.HasPrefix(arg, "magnet:") {
 				t, err := client.AddMagnet(arg)
 				if err != nil {
@@ -121,13 +121,7 @@ func main() {
 	tagflag.Parse(&opts, tagflag.SkipBadTypes())
 	clientConfig := opts.Config
 	if opts.Mmap {
-		clientConfig.TorrentDataOpener = func(info *metainfo.Info) torrent.Data {
-			ret, err := mmap.TorrentData(info, "")
-			if err != nil {
-				log.Fatalf("error opening torrent data for %q: %s", info.Name, err)
-			}
-			return ret
-		}
+		clientConfig.DefaultStorage = storage.NewMMap("")
 	}
 
 	client, err := torrent.NewClient(&clientConfig)

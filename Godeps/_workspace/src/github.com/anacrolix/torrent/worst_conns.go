@@ -7,7 +7,7 @@ import (
 // Implements heap functions such that [0] is the worst connection.
 type worstConns struct {
 	c  []*connection
-	t  *torrent
+	t  *Torrent
 	cl *Client
 }
 

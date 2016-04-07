@@ -116,18 +116,30 @@ func TestUnsupportedType(t *testing.T) {
 	//config
 	type Config struct {
 		Foo string
-		Bar interface{}
+		Bar map[string]bool
 	}
-
-	c := &Config{}
-
+	c := Config{}
 	//flag example parse
-	err := New(c).Process([]string{"--foo", "hello", "--bar", "world"})
+	err := New(&c).Process([]string{"--foo", "hello", "--bar", "world"})
 	if err == nil {
 		t.Fatal("Expected error")
 	}
+	check(t, strings.Contains(err.Error(), "has unsupported type: map"), true)
+}
 
-	check(t, strings.Contains(err.Error(), "has unsupported type: interface"), true)
+func TestUnsupportedInterfaceType(t *testing.T) {
+	//config
+	type Config struct {
+		Foo string
+		Bar interface{}
+	}
+	c := Config{}
+	//flag example parse
+	err := New(&c).Process([]string{"--foo", "hello", "--bar", "world"})
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+	check(t, strings.Contains(err.Error(), "interface type must implement flag.Value"), true)
 }
 
 func TestEnv(t *testing.T) {

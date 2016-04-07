@@ -8,14 +8,14 @@ import (
 
 // Provides access to regions of torrent data that correspond to its files.
 type File struct {
-	t      Torrent
+	t      *Torrent
 	path   string
 	offset int64
 	length int64
 	fi     metainfo.FileInfo
 }
 
-func (f *File) Torrent() Torrent {
+func (f *File) Torrent() *Torrent {
 	return f.t
 }
 
@@ -54,7 +54,7 @@ type FilePieceState struct {
 
 // Returns the state of pieces in this file.
 func (f *File) State() (ret []FilePieceState) {
-	pieceSize := int64(f.t.torrent.usualPieceSize())
+	pieceSize := int64(f.t.usualPieceSize())
 	off := f.offset % pieceSize
 	remaining := f.length
 	for i := int(f.offset / pieceSize); ; i++ {
@@ -66,7 +66,7 @@ func (f *File) State() (ret []FilePieceState) {
 			len1 = remaining
 		}
 		f.t.cl.mu.RLock()
-		ps := f.t.torrent.pieceState(i)
+		ps := f.t.pieceState(i)
 		f.t.cl.mu.RUnlock()
 		ret = append(ret, FilePieceState{len1, ps})
 		off = 0
@@ -75,15 +75,27 @@ func (f *File) State() (ret []FilePieceState) {
 	return
 }
 
-// Marks pieces in the region of the file for download. This is a helper
-// wrapping Torrent.SetRegionPriority.
+// Requests that all pieces containing data in the file be downloaded.
+func (f *File) Download() {
+	f.t.DownloadPieces(f.t.byteRegionPieces(f.offset, f.length))
+}
+
+// Requests that torrent pieces containing bytes in the given region of the
+// file be downloaded.
 func (f *File) PrioritizeRegion(off, len int64) {
-	if off < 0 || off >= f.length {
-		return
-	}
-	if off+len > f.length {
-		len = f.length - off
-	}
-	off += f.offset
-	f.t.SetRegionPriority(off, len)
+	f.t.DownloadPieces(f.t.byteRegionPieces(f.offset+off, len))
+}
+
+func byteRegionExclusivePieces(off, size, pieceSize int64) (begin, end int) {
+	begin = int((off + pieceSize - 1) / pieceSize)
+	end = int((off + size) / pieceSize)
+	return
+}
+
+func (f *File) exclusivePieces() (begin, end int) {
+	return byteRegionExclusivePieces(f.offset, f.length, int64(f.t.usualPieceSize()))
+}
+
+func (f *File) Cancel() {
+	f.t.CancelPieces(f.exclusivePieces())
 }

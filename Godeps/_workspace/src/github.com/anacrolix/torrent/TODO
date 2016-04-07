@@ -8,3 +8,8 @@
  * Track connection chunk contributions to successful and failed piece hashes. Only drop the worst performer on a bad hash. Maybe block its IP.
  * Remove assumptions that the first piece requested will be the first that peers will send.
  * Clean-up DHT transaction code, it's just nasty.
+ * Handle wanted pieces more efficiently, it's slow in in fillRequests, since the prioritization system was changed.
+ * Determine if we should accept connections, even if we just close them. http://stackoverflow.com/questions/35108571/can-i-leave-sockets-in-syn-recv-until-im-interested-in-accepting
+ * Implement BEP 40.
+ * Rewrite tracker package to be announce-centric, rather than client. Currently the clients are private and adapted onto by the Announce() func.
+ * Move tracker management code in the torrent package to its own file.

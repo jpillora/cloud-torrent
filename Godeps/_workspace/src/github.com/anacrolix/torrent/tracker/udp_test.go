@@ -9,10 +9,10 @@ import (
 	"io/ioutil"
 	"net"
 	"net/url"
-	"strings"
 	"sync"
 	"testing"
 
+	_ "github.com/anacrolix/envpprof"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -102,13 +102,9 @@ func TestAnnounceLocalhost(t *testing.T) {
 	srv.pc, err = net.ListenPacket("udp", ":0")
 	require.NoError(t, err)
 	defer srv.pc.Close()
-	tr, err := New(fmt.Sprintf("udp://%s/announce", srv.pc.LocalAddr().String()))
-	require.NoError(t, err)
 	go func() {
 		require.NoError(t, srv.serveOne())
 	}()
-	err = tr.Connect()
-	require.NoError(t, err)
 	req := AnnounceRequest{
 		NumWant: -1,
 		Event:   Started,
@@ -118,7 +114,7 @@ func TestAnnounceLocalhost(t *testing.T) {
 	go func() {
 		require.NoError(t, srv.serveOne())
 	}()
-	ar, err := tr.Announce(&req)
+	ar, err := Announce(fmt.Sprintf("udp://%s/announce", srv.pc.LocalAddr().String()), &req)
 	require.NoError(t, err)
 	assert.EqualValues(t, 1, ar.Seeders)
 	assert.EqualValues(t, 2, len(ar.Peers))
@@ -126,27 +122,25 @@ func TestAnnounceLocalhost(t *testing.T) {
 
 func TestUDPTracker(t *testing.T) {
 	t.Parallel()
-	tr, err := New("udp://tracker.openbittorrent.com:80/announce")
-	require.NoError(t, err)
 	if testing.Short() {
 		t.SkipNow()
 	}
-	if err := tr.Connect(); err != nil {
-		if strings.Contains(err.Error(), "no such host") {
-			t.Skip(err)
-		}
-		if strings.Contains(err.Error(), "i/o timeout") {
-			t.Skip(err)
-		}
-		t.Fatal(err)
-	}
+	// if err := tr.Connect(); err != nil {
+	// 	if strings.Contains(err.Error(), "no such host") {
+	// 		t.Skip(err)
+	// 	}
+	// 	if strings.Contains(err.Error(), "i/o timeout") {
+	// 		t.Skip(err)
+	// 	}
+	// 	t.Fatal(err)
+	// }
 	req := AnnounceRequest{
 		NumWant: -1,
 		// Event:   Started,
 	}
 	rand.Read(req.PeerId[:])
 	copy(req.InfoHash[:], []uint8{0xa3, 0x56, 0x41, 0x43, 0x74, 0x23, 0xe6, 0x26, 0xd9, 0x38, 0x25, 0x4a, 0x6b, 0x80, 0x49, 0x10, 0xa6, 0x67, 0xa, 0xc1})
-	ar, err := tr.Announce(&req)
+	ar, err := Announce("udp://tracker.openbittorrent.com:80/announce", &req)
 	if ne, ok := err.(net.Error); ok {
 		if ne.Timeout() {
 			t.Skip(err)
@@ -183,15 +177,7 @@ func TestAnnounceRandomInfoHashThirdParty(t *testing.T) {
 		wg.Add(1)
 		go func(url string) {
 			defer wg.Done()
-			tr, err := New(url)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if err := tr.Connect(); err != nil {
-				t.Log(err)
-				return
-			}
-			resp, err := tr.Announce(&req)
+			resp, err := Announce(url, &req)
 			if err != nil {
 				t.Logf("error announcing to %s: %s", url, err)
 				return
@@ -226,19 +212,16 @@ func TestURLPathOption(t *testing.T) {
 		panic(err)
 	}
 	defer conn.Close()
-	cl := newClient(&url.URL{
-		Host: conn.LocalAddr().String(),
-		Path: "/announce",
-	})
 	go func() {
-		err = cl.Connect()
+		_, err := Announce((&url.URL{
+			Scheme: "udp",
+			Host:   conn.LocalAddr().String(),
+			Path:   "/announce",
+		}).String(), &AnnounceRequest{})
 		if err != nil {
-			t.Fatal(err)
+			defer conn.Close()
 		}
-		_, err = cl.Announce(&AnnounceRequest{})
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 	}()
 	var b [512]byte
 	_, addr, _ := conn.ReadFrom(b[:])

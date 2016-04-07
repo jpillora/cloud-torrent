@@ -46,27 +46,28 @@ const (
 	Stopped                 // The local peer is leaving the swarm.
 )
 
-type Client interface {
+type client interface {
 	// Returns ErrNotConnected if Connect needs to be called.
 	Announce(*AnnounceRequest) (AnnounceResponse, error)
 	Connect() error
 	String() string
 	URL() string
+	Close() error
 }
 
 var (
 	ErrNotConnected = errors.New("not connected")
 	ErrBadScheme    = errors.New("unknown scheme")
 
-	schemes = make(map[string]func(*url.URL) Client)
+	schemes = make(map[string]func(*url.URL) client)
 )
 
-func RegisterClientScheme(scheme string, newFunc func(*url.URL) Client) {
+func registerClientScheme(scheme string, newFunc func(*url.URL) client) {
 	schemes[scheme] = newFunc
 }
 
 // Returns ErrBadScheme if the tracker scheme isn't recognised.
-func New(rawurl string) (cl Client, err error) {
+func new(rawurl string) (cl client, err error) {
 	url_s, err := url.Parse(rawurl)
 	if err != nil {
 		return
@@ -78,4 +79,18 @@ func New(rawurl string) (cl Client, err error) {
 	}
 	cl = newFunc(url_s)
 	return
+}
+
+func Announce(urlStr string, req *AnnounceRequest) (res AnnounceResponse, err error) {
+	cl, err := new(urlStr)
+	if err != nil {
+		return
+	}
+	defer cl.Close()
+	err = cl.Connect()
+	if err != nil {
+		return
+	}
+	return cl.Announce(req)
+
 }

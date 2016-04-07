@@ -15,20 +15,22 @@ import (
 )
 
 func init() {
-	RegisterClientScheme("http", NewClient)
+	registerClientScheme("http", newHTTPClient)
 }
 
-type client struct {
+type httpClient struct {
 	url url.URL
 }
 
-func NewClient(url *url.URL) Client {
-	return &client{
+func (httpClient) Close() error { return nil }
+
+func newHTTPClient(url *url.URL) client {
+	return &httpClient{
 		url: *url,
 	}
 }
 
-type response struct {
+type httpResponse struct {
 	FailureReason string      `bencode:"failure reason"`
 	Interval      int32       `bencode:"interval"`
 	TrackerId     string      `bencode:"tracker id"`
@@ -37,7 +39,7 @@ type response struct {
 	Peers         interface{} `bencode:"peers"`
 }
 
-func (r *response) UnmarshalPeers() (ret []Peer, err error) {
+func (r *httpResponse) UnmarshalPeers() (ret []Peer, err error) {
 	s, ok := r.Peers.(string)
 	if !ok {
 		err = fmt.Errorf("unsupported peers value type: %T", r.Peers)
@@ -54,8 +56,10 @@ func (r *response) UnmarshalPeers() (ret []Peer, err error) {
 	return
 }
 
-func (me *client) Announce(ar *AnnounceRequest) (ret AnnounceResponse, err error) {
-	q := make(url.Values)
+func (me *httpClient) Announce(ar *AnnounceRequest) (ret AnnounceResponse, err error) {
+	// retain query parameters from announce URL
+	q := me.url.Query()
+
 	q.Set("info_hash", string(ar.InfoHash[:]))
 	q.Set("peer_id", string(ar.PeerId[:]))
 	q.Set("port", fmt.Sprintf("%d", ar.Port))
@@ -82,7 +86,7 @@ func (me *client) Announce(ar *AnnounceRequest) (ret AnnounceResponse, err error
 		err = fmt.Errorf("response from tracker: %s: %s", resp.Status, buf.String())
 		return
 	}
-	var trackerResponse response
+	var trackerResponse httpResponse
 	err = bencode.Unmarshal(buf.Bytes(), &trackerResponse)
 	if err != nil {
 		err = fmt.Errorf("error decoding %q: %s", buf.Bytes(), err)
@@ -99,15 +103,15 @@ func (me *client) Announce(ar *AnnounceRequest) (ret AnnounceResponse, err error
 	return
 }
 
-func (me *client) Connect() error {
+func (me *httpClient) Connect() error {
 	// HTTP trackers do not require a connecting handshake.
 	return nil
 }
 
-func (me *client) String() string {
+func (me *httpClient) String() string {
 	return me.URL()
 }
 
-func (me *client) URL() string {
+func (me *httpClient) URL() string {
 	return me.url.String()
 }

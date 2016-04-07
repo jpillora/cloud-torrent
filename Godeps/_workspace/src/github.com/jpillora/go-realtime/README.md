@@ -1,5 +1,11 @@
 
-# go-realtime
+:warning: This project has been rewritten, simplified and now been deprecated.
+
+## See https://github.com/jpillora/velox
+
+---
+
+### go-realtime
 
 Keep your Go structs in sync with your JS objects
 

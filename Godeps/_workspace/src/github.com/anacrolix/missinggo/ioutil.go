@@ -17,9 +17,11 @@ func NewStatWriter(w io.Writer) *StatWriter {
 	return &StatWriter{w: w}
 }
 
-type ZeroReader struct{}
+var ZeroReader zeroReader
 
-func (me ZeroReader) Read(b []byte) (n int, err error) {
+type zeroReader struct{}
+
+func (me zeroReader) Read(b []byte) (n int, err error) {
 	for i := range b {
 		b[i] = 0
 	}

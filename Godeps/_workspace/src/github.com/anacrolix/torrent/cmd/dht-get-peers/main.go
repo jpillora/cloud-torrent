@@ -12,7 +12,6 @@ import (
 	_ "github.com/anacrolix/envpprof"
 
 	"github.com/anacrolix/torrent/dht"
-	_ "github.com/anacrolix/torrent/util/profile"
 )
 
 var (

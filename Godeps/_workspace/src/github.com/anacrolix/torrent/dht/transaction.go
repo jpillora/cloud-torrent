@@ -9,7 +9,7 @@ import (
 // query message and a response message.
 type Transaction struct {
 	mu             sync.Mutex
-	remoteAddr     dHTAddr
+	remoteAddr     Addr
 	t              string
 	response       chan Msg
 	onResponse     func(Msg) // Called with the server locked.

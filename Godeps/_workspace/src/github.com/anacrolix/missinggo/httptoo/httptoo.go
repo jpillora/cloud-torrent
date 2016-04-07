@@ -21,7 +21,7 @@ func OriginatingProtocol(r *http.Request) string {
 
 // Clears the named cookie for every domain that leads to the current one.
 func NukeCookie(w http.ResponseWriter, r *http.Request, name, path string) {
-	parts := strings.Split(missinggo.ParseHostPort(r.Host).Host, ".")
+	parts := strings.Split(missinggo.SplitHostMaybePort(r.Host).Host, ".")
 	for i := range iter.N(len(parts) + 1) { // Include the empty domain.
 		http.SetCookie(w, &http.Cookie{
 			Name:   name,

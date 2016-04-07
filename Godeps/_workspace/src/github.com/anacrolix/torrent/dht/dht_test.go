@@ -2,6 +2,7 @@ package dht
 
 import (
 	"encoding/hex"
+	"log"
 	"math/big"
 	"math/rand"
 	"net"
@@ -23,7 +24,7 @@ func TestMarshalCompactNodeInfo(t *testing.T) {
 	}
 	addr, err := net.ResolveUDPAddr("udp4", "1.2.3.4:5")
 	require.NoError(t, err)
-	cni.Addr = newDHTAddr(addr)
+	cni.Addr = NewAddr(addr)
 	var b [CompactIPv4NodeInfoLen]byte
 	err = cni.PutCompact(b[:])
 	require.NoError(t, err)
@@ -48,6 +49,7 @@ const zeroID = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
 var testIDs []nodeID
 
 func init() {
+	log.SetFlags(log.Flags() | log.Lshortfile)
 	for _, s := range []string{
 		zeroID,
 		"\x03" + zeroID[1:],
@@ -152,13 +154,14 @@ func TestServerCustomNodeId(t *testing.T) {
 
 func TestAnnounceTimeout(t *testing.T) {
 	if testing.Short() {
-		t.Skip()
+		t.SkipNow()
 	}
 	s, err := NewServer(&ServerConfig{
 		BootstrapNodes: []string{"1.2.3.4:5"},
 	})
 	require.NoError(t, err)
 	a, err := s.Announce("12341234123412341234", 0, true)
+	assert.NoError(t, err)
 	<-a.Peers
 	a.Close()
 	s.Close()

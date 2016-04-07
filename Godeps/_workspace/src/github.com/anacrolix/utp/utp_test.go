@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
+	"os"
 	"runtime"
 	"sync"
 	"testing"
@@ -14,6 +16,7 @@ import (
 	_ "github.com/anacrolix/envpprof"
 	"github.com/anacrolix/missinggo"
 	"github.com/bradfitz/iter"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -172,7 +175,9 @@ func TestUTPRawConn(t *testing.T) {
 func TestConnReadDeadline(t *testing.T) {
 	t.Parallel()
 	ls, _ := NewSocket("udp", "localhost:0")
+	defer ls.Close()
 	ds, _ := NewSocket("udp", "localhost:0")
+	defer ds.Close()
 	dcReadErr := make(chan error)
 	go func() {
 		c, _ := ds.Dial(ls.Addr().String())
@@ -219,9 +224,7 @@ func TestConnReadDeadline(t *testing.T) {
 func connectSelfLots(n int, t testing.TB) {
 	defer goroutineLeakCheck(t)()
 	s, err := NewSocket("udp", "localhost:0")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	go func() {
 		for range iter.N(n) {
 			c, err := s.Accept()
@@ -260,12 +263,7 @@ func connectSelfLots(n int, t testing.TB) {
 			c.Close()
 		}
 	}
-	s.mu.Lock()
-	for len(s.conns) != 0 {
-		// log.Print(len(s.conns))
-		s.event.Wait()
-	}
-	s.mu.Unlock()
+	sleepWhile(&s.mu, func() bool { return len(s.conns) != 0 })
 	s.Close()
 }
 
@@ -302,34 +300,30 @@ func TestRejectDialBacklogFilled(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	errChan := make(chan error, 1)
+	errChan := make(chan error)
 	dial := func() {
 		_, err := s.Dial(s.Addr().String())
-		if err != nil {
-			errChan <- err
-		}
+		require.Error(t, err)
+		errChan <- err
 	}
 	// Fill the backlog.
-	for range iter.N(backlog + 1) {
+	for range iter.N(backlog) {
 		go dial()
 	}
-	s.mu.Lock()
-	for len(s.backlog) < backlog {
-		s.event.Wait()
-	}
-	s.mu.Unlock()
+	sleepWhile(&s.mu, func() bool { return len(s.backlog) < backlog })
 	select {
-	case <-errChan:
-		t.FailNow()
+	case err := <-errChan:
+		t.Fatalf("got premature error: %s", err)
 	default:
 	}
 	// One more connection should cause a dial attempt to get reset.
 	go dial()
 	err = <-errChan
-	if err.Error() != "peer reset" {
-		t.FailNow()
-	}
+	assert.EqualError(t, err, "peer reset")
 	s.Close()
+	for range iter.N(backlog) {
+		<-errChan
+	}
 }
 
 // Make sure that we can reset AfterFunc timers, so we don't have to create
@@ -409,12 +403,7 @@ func TestCloseDetachesQuickly(t *testing.T) {
 	}()
 	b, _ := s.Accept()
 	b.Close()
-	s.mu.Lock()
-	for len(s.conns) != 0 {
-		log.Print(len(s.conns))
-		s.event.Wait()
-	}
-	s.mu.Unlock()
+	sleepWhile(&s.mu, func() bool { return len(s.conns) != 0 })
 }
 
 // Check that closing, and resulting detach of a Conn doesn't close the parent
@@ -425,7 +414,7 @@ func TestConnCloseUnclosedSocket(t *testing.T) {
 	s, err := NewSocket("udp", "localhost:0")
 	require.NoError(t, err)
 	defer func() {
-		require.NoError(t, s.Close())
+		assert.NoError(t, s.Close())
 	}()
 	// Prevents the dialing goroutine from closing its end of the Conn before
 	// we can check that it has been registered in the listener.
@@ -453,24 +442,25 @@ func TestConnCloseUnclosedSocket(t *testing.T) {
 		}()
 		dialerSync <- struct{}{}
 		require.NoError(t, a.Close())
-		func() {
-			s.mu.Lock()
-			defer s.mu.Unlock()
-			for len(s.conns) != 0 {
-				s.event.Wait()
-			}
-		}()
+		sleepWhile(&s.mu, func() bool { return len(s.conns) != 0 })
 	}
 }
 
 func TestAcceptGone(t *testing.T) {
-	s, _ := NewSocket("udp", "localhost:0")
-	_, err := DialTimeout(s.Addr().String(), time.Millisecond)
+	defer sleepWhile(&mu, func() bool { return len(sockets) != 0 })
+	s, err := NewSocket("udp", "localhost:0")
+	require.NoError(t, err)
+	defer s.Close()
+	_, err = DialTimeout(s.Addr().String(), time.Millisecond)
 	require.Error(t, err)
-	c, _ := s.Accept()
-	c.SetReadDeadline(time.Now().Add(time.Millisecond))
-	c.Read(nil)
-	// select {}
+	// Will succeed because we don't signal that we give up dialing, or check
+	// that the handshake is completed before returning the new Conn.
+	c, err := s.Accept()
+	require.NoError(t, err)
+	defer c.Close()
+	err = c.SetReadDeadline(time.Now().Add(time.Millisecond))
+	_, err = c.Read(nil)
+	require.EqualError(t, err, "i/o timeout")
 }
 
 func TestPacketReadTimeout(t *testing.T) {
@@ -481,4 +471,31 @@ func TestPacketReadTimeout(t *testing.T) {
 	t.Log(err)
 	t.Log(a.Close())
 	t.Log(b.Close())
+}
+
+func sleepWhile(l sync.Locker, cond func() bool) {
+	for {
+		l.Lock()
+		val := cond()
+		l.Unlock()
+		if !val {
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
+func TestMain(m *testing.M) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		WriteStatus(w)
+	})
+	code := m.Run()
+	WriteStatus(os.Stderr)
+	mu.Lock()
+	numSockets := len(sockets)
+	mu.Unlock()
+	if numSockets != 0 {
+		code = 1
+	}
+	os.Exit(code)
 }

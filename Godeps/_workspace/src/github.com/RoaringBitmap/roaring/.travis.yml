@@ -1,0 +1,8 @@
+language: go
+sudo: false
+install:
+  - go get github.com/smartystreets/goconvey/convey
+  - go get github.com/willf/bitset
+
+notifications:
+        email: false

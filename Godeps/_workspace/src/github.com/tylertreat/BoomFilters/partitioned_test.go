@@ -1,8 +1,12 @@
 package boom
 
 import (
+	"bytes"
+	"encoding/gob"
 	"strconv"
 	"testing"
+
+	"github.com/d4l3k/messagediff"
 )
 
 // Ensures that Capacity returns the number of bits, m, in the Bloom filter.
@@ -129,6 +133,28 @@ func TestPartitionedBloomReset(t *testing.T) {
 				t.Error("Expected all bits to be unset")
 			}
 		}
+	}
+}
+
+// Ensures that PartitionedBloomFilter can be serialized and deserialized without errors.
+func TestPartitionedBloomGob(t *testing.T) {
+	f := NewPartitionedBloomFilter(100, 0.1)
+	for i := 0; i < 1000; i++ {
+		f.Add([]byte(strconv.Itoa(i)))
+	}
+
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(f); err != nil {
+		t.Error(err)
+	}
+
+	f2 := NewPartitionedBloomFilter(100, 0.1)
+	if err := gob.NewDecoder(&buf).Decode(f2); err != nil {
+		t.Error(err)
+	}
+
+	if diff, equal := messagediff.PrettyDiff(f, f2); !equal {
+		t.Errorf("PartitionedBoomFilter Gob Encode and Decode = %+v; not %+v\n%s", f2, f, diff)
 	}
 }
 

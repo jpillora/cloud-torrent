@@ -3,8 +3,15 @@ package itertools
 import "github.com/anacrolix/missinggo"
 
 type Iterator interface {
+	// Advances to the next value. Returns false if there are no more values.
+	// Must be called before the first value.
 	Next() bool
+	// Returns the current value. Should panic when the iterator is in an
+	// invalid state.
 	Value() interface{}
+	// Ceases iteration prematurely. This should occur implicitly if Next
+	// returns false.
+	Stop()
 }
 
 type sliceIterator struct {
@@ -30,6 +37,8 @@ func (me *sliceIterator) Value() interface{} {
 	return me.value
 }
 
+func (me *sliceIterator) Stop() {}
+
 func SliceIterator(a []interface{}) Iterator {
 	return &sliceIterator{
 		slice: a,
@@ -38,4 +47,11 @@ func SliceIterator(a []interface{}) Iterator {
 
 func StringIterator(a string) Iterator {
 	return SliceIterator(missinggo.ConvertToSliceOfEmptyInterface(a))
+}
+
+func IteratorAsSlice(it Iterator) (ret []interface{}) {
+	for it.Next() {
+		ret = append(ret, it.Value())
+	}
+	return
 }

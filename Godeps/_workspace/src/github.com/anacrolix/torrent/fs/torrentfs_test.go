@@ -6,11 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -20,12 +18,13 @@ import (
 	_ "github.com/anacrolix/envpprof"
 	"github.com/anacrolix/missinggo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	netContext "golang.org/x/net/context"
 
 	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/data/mmap"
 	"github.com/anacrolix/torrent/internal/testutil"
 	"github.com/anacrolix/torrent/metainfo"
+	"github.com/anacrolix/torrent/storage"
 )
 
 func init() {
@@ -85,9 +84,7 @@ func newGreetingLayout() (tl testLayout, err error) {
 // operations blocked inside the filesystem code.
 func TestUnmountWedged(t *testing.T) {
 	layout, err := newGreetingLayout()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	defer func() {
 		err := layout.Destroy()
 		if err != nil {
@@ -101,14 +98,11 @@ func TestUnmountWedged(t *testing.T) {
 		ListenAddr:      "redonk",
 		DisableTCP:      true,
 		DisableUTP:      true,
-
-		NoDefaultBlocklist: true,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	defer client.Close()
-	client.AddTorrent(layout.Metainfo)
+	_, err = client.AddTorrent(layout.Metainfo)
+	require.NoError(t, err)
 	fs := New(client)
 	fuseConn, err := fuse.Mount(layout.MountDir)
 	if err != nil {
@@ -167,75 +161,43 @@ func TestUnmountWedged(t *testing.T) {
 
 func TestDownloadOnDemand(t *testing.T) {
 	layout, err := newGreetingLayout()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	defer layout.Destroy()
 	seeder, err := torrent.NewClient(&torrent.Config{
 		DataDir:         layout.Completed,
 		DisableTrackers: true,
 		NoDHT:           true,
-		ListenAddr:      ":0",
+		ListenAddr:      "localhost:0",
 		Seed:            true,
-
-		NoDefaultBlocklist: true,
 		// Ensure that the metainfo is obtained over the wire, since we added
 		// the torrent to the seeder by magnet.
 		DisableMetainfoCache: true,
 	})
-	if err != nil {
-		t.Fatalf("error creating seeder client: %s", err)
-	}
-	seeder.SetIPBlockList(nil)
+	require.NoError(t, err)
 	defer seeder.Close()
-	http.HandleFunc("/seeder", func(w http.ResponseWriter, req *http.Request) {
-		seeder.WriteStatus(w)
-	})
-	_, err = seeder.AddMagnet(fmt.Sprintf("magnet:?xt=urn:btih:%x", layout.Metainfo.Info.Hash))
-	if err != nil {
-		t.Fatal(err)
-	}
+	testutil.ExportStatusWriter(seeder, "s")
+	_, err = seeder.AddMagnet(fmt.Sprintf("magnet:?xt=urn:btih:%s", layout.Metainfo.Info.Hash.HexString()))
+	require.NoError(t, err)
 	leecher, err := torrent.NewClient(&torrent.Config{
 		DisableTrackers: true,
 		NoDHT:           true,
-		ListenAddr:      ":0",
+		ListenAddr:      "localhost:0",
 		DisableTCP:      true,
-
-		NoDefaultBlocklist: true,
-
-		TorrentDataOpener: func(info *metainfo.Info) torrent.Data {
-			ret, _ := mmap.TorrentData(info, filepath.Join(layout.BaseDir, "download"))
-			return ret
-		},
-
+		DefaultStorage:  storage.NewMMap(filepath.Join(layout.BaseDir, "download")),
 		// This can be used to check if clients can connect to other clients
 		// with the same ID.
-
 		// PeerID: seeder.PeerID(),
 	})
-	leecher.SetIPBlockList(nil)
-	http.HandleFunc("/leecher", func(w http.ResponseWriter, req *http.Request) {
-		leecher.WriteStatus(w)
-	})
+	require.NoError(t, err)
+	testutil.ExportStatusWriter(leecher, "l")
 	defer leecher.Close()
 	leecherTorrent, _ := leecher.AddTorrent(layout.Metainfo)
-	leecherTorrent.AddPeers([]torrent.Peer{func() torrent.Peer {
-		_, port, err := net.SplitHostPort(seeder.ListenAddr().String())
-		if err != nil {
-			panic(err)
-		}
-		portInt64, err := strconv.ParseInt(port, 0, 0)
-		if err != nil {
-			panic(err)
-		}
-		return torrent.Peer{
-			IP: func() net.IP {
-				ret, _ := net.ResolveIPAddr("ip", "localhost")
-				return ret.IP
-			}(),
-			Port: int(portInt64),
-		}
-	}()})
+	leecherTorrent.AddPeers([]torrent.Peer{
+		torrent.Peer{
+			IP:   missinggo.AddrIP(seeder.ListenAddr()),
+			Port: missinggo.AddrPort(seeder.ListenAddr()),
+		},
+	})
 	fs := New(leecher)
 	defer fs.Destroy()
 	root, _ := fs.Root()
@@ -249,10 +211,7 @@ func TestDownloadOnDemand(t *testing.T) {
 	node.(fusefs.HandleReader).Read(netContext.Background(), &fuse.ReadRequest{
 		Size: int(size),
 	}, resp)
-	content := resp.Data
-	if string(content) != testutil.GreetingFileContents {
-		t.Fatalf("%q != %q", string(content), testutil.GreetingFileContents)
-	}
+	assert.EqualValues(t, testutil.GreetingFileContents, resp.Data)
 }
 
 func TestIsSubPath(t *testing.T) {

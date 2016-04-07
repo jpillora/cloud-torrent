@@ -5,6 +5,8 @@ import (
 	"reflect"
 )
 
+// Copy elements from src to dst. Panics if the length of src and dst are
+// different.
 func CopyExact(dest interface{}, src interface{}) {
 	dV := reflect.ValueOf(dest)
 	sV := reflect.ValueOf(src)

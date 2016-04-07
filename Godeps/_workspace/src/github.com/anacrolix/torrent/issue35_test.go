@@ -30,12 +30,11 @@ func addirs(cf *Config) *Config {
 	return cf
 }
 
-func testingConfig() *Config {
+func issue35TestingConfig() *Config {
 	return &Config{
 		ListenAddr:           "localhost:0",
 		NoDHT:                false,
 		DisableTrackers:      true,
-		NoDefaultBlocklist:   true,
 		DisableUTP:           false,
 		DisableMetainfoCache: true,
 		DisableIPv6:          true,
@@ -85,7 +84,7 @@ func TestInfohash(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cf_one = testingConfig()
+	cf_one = issue35TestingConfig()
 	cf_one.ListenAddr = "localhost:43433"
 	cf_one = addirs(cf_one)
 	cl_one, err = NewClient(cf_one)
@@ -96,7 +95,7 @@ func TestInfohash(t *testing.T) {
 	writeranddata(tfp)
 	b := metainfo.Builder{}
 	b.AddFile(tfp)
-	b.AddDhtNodes([]string{fmt.Sprintf(cl_one.DHT().ID())})
+	b.AddDhtNodes([]string{"1.2.3.4:5555"})
 	ba, err := b.Submit()
 	if err != nil {
 		t.Fatal(err)

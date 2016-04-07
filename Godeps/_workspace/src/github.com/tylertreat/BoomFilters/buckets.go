@@ -1,5 +1,11 @@
 package boom
 
+import (
+	"bytes"
+	"encoding/binary"
+	"io"
+)
+
 // Buckets is a fast, space-efficient array of buckets where each bucket can
 // store up to a configured maximum value.
 type Buckets struct {
@@ -94,4 +100,83 @@ func (b *Buckets) setBits(offset, length, bits uint32) {
 	bitMask := uint32((1 << length) - 1)
 	b.data[byteIndex] = byte(uint32(b.data[byteIndex]) & ^(bitMask << byteOffset))
 	b.data[byteIndex] = byte(uint32(b.data[byteIndex]) | ((bits & bitMask) << byteOffset))
+}
+
+// WriteTo writes a binary representation of Buckets to an i/o stream.
+// It returns the number of bytes written.
+func (b *Buckets) WriteTo(stream io.Writer) (int64, error) {
+	err := binary.Write(stream, binary.BigEndian, b.bucketSize)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, b.max)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, uint64(b.count))
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, uint64(len(b.data)))
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, b.data)
+	if err != nil {
+		return 0, err
+	}
+	return int64(len(b.data) + 2*binary.Size(uint8(0)) + 2*binary.Size(uint64(0))), err
+}
+
+// ReadFrom reads a binary representation of Buckets (such as might
+// have been written by WriteTo()) from an i/o stream. It returns the number
+// of bytes read.
+func (b *Buckets) ReadFrom(stream io.Reader) (int64, error) {
+	var bucketSize, max uint8
+	var count, len uint64
+	err := binary.Read(stream, binary.BigEndian, &bucketSize)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &max)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &count)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &len)
+	if err != nil {
+		return 0, err
+	}
+	data := make([]byte, len)
+	err = binary.Read(stream, binary.BigEndian, &data)
+	if err != nil {
+		return 0, err
+	}
+	b.bucketSize = bucketSize
+	b.max = max
+	b.count = uint(count)
+	b.data = data
+	return int64(int(len) + 2*binary.Size(uint8(0)) + 2*binary.Size(uint64(0))), nil
+}
+
+// GobEncode implements gob.GobEncoder interface.
+func (b *Buckets) GobEncode() ([]byte, error) {
+	var buf bytes.Buffer
+	_, err := b.WriteTo(&buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// GobDecode implements gob.GobDecoder interface.
+func (b *Buckets) GobDecode(data []byte) error {
+	buf := bytes.NewBuffer(data)
+	_, err := b.ReadFrom(buf)
+
+	return err
 }

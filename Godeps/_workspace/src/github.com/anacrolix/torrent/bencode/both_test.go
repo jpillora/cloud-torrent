@@ -1,43 +1,39 @@
 package bencode
 
-import "testing"
-import "bytes"
-import "io/ioutil"
+import (
+	"bytes"
+	"io/ioutil"
+	"testing"
 
-func load_file(name string, t *testing.T) []byte {
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func loadFile(name string, t *testing.T) []byte {
 	data, err := ioutil.ReadFile(name)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	return data
 }
 
-func test_file_interface(t *testing.T, filename string) {
-	data1 := load_file(filename, t)
-	var iface interface{}
+func testFileInterface(t *testing.T, filename string) {
+	data1 := loadFile(filename, t)
 
+	var iface interface{}
 	err := Unmarshal(data1, &iface)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	data2, err := Marshal(iface)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	if !bytes.Equal(data1, data2) {
-		t.Fatalf("equality expected\n")
-	}
-
+	assert.EqualValues(t, data1, data2)
 }
 
 func TestBothInterface(t *testing.T) {
-	test_file_interface(t, "_testdata/archlinux-2011.08.19-netinstall-i686.iso.torrent")
-	test_file_interface(t, "_testdata/continuum.torrent")
+	testFileInterface(t, "testdata/archlinux-2011.08.19-netinstall-i686.iso.torrent")
+	testFileInterface(t, "testdata/continuum.torrent")
 }
 
-type torrent_file struct {
+type torrentFile struct {
 	Info struct {
 		Name        string `bencode:"name"`
 		Length      int64  `bencode:"length"`
@@ -55,9 +51,9 @@ type torrent_file struct {
 	URLList      interface{} `bencode:"url-list,omitempty"`
 }
 
-func test_file(t *testing.T, filename string) {
-	data1 := load_file(filename, t)
-	var f torrent_file
+func testFile(t *testing.T, filename string) {
+	data1 := loadFile(filename, t)
+	var f torrentFile
 
 	err := Unmarshal(data1, &f)
 	if err != nil {
@@ -76,5 +72,5 @@ func test_file(t *testing.T, filename string) {
 }
 
 func TestBoth(t *testing.T) {
-	test_file(t, "_testdata/archlinux-2011.08.19-netinstall-i686.iso.torrent")
+	testFile(t, "testdata/archlinux-2011.08.19-netinstall-i686.iso.torrent")
 }

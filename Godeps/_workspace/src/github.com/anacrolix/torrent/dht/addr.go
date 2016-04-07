@@ -1,27 +1,17 @@
 package dht
 
-import (
-	"net"
-
-	"github.com/anacrolix/missinggo"
-)
+import "net"
 
 // Used internally to refer to node network addresses.
-type dHTAddr interface {
-	net.Addr
+type Addr interface {
 	UDPAddr() *net.UDPAddr
-	IP() net.IP
+	String() string
 }
 
 // Speeds up some of the commonly called Addr methods.
 type cachedAddr struct {
-	a  net.Addr
+	ua net.UDPAddr
 	s  string
-	ip net.IP
-}
-
-func (ca cachedAddr) Network() string {
-	return ca.a.Network()
 }
 
 func (ca cachedAddr) String() string {
@@ -29,13 +19,12 @@ func (ca cachedAddr) String() string {
 }
 
 func (ca cachedAddr) UDPAddr() *net.UDPAddr {
-	return ca.a.(*net.UDPAddr)
+	return &ca.ua
 }
 
-func (ca cachedAddr) IP() net.IP {
-	return ca.ip
-}
-
-func newDHTAddr(addr net.Addr) dHTAddr {
-	return cachedAddr{addr, addr.String(), missinggo.AddrIP(addr)}
+func NewAddr(ua *net.UDPAddr) Addr {
+	return cachedAddr{
+		ua: *ua,
+		s:  ua.String(),
+	}
 }
