@@ -6,7 +6,7 @@ app.run(function($rootScope, search, api) {
   var $scope = window.scope = $rootScope;
 
   //link up to angular
-	var rt = realtime("/realtime");
+	var rt = realtime("realtime");
 	$scope.state = {};
 	rt.add("state", $scope.state, function() {
 		$scope.$apply();
