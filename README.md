@@ -26,6 +26,12 @@ See [the latest release](https://github.com/jpillora/cloud-torrent/releases/late
 $ go get -v github.com/jpillora/cloud-torrent
 ```
 
+**Docker**
+
+``` sh
+$ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-torrent
+```
+
 **Heroku**
 
 Click this button to...

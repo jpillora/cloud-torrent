@@ -25,11 +25,6 @@ func NewTorrent(ih string, storage *storage.Storage, sortConfig *MediaSortConfig
 type Torrent struct {
 	ihash IHash
 	id    torrent.InfoHash
-	//cloud torrent
-	Started      bool
-	Dropped      bool
-	Percent      float32
-	DownloadRate float32
 	//anacrolix/torrent
 	InfoHash   string
 	Name       string
@@ -46,6 +41,13 @@ type Torrent struct {
 	filesMut   sync.Mutex
 	storage    *storage.Storage
 	sortConfig *MediaSortConfig
+	//cloud torrent
+	Started      bool
+	Dropped      bool
+	Percent      float32
+	DownloadRate float32
+	t            *torrent.Torrent
+	updatedAt    time.Time
 }
 
 func (torrent *Torrent) init(info *metainfo.Info) {

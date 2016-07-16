@@ -1,6 +1,0 @@
-Shared DHT/UTP/UDP-tracker socket dispatching in Transmission is at
-https://trac.transmissionbt.com/browser/trunk/libtransmission/tr-udp.c
-event_callback(). Currently I don't do this because github.com/h2so5/utp does
-not support UTP sockets backed by a socket out of its control. Also I only
-make client requests for UDP-trackers, so no shared socket is required there
-unless I want to imply the client port.

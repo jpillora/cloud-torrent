@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/anacrolix/torrent/metainfo"
 )
 
 func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) error {
@@ -31,6 +33,16 @@ func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) error {
 			return fmt.Errorf("Failed to download remote torrent: %s", err)
 		}
 		action = "torrentfile"
+	}
+	//convert torrent bytes into magnet
+	if action == "torrentfile" {
+		reader := bytes.NewBuffer(data)
+		info, err := metainfo.Load(reader)
+		if err != nil {
+			return err
+		}
+		data = []byte(info.Magnet().String())
+		action = "magnet"
 	}
 	//update after action completes
 	defer s.state.Push()

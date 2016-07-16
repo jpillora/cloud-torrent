@@ -1,219 +1,231 @@
 package engine
 
 import (
-	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"net"
 	"os"
 	"path/filepath"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/bencode"
 	"github.com/anacrolix/torrent/metainfo"
-	"github.com/jpillora/cloud-torrent/storage"
 )
-
-type IHash torrent.InfoHash
-
-func info2hash(info *metainfo.Info) IHash {
-	b, _ := bencode.Marshal(info)
-	ihash := IHash{}
-	h := sha1.New()
-	h.Write(b)
-	result := h.Sum(nil)
-	copy(ihash[:], result)
-	return ihash
-}
 
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
 type Engine struct {
-	//public torrents
-	Torrents map[string]*Torrent
-	//internal
-	mut         sync.Mutex
-	cacheDir    string
-	configuring bool
-	client      *torrent.Client
-	ts          map[torrent.InfoHash]*Torrent
-	openned     map[IHash]*Torrent
-	lastConfig  Config
+	mut      sync.Mutex
+	cacheDir string
+	client   *torrent.Client
+	config   Config
+	ts       map[string]*Torrent
 }
 
-func New(storage *storage.Storage) *Engine {
-	return &Engine{
-		Torrents: map[string]*Torrent{},
-		ts:       map[torrent.InfoHash]*Torrent{},
-		openned:  map[IHash]*Torrent{},
-	}
+func New() *Engine {
+	return &Engine{ts: map[string]*Torrent{}}
 }
 
-func (e *Engine) Configure(c *Config) error {
-	//ensure locks
-	e.mut.Lock()
-	defer func() {
-		e.mut.Unlock()
-		e.Update()
-	}()
-	if e.configuring {
-		return fmt.Errorf("Configuration in progress")
-	}
-	//configuring...
-	defer func() {
-		e.configuring = false
-	}()
-	e.configuring = true
-	if c.IncomingPort <= 0 || c.IncomingPort >= 65535 {
-		c.IncomingPort = 50007
-	}
-	if dir, err := filepath.Abs(c.DownloadDirectory); err != nil {
-		return fmt.Errorf("Invalid path")
-	} else {
-		c.DownloadDirectory = dir
-	}
+func (e *Engine) Configure(c Config) error {
 	//recieve config
 	if e.client != nil {
 		e.client.Close()
-		//wait until disconnected
-		conn, err := net.Dial("tcp", "0.0.0.0:"+strconv.Itoa(e.lastConfig.IncomingPort))
-		if err == nil {
-			b := make([]byte, 0xff)
-			for {
-				if _, err := conn.Read(b); err != nil {
-					break
-				}
-			}
-		}
+		time.Sleep(1 * time.Second)
+	}
+	if c.IncomingPort <= 0 {
+		return fmt.Errorf("Invalid incoming port (%d)", c.IncomingPort)
 	}
 	tc := torrent.Config{
 		DataDir:           c.DownloadDirectory,
-		ConfigDir:         filepath.Join(c.DownloadDirectory, ".config"),
 		ListenAddr:        "0.0.0.0:" + strconv.Itoa(c.IncomingPort),
+		ConfigDir:         filepath.Join(c.DownloadDirectory, ".config"),
 		NoUpload:          !c.EnableUpload,
 		Seed:              c.EnableSeeding,
-		DisableEncryption: !c.EnableEncryption,
-		TorrentDataOpener: e.OpenTorrent,
+		DisableEncryption: c.DisableEncryption,
 	}
 	client, err := torrent.NewClient(&tc)
 	if err != nil {
 		return err
 	}
-	e.lastConfig = *c
-	e.client = client
+	e.mut.Lock()
 	e.cacheDir = filepath.Join(tc.ConfigDir, "torrents")
 	if files, err := ioutil.ReadDir(e.cacheDir); err == nil {
 		for _, f := range files {
 			if filepath.Ext(f.Name()) != ".torrent" {
 				continue
 			}
-			file, err := os.Open(filepath.Join(e.cacheDir, f.Name()))
-			if err != nil {
-				return err
+			tt, err := client.AddTorrentFromFile(filepath.Join(e.cacheDir, f.Name()))
+			if err == nil {
+				e.upsertTorrent(tt)
 			}
-			e.NewByFile(file)
 		}
 	}
+	e.config = c
+	e.client = client
+	e.mut.Unlock()
+	//reset
+	e.GetTorrents()
 	return nil
 }
 
-//OpenTorrent implements the torrent.Openner interface
-//and Torrent implements the torrent.Data interface
-func (e *Engine) OpenTorrent(info *metainfo.Info) torrent.Data {
-	ihash := info2hash(info)
-	//load by infohash (cant error - valid ih and upserting)
-	t, ok := e.openned[ihash]
-	if !ok {
-		t = &Torrent{}
-		e.openned[ihash] = t
-		t.init(info)
+func (e *Engine) NewTorrent(magnetURI string) error {
+	//adds the torrent but does not start it
+	tt, err := e.client.AddMagnet(magnetURI)
+	if err != nil {
+		return err
 	}
-	//provide the torrent as its own "openner"
-	return t
+	t := e.upsertTorrent(tt)
+
+	go func() {
+		<-t.t.GotInfo()
+
+		// if e.config.AutoStart && !loaded && torrent.Loaded && !torrent.Started {
+		e.StartTorrent(t.InfoHash)
+		// }
+
+	}()
+
+	return nil
 }
 
-//GetTorrents copies torrents out of anacrolix/torrent
+//GetTorrents moves torrents out of the anacrolix/torrent
 //and into the local cache
-func (e *Engine) Update() {
+func (e *Engine) GetTorrents() map[string]*Torrent {
 	e.mut.Lock()
 	defer e.mut.Unlock()
+
 	if e.client == nil {
-		return
+		return nil
 	}
 	for _, tt := range e.client.Torrents() {
-		ih := tt.InfoHash()
-		ihash := info2hash(tt.Info())
-		t, ok := e.openned[ihash]
-		if ok {
-			delete(e.openned, ihash)
-			t.InfoHash = ih.HexString()
-			e.ts[ih] = t
-			e.Torrents[t.InfoHash] = t
-		} else {
-			t, ok = e.ts[ih]
-			if !ok {
-				t = &Torrent{}
-				e.ts[ih] = t
-				e.Torrents[ih.HexString()] = t
-			}
-		}
-		t.Update(tt)
+		e.upsertTorrent(tt)
 	}
+	return e.ts
 }
 
-func (e *Engine) Get(hex string) (*Torrent, bool) {
-	e.mut.Lock()
-	defer e.mut.Unlock()
-	ih, err := validateInfohash(hex)
-	if err != nil {
-		return nil, false
-	}
-	t, ok := e.ts[ih]
-	return t, ok
-}
-
-func (e *Engine) NewByMagnet(magnetURI string) error {
-	_, err := e.client.AddMagnet(magnetURI)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (e *Engine) NewByFile(body io.Reader) error {
-	info, err := metainfo.Load(body)
-	if err != nil {
-		return err
-	}
-	_, err = e.client.AddTorrent(info)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (e *Engine) Remove(rmt *Torrent) error {
-	e.mut.Lock()
-	defer e.mut.Unlock()
-	id := rmt.id
-	t, ok := e.ts[id]
+func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
+	ih := tt.InfoHash().HexString()
+	torrent, ok := e.ts[ih]
 	if !ok {
-		return fmt.Errorf("Missing")
+		torrent = &Torrent{InfoHash: ih}
+		e.ts[ih] = torrent
 	}
+	//update torrent fields using underlying torrent
+	torrent.Update(tt)
+	return torrent
+}
+
+func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
+	ih, err := str2ih(infohash)
+	if err != nil {
+		return nil, err
+	}
+	t, ok := e.ts[ih.HexString()]
+	if !ok {
+		return t, fmt.Errorf("Missing torrent %x", ih)
+	}
+	return t, nil
+}
+
+func (e *Engine) getOpenTorrent(infohash string) (*Torrent, error) {
+	t, err := e.getTorrent(infohash)
+	if err != nil {
+		return nil, err
+	}
+	// if t.t == nil {
+	// 	newt, err := e.client.AddTorrentFromFile(filepath.Join(e.cacheDir, infohash+".torrent"))
+	// 	if err != nil {
+	// 		return t, fmt.Errorf("Failed to open torrent %s", err)
+	// 	}
+	// 	t.t = &newt
+	// }
+	return t, nil
+}
+
+func (e *Engine) StartTorrent(infohash string) error {
+	t, err := e.getOpenTorrent(infohash)
+	if err != nil {
+		return err
+	}
+	if t.Started {
+		return fmt.Errorf("Already started")
+	}
+	t.Started = true
 	for _, f := range t.Files {
-		f.Stop()
+		if f != nil {
+			f.Started = true
+		}
 	}
-	t.tt.Drop()
-	delete(e.ts, id)
-	delete(e.Torrents, id.HexString())
+	if t.t.Info() != nil {
+		t.t.DownloadAll()
+	}
 	return nil
 }
 
-func validateInfohash(str string) (torrent.InfoHash, error) {
-	var ih torrent.InfoHash
+func (e *Engine) StopTorrent(infohash string) error {
+	t, err := e.getTorrent(infohash)
+	if err != nil {
+		return err
+	}
+	if !t.Started {
+		return fmt.Errorf("Already stopped")
+	}
+	//there is no stop - kill underlying torrent
+	t.t.Drop()
+	t.Started = false
+	for _, f := range t.Files {
+		if f != nil {
+			f.Started = false
+		}
+	}
+	return nil
+}
+
+func (e *Engine) DeleteTorrent(infohash string) error {
+	t, err := e.getTorrent(infohash)
+	if err != nil {
+		return err
+	}
+	os.Remove(filepath.Join(e.cacheDir, infohash+".torrent"))
+	delete(e.ts, t.InfoHash)
+	ih, _ := str2ih(infohash)
+	if tt, ok := e.client.Torrent(ih); ok {
+		tt.Drop()
+	}
+	return nil
+}
+
+func (e *Engine) StartFile(infohash, filepath string) error {
+	t, err := e.getOpenTorrent(infohash)
+	if err != nil {
+		return err
+	}
+	var f *File
+	for _, file := range t.Files {
+		if file.Path == filepath {
+			f = file
+			break
+		}
+	}
+	if f == nil {
+		return fmt.Errorf("Missing file %s", filepath)
+	}
+	if f.Started {
+		return fmt.Errorf("Already started")
+	}
+	t.Started = true
+	f.Started = true
+	f.f.PrioritizeRegion(0, f.Size)
+	return nil
+}
+
+func (e *Engine) StopFile(infohash, filepath string) error {
+	return fmt.Errorf("Unsupported")
+}
+
+func str2ih(str string) (metainfo.Hash, error) {
+	var ih metainfo.Hash
 	e, err := hex.Decode(ih[:], []byte(str))
 	if err != nil {
 		return ih, fmt.Errorf("Invalid hex string")
