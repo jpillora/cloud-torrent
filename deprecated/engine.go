@@ -3,7 +3,6 @@ package engine
 import (
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -28,7 +27,7 @@ func New() *Engine {
 }
 
 func (e *Engine) Configure(c Config) error {
-	//recieve config
+	//recieve and enforce engine config
 	if e.client != nil {
 		e.client.Close()
 		time.Sleep(1 * time.Second)
@@ -39,28 +38,27 @@ func (e *Engine) Configure(c Config) error {
 	tc := torrent.Config{
 		DataDir:           c.DownloadDirectory,
 		ListenAddr:        "0.0.0.0:" + strconv.Itoa(c.IncomingPort),
-		ConfigDir:         filepath.Join(c.DownloadDirectory, ".config"),
 		NoUpload:          !c.EnableUpload,
 		Seed:              c.EnableSeeding,
-		DisableEncryption: c.DisableEncryption,
+		DisableEncryption: !c.EnableEncryption,
 	}
 	client, err := torrent.NewClient(&tc)
 	if err != nil {
 		return err
 	}
 	e.mut.Lock()
-	e.cacheDir = filepath.Join(tc.ConfigDir, "torrents")
-	if files, err := ioutil.ReadDir(e.cacheDir); err == nil {
-		for _, f := range files {
-			if filepath.Ext(f.Name()) != ".torrent" {
-				continue
-			}
-			tt, err := client.AddTorrentFromFile(filepath.Join(e.cacheDir, f.Name()))
-			if err == nil {
-				e.upsertTorrent(tt)
-			}
-		}
-	}
+	// e.cacheDir = filepath.Join(tc.ConfigDir, "torrents")
+	// if files, err := ioutil.ReadDir(e.cacheDir); err == nil {
+	// 	for _, f := range files {
+	// 		if filepath.Ext(f.Name()) != ".torrent" {
+	// 			continue
+	// 		}
+	// 		tt, err := client.AddTorrentFromFile(filepath.Join(e.cacheDir, f.Name()))
+	// 		if err == nil {
+	// 			e.upsertTorrent(tt)
+	// 		}
+	// 	}
+	// }
 	e.config = c
 	e.client = client
 	e.mut.Unlock()

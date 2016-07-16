@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,15 +13,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jpillora/cloud-torrent/engine"
+	"github.com/jpillora/cloud-torrent/fs"
+	"github.com/jpillora/cloud-torrent/fs/disk"
+	"github.com/jpillora/cloud-torrent/fs/dropbox"
+	"github.com/jpillora/cloud-torrent/fs/torrent"
 	"github.com/jpillora/cloud-torrent/static"
-	"github.com/jpillora/cloud-torrent/storage"
-	"github.com/jpillora/go-realtime"
+	realtime "github.com/jpillora/go-realtime"
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/scraper/scraper"
 	"github.com/jpillora/velox"
 	"github.com/skratchdot/open-golang/open"
 )
+
+type Configurations map[string]json.RawMessage
 
 //Server is the "State" portion of the diagram
 type Server struct {
@@ -38,18 +43,16 @@ type Server struct {
 	files, static http.Handler
 	scraper       *scraper.Handler
 	scraperh      http.Handler
-	//torrent storage
-	storage *storage.Storage
-	//torrent engine
-	engine *engine.Engine
+	//filesystems
+	FileSystems map[string]fs.FS
 	//velox state (sync'd with browser immediately)
 	state struct {
 		velox.State
 		sync.Mutex
-		Config          Config
+		// Config          Config
 		SearchProviders scraper.Config
-		Downloads       map[string]*storage.Node
-		Torrents        map[string]*engine.Torrent
+		FileSystems     map[string]fs.FS
+		Configurations  map[string]interface{}
 		Users           map[string]*realtime.User
 		Stats           struct {
 			Title   string
@@ -66,49 +69,49 @@ func (s *Server) Run(version string) error {
 	if tls && (s.CertPath == "" || s.KeyPath == "") {
 		return fmt.Errorf("You must provide both key and cert paths")
 	}
-	//torrent storage
-	s.storage = storage.New()
-	//torrent engine
-	s.engine = engine.New(s.storage)
+	//fs
+	s.FileSystems = map[string]fs.FS{}
+	for _, fs := range []fs.FS{
+		torrent.New(),
+		disk.New(),
+		dropbox.New(),
+	} {
+		n := fs.Name()
+		if _, ok := s.FileSystems[n]; ok {
+			return errors.New("duplicate fs: " + n)
+		}
+		s.FileSystems[n] = fs
+	}
 	//stats
 	s.state.Stats.Title = s.Title
 	s.state.Stats.Version = version
 	s.state.Stats.Runtime = strings.TrimPrefix(runtime.Version(), "go")
 	s.state.Stats.Uptime = time.Now()
-	//init maps
+	s.state.FileSystems = s.FileSystems
+	s.state.Configurations = map[string]interface{}{}
 	s.state.Users = map[string]*realtime.User{}
-	s.state.Downloads = map[string]*storage.Node{}
-	s.state.Torrents = s.engine.Torrents
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
-	s.files = http.HandlerFunc(s.serveFiles)
+	// s.files = http.HandlerFunc(s.serveFiles)
 	s.static = ctstatic.FileSystemHandler()
 	s.scraper = &scraper.Handler{Log: false}
-	if err := s.scraper.LoadConfig(defaultSearchConfig); err != nil {
+	if err := s.scraper.LoadConfig(ctstatic.MustAsset("files/misc/search.json")); err != nil {
 		log.Fatal(err)
 	}
 	s.state.SearchProviders = s.scraper.Config //share scraper config
 	s.scraperh = http.StripPrefix("/search", s.scraper)
-	//configure engine
-	c := Config{
-		Torrent: engine.Config{
-			DownloadDirectory: "./downloads",
-			EnableUpload:      true,
-			EnableEncryption:  true,
-			AutoStart:         true,
-		},
-	}
+	//configure
+	cfgs := Configurations{}
 	if _, err := os.Stat(s.ConfigPath); err == nil {
 		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {
-			return fmt.Errorf("Read configuration error: %s", err)
+			return fmt.Errorf("Read configurations error: %s", err)
 		} else if len(b) == 0 {
 			//ignore empty file
-		} else if err := json.Unmarshal(b, &c); err != nil {
-			return fmt.Errorf("Malformed configuration: %s", err)
+		} else if err := json.Unmarshal(b, &cfgs); err != nil {
+			return fmt.Errorf("Malformed configurations: %s", err)
 		}
 	}
-	log.Printf("reconf...")
 	//initial configure
-	if err := s.reconfigure(c); err != nil {
+	if err := s.reconfigure(cfgs); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)
 	}
 
@@ -117,7 +120,7 @@ func (s *Server) Run(version string) error {
 	go func() {
 		for {
 			s.state.Lock()
-			s.engine.Update()
+			// s.engine.Update()
 			// log.Printf("torrents #%d files #%d", len(s.state.Torrents), len(s.state.Downloads.Children))
 			s.state.Unlock()
 			s.state.Push()
@@ -170,19 +173,30 @@ func (s *Server) Run(version string) error {
 	}
 }
 
-func (s *Server) reconfigure(c Config) error {
-	if err := s.engine.Configure(&c.Torrent); err != nil {
-		return err
+func (s *Server) reconfigure(cfgs Configurations) error {
+	for name, raw := range cfgs {
+		// if name == "Server" {
+		//
+		// } else if fs, ok := s.FileSystems[name]; ok {
+		//
+		// }
+		v, err := s.configure(raw)
+		if err != nil {
+			continue
+		}
+		s.state.Configurations[name] = v
 	}
-	if err := s.storage.Configure(c.Storage); err != nil {
-		return err
-	}
-	b, _ := json.MarshalIndent(&c, "", "  ")
-	ioutil.WriteFile(s.ConfigPath, b, 0755)
-	s.state.Config = c
+	//write back to disk
+	b, _ := json.MarshalIndent(&cfgs, "", "  ")
+	ioutil.WriteFile(s.ConfigPath, b, 0600)
+	//update frontend
 	s.state.Push()
 	log.Printf("reconfd")
 	return nil
+}
+
+func (s *Server) configure(raw json.RawMessage) (interface{}, error) {
+	return nil, nil
 }
 
 func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
@@ -214,10 +228,10 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	//api call
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		//only pass request in, expect error out
-		if err := s.handleAPI(w, r); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
-		}
+		// if err := s.handleAPI(w, r); err != nil {
+		// 	w.WriteHeader(http.StatusBadRequest)
+		// 	w.Write([]byte(err.Error()))
+		// }
 		return
 	}
 	//no match, assume static file

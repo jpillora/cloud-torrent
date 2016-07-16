@@ -1,8 +1,4 @@
-package server
-
-//see github.com/jpillora/scraper for config specification
-//cloud-torrent uses "<id>-item" handlers
-var defaultSearchConfig = []byte(`{
+{
 	"kat": {
 		"name": "Kickass Torrents",
 		"url": "https://kat.cr/usearch/{{query}}/{{page:1}}/?field=seeders&sorder=desc",
@@ -48,4 +44,4 @@ var defaultSearchConfig = []byte(`{
 			"tracker": "table tr td:nth-child(2)"
 		}
 	}
-}`)
+}

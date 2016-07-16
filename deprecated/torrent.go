@@ -23,9 +23,8 @@ func NewTorrent(ih string, storage *storage.Storage, sortConfig *MediaSortConfig
 
 //Torrent is converted to JSON and sent to the frontend
 type Torrent struct {
-	ihash IHash
-	id    torrent.InfoHash
 	//anacrolix/torrent
+	at         *torrent.Torrent
 	InfoHash   string
 	Name       string
 	Loaded     bool
@@ -35,8 +34,6 @@ type Torrent struct {
 	//state
 	files      map[string]*File
 	loadedMut  sync.Mutex
-	tt         torrent.Torrent
-	info       *metainfo.Info
 	updatedAt  time.Time
 	filesMut   sync.Mutex
 	storage    *storage.Storage
@@ -46,8 +43,6 @@ type Torrent struct {
 	Dropped      bool
 	Percent      float32
 	DownloadRate float32
-	t            *torrent.Torrent
-	updatedAt    time.Time
 }
 
 func (torrent *Torrent) init(info *metainfo.Info) {
@@ -56,8 +51,8 @@ func (torrent *Torrent) init(info *metainfo.Info) {
 	if torrent.Loaded {
 		return
 	}
-	torrent.InfoHash = torrent.id.HexString()
-	torrent.info = info
+	// torrent.InfoHash = info. .HexString()
+	// torrent.info = info
 	torrent.Name = info.Name
 	torrent.Size = info.TotalLength()
 	numFiles := len(info.Files)
@@ -85,7 +80,7 @@ func (torrent *Torrent) Get(path string) (*File, bool) {
 
 func (torrent *Torrent) Update(tt torrent.Torrent) {
 	if info := tt.Info(); info != nil {
-		torrent.init(info)
+		torrent.init(&info.Info)
 	}
 	torrent.filesMut.Lock()
 	if torrent.Loaded {
@@ -119,7 +114,7 @@ func (torrent *Torrent) Update(tt torrent.Torrent) {
 	}
 	torrent.Downloaded = bytesDownloaded
 	torrent.updatedAt = now
-	torrent.tt = tt
+	// torrent.tt = tt
 	torrent.filesMut.Unlock()
 }
 
@@ -185,25 +180,28 @@ func (torrent *Torrent) WriteSectionTo(w io.Writer, off, n int64) (written int64
 
 // We believe the piece data will pass a hash check.
 func (torrent *Torrent) PieceCompleted(index int) error {
-	p := torrent.info.Piece(index)
-	f, off := torrent.File(p.Offset())
-	if f == nil {
-		return errors.New("missing file")
-	}
-	log.Printf("[%s] set complete '%s' %d", torrent.Name, f.Path, off)
+	// l := torrent.info.NumPieces()
+	//
+	// torrent.info.Pieces[index]
+	// p :=
+	// f, off := torrent.File(p.Offset())
+	// if f == nil {
+	// 	return errors.New("missing file")
+	// }
+	// log.Printf("[%s] set complete '%s' %d", torrent.Name, f.Path, off)
 	return nil
 }
 
 // Returns true if the piece is complete.
 func (torrent *Torrent) PieceComplete(index int) bool {
-	if torrent.info == nil {
-		return false
-	}
-	p := torrent.info.Piece(index)
-	f, _ := torrent.File(p.Offset())
-	if f == nil {
-		return false
-	}
+	// if torrent.info == nil {
+	// 	return false
+	// }
+	// p := torrent.info.Piece(index)
+	// f, _ := torrent.File(p.Offset())
+	// if f == nil {
+	// 	return false
+	// }
 	// log.Printf("[%s] is complete %d?", torrent.Name, index)
 	return false
 }

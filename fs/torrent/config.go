@@ -1,4 +1,4 @@
-package engine
+package torrent
 
 type Config struct {
 	PeerID            string
