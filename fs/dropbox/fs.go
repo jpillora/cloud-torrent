@@ -20,7 +20,7 @@ type dropboxFS struct {
 }
 
 func (d *dropboxFS) Name() string {
-	return "Disk"
+	return "Dropbox"
 }
 
 func (d *dropboxFS) Mode() fs.FSMode {

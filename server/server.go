@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,8 +26,6 @@ import (
 	"github.com/skratchdot/open-golang/open"
 )
 
-type Configurations map[string]json.RawMessage
-
 //Server is the "State" portion of the diagram
 type Server struct {
 	//config
@@ -44,7 +43,7 @@ type Server struct {
 	scraper       *scraper.Handler
 	scraperh      http.Handler
 	//filesystems
-	FileSystems map[string]fs.FS
+	fileSystems map[string]fs.FS
 	//velox state (sync'd with browser immediately)
 	state struct {
 		velox.State
@@ -70,24 +69,24 @@ func (s *Server) Run(version string) error {
 		return fmt.Errorf("You must provide both key and cert paths")
 	}
 	//fs
-	s.FileSystems = map[string]fs.FS{}
+	s.fileSystems = map[string]fs.FS{}
 	for _, fs := range []fs.FS{
 		torrent.New(),
 		disk.New(),
 		dropbox.New(),
 	} {
 		n := fs.Name()
-		if _, ok := s.FileSystems[n]; ok {
+		if _, ok := s.fileSystems[n]; ok {
 			return errors.New("duplicate fs: " + n)
 		}
-		s.FileSystems[n] = fs
+		s.fileSystems[n] = fs
 	}
 	//stats
 	s.state.Stats.Title = s.Title
 	s.state.Stats.Version = version
 	s.state.Stats.Runtime = strings.TrimPrefix(runtime.Version(), "go")
 	s.state.Stats.Uptime = time.Now()
-	s.state.FileSystems = s.FileSystems
+	s.state.FileSystems = s.fileSystems
 	s.state.Configurations = map[string]interface{}{}
 	s.state.Users = map[string]*realtime.User{}
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
@@ -100,20 +99,19 @@ func (s *Server) Run(version string) error {
 	s.state.SearchProviders = s.scraper.Config //share scraper config
 	s.scraperh = http.StripPrefix("/search", s.scraper)
 	//configure
-	cfgs := Configurations{}
 	if _, err := os.Stat(s.ConfigPath); err == nil {
 		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {
 			return fmt.Errorf("Read configurations error: %s", err)
 		} else if len(b) == 0 {
 			//ignore empty file
-		} else if err := json.Unmarshal(b, &cfgs); err != nil {
-			return fmt.Errorf("Malformed configurations: %s", err)
+		} else if err := s.reconfigure(b); err != nil {
+			return fmt.Errorf("initial configure failed: %s", err)
 		}
 	}
 	//initial configure
-	if err := s.reconfigure(cfgs); err != nil {
-		return fmt.Errorf("initial configure failed: %s", err)
-	}
+	// if err := s.reconfigure(cfgs); err != nil {
+	// 	return fmt.Errorf("initial configure failed: %s", err)
+	// }
 
 	log.Printf("poll...")
 	//poll torrents
@@ -173,7 +171,11 @@ func (s *Server) Run(version string) error {
 	}
 }
 
-func (s *Server) reconfigure(cfgs Configurations) error {
+func (s *Server) reconfigure(b []byte) error {
+	cfgs := map[string]json.RawMessage{}
+	if err := json.Unmarshal(b, &cfgs); err != nil {
+		return nil
+	}
 	for name, raw := range cfgs {
 		// if name == "Server" {
 		//
@@ -186,11 +188,13 @@ func (s *Server) reconfigure(cfgs Configurations) error {
 		}
 		s.state.Configurations[name] = v
 	}
-	//write back to disk
-	b, _ := json.MarshalIndent(&cfgs, "", "  ")
-	ioutil.WriteFile(s.ConfigPath, b, 0600)
-	//update frontend
-	s.state.Push()
+	//write back to disk if changed
+	b2, _ := json.MarshalIndent(&cfgs, "", "  ")
+	if !bytes.Equal(b, b2) {
+		ioutil.WriteFile(s.ConfigPath, b2, 0600)
+		//update frontend
+		s.state.Push()
+	}
 	log.Printf("reconfd")
 	return nil
 }
