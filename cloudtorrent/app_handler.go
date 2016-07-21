@@ -42,7 +42,9 @@ func (a *App) routes() http.Handler {
 }
 
 func (a *App) veloxSync(w http.ResponseWriter, r *http.Request) {
-	if conn, err := velox.Sync(&a.state, w, r); err == nil {
+	if conn, err := velox.Sync(&a.state, w, r); err != nil {
+		log.Print(err)
+	} else {
 		//add user
 		a.state.Lock()
 		a.state.Users[r.RemoteAddr] = time.Now().UTC()

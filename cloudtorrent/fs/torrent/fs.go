@@ -39,10 +39,22 @@ func (t *torrentFS) Configure(raw json.RawMessage) (interface{}, error) {
 	if err := json.Unmarshal(raw, &t.config); err != nil {
 		return nil, err
 	}
+	unset := t.config.PeerID == "" && t.config.IncomingPort == 0
+	if t.config.PeerID == "" {
+		t.config.PeerID = "Cloud Torrent"
+	}
+	if t.config.IncomingPort == 0 {
+		t.config.IncomingPort = 4479
+	}
+	if unset {
+		t.config.EnableEncryption = true
+		t.config.EnableSeeding = true
+		t.config.EnableUpload = true
+	}
 	return &t.config, nil
 }
 
-func (t *torrentFS) Sync(chan fs.Node) error {
+func (t *torrentFS) Update(chan fs.Node) error {
 	return nil
 }
 

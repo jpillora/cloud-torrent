@@ -50,8 +50,8 @@ type App struct {
 		velox.State
 		sync.Mutex
 		SearchProviders scraper.Config
-		Files           map[string]fs.Node
 		Configurations  map[string]interface{}
+		FSS             map[string]*FileSystemState
 		Users           map[string]time.Time
 		Stats           struct {
 			Title   string
@@ -77,8 +77,17 @@ func (a *App) Run(version string) error {
 	//prepare initial empty configs
 	a.prevConfigs = rawMessages{}
 	cfgs := rawMessages{
-		"App": json.RawMessage("{}"),
+		"App": EmptyConfig,
 	}
+	//system statistics
+	a.state.Stats.Title = a.Title
+	a.state.Stats.Version = version
+	a.state.Stats.Runtime = strings.TrimPrefix(runtime.Version(), "go")
+	a.state.Stats.Uptime = time.Now()
+	//app state
+	a.state.Configurations = map[string]interface{}{}
+	a.state.FSS = map[string]*FileSystemState{}
+	a.state.Users = map[string]time.Time{}
 	//init filesystems
 	a.fileSystems = map[string]fs.FS{}
 	for _, fs := range []fs.FS{
@@ -90,18 +99,11 @@ func (a *App) Run(version string) error {
 		if _, ok := a.fileSystems[n]; ok {
 			return errors.New("duplicate fs: " + n)
 		}
-		cfgs[n] = json.RawMessage("{}")
+		cfgs[n] = EmptyConfig
 		a.fileSystems[n] = fs
+		a.state.FSS[n] = &FileSystemState{Enabled: true}
 	}
-	//system statistics
-	a.state.Stats.Title = a.Title
-	a.state.Stats.Version = version
-	a.state.Stats.Runtime = strings.TrimPrefix(runtime.Version(), "go")
-	a.state.Stats.Uptime = time.Now()
-	//app state
-	a.state.Configurations = map[string]interface{}{}
-	a.state.Files = map[string]fs.Node{}
-	a.state.Users = map[string]time.Time{}
+
 	//app handlers
 	a.auth = cookieauth.New()
 	//static will use a the local static/ dir if it exists,
@@ -127,10 +129,6 @@ func (a *App) Run(version string) error {
 	//initial configure
 	if err := a.configureAll(cfgs); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)
-	}
-	//start syncing filesystems
-	for _, fs := range a.fileSystems {
-		a.startFSSync(fs)
 	}
 	//start server
 	host := a.Host
@@ -163,30 +161,48 @@ func (a *App) Run(version string) error {
 	}
 }
 
+//startFSSync runs once after the first
+//successful configure, then loops fs.Update()
+//forever, with exponential backoff on failures.
 func (a *App) startFSSync(f fs.FS) {
 	name := f.Name()
 	updates := make(chan fs.Node)
+	fsstate := a.state.FSS[name]
 	//monitor and sync updates
 	go func() {
 		for node := range updates {
 			a.state.Lock()
-			a.state.Files[name] = node
+			log.Printf("[%s] updated", name)
+			fsstate.Root = &fs.JSONNode{Node: node}
 			a.state.Unlock()
 			a.state.Push()
 		}
 	}()
 	//sync loop forever
 	go func() {
-		b := backoff.Backoff{}
+		b := backoff.Backoff{Max: 2 * time.Minute}
 		for {
-			if err := f.Sync(updates); err != nil {
-				logf("[fs %s] sync failed: %s", name, err)
-				time.Sleep(b.Duration())
+			//retrieve updates
+			err := f.Update(updates)
+			e := ""
+			d := 30 * time.Second
+			if err == nil {
+				b.Reset()
 			} else {
-				time.Sleep(30 * time.Second)
+				log.Printf("[%s] sync failed: %s", name, err)
+				e = err.Error()
+				d = b.Duration()
 			}
+			//show result
+			a.state.Lock()
+			fsstate.Error = e
+			a.state.Unlock()
+			a.state.Push()
+			//retry after sleep
+			time.Sleep(d)
 		}
 	}()
+	log.Printf("[%s] Sync started", name)
 }
 
 func logf(format string, args ...interface{}) {

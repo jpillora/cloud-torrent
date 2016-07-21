@@ -1,6 +1,6 @@
 <html ng-app="app" >
 	<head>
-		<title ng-bind="state.Stats.Title">Cloud Torrent</title>
+		<title ng-bind="state.Configurations.App.Title">Cloud Torrent</title>
     	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 		<link rel="stylesheet" type="text/css" href="css/Lato/Lato.css">
 		<link rel="stylesheet" type="text/css" href="css/semantic.min.css">
@@ -28,7 +28,7 @@
 					ng-init="logoHover = false"
 					ng-mouseover="logoHover = true"
 					ng-mouseleave="logoHover = false">
-					<i class="blue icon" ng-class="{cloud:!logoHover, github: logoHover}"></i>  {{ state.Stats.Title }}
+					<i class="blue icon" ng-class="{cloud:!logoHover, github: logoHover}"></i>  {{ logoHover ? 'Cloud Torrent' : state.Configurations.App.Title }}
 				</a>
 			</h2>
 			<div class="status">

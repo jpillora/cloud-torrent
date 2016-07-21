@@ -8,11 +8,15 @@
 					<label>Username</label>
 					<input type="text" ng-model="inputs.App.User"></input>
 				</div>
-			</div>
-			<div class="column">
 				<div class="field">
 					<label>Password</label>
 					<input type="password" ng-model="inputs.App.Pass"></input>
+				</div>
+			</div>
+			<div class="column">
+				<div class="field">
+					<label>Title</label>
+					<input type="text" ng-model="inputs.App.Title"></input>
 				</div>
 			</div>
 		</div>
@@ -58,8 +62,12 @@
 	<!-- ================================== -->
 	<h4 class="ui dividing header">Dropbox</h4>
 	<div class="field">
-		<label>Token</label>
+		<label>API Token</label>
 		<input type="text" ng-model="inputs.Dropbox.Token"></input>
+	</div>
+	<div class="field">
+		<label>Storage path</label>
+		<input type="text" ng-model="inputs.Dropbox.Base"></input>
 	</div>
 	<!-- ================================== -->
 	<div class="buttons">

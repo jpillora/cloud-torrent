@@ -10,7 +10,7 @@ app.controller("ConfigController", function($scope, $rootScope, storage, api) {
   $scope.inputs = {};
   $scope.saved = true;
   $scope.$watch("inputs", function() {
-    $scope.saved = hash($scope.cfgs) === hash(inputs);
+    $scope.saved = hash($scope.cfgs) === hash($scope.inputs);
   }, true);
   //
   $rootScope.$watch("state.Configurations", function(cfgs) {

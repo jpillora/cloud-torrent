@@ -13,7 +13,6 @@ app.run(function($rootScope, search, api) {
     $scope.$apply();
   };
   v.onupdate = function() {
-    console.log($scope.state);
     $scope.$apply();
   };
 

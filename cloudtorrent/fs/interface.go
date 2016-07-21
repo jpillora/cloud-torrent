@@ -17,6 +17,11 @@ const (
 type FS interface {
 	Mode() FSMode
 	Configure(json.RawMessage) (interface{}, error)
-	Sync(chan Node) error
+	Update(chan Node) error
 	afero.Fs
+}
+
+type Node interface {
+	afero.File
+	Children() []Node
 }

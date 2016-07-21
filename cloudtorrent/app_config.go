@@ -17,6 +17,17 @@ type AppConfig struct {
 	Title      string
 }
 
+var EmptyConfig = json.RawMessage("{}")
+
+//file system state
+type FileSystemState struct {
+	Enabled bool           `json:",omitempty"`
+	Syncing bool           `json:",omitempty"`
+	Config  interface{}    `json:",omitempty"`
+	Root    json.Marshaler `json:",omitempty"`
+	Error   string         `json:",omitempty"`
+}
+
 func (a *App) handleConfigure(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	cfgs := rawMessages{}
 	if err := json.NewDecoder(r.Body).Decode(&cfgs); err != nil {
@@ -32,6 +43,9 @@ func (a *App) configureApp(raw json.RawMessage) (interface{}, error) {
 	if err := json.Unmarshal(raw, &a.config); err != nil {
 		return nil, err
 	}
+	if a.Title == "" {
+		a.Title = "Cloud Torrent"
+	}
 	return &a.config, nil
 }
 
@@ -46,6 +60,13 @@ func (a *App) configureAllRaw(b []byte) error {
 func (a *App) configureAll(cfgs rawMessages) error {
 	changed := false
 	for name, raw := range cfgs {
+		//normalize raw
+		indented := bytes.Buffer{}
+		if err := json.Indent(&indented, raw, "", "  "); err != nil {
+			panic(err)
+		}
+		r := indented.Bytes()
+		//check for fs
 		f, ok := a.fileSystems[name]
 		//validate name
 		if name != "App" && !ok {
@@ -53,24 +74,34 @@ func (a *App) configureAll(cfgs rawMessages) error {
 		}
 		//compare to last update
 		prev := a.prevConfigs[name]
-		if bytes.Equal(prev, raw) {
+		if bytes.Equal(prev, r) {
 			continue
 		}
 		//apply!
 		var v interface{}
 		var err error
 		if name == "App" {
-			v, err = a.configureApp(raw)
+			v, err = a.configureApp(r)
 		} else {
-			v, err = f.Configure(raw)
+			v, err = f.Configure(r)
 		}
 		if err != nil {
+			if bytes.Equal(raw, EmptyConfig) {
+				continue
+			}
 			logf("[%s] configuration error: %s", name, err)
-			continue
+			return err
 		}
+		//note successful configure
 		a.state.Configurations[name] = v
-		a.prevConfigs[name] = raw
+		a.prevConfigs[name] = r
 		changed = true
+		//first config? start syncing filesystems
+		if state, ok := a.state.FSS[name]; ok && !state.Syncing {
+			state.Syncing = true
+			a.state.Push()
+			a.startFSSync(f)
+		}
 	}
 	if changed {
 		//write back to disk if changed
