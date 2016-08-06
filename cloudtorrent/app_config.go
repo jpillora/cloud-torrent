@@ -19,15 +19,6 @@ type AppConfig struct {
 
 var EmptyConfig = json.RawMessage("{}")
 
-//file system state
-type FileSystemState struct {
-	Enabled bool           `json:",omitempty"`
-	Syncing bool           `json:",omitempty"`
-	Config  interface{}    `json:",omitempty"`
-	Root    json.Marshaler `json:",omitempty"`
-	Error   string         `json:",omitempty"`
-}
-
 func (a *App) handleConfigure(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	cfgs := rawMessages{}
 	if err := json.NewDecoder(r.Body).Decode(&cfgs); err != nil {
@@ -40,13 +31,16 @@ func (a *App) handleConfigure(ctx context.Context, w http.ResponseWriter, r *htt
 }
 
 func (a *App) configureApp(raw json.RawMessage) (interface{}, error) {
-	if err := json.Unmarshal(raw, &a.config); err != nil {
+	if err := json.Unmarshal(raw, &a.state.AppConfig); err != nil {
 		return nil, err
 	}
-	if a.Title == "" {
-		a.Title = "Cloud Torrent"
+	if a.state.AppConfig.Title == "" {
+		a.state.AppConfig.Title = "Cloud Torrent"
 	}
-	return &a.config, nil
+	if a.state.AppConfig.User != "" || a.state.AppConfig.Pass != "" {
+		a.auth.SetUserPass(a.state.AppConfig.User, a.state.AppConfig.Pass)
+	}
+	return &a.state.AppConfig, nil
 }
 
 func (a *App) configureAllRaw(b []byte) error {
@@ -93,14 +87,18 @@ func (a *App) configureAll(cfgs rawMessages) error {
 			return err
 		}
 		//note successful configure
-		a.state.Configurations[name] = v
 		a.prevConfigs[name] = r
 		changed = true
-		//first config? start syncing filesystems
-		if state, ok := a.state.FSS[name]; ok && !state.Syncing {
-			state.Syncing = true
-			a.state.Push()
-			a.startFSSync(f)
+		if name == "App" {
+			//noop
+		} else if fsstate, ok := a.state.FSS[name]; ok {
+			fsstate.Config = v
+			//first config? start syncing filesystems
+			if !fsstate.Syncing {
+				fsstate.Syncing = true
+				fsstate.Push()
+				fsstate.Sync(f)
+			}
 		}
 	}
 	if changed {

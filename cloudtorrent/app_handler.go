@@ -37,7 +37,10 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc(pat.Get("/sync"), a.veloxSync)
 	mux.Handle(pat.Get("/search/*"), a.scraperh)
 	mux.Handle(pat.Post("/api/configure"), errhand(a.handleConfigure))
-	mux.Handle(pat.Get("/*"), a.static)
+	mux.HandleFunc(pat.Get("/*"), func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("fallback handle: %s %s", r.Method, r.URL)
+		a.static.ServeHTTP(w, r)
+	})
 	return mux
 }
 

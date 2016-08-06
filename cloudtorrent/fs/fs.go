@@ -1,10 +1,6 @@
 package fs
 
-import (
-	"encoding/json"
-
-	"github.com/spf13/afero"
-)
+import "encoding/json"
 
 type FSMode int
 
@@ -15,13 +11,8 @@ const (
 )
 
 type FS interface {
+	Name() string
 	Mode() FSMode
 	Configure(json.RawMessage) (interface{}, error)
 	Update(chan Node) error
-	afero.Fs
-}
-
-type Node interface {
-	afero.File
-	Children() []Node
 }
