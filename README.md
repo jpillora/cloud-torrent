@@ -32,11 +32,13 @@ $ go get -v github.com/jpillora/cloud-torrent
 $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-torrent
 ```
 
+**VPS**
+
+Purchase VM. SSH into VM. Download the binary above. Run binary.
+
 **Heroku**
 
-Click this button to...
-
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+Heroku is no longer supported
 
 ### Usage
 
@@ -59,7 +61,7 @@ $ cloud-torrent --help
   --version, -v
 
   Version:
-    0.8.8
+    0.8.11
 
   Read more:
     https://github.com/jpillora/cloud-torrent
@@ -72,7 +74,7 @@ This project is the version 2 rewrite of the original [Node version](https://git
 
 ![overview](https://docs.google.com/drawings/d/1ekyeGiehwQRyi6YfFA4_tQaaEpUaS8qihwJ-s3FT_VU/pub?w=606&h=305)
 
-Credits to `anacrolix` for https://github.com/anacrolix/torrent
+Credits to @anacrolix for https://github.com/anacrolix/torrent
 
 #### License
 
