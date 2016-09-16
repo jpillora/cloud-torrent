@@ -50,7 +50,10 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-
   12. Run `cloud-torrent` with:
   
     ```
-    docker run --name ct -d --net host -v /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt -v /root/downloads:/downloads jpillora/cloud-torrent --port 63000
+    docker run --name ct -d -p 63000:63000 \
+      -v /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt \
+      -v /root/downloads:/downloads \
+      jpillora/cloud-torrent --port 63000
     ```
   
   13. Visit `http://<IP Address from email>:63000/`
@@ -58,8 +61,8 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-
 
 [Vultr](http://www.vultr.com/?ref=6947403-3B)
 
-* Similar to DO though no "One-Click" apps
 * [Sign up with free $30 credit here](http://www.vultr.com/?ref=6947403-3B)
+* Follow the DO tutorial above, very similar steps ("Applications" instead of "One-Click Apps")
 * Offers different server locations
 
 [AWS](https://aws.amazon.com)
