@@ -34,7 +34,8 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-
 
 **VPS**
 
-* Digital Ocean
+[Digital Ocean](https://m.do.co/c/011fa87fde07)
+
   1. [Sign up with free $10 credit](https://m.do.co/c/011fa87fde07)
   2. "Create Droplet"
   3. "One-Click Apps"
@@ -47,18 +48,21 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-
   10. SSH into the server using these details (Windows: [Putty](https://the.earth.li/~sgtatham/putty/latest/x86/putty.exe), Mac: Terminal)
   11. Follow the prompts to set a new password
   12. Run `cloud-torrent` with:
+  
     ```
     docker run --name ct -d --net host -v /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt -v /root/downloads:/downloads jpillora/cloud-torrent --port 63000
     ```
+  
   13. Visit `http://<IP Address from email>:63000/`
   14. **OPTIONAL** In addition to `--port` you can specify the options below
 
-* Vultr
-  * Similar to DO though no "One-Click" apps
-  * [Sign up with free $30 credit here](http://www.vultr.com/?ref=6947403-3B)
-  * Offers different server locations
+[Vultr](http://www.vultr.com/?ref=6947403-3B)
 
-* AWS
+* Similar to DO though no "One-Click" apps
+* [Sign up with free $30 credit here](http://www.vultr.com/?ref=6947403-3B)
+* Offers different server locations
+
+[AWS](https://aws.amazon.com)
 
 **Heroku**
 
