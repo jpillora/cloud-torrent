@@ -1,0 +1,61 @@
+package storage
+
+import (
+	"errors"
+	"os"
+)
+
+type TemplateFile struct {
+}
+
+func (f *TemplateFile) Close() error {
+	return errors.New("Not implemented")
+}
+
+func (f *TemplateFile) Name() string {
+	return ""
+}
+
+func (f *TemplateFile) Stat() (os.FileInfo, error) {
+	return nil, errors.New("Not implemented")
+}
+
+func (f *TemplateFile) Sync() error {
+	return errors.New("Not implemented")
+}
+
+func (f *TemplateFile) Truncate(size int64) error {
+	return errors.New("Not implemented")
+}
+
+func (f *TemplateFile) Read(b []byte) (n int, err error) {
+	return 0, errors.New("Not implemented")
+}
+
+func (f *TemplateFile) ReadAt(b []byte, off int64) (n int, err error) {
+	return 0, errors.New("Not implemented")
+}
+
+func (f *TemplateFile) Readdir(count int) (res []os.FileInfo, err error) {
+	return nil, errors.New("Not implemented")
+}
+
+func (f *TemplateFile) Readdirnames(n int) (names []string, err error) {
+	return nil, errors.New("Not implemented")
+}
+
+func (f *TemplateFile) Seek(offset int64, whence int) (int64, error) {
+	return 0, errors.New("Not implemented")
+}
+
+func (f *TemplateFile) Write(b []byte) (n int, err error) {
+	return 0, errors.New("Not implemented")
+}
+
+func (f *TemplateFile) WriteAt(b []byte, off int64) (n int, err error) {
+	return 0, errors.New("Not implemented")
+}
+
+func (f *TemplateFile) WriteString(s string) (ret int, err error) {
+	return 0, errors.New("Not implemented")
+}

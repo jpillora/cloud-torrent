@@ -1,0 +1,87 @@
+<form class="ui segment edit form">
+	<!-- ================================== -->
+	<h4 class="ui dividing header">Web UI</h4>
+	<div class="ui basic segment">
+		<div class="ui stackable two column grid">
+			<div class="column">
+				<div class="field">
+					<label>Username</label>
+					<input type="text" ng-model="inputs.App.User"></input>
+				</div>
+				<div class="field">
+					<label>Password</label>
+					<input type="password" ng-model="inputs.App.Pass"></input>
+				</div>
+			</div>
+			<div class="column">
+				<div class="field">
+					<label>Title</label>
+					<input type="text" ng-model="inputs.App.Title"></input>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- ================================== -->
+	<h4 class="ui dividing header">Torrents</h4>
+	<div class="ui basic segment">
+		<div class="ui stackable two column grid">
+			<div class="column">
+				<div class="field">
+					<label>Peer ID</label>
+					<input type="text" ng-model="inputs.Torrents.PeerID"></input>
+				</div>
+				<div class="field">
+					<label>Incoming connections port</label>
+					<input type="number" min="1" max="65535" ng-model="inputs.Torrents.IncomingPort"></input>
+				</div>
+			</div>
+			<div class="column">
+				<div class="ui basic segment">
+					<div class="field">
+						<checkbox type="toggle" ng-model="inputs.Torrents.AutoStart">Auto start torrents</checkbox><br>
+					</div>
+					<div class="field">
+						<checkbox type="toggle" ng-model="inputs.Torrents.EnableEncryption">Enable encryption</checkbox><br>
+					</div>
+					<div class="field">
+						<checkbox type="toggle" ng-model="inputs.Torrents.EnableUpload">Enable uploading</checkbox><br>
+					</div>
+					<div class="field">
+						<checkbox type="toggle" ng-model="inputs.Torrents.EnableSeeding">Enable seeding</checkbox><br>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- ================================== -->
+	<h4 class="ui dividing header">Disk</h4>
+	<div class="field">
+		<label>Storage path</label>
+		<input type="text" ng-model="inputs.Disk.Base"></input>
+	</div>
+	<!-- ================================== -->
+	<h4 class="ui dividing header">Dropbox</h4>
+	<div class="field">
+		<label>API Token</label>
+		<input type="text" ng-model="inputs.Dropbox.Token"></input>
+	</div>
+	<div class="field">
+		<label>Storage path</label>
+		<input type="text" ng-model="inputs.Dropbox.Base"></input>
+	</div>
+	<!-- ================================== -->
+	<div class="buttons">
+		<div class="buttons">
+			<div class="ui blue button"
+				ng-class="{loading: apiing, disabled: saved}"
+				ng-disable="saved"
+				ng-click="submitConfig()">
+				Save
+			</div>
+			<div class="ui grey button"
+				ng-click="toggleConfig()">
+				Cancel
+			</div>
+		</div>
+	</div>
+</form>

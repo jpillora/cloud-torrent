@@ -1,0 +1,83 @@
+<html ng-app="app" >
+	<head>
+		<title ng-bind="state.Configurations.App.Title">Cloud Torrent</title>
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+		<link rel="stylesheet" type="text/css" href="css/Lato/Lato.css">
+		<link rel="stylesheet" type="text/css" href="css/semantic.min.css">
+		<link rel="stylesheet" type="text/css" href="css/app.css">
+		<link rel="icon" href="cloud-favicon.png" type="image/x-icon" />
+		<style type="text/css">[ng-cloak]{display: none;}</style>
+	</head>
+	<body class="app"><div ng-cloak class="cage">
+	<!-- DISCONNECTION WARNING ========= -->
+		<div ng-if="!connected" class="connect-warning ui inverted vertical masthead center aligned segment">
+			<div class="ui text container">
+				<h1 class="ui inverted header">
+					Disconnected
+				</h1>
+				<h1 class="ui inverted header">
+					<i class="red lightning icon"></i>
+				</h1>
+			</div>
+		</div>
+		<!-- TITLE ===================== -->
+		<div class="title">
+			<h2>
+				<a href="https://github.com/jpillora/cloud-torrent"
+					target="_blank"
+					ng-init="logoHover = false"
+					ng-mouseover="logoHover = true"
+					ng-mouseleave="logoHover = false">
+					<i class="blue icon" ng-class="{cloud:!logoHover, github: logoHover}"></i>  {{ logoHover ? 'Cloud Torrent' : state.Configurations.App.Title }}
+				</a>
+			</h2>
+			<div class="status">
+				<i ng-show="request.count > 0"
+					class="ui circular loading repeat icon"></i>
+				<i ng-click="toggleConfig();" ng-class="{green: $root.screen === 'config'}"
+					class="ui circular configure icon" style="font-size: 14px;"></i>
+				<i ng-click="$root.omni.edit = !$root.omni.edit;"
+					ng-class="{green: $root.omni.edit}"
+					class="ui circular magnet icon" style="font-size: 14px;"></i>
+				<i class="ui circular lightning icon"
+					ng-class="{ green: connected, red: !connected }"></i>
+			</div>
+		</div>
+		<!-- GLOBAL ERROR MESSAGE ===================== -->
+		<div ng-if="err" class="ui error message">
+			<i class="close icon" ng-click="$root.err = null"></i>
+			<div class="header">Error</div>
+			<p>{{err}}</p>
+		</div>
+		<!-- SCREENS ===================== -->
+		<screens ng-switch="$root.screen">
+			<screen ng-switch-when="config">
+				<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html'"></section>
+			</screen>
+			<screen ng-switch-when="home">
+				<section class="omni" ng-controller="OmniController" ng-include src="'template/omni.html'"></section>
+				<section class="torrents" ng-controller="TorrentsController" ng-include src="'template/torrents.html'"></section>
+				<section class="downloads" ng-controller="DownloadsController" ng-include src="'template/downloads.html'"></section>
+			</screen>
+		</screens>
+		<!-- FOOTER ===================== -->
+		<footer>
+			<span>github.com/<a href="https://github.com/jpillora" target="_blank">jpillora</a>/<a href="https://github.com/jpillora/cloud-torrent" target="_blank">cloud-torrent</a> version {{ state.Stats.Version }}	-	</span>
+			<span ng-if="numKeys(state.Users) > 1">{{ numKeys(state.Users) }} users connected	-	</span>
+			<span><a href="https://golang.org" target="_blank">Go</a> {{ state.Stats.Runtime }}</span>
+		</footer>
+		<!-- SCRIPTS ===================== -->
+		<script src="js/vendor/query-string.js"></script>
+		<script src="js/vendor/angular.min.js"></script>
+		<script src="js/vendor/moment.min.js"></script>
+		<script src="js/velox.js"></script>
+		<script>window.app = window.angular.module('app', []);</script>
+		<script src="js/config-controller.js"></script>
+		<script src="js/omni-controller.js"></script>
+		<script src="js/torrents-controller.js"></script>
+		<script src="js/downloads-controller.js"></script>
+		<script src="js/utils.js"></script>
+		<script src="js/semantic-checkbox.js"></script>
+		<script src="js/run.js"></script>
+	</div></body>
+</html>
