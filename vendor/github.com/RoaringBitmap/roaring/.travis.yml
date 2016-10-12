@@ -1,0 +1,20 @@
+language: go
+sudo: false
+install:
+- go get github.com/smartystreets/goconvey/convey
+- go get github.com/willf/bitset
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
+- go get github.com/mschoch/smat
+notifications:
+  email: false
+go:
+- 1.6
+- 1.7
+- tip
+script:
+- go test -v -covermode=count -coverprofile=coverage.out
+- $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken KOlKyOXz0qSjAqvfTF28RzNlr3unxjrLh
+matrix:
+  allow_failures:
+  - go: tip

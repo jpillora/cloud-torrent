@@ -30,10 +30,10 @@ app.factory('search', function($rootScope, $http, reqerr) {
       });
       return req;
     },
-    one: function(provider, path) {
-      var opts = { params: { path:path } };
+    one: function(provider, item) {
+      var opts = { params: { item:item } };
       $rootScope.searching = true;
-      var req = $http.get("/search/"+provider+"-item", opts);
+      var req = $http.get("/search/"+provider+"/item", opts);
       req.error(reqerr);
       req.finally(function() {
         $rootScope.searching = false;

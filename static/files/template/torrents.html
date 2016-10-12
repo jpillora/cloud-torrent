@@ -4,7 +4,7 @@
     Torrents
   </h3>
   <h5 class="ui files downloading header">
-    {{ numKeys(state.Torrents) }} torrent{{ numKeys(state.Torrents) == 1 && '' || 's' }}
+    {{ numKeys(state.Torrents) }} torrent{{ numKeys(state.Torrents) == 1 ? '' : 's' }}
   </h5>
 </div>
 

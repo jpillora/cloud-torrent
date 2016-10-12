@@ -38,8 +38,15 @@ type File struct {
 func (torrent *Torrent) Update(t *torrent.Torrent) {
 	torrent.Name = t.Name()
 	torrent.Loaded = t.Info() != nil
-	torrent.Size = t.Length()
+	if torrent.Loaded {
+		torrent.updateLoaded(t)
+	}
+	torrent.t = t
+}
 
+func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
+
+	torrent.Size = t.Length()
 	totalChunks := 0
 	totalCompleted := 0
 
@@ -87,7 +94,6 @@ func (torrent *Torrent) Update(t *torrent.Torrent) {
 	}
 	torrent.Downloaded = bytes
 	torrent.updatedAt = now
-	torrent.t = t
 }
 
 func percent(n, total int64) float32 {

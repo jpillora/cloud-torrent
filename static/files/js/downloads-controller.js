@@ -30,11 +30,13 @@ app.controller("NodeController", function($scope, $rootScope, $http, $timeout) {
   var torrents = $rootScope.state.Torrents;
   if($scope.isfile() && torrents) {
     for(var ih in torrents) {
-      var files = torrents[ih].Files;
+      var torrent = torrents[ih]
+      var files = torrent.Files;
       if(files) {
         for (var i = 0; i < files.length; i++) {
           var f = files[i];
           if(f.Path === path) {
+            n.$torrent = torrent;
             n.$file = f;
             break;
           }
@@ -46,7 +48,7 @@ app.controller("NodeController", function($scope, $rootScope, $http, $timeout) {
   }
 
   $scope.isdownloading = function() {
-    return n.$file && n.$file.Percent < 100;
+    return n.$torrent && n.$torrent.Loaded && n.$torrent.Started && n.$file && n.$file.Percent < 100;
   };
 
   $scope.preremove = function() {

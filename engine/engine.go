@@ -3,7 +3,6 @@ package engine
 import (
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -39,7 +38,6 @@ func (e *Engine) Configure(c Config) error {
 	tc := torrent.Config{
 		DataDir:           c.DownloadDirectory,
 		ListenAddr:        "0.0.0.0:" + strconv.Itoa(c.IncomingPort),
-		ConfigDir:         filepath.Join(c.DownloadDirectory, ".config"),
 		NoUpload:          !c.EnableUpload,
 		Seed:              c.EnableSeeding,
 		DisableEncryption: c.DisableEncryption,
@@ -49,18 +47,6 @@ func (e *Engine) Configure(c Config) error {
 		return err
 	}
 	e.mut.Lock()
-	e.cacheDir = filepath.Join(tc.ConfigDir, "torrents")
-	if files, err := ioutil.ReadDir(e.cacheDir); err == nil {
-		for _, f := range files {
-			if filepath.Ext(f.Name()) != ".torrent" {
-				continue
-			}
-			tt, err := client.AddTorrentFromFile(filepath.Join(e.cacheDir, f.Name()))
-			if err == nil {
-				e.upsertTorrent(tt)
-			}
-		}
-	}
 	e.config = c
 	e.client = client
 	e.mut.Unlock()
@@ -69,23 +55,30 @@ func (e *Engine) Configure(c Config) error {
 	return nil
 }
 
-func (e *Engine) NewTorrent(magnetURI string) error {
-	//adds the torrent but does not start it
+func (e *Engine) NewMagnet(magnetURI string) error {
 	tt, err := e.client.AddMagnet(magnetURI)
 	if err != nil {
 		return err
 	}
-	t := e.upsertTorrent(tt)
+	return e.newTorrent(tt)
+}
 
+func (e *Engine) NewTorrent(spec *torrent.TorrentSpec) error {
+	tt, _, err := e.client.AddTorrentSpec(spec)
+	if err != nil {
+		return err
+	}
+	return e.newTorrent(tt)
+}
+
+func (e *Engine) newTorrent(tt *torrent.Torrent) error {
+	t := e.upsertTorrent(tt)
 	go func() {
 		<-t.t.GotInfo()
-
 		// if e.config.AutoStart && !loaded && torrent.Loaded && !torrent.Started {
 		e.StartTorrent(t.InfoHash)
 		// }
-
 	}()
-
 	return nil
 }
 
