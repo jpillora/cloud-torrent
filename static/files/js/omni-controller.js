@@ -1,5 +1,4 @@
 /* globals app,window */
-
 app.controller("OmniController", function($scope, $rootScope, storage, api, search) {
   $rootScope.omni = $scope;
   $scope.inputs = {

@@ -18,7 +18,7 @@
 
 See [the latest release](https://github.com/jpillora/cloud-torrent/releases/latest) or download it now with `curl i.jpillora.com/cloud-torrent | bash`
 
-:warning: Currently, `0.8.12` only has linux 64bit releases. Please either compile from source or download a `0.8.11` release.
+:warning: Currently, there are only linux 64bit releases. Please either compile from source or download a `0.8.11` release.
 
 **Source**
 
@@ -98,7 +98,7 @@ $ cloud-torrent --help
   --version, -v
 
   Version:
-    0.8.11
+    0.X.Y
 
   Read more:
     https://github.com/jpillora/cloud-torrent

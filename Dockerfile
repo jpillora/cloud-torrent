@@ -10,7 +10,7 @@ ENV GOLANG_SRC_URL https://golang.org/dl/go$GOLANG_VERSION.src.tar.gz
 ENV GOLANG_SRC_SHA256 2b843f133b81b7995f26d0cb64bbdbb9d0704b90c44df45f844d28881ad442d3
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 # https://golang.org/issue/14851
-COPY .no-pic.patch /no-pic.patch
+COPY docker-golang.patch /no-pic.patch
 # in one step (to prevent creating superfluous layers):
 # 1. fetch and install temporary build programs,
 # 2. build cloud-torrent alpine binary
