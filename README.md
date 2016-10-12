@@ -18,6 +18,8 @@
 
 See [the latest release](https://github.com/jpillora/cloud-torrent/releases/latest) or download it now with `curl i.jpillora.com/cloud-torrent | bash`
 
+:warning: Currently, `0.8.12` only has linux 64bit releases. Please either compile from source or download a `0.8.11` release.
+
 **Source**
 
 *[Go](https://golang.org/dl/) is required to install from source*
@@ -27,6 +29,10 @@ $ go get -v github.com/jpillora/cloud-torrent
 ```
 
 **Docker**
+
+[![Docker Pulls](https://img.shields.io/docker/pulls/jpillora/cloud-torrent.svg)][dockerhub] [![Image Size](https://images.microbadger.com/badges/image/jpillora/cloud-torrent.svg)][dockerhub]
+
+[dockerhub]: https://hub.docker.com/r/jpillora/cloud-torrent/
 
 ``` sh
 $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-torrent
@@ -48,14 +54,14 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-
   10. SSH into the server using these details (Windows: [Putty](https://the.earth.li/~sgtatham/putty/latest/x86/putty.exe), Mac: Terminal)
   11. Follow the prompts to set a new password
   12. Run `cloud-torrent` with:
-  
+
     ```
     docker run --name ct -d -p 63000:63000 \
       -v /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt \
       -v /root/downloads:/downloads \
       jpillora/cloud-torrent --port 63000
     ```
-  
+
   13. Visit `http://<IP Address from email>:63000/`
   14. **OPTIONAL** In addition to `--port` you can specify the options below
 
