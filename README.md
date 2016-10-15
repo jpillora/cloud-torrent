@@ -37,6 +37,11 @@ $ go get -v github.com/jpillora/cloud-torrent
 ``` sh
 $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-torrent
 ```
+**Heroku**
+
+Click this button to...
+
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
 **VPS**
 
