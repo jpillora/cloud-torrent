@@ -9,6 +9,7 @@ import (
 // Represents data storage for an unspecified torrent.
 type ClientImpl interface {
 	OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (TorrentImpl, error)
+	Close() error
 }
 
 // Data storage bound to a torrent.
@@ -20,7 +21,7 @@ type TorrentImpl interface {
 // Interacts with torrent piece data.
 type PieceImpl interface {
 	// These interfaces are not as strict as normally required. They can
-	// assume that the parameters are appropriate for the dimentions of the
+	// assume that the parameters are appropriate for the dimensions of the
 	// piece.
 	io.ReaderAt
 	io.WriterAt

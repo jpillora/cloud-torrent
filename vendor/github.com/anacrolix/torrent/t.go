@@ -36,6 +36,7 @@ func (t *Torrent) NewReader() (ret *Reader) {
 		t:         t,
 		readahead: 5 * 1024 * 1024,
 	}
+	ret.pieces = ret.piecesUncached()
 	t.addReader(ret)
 	return
 }

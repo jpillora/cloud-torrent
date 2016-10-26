@@ -11,7 +11,13 @@ import (
 	"golang.org/x/net/context"
 )
 
-// Accesses torrent data via a client.
+// Piece range by piece index, [begin, end).
+type pieceRange struct {
+	begin, end int
+}
+
+// Accesses Torrent data via a Client. Reads block until the data is
+// available. Seeks and readahead also drive Client behaviour.
 type Reader struct {
 	t          *Torrent
 	responsive bool
@@ -24,6 +30,10 @@ type Reader struct {
 	mu        sync.Locker
 	pos       int64
 	readahead int64
+	// The cached piece range this reader wants downloaded. The zero value
+	// corresponds to nothing. We cache this so that changes can be detected,
+	// and bubbled up to the Torrent only as required.
+	pieces pieceRange
 }
 
 var _ io.ReadCloser = &Reader{}
@@ -42,7 +52,7 @@ func (r *Reader) SetReadahead(readahead int64) {
 	r.mu.Unlock()
 	r.t.cl.mu.Lock()
 	defer r.t.cl.mu.Unlock()
-	r.tickleClient()
+	r.posChanged()
 }
 
 func (r *Reader) readable(off int64) (ret bool) {
@@ -90,6 +100,17 @@ func (r *Reader) waitReadable(off int64) {
 	// it failed.
 	r.tickleClient()
 	r.t.cl.event.Wait()
+}
+
+// Calculates the pieces this reader wants downloaded, ignoring the cached
+// value at r.pieces.
+func (r *Reader) piecesUncached() (ret pieceRange) {
+	ra := r.readahead
+	if ra < 1 {
+		ra = 1
+	}
+	ret.begin, ret.end = r.t.byteRegionPieces(r.pos, ra)
+	return
 }
 
 func (r *Reader) Read(b []byte) (n int, err error) {
@@ -193,6 +214,11 @@ func (r *Reader) Close() error {
 }
 
 func (r *Reader) posChanged() {
+	p := r.piecesUncached()
+	if p == r.pieces {
+		return
+	}
+	r.pieces = p
 	r.t.readersChanged()
 }
 

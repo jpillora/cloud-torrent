@@ -20,6 +20,8 @@ func NewFileStorePieces(fs missinggo.FileStore) ClientImpl {
 	}
 }
 
+func (pieceFileStorage) Close() error { return nil }
+
 type pieceFileTorrentStorage struct {
 	s *pieceFileStorage
 }

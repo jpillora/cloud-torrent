@@ -26,7 +26,6 @@ var (
 )
 
 type boltDBClient struct {
-	// TODO: This is never closed.
 	db *bolt.DB
 }
 
@@ -49,6 +48,10 @@ func NewBoltDB(filePath string) ClientImpl {
 		panic(err)
 	}
 	return ret
+}
+
+func (me *boltDBClient) Close() error {
+	return me.db.Close()
 }
 
 func (me *boltDBClient) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (TorrentImpl, error) {

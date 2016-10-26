@@ -15,11 +15,13 @@ import (
 
 type mmapStorage struct {
 	baseDir string
+	pc      pieceCompletion
 }
 
 func NewMMap(baseDir string) ClientImpl {
 	return &mmapStorage{
 		baseDir: baseDir,
+		pc:      pieceCompletionForDir(baseDir),
 	}
 }
 
@@ -27,9 +29,13 @@ func (s *mmapStorage) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (
 	span, err := mMapTorrent(info, s.baseDir)
 	t = &mmapTorrentStorage{
 		span: span,
-		pc:   pieceCompletionForDir(s.baseDir),
+		pc:   s.pc,
 	}
 	return
+}
+
+func (s *mmapStorage) Close() error {
+	return s.pc.Close()
 }
 
 type mmapTorrentStorage struct {

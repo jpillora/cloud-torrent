@@ -8,7 +8,7 @@ type mapPieceCompletion struct {
 	m map[metainfo.PieceKey]struct{}
 }
 
-func (mapPieceCompletion) Close() {}
+func (mapPieceCompletion) Close() error { return nil }
 
 func (me *mapPieceCompletion) Get(pk metainfo.PieceKey) (bool, error) {
 	_, ok := me.m[pk]

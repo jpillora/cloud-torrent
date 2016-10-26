@@ -17,7 +17,6 @@ import (
 
 	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/bitmap"
-	"github.com/anacrolix/missinggo/itertools"
 	"github.com/anacrolix/missinggo/perf"
 	"github.com/anacrolix/missinggo/pubsub"
 	"github.com/anacrolix/missinggo/slices"
@@ -872,6 +871,7 @@ func (t *Torrent) updatePiecePriorities() {
 	}
 }
 
+// Returns the range of pieces [begin, end) that contains the extent of bytes.
 func (t *Torrent) byteRegionPieces(off, size int64) (begin, end int) {
 	if off >= t.length {
 		return
@@ -896,17 +896,11 @@ func (t *Torrent) byteRegionPieces(off, size int64) (begin, end int) {
 // callers depend on this method to enumerate readers.
 func (t *Torrent) forReaderOffsetPieces(f func(begin, end int) (more bool)) (all bool) {
 	for r := range t.readers {
-		// r.mu.Lock()
-		pos, readahead := r.pos, r.readahead
-		// r.mu.Unlock()
-		if readahead < 1 {
-			readahead = 1
-		}
-		begin, end := t.byteRegionPieces(pos, readahead)
-		if begin >= end {
+		p := r.pieces
+		if p.begin >= p.end {
 			continue
 		}
-		if !f(begin, end) {
+		if !f(p.begin, p.end) {
 			return false
 		}
 	}
@@ -969,17 +963,6 @@ func (t *Torrent) unpendPieceRange(begin, end int) {
 	var bm bitmap.Bitmap
 	bm.AddRange(begin, end)
 	t.unpendPieces(&bm)
-}
-
-func (t *Torrent) connRequestPiecePendingChunks(c *connection, piece int) (more bool) {
-	if !c.PeerHasPiece(piece) {
-		return true
-	}
-	chunkIndices := t.pieces[piece].undirtiedChunkIndices().ToSortedSlice()
-	return itertools.ForPerm(len(chunkIndices), func(i int) bool {
-		req := request{pp.Integer(piece), t.chunkIndexSpec(chunkIndices[i], piece)}
-		return c.Request(req)
-	})
 }
 
 func (t *Torrent) pendRequest(req request) {

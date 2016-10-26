@@ -15,6 +15,7 @@ func (me *Event) LockedChan(lock sync.Locker) <-chan struct{} {
 	return ch
 }
 
+// Returns a chan that is closed when the event is true.
 func (me *Event) C() <-chan struct{} {
 	if me.ch == nil {
 		me.ch = make(chan struct{})
@@ -29,6 +30,7 @@ func (me *Event) Clear() {
 	}
 }
 
+// Set the event to true/on.
 func (me *Event) Set() (first bool) {
 	if me.closed {
 		return false

@@ -33,8 +33,7 @@ type Conn struct {
 	// When the conn was allocated.
 	created time.Time
 
-	sentSyn   bool
-	synAcked  bool
+	synAcked  bool // Syn is acked by the acceptor. Initiator also tracks it.
 	gotFin    missinggo.Event
 	wroteFin  missinggo.Event
 	finAcked  bool
@@ -175,9 +174,6 @@ func (c *Conn) pendSendState() {
 }
 
 func (me *Conn) writeSyn() {
-	if me.sentSyn {
-		panic("already sent syn")
-	}
 	me.write(stSyn, me.recv_id, nil, me.seq_nr)
 	return
 }
@@ -474,16 +470,10 @@ func (c *Conn) waitAck(seq uint16) {
 	return
 }
 
-func (c *Conn) connect() (err error) {
+// Waits for sent SYN to be ACKed. Returns any errors.
+func (c *Conn) recvSynAck() (err error) {
 	mu.Lock()
 	defer mu.Unlock()
-	c.seq_nr = 1
-	c.writeSyn()
-	c.sentSyn = true
-	if logLevel >= 2 {
-		log.Printf("sent syn")
-	}
-	// c.seq_nr++
 	c.waitAck(1)
 	if c.err != nil {
 		err = c.err

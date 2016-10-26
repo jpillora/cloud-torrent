@@ -18,6 +18,7 @@ import (
 
 	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/bitmap"
+	"github.com/anacrolix/missinggo/itertools"
 	"github.com/anacrolix/missinggo/prioritybitmap"
 	"github.com/bradfitz/iter"
 
@@ -38,9 +39,14 @@ const (
 
 // Maintains the state of a connection with a peer.
 type connection struct {
-	t         *Torrent
-	conn      net.Conn
-	rw        io.ReadWriter // The real slim shady
+	t *Torrent
+	// The actual Conn, used for closing, and setting socket options.
+	conn net.Conn
+	// The Reader and Writer for this Conn, with hooks installed for stats,
+	// limiting, deadlines etc.
+	w io.Writer
+	r io.Reader
+	// True if the connection is operating over MSE obfuscation.
 	encrypted bool
 	Discovery peerSource
 	uTP       bool
@@ -99,18 +105,6 @@ type connection struct {
 
 func (cn *connection) mu() sync.Locker {
 	return &cn.t.cl.mu
-}
-
-func newConnection(nc net.Conn, l sync.Locker) (c *connection) {
-	c = &connection{
-		conn: nc,
-
-		Choked:          true,
-		PeerChoked:      true,
-		PeerMaxRequests: 250,
-	}
-	c.rw = connStatsReadWriter{nc, l, c}
-	return
 }
 
 func (cn *connection) remoteAddr() net.Addr {
@@ -407,7 +401,7 @@ func (cn *connection) writer(keepAliveTimeout time.Duration) {
 		cn.Close()
 	}()
 	// Reduce write syscalls.
-	buf := bufio.NewWriter(cn.rw)
+	buf := bufio.NewWriter(cn.w)
 	keepAliveTimer := time.NewTimer(keepAliveTimeout)
 	for {
 		cn.mu().Lock()
@@ -511,8 +505,15 @@ func (cn *connection) fillRequests() {
 	})
 }
 
-func (cn *connection) requestPiecePendingChunks(piece int) (again bool) {
-	return cn.t.connRequestPiecePendingChunks(cn, piece)
+func (c *connection) requestPiecePendingChunks(piece int) (again bool) {
+	if !c.PeerHasPiece(piece) {
+		return true
+	}
+	chunkIndices := c.t.pieces[piece].undirtiedChunkIndices().ToSortedSlice()
+	return itertools.ForPerm(len(chunkIndices), func(i int) bool {
+		req := request{pp.Integer(piece), c.t.chunkIndexSpec(chunkIndices[i], piece)}
+		return c.Request(req)
+	})
 }
 
 func (cn *connection) stopRequestingPiece(piece int) {
@@ -700,7 +701,7 @@ func (c *connection) mainReadLoop() error {
 	cl := t.cl
 
 	decoder := pp.Decoder{
-		R:         bufio.NewReader(c.rw),
+		R:         bufio.NewReader(c.r),
 		MaxLength: 256 * 1024,
 		Pool:      t.chunkPool,
 	}
@@ -906,4 +907,18 @@ func (c *connection) mainReadLoop() error {
 			return err
 		}
 	}
+}
+
+// Set both the Reader and Writer for the connection from a single ReadWriter.
+func (cn *connection) setRW(rw io.ReadWriter) {
+	cn.r = rw
+	cn.w = rw
+}
+
+// Returns the Reader and Writer as a combined ReadWriter.
+func (cn *connection) rw() io.ReadWriter {
+	return struct {
+		io.Reader
+		io.Writer
+	}{cn.r, cn.w}
 }

@@ -15,51 +15,51 @@
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo",
-			"Rev": "bf3c532d9888ff58cb1e246e839de7a00fb44012"
+			"Rev": "03b41562f79c09a2bccb139f2a6282dcd14d6ce6"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo/bitmap",
-			"Rev": "bf3c532d9888ff58cb1e246e839de7a00fb44012"
+			"Rev": "03b41562f79c09a2bccb139f2a6282dcd14d6ce6"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo/httptoo",
-			"Rev": "bf3c532d9888ff58cb1e246e839de7a00fb44012"
+			"Rev": "03b41562f79c09a2bccb139f2a6282dcd14d6ce6"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo/inproc",
-			"Rev": "bf3c532d9888ff58cb1e246e839de7a00fb44012"
+			"Rev": "03b41562f79c09a2bccb139f2a6282dcd14d6ce6"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo/itertools",
-			"Rev": "bf3c532d9888ff58cb1e246e839de7a00fb44012"
+			"Rev": "03b41562f79c09a2bccb139f2a6282dcd14d6ce6"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo/orderedmap",
-			"Rev": "bf3c532d9888ff58cb1e246e839de7a00fb44012"
+			"Rev": "03b41562f79c09a2bccb139f2a6282dcd14d6ce6"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo/perf",
-			"Rev": "bf3c532d9888ff58cb1e246e839de7a00fb44012"
+			"Rev": "03b41562f79c09a2bccb139f2a6282dcd14d6ce6"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo/pproffd",
-			"Rev": "bf3c532d9888ff58cb1e246e839de7a00fb44012"
+			"Rev": "03b41562f79c09a2bccb139f2a6282dcd14d6ce6"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo/prioritybitmap",
-			"Rev": "bf3c532d9888ff58cb1e246e839de7a00fb44012"
+			"Rev": "03b41562f79c09a2bccb139f2a6282dcd14d6ce6"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo/pubsub",
-			"Rev": "bf3c532d9888ff58cb1e246e839de7a00fb44012"
+			"Rev": "03b41562f79c09a2bccb139f2a6282dcd14d6ce6"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo/resource",
-			"Rev": "bf3c532d9888ff58cb1e246e839de7a00fb44012"
+			"Rev": "03b41562f79c09a2bccb139f2a6282dcd14d6ce6"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/missinggo/slices",
-			"Rev": "bf3c532d9888ff58cb1e246e839de7a00fb44012"
+			"Rev": "03b41562f79c09a2bccb139f2a6282dcd14d6ce6"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/sync",
@@ -67,59 +67,59 @@
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent/bencode",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent/dht",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent/dht/krpc",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent/iplist",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent/logonce",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent/metainfo",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent/mmap_span",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent/mse",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent/peer_protocol",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent/storage",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent/tracker",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/torrent/util",
-			"Rev": "aefc63b9d3b8e3b7629a91ea66405dc3e8305cec"
+			"Rev": "5e83287890e1d18a913dea04c685966a30689866"
 		},
 		{
 			"ImportPath": "github.com/anacrolix/utp",
-			"Rev": "59dfcf2995f0a175d717fe0b5b7c526771a0ad83"
+			"Rev": "83bf7c81b0e1f917f18ac31b7a27b91c33737df9"
 		},
 		{
 			"ImportPath": "github.com/andrew-d/go-termutil",
@@ -131,8 +131,8 @@
 		},
 		{
 			"ImportPath": "github.com/boltdb/bolt",
-			"Comment": "v1.3.0-21-gf0d0212",
-			"Rev": "f0d021274dede8e672f17a2dbcb997c5f0760c41"
+			"Comment": "v1.3.0-25-g074dffc",
+			"Rev": "074dffcc83e9f421e261526d297cd93f22a34080"
 		},
 		{
 			"ImportPath": "github.com/bradfitz/iter",
@@ -152,7 +152,7 @@
 		},
 		{
 			"ImportPath": "github.com/google/btree",
-			"Rev": "7364763242911ab6d418d2722e237194938ebad0"
+			"Rev": "925471ac9e2131377a91e1595defec898166fe49"
 		},
 		{
 			"ImportPath": "github.com/gorilla/websocket",
@@ -225,19 +225,23 @@
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
-			"Rev": "f4b625ec9b21d620bb5ce57f2dfc3e08ca97fce6"
+			"Rev": "65dfc08770ce66f74becfdff5f8ab01caef4e946"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html",
-			"Rev": "f4b625ec9b21d620bb5ce57f2dfc3e08ca97fce6"
+			"Rev": "65dfc08770ce66f74becfdff5f8ab01caef4e946"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html/atom",
-			"Rev": "f4b625ec9b21d620bb5ce57f2dfc3e08ca97fce6"
+			"Rev": "65dfc08770ce66f74becfdff5f8ab01caef4e946"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
 			"Rev": "8f0908ab3b2457e2e15403d3697c9ef5cb4b57a9"
+		},
+		{
+			"ImportPath": "golang.org/x/time/rate",
+			"Rev": "711ca1cb87636abec28122ef3bc6a77269d433f3"
 		}
 	]
 }

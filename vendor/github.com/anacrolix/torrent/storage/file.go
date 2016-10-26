@@ -14,12 +14,18 @@ import (
 // torrent.
 type fileClientImpl struct {
 	baseDir string
+	pc      pieceCompletion
 }
 
 func NewFile(baseDir string) ClientImpl {
 	return &fileClientImpl{
 		baseDir: baseDir,
+		pc:      pieceCompletionForDir(baseDir),
 	}
+}
+
+func (me *fileClientImpl) Close() error {
+	return me.pc.Close()
 }
 
 func (fs *fileClientImpl) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (TorrentImpl, error) {
@@ -31,7 +37,7 @@ func (fs *fileClientImpl) OpenTorrent(info *metainfo.Info, infoHash metainfo.Has
 		fs,
 		info,
 		infoHash,
-		pieceCompletionForDir(fs.baseDir),
+		fs.pc,
 	}, nil
 }
 
@@ -56,7 +62,6 @@ func (fts *fileTorrentImpl) Piece(p metainfo.Piece) PieceImpl {
 }
 
 func (fs *fileTorrentImpl) Close() error {
-	fs.completion.Close()
 	return nil
 }
 

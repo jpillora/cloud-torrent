@@ -1,3 +1,5 @@
+// +build cgo
+
 package storage
 
 import (
@@ -9,11 +11,11 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
-type dbPieceCompletion struct {
+type sqlitePieceCompletion struct {
 	db *sql.DB
 }
 
-func newDBPieceCompletion(dir string) (ret *dbPieceCompletion, err error) {
+func newSqlitePieceCompletion(dir string) (ret *sqlitePieceCompletion, err error) {
 	p := filepath.Join(dir, ".torrent.db")
 	db, err := sql.Open("sqlite3", p)
 	if err != nil {
@@ -24,17 +26,17 @@ func newDBPieceCompletion(dir string) (ret *dbPieceCompletion, err error) {
 		db.Close()
 		return
 	}
-	ret = &dbPieceCompletion{db}
+	ret = &sqlitePieceCompletion{db}
 	return
 }
 
-func (me *dbPieceCompletion) Get(pk metainfo.PieceKey) (ret bool, err error) {
+func (me *sqlitePieceCompletion) Get(pk metainfo.PieceKey) (ret bool, err error) {
 	row := me.db.QueryRow(`select exists(select * from completed where infohash=? and "index"=?)`, pk.InfoHash.HexString(), pk.Index)
 	err = row.Scan(&ret)
 	return
 }
 
-func (me *dbPieceCompletion) Set(pk metainfo.PieceKey, b bool) (err error) {
+func (me *sqlitePieceCompletion) Set(pk metainfo.PieceKey, b bool) (err error) {
 	if b {
 		_, err = me.db.Exec(`insert into completed (infohash, "index") values (?, ?)`, pk.InfoHash.HexString(), pk.Index)
 	} else {
@@ -43,6 +45,6 @@ func (me *dbPieceCompletion) Set(pk metainfo.PieceKey, b bool) (err error) {
 	return
 }
 
-func (me *dbPieceCompletion) Close() {
+func (me *sqlitePieceCompletion) Close() {
 	me.db.Close()
 }

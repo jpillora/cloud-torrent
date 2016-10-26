@@ -18,8 +18,6 @@
 
 See [the latest release](https://github.com/jpillora/cloud-torrent/releases/latest) or download it now with `curl i.jpillora.com/cloud-torrent | bash`
 
-:warning: Currently, there are only linux 64bit releases. Please either compile from source or download a `0.8.11` release.
-
 **Source**
 
 *[Go](https://golang.org/dl/) is required to install from source*
@@ -57,7 +55,7 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-
 
     ```
     docker run --name ct -d -p 63000:63000 \
-      -v /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt \
+      ---restart always \
       -v /root/downloads:/downloads \
       jpillora/cloud-torrent --port 63000
     ```

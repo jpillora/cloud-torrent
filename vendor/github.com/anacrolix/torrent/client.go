@@ -22,6 +22,7 @@ import (
 	"github.com/anacrolix/sync"
 	"github.com/anacrolix/utp"
 	"github.com/dustin/go-humanize"
+	"golang.org/x/time/rate"
 
 	"github.com/anacrolix/torrent/bencode"
 	"github.com/anacrolix/torrent/dht"
@@ -57,29 +58,32 @@ func (cl *Client) queueFirstHash(t *Torrent, piece int) {
 // Clients contain zero or more Torrents. A Client manages a blocklist, the
 // TCP/UDP protocol ports, and DHT as desired.
 type Client struct {
-	halfOpenLimit int
-	peerID        [20]byte
-	// The net.Addr.String part that should be common to all active listeners.
-	listenAddr     string
+	mu     sync.RWMutex
+	event  sync.Cond
+	closed missinggo.Event
+
+	config Config
+
+	halfOpenLimit  int
+	peerID         [20]byte
+	defaultStorage *storage.Client
 	tcpListener    net.Listener
 	utpSock        *utp.Socket
 	dHT            *dht.Server
 	ipBlockList    iplist.Ranger
-	config         Config
+	// Our BitTorrent protocol extension bytes, sent in our BT handshakes.
 	extensionBytes peerExtensionBytes
+	// The net.Addr.String part that should be common to all active listeners.
+	listenAddr    string
+	uploadLimit   *rate.Limiter
+	downloadLimit *rate.Limiter
+
 	// Set of addresses that have our client ID. This intentionally will
 	// include ourselves if we end up trying to connect to our own address
 	// through legitimate channels.
 	dopplegangerAddrs map[string]struct{}
 	badPeerIPs        map[string]struct{}
-
-	defaultStorage *storage.Client
-
-	mu     sync.RWMutex
-	event  sync.Cond
-	closed missinggo.Event
-
-	torrents map[metainfo.Hash]*Torrent
+	torrents          map[metainfo.Hash]*Torrent
 }
 
 func (cl *Client) BadPeerIPs() []string {
@@ -255,6 +259,16 @@ func NewClient(cfg *Config) (cl *Client, err error) {
 		dopplegangerAddrs: make(map[string]struct{}),
 		torrents:          make(map[metainfo.Hash]*Torrent),
 	}
+	if cfg.UploadRateLimiter == nil {
+		cl.uploadLimit = rate.NewLimiter(rate.Inf, 0)
+	} else {
+		cl.uploadLimit = cfg.UploadRateLimiter
+	}
+	if cfg.DownloadRateLimiter == nil {
+		cl.downloadLimit = rate.NewLimiter(rate.Inf, 0)
+	} else {
+		cl.downloadLimit = cfg.DownloadRateLimiter
+	}
 	missinggo.CopyExact(&cl.extensionBytes, defaultExtensionBytes)
 	cl.event.L = &cl.mu
 	storageImpl := cfg.DefaultStorage
@@ -427,7 +441,7 @@ func (cl *Client) incomingConnection(nc net.Conn, utp bool) {
 	if tc, ok := nc.(*net.TCPConn); ok {
 		tc.SetLinger(0)
 	}
-	c := newConnection(nc, &cl.mu)
+	c := cl.newConnection(nc)
 	c.Discovery = peerSourceIncoming
 	c.uTP = utp
 	cl.runReceivedConn(c)
@@ -567,7 +581,7 @@ func (cl *Client) noLongerHalfOpen(t *Torrent, addr string) {
 // Performs initiator handshakes and returns a connection. Returns nil
 // *connection if no connection for valid reasons.
 func (cl *Client) handshakesConnection(nc net.Conn, t *Torrent, encrypted, utp bool) (c *connection, err error) {
-	c = newConnection(nc, &cl.mu)
+	c = cl.newConnection(nc)
 	c.encrypted = encrypted
 	c.uTP = utp
 	err = nc.SetDeadline(time.Now().Add(handshakesTimeout))
@@ -801,18 +815,16 @@ func (r deadlineReader) Read(b []byte) (n int, err error) {
 	return
 }
 
-type readWriter struct {
-	io.Reader
-	io.Writer
-}
-
 func maybeReceiveEncryptedHandshake(rw io.ReadWriter, skeys [][]byte) (ret io.ReadWriter, encrypted bool, err error) {
 	var protocol [len(pp.Protocol)]byte
 	_, err = io.ReadFull(rw, protocol[:])
 	if err != nil {
 		return
 	}
-	ret = readWriter{
+	ret = struct {
+		io.Reader
+		io.Writer
+	}{
 		io.MultiReader(bytes.NewReader(protocol[:]), rw),
 		rw,
 	}
@@ -833,7 +845,12 @@ func (cl *Client) receiveSkeys() (ret [][]byte) {
 
 func (cl *Client) initiateHandshakes(c *connection, t *Torrent) (ok bool, err error) {
 	if c.encrypted {
-		c.rw, err = mse.InitiateHandshake(c.rw, t.infoHash[:], nil)
+		var rw io.ReadWriter
+		rw, err = mse.InitiateHandshake(struct {
+			io.Reader
+			io.Writer
+		}{c.r, c.w}, t.infoHash[:], nil)
+		c.setRW(rw)
 		if err != nil {
 			return
 		}
@@ -851,7 +868,9 @@ func (cl *Client) receiveHandshakes(c *connection) (t *Torrent, err error) {
 	skeys := cl.receiveSkeys()
 	cl.mu.Unlock()
 	if !cl.config.DisableEncryption {
-		c.rw, c.encrypted, err = maybeReceiveEncryptedHandshake(c.rw, skeys)
+		var rw io.ReadWriter
+		rw, c.encrypted, err = maybeReceiveEncryptedHandshake(c.rw(), skeys)
+		c.setRW(rw)
 		if err != nil {
 			if err == mse.ErrNoSecretKeyMatch {
 				err = nil
@@ -879,7 +898,7 @@ func (cl *Client) receiveHandshakes(c *connection) (t *Torrent, err error) {
 
 // Returns !ok if handshake failed for valid reasons.
 func (cl *Client) connBTHandshake(c *connection, ih *metainfo.Hash) (ret metainfo.Hash, ok bool, err error) {
-	res, ok, err := handshake(c.rw, ih, cl.peerID, cl.extensionBytes)
+	res, ok, err := handshake(c.rw(), ih, cl.peerID, cl.extensionBytes)
 	if err != nil || !ok {
 		return
 	}
@@ -929,10 +948,7 @@ func (cl *Client) runReceivedConn(c *connection) {
 
 func (cl *Client) runHandshookConn(c *connection, t *Torrent) {
 	c.conn.SetWriteDeadline(time.Time{})
-	c.rw = readWriter{
-		deadlineReader{c.conn, c.rw},
-		c.rw,
-	}
+	c.r = deadlineReader{c.conn, c.r}
 	completedHandshakeConnectionFlags.Add(c.connectionFlags(), 1)
 	if !t.addConnection(c) {
 		return
@@ -1065,6 +1081,7 @@ func (cl *Client) gotMetadataExtensionMsg(payload []byte, t *Torrent, c *connect
 	}
 }
 
+// Also handles choking and unchoking of the remote peer.
 func (cl *Client) upload(t *Torrent, c *connection) {
 	if cl.config.NoUpload {
 		return
@@ -1074,12 +1091,28 @@ func (cl *Client) upload(t *Torrent, c *connection) {
 	}
 	seeding := t.seeding()
 	if !seeding && !t.connHasWantedPieces(c) {
+		// There's no reason to upload to this peer.
 		return
 	}
+	// Breaking or completing this loop means we don't want to upload to the
+	// peer anymore, and we choke them.
 another:
 	for seeding || c.chunksSent < c.UsefulChunksReceived+6 {
+		// We want to upload to the peer.
 		c.Unchoke()
 		for r := range c.PeerRequests {
+			res := cl.uploadLimit.ReserveN(time.Now(), int(r.Length))
+			delay := res.Delay()
+			if delay > 0 {
+				res.Cancel()
+				go func() {
+					time.Sleep(delay)
+					cl.mu.Lock()
+					defer cl.mu.Unlock()
+					cl.upload(t, c)
+				}()
+				return
+			}
 			err := cl.sendChunk(t, c, r)
 			if err != nil {
 				i := int(r.Index)
@@ -1545,4 +1578,17 @@ func (cl *Client) banPeerIP(ip net.IP) {
 		cl.badPeerIPs = make(map[string]struct{})
 	}
 	cl.badPeerIPs[ip.String()] = struct{}{}
+}
+
+func (cl *Client) newConnection(nc net.Conn) (c *connection) {
+	c = &connection{
+		conn: nc,
+
+		Choked:          true,
+		PeerChoked:      true,
+		PeerMaxRequests: 250,
+	}
+	c.setRW(connStatsReadWriter{nc, &cl.mu, c})
+	c.r = rateLimitedReader{cl.downloadLimit, c.r}
+	return
 }
