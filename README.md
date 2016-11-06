@@ -55,7 +55,7 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-
 
     ```
     docker run --name ct -d -p 63000:63000 \
-      ---restart always \
+      --restart always \
       -v /root/downloads:/downloads \
       jpillora/cloud-torrent --port 63000
     ```
