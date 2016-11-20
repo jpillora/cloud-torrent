@@ -149,7 +149,8 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
       for (var i = 0; i < results.length; i++) {
         var r = results[i];
         //add origin to path to create urls
-        if(r.path && /^\//.test(r.path)) {
+        if(r.url && /^\//.test(r.url)) {
+          r.path = r.url;
           r.url = origin + r.path;
         }
         if(r.torrent && /^\//.test(r.torrent)) {
@@ -171,11 +172,11 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
       api.url(result.torrent);
       return;
     }
-    //else, look it up via url
-    if (!result.item)
+    //else, look it up via url path
+    if (!result.path)
       return $scope.omnierr = "No item URL found";
 
-    search.one($scope.inputs.provider, result.item).then(function(resp) {
+    search.one($scope.inputs.provider, result.path).then(function(resp) {
       var data = resp.data;
       if (!data)
         return $scope.omnierr = "No response";

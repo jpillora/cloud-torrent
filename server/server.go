@@ -75,11 +75,18 @@ func (s *Server) Run(version string) error {
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
 	s.files = http.HandlerFunc(s.serveFiles)
 	s.static = ctstatic.FileSystemHandler()
-	s.scraper = &scraper.Handler{Log: false}
+	s.scraper = &scraper.Handler{
+		Log: false, Debug: false,
+		Headers: map[string]string{
+			"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36",
+		},
+	}
 	if err := s.scraper.LoadConfig(defaultSearchConfig); err != nil {
 		log.Fatal(err)
 	}
+
 	s.state.SearchProviders = s.scraper.Config //share scraper config
+	go s.fetchSearchConfigLoop()
 	s.scraperh = http.StripPrefix("/search", s.scraper)
 
 	s.engine = engine.New()

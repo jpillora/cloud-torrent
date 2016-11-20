@@ -177,8 +177,8 @@
 		},
 		{
 			"ImportPath": "github.com/jpillora/scraper/scraper",
-			"Comment": "0.1.2",
-			"Rev": "11ad4fe0882f676c256dad38e96373351b9862ba"
+			"Comment": "0.1.2-2-ge773d84",
+			"Rev": "e773d84ba120c0de5dcbdb7ba07eb6c7ce4d3425"
 		},
 		{
 			"ImportPath": "github.com/jpillora/sizestr",
