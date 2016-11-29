@@ -169,6 +169,23 @@ func attributeEqualsSelector(key, val string) Selector {
 		})
 }
 
+// attributeNotEqualSelector returns a Selector that matches elements where
+// the attribute named key does not have the value val.
+func attributeNotEqualSelector(key, val string) Selector {
+	key = toLowerASCII(key)
+	return func(n *html.Node) bool {
+		if n.Type != html.ElementNode {
+			return false
+		}
+		for _, a := range n.Attr {
+			if a.Key == key && a.Val == val {
+				return false
+			}
+		}
+		return true
+	}
+}
+
 // attributeIncludesSelector returns a Selector that matches elements where
 // the attribute named key is a whitespace-separated list that includes val.
 func attributeIncludesSelector(key, val string) Selector {

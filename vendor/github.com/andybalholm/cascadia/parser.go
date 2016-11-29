@@ -395,6 +395,8 @@ func (p *parser) parseAttributeSelector() (Selector, error) {
 	switch op {
 	case "=":
 		return attributeEqualsSelector(key, val), nil
+	case "!=":
+		return attributeNotEqualSelector(key, val), nil
 	case "~=":
 		return attributeIncludesSelector(key, val), nil
 	case "|=":
