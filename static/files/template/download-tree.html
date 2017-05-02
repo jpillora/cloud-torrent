@@ -1,8 +1,7 @@
-
 <!-- <div class="icon-container"> -->
 <i class="wrapper icon">
   <i ng-if="isdir()" ng-class="icon()" ng-click="toggle()"></i>
-  <i ng-if="isfile()" ng-class="icon()"></i>
+<i ng-if="isfile()" ng-class="icon()"></i>
 </i>
 <!-- </div> -->
 
@@ -15,12 +14,21 @@
       <i ng-show="!confirm" ng-click="preremove()" class="red trash icon"></i>
       <i ng-show="!deleting && confirm" ng-click="deleting = true; remove();" class="red check icon"></i>
       <i ng-show="deleting" class="grey notched circle loading icon"></i>
+      <i ng-show="imagePreview || videoPreview || audioPreview" ng-click="togglePreview()" class="blue {{ showPreview ? 'circle outline' : 'video play outline' }} icon"></i>
     </span>
   </div>
   <div class="description">{{ node.Size | bytes }} updated {{ ago(node.Modified) }}</div>
+  <div class="preview" ng-if="showPreview">
+    <audio ng-if="audioPreview" controls>
+      <source ng-src="{{ showPreview ? ('/download/'+node.$path) : '' }}">
+    </audio>
+    <img ng-if="imagePreview" ng-src="{{ showPreview ? ('/download/'+node.$path) : '' }}">
+    <video controls autoplay ng-if="videoPreview">
+      <source ng-src="{{ showPreview ? ('/download/'+node.$path) : '' }}">
+    </video>
+  </div>
   <div class="list" ng-if="isdir() && !closed()">
-    <div class="item" ng-repeat="node in node.Children"
-        ng-controller="NodeController"
-        ng-include src="'template/download-tree.html'"></div>
+    <div class="item" ng-repeat="node in node.Children" ng-controller="NodeController" ng-include
+      src="'template/download-tree.html'"></div>
   </div>
 </div>

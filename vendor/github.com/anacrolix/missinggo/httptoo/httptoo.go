@@ -2,6 +2,7 @@ package httptoo
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/bradfitz/iter"
@@ -30,4 +31,9 @@ func NukeCookie(w http.ResponseWriter, r *http.Request, name, path string) {
 			Domain: strings.Join(parts[i:], "."),
 		})
 	}
+}
+
+// Performs quoted-string from http://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html
+func EncodeQuotedString(s string) string {
+	return strconv.Quote(s)
 }

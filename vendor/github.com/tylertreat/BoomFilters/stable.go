@@ -1,8 +1,11 @@
 package boom
 
 import (
+	"bytes"
+	"encoding/binary"
 	"hash"
 	"hash/fnv"
+	"io"
 	"math"
 	"math/rand"
 )
@@ -207,6 +210,109 @@ func (s *StableBloomFilter) decrement() {
 // For the effect on false positive rates see: https://github.com/tylertreat/BoomFilters/pull/1
 func (s *StableBloomFilter) SetHash(h hash.Hash64) {
 	s.hash = h
+}
+
+// WriteTo writes a binary representation of the StableBloomFilter to an i/o stream.
+// It returns the number of bytes written.
+func (s *StableBloomFilter) WriteTo(stream io.Writer) (int64, error) {
+	err := binary.Write(stream, binary.BigEndian, uint64(s.m))
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, uint64(s.p))
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, uint64(s.k))
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, s.max)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, int64(len(s.indexBuffer)))
+	if err != nil {
+		return 0, err
+	}
+	for _, index := range s.indexBuffer {
+		err = binary.Write(stream, binary.BigEndian, uint64(index))
+		if err != nil {
+			return 0, err
+		}
+	}
+	n, err := s.cells.WriteTo(stream)
+	if err != nil {
+		return 0, err
+	}
+	return int64((3+len(s.indexBuffer))*binary.Size(uint64(0))) +
+		int64(1*binary.Size(uint8(0))) + int64(1*binary.Size(int64(0))) + n, err
+}
+
+// ReadFrom reads a binary representation of StableBloomFilter (such as might
+// have been written by WriteTo()) from an i/o stream. It returns the number
+// of bytes read.
+func (s *StableBloomFilter) ReadFrom(stream io.Reader) (int64, error) {
+	var m, p, k, bufferLen uint64
+	var max uint8
+	err := binary.Read(stream, binary.BigEndian, &m)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &p)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &k)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &max)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &bufferLen)
+	if err != nil {
+		return 0, err
+	}
+	indexBuffer := make([]uint, bufferLen)
+	var index uint64
+	for i, _ := range indexBuffer {
+		err = binary.Read(stream, binary.BigEndian, &index)
+		if err != nil {
+			return 0, err
+		}
+		indexBuffer[i] = uint(index)
+	}
+	s.m = uint(m)
+	s.p = uint(p)
+	s.k = uint(k)
+	s.max = max
+	s.indexBuffer = indexBuffer
+
+	n, err := s.cells.ReadFrom(stream)
+	if err != nil {
+		return 0, err
+	}
+	return int64((3+len(s.indexBuffer))*binary.Size(uint64(0))) +
+		int64(1*binary.Size(uint8(0))) + int64(1*binary.Size(int64(0))) + n, nil
+}
+
+// GobEncode implements gob.GobEncoder interface.
+func (s *StableBloomFilter) GobEncode() ([]byte, error) {
+	var buf bytes.Buffer
+	_, err := s.WriteTo(&buf)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// GobDecode implements gob.GobDecoder interface.
+func (s *StableBloomFilter) GobDecode(data []byte) error {
+	buf := bytes.NewBuffer(data)
+	_, err := s.ReadFrom(buf)
+	return err
 }
 
 // optimalStableP returns the optimal number of cells to decrement, p, per

@@ -1,13 +1,14 @@
 # torrent
 
-[![Join the chat at https://gitter.im/anacrolix/torrent](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/anacrolix/torrent?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![CircleCI](https://circleci.com/gh/anacrolix/torrent.svg?style=shield)](https://circleci.com/gh/anacrolix/torrent)
 [![GoDoc](https://godoc.org/github.com/anacrolix/torrent?status.svg)](https://godoc.org/github.com/anacrolix/torrent)
+[![Join the chat at https://gitter.im/anacrolix/torrent](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/anacrolix/torrent?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This repository implements BitTorrent-related packages and command-line utilities in Go. The emphasis is on use as a library from other projects. It's been used 24/7 in production by a downstream, private service since late 2014.
 
-There is support for protocol encryption, DHT, PEX, uTP, and various extensions. See the package documentation for a more complete list. There are several data storage backends provided: blob, file, and mmap, and you can write your own, such as to store data on S3, or in a database. You can use the provided binaries in `./cmd`, or use `torrent` as a library for your own applications.
+There is support for protocol encryption, [DHT](https://github.com/anacrolix/dht), PEX, [uTP](https://github.com/anacrolix/utp), and various extensions. See the package documentation for a more complete list. There are several data storage backends provided: blob, file, and mmap, and you can write your own, such as to store data on S3, or in a database. You can use the provided binaries in `./cmd`, or use `torrent` as a library for your own applications.
 
-Many of the sub-packages can be used for other purposes: [dht](https://godoc.org/github.com/anacrolix/torrent/dht), [bencode](https://godoc.org/github.com/anacrolix/torrent/bencode), and [tracker](https://godoc.org/github.com/anacrolix/torrent/tracker), in particular.
+Many of the sub-packages can be used for other purposes: [bencode](https://godoc.org/github.com/anacrolix/torrent/bencode), and [tracker](https://godoc.org/github.com/anacrolix/torrent/tracker), in particular.
 
 ## Installation
 
@@ -17,16 +18,18 @@ Install the library package with `go get github.com/anacrolix/torrent`, or the p
 
 There is a small example in the [package documentation](https://godoc.org/github.com/anacrolix/torrent).
 
-## Other projects using Torrent
+## Other public projects using torrent
 
  * [Go Peerflix](https://github.com/Sioro-Neoku/go-peerflix)
  * [Cloud Torrent](https://github.com/jpillora/cloud-torrent)
- * [Android Torrent Client](https://github.com/axet/android-torrent-client)
- * [Android libtorrent](https://github.com/axet/libtorrent)
+ * [Android Torrent Client](https://gitlab.com/axet/android-torrent-client)
+ * [Android libtorrent](https://gitlab.com/axet/libtorrent)
+ * [Trickl - Torrent Client](https://play.google.com/store/apps/details?id=com.shwifty.tex)
+ * [Confluence](https://github.com/anacrolix/confluence)
 
 ## Mobile
 
-There's a branch called `mobile` that supports binding to torrent with the [gomobile](https://github.com/golang/go/wiki/Mobile) tool. It has some API changes as required by `gomobile`. Checkout the `mobile` branch, and bind as usual.
+There's a branch called `mobile` that supports binding to torrent with the [gomobile](https://github.com/golang/go/wiki/Mobile) tool. It has some API changes as required by `gomobile`. Checkout the [`mobile` branch](https://github.com/anacrolix/torrent/tree/mobile), and bind as usual.
 
 ## Commands
 

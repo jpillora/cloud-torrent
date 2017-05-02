@@ -1,9 +1,9 @@
 package torrent
 
 import (
+	"github.com/anacrolix/dht"
 	"golang.org/x/time/rate"
 
-	"github.com/anacrolix/torrent/dht"
 	"github.com/anacrolix/torrent/iplist"
 	"github.com/anacrolix/torrent/storage"
 )

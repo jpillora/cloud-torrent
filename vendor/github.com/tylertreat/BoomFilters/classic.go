@@ -1,8 +1,11 @@
 package boom
 
 import (
+	"bytes"
+	"encoding/binary"
 	"hash"
 	"hash/fnv"
+	"io"
 	"math"
 )
 
@@ -118,4 +121,79 @@ func (b *BloomFilter) Reset() *BloomFilter {
 // For the effect on false positive rates see: https://github.com/tylertreat/BoomFilters/pull/1
 func (b *BloomFilter) SetHash(h hash.Hash64) {
 	b.hash = h
+}
+
+// WriteTo writes a binary representation of the BloomFilter to an i/o stream.
+// It returns the number of bytes written.
+func (b *BloomFilter) WriteTo(stream io.Writer) (int64, error) {
+	err := binary.Write(stream, binary.BigEndian, uint64(b.count))
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, uint64(b.m))
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Write(stream, binary.BigEndian, uint64(b.k))
+	if err != nil {
+		return 0, err
+	}
+
+	writtenSize, err := b.buckets.WriteTo(stream)
+	if err != nil {
+		return 0, err
+	}
+
+	return writtenSize + int64(3*binary.Size(uint64(0))), err
+}
+
+// ReadFrom reads a binary representation of BloomFilter (such as might
+// have been written by WriteTo()) from an i/o stream. It returns the number
+// of bytes read.
+func (b *BloomFilter) ReadFrom(stream io.Reader) (int64, error) {
+	var count, m, k uint64
+	var buckets Buckets
+
+	err := binary.Read(stream, binary.BigEndian, &count)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &m)
+	if err != nil {
+		return 0, err
+	}
+	err = binary.Read(stream, binary.BigEndian, &k)
+	if err != nil {
+		return 0, err
+	}
+
+	readSize, err := buckets.ReadFrom(stream)
+	if err != nil {
+		return 0, err
+	}
+
+	b.count = uint(count)
+	b.m = uint(m)
+	b.k = uint(k)
+	b.buckets = &buckets
+	return readSize + int64(3*binary.Size(uint64(0))), nil
+}
+
+// GobEncode implements gob.GobEncoder interface.
+func (b *BloomFilter) GobEncode() ([]byte, error) {
+	var buf bytes.Buffer
+	_, err := b.WriteTo(&buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// GobDecode implements gob.GobDecoder interface.
+func (b *BloomFilter) GobDecode(data []byte) error {
+	buf := bytes.NewBuffer(data)
+	_, err := b.ReadFrom(buf)
+
+	return err
 }

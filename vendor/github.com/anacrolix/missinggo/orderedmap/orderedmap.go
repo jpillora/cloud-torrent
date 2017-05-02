@@ -1,6 +1,6 @@
 package orderedmap
 
-import "github.com/anacrolix/missinggo/itertools"
+import "github.com/anacrolix/missinggo/iter"
 
 func New(lesser func(l, r interface{}) bool) OrderedMap {
 	return NewGoogleBTree(lesser)
@@ -9,7 +9,7 @@ func New(lesser func(l, r interface{}) bool) OrderedMap {
 type OrderedMap interface {
 	Get(key interface{}) interface{}
 	GetOk(key interface{}) (interface{}, bool)
-	itertools.Iterable
+	iter.Iterable
 	Set(key, value interface{})
 	Unset(key interface{})
 	Len() int

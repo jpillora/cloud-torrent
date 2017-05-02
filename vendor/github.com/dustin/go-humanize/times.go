@@ -94,6 +94,9 @@ func CustomRelTime(a, b time.Time, albl, blbl string, magnitudes []RelTimeMagnit
 		return magnitudes[i].D >= diff
 	})
 
+	if n >= len(magnitudes) {
+		n = len(magnitudes) - 1
+	}
 	mag := magnitudes[n]
 	args := []interface{}{}
 	escaped := false

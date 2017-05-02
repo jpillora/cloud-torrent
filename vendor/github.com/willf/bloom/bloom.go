@@ -40,7 +40,7 @@ for example, to add a uint32 to the filter:
     f.Add(n1)
 
 Finally, there is a method to estimate the false positive rate of a particular
-bloom filter for a set of size _n_:
+Bloom filter for a set of size _n_:
 
     if filter.EstimateFalsePositiveRate(1000) > 0.001
 
@@ -57,6 +57,7 @@ import (
 	"io"
 	"math"
 
+	"github.com/spaolacci/murmur3"
 	"github.com/willf/bitset"
 )
 
@@ -74,23 +75,17 @@ func New(m uint, k uint) *BloomFilter {
 	return &BloomFilter{m, k, bitset.New(m)}
 }
 
-func fnv64Hash(index uint64, data []byte) uint64 {
-	hash := index + 14695981039346656037
-	for i := range data {
-		hash ^= uint64(data[i])
-		hash *= 1099511628211
-	}
-	return hash
-}
-
 // baseHashes returns the four hash values of data that are used to create k
 // hashes
 func baseHashes(data []byte) [4]uint64 {
+	a1 := []byte{1} // to grab another bit of data
+	hasher := murmur3.New128()
+	hasher.Write(data)
+	v1, v2 := hasher.Sum128()
+	hasher.Write(a1)
+	v3, v4 := hasher.Sum128()
 	return [4]uint64{
-		fnv64Hash(0, data),
-		fnv64Hash(1, data),
-		fnv64Hash(2, data),
-		fnv64Hash(3, data),
+		v1, v2, v3, v4,
 	}
 }
 
@@ -140,25 +135,24 @@ func (f *BloomFilter) Add(data []byte) *BloomFilter {
 func (f *BloomFilter) Merge(g *BloomFilter) error {
 	// Make sure the m's and k's are the same, otherwise merging has no real use.
 	if f.m != g.m {
-		return fmt.Errorf("m's don't match: %d != %d\n", f.m, g.m)
+		return fmt.Errorf("m's don't match: %d != %d", f.m, g.m)
 	}
 
 	if f.k != g.k {
-		return fmt.Errorf("k's don't match: %d != %d\n", f.m, g.m)
+		return fmt.Errorf("k's don't match: %d != %d", f.m, g.m)
 	}
 
 	f.b.InPlaceUnion(g.b)
 	return nil
 }
 
-// Create a copy of a bloom filter.
+// Copy creates a copy of a Bloom filter.
 func (f *BloomFilter) Copy() *BloomFilter {
 	fc := New(f.m, f.k)
 	fc.Merge(f)
 	return fc
 }
 
-// Tests for the presence of data in the Bloom filter
 // AddString to the Bloom Filter. Returns the filter (allows chaining)
 func (f *BloomFilter) AddString(data string) *BloomFilter {
 	return f.Add([]byte(data))
@@ -320,6 +314,7 @@ func (f *BloomFilter) GobDecode(data []byte) error {
 	return err
 }
 
+// Equal tests for the equality of two Bloom filters
 func (f *BloomFilter) Equal(g *BloomFilter) bool {
 	return f.m == g.m && f.k == g.k && f.b.Equal(g.b)
 }

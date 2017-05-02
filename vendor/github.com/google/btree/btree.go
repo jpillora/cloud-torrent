@@ -52,6 +52,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"sync"
 )
 
 // Item represents a single object in the tree.
@@ -76,8 +77,9 @@ var (
 // FreeList represents a free list of btree nodes. By default each
 // BTree has its own FreeList, but multiple BTrees can share the same
 // FreeList.
-// Two Btrees using the same freelist are not safe for concurrent write access.
+// Two Btrees using the same freelist are safe for concurrent write access.
 type FreeList struct {
+	mu       sync.Mutex
 	freelist []*node
 }
 
@@ -88,20 +90,25 @@ func NewFreeList(size int) *FreeList {
 }
 
 func (f *FreeList) newNode() (n *node) {
+	f.mu.Lock()
 	index := len(f.freelist) - 1
 	if index < 0 {
+		f.mu.Unlock()
 		return new(node)
 	}
 	n = f.freelist[index]
 	f.freelist[index] = nil
 	f.freelist = f.freelist[:index]
+	f.mu.Unlock()
 	return
 }
 
 func (f *FreeList) freeNode(n *node) {
+	f.mu.Lock()
 	if len(f.freelist) < cap(f.freelist) {
 		f.freelist = append(f.freelist, n)
 	}
+	f.mu.Unlock()
 }
 
 // ItemIterator allows callers of Ascend* to iterate in-order over portions of
@@ -123,8 +130,8 @@ func NewWithFreeList(degree int, f *FreeList) *BTree {
 		panic("bad degree")
 	}
 	return &BTree{
-		degree:   degree,
-		freelist: f,
+		degree: degree,
+		cow:    &copyOnWriteContext{freelist: f},
 	}
 }
 
@@ -233,7 +240,34 @@ func (s *children) truncate(index int) {
 type node struct {
 	items    items
 	children children
-	t        *BTree
+	cow      *copyOnWriteContext
+}
+
+func (n *node) mutableFor(cow *copyOnWriteContext) *node {
+	if n.cow == cow {
+		return n
+	}
+	out := cow.newNode()
+	if cap(out.items) >= len(n.items) {
+		out.items = out.items[:len(n.items)]
+	} else {
+		out.items = make(items, len(n.items), cap(n.items))
+	}
+	copy(out.items, n.items)
+	// Copy children
+	if cap(out.children) >= len(n.children) {
+		out.children = out.children[:len(n.children)]
+	} else {
+		out.children = make(children, len(n.children), cap(n.children))
+	}
+	copy(out.children, n.children)
+	return out
+}
+
+func (n *node) mutableChild(i int) *node {
+	c := n.children[i].mutableFor(n.cow)
+	n.children[i] = c
+	return c
 }
 
 // split splits the given node at the given index.  The current node shrinks,
@@ -241,7 +275,7 @@ type node struct {
 // containing all items/children after it.
 func (n *node) split(i int) (Item, *node) {
 	item := n.items[i]
-	next := n.t.newNode()
+	next := n.cow.newNode()
 	next.items = append(next.items, n.items[i+1:]...)
 	n.items.truncate(i)
 	if len(n.children) > 0 {
@@ -257,7 +291,7 @@ func (n *node) maybeSplitChild(i, maxItems int) bool {
 	if len(n.children[i].items) < maxItems {
 		return false
 	}
-	first := n.children[i]
+	first := n.mutableChild(i)
 	item, second := first.split(maxItems / 2)
 	n.items.insertAt(i, item)
 	n.children.insertAt(i+1, second)
@@ -291,7 +325,7 @@ func (n *node) insert(item Item, maxItems int) Item {
 			return out
 		}
 	}
-	return n.children[i].insert(item, maxItems)
+	return n.mutableChild(i).insert(item, maxItems)
 }
 
 // get finds the given key in the subtree and returns it.
@@ -369,10 +403,10 @@ func (n *node) remove(item Item, minItems int, typ toRemove) Item {
 		panic("invalid type")
 	}
 	// If we get to here, we have children.
-	child := n.children[i]
-	if len(child.items) <= minItems {
+	if len(n.children[i].items) <= minItems {
 		return n.growChildAndRemove(i, item, minItems, typ)
 	}
+	child := n.mutableChild(i)
 	// Either we had enough items to begin with, or we've done some
 	// merging/stealing, because we've got enough now and we're ready to return
 	// stuff.
@@ -411,10 +445,10 @@ func (n *node) remove(item Item, minItems int, typ toRemove) Item {
 // whether we're in case 1 or 2), we'll have enough items and can guarantee
 // that we hit case A.
 func (n *node) growChildAndRemove(i int, item Item, minItems int, typ toRemove) Item {
-	child := n.children[i]
 	if i > 0 && len(n.children[i-1].items) > minItems {
 		// Steal from left child
-		stealFrom := n.children[i-1]
+		child := n.mutableChild(i)
+		stealFrom := n.mutableChild(i - 1)
 		stolenItem := stealFrom.items.pop()
 		child.items.insertAt(0, n.items[i-1])
 		n.items[i-1] = stolenItem
@@ -423,7 +457,8 @@ func (n *node) growChildAndRemove(i int, item Item, minItems int, typ toRemove) 
 		}
 	} else if i < len(n.items) && len(n.children[i+1].items) > minItems {
 		// steal from right child
-		stealFrom := n.children[i+1]
+		child := n.mutableChild(i)
+		stealFrom := n.mutableChild(i + 1)
 		stolenItem := stealFrom.items.removeAt(0)
 		child.items = append(child.items, n.items[i])
 		n.items[i] = stolenItem
@@ -433,15 +468,15 @@ func (n *node) growChildAndRemove(i int, item Item, minItems int, typ toRemove) 
 	} else {
 		if i >= len(n.items) {
 			i--
-			child = n.children[i]
 		}
+		child := n.mutableChild(i)
 		// merge with right child
 		mergeItem := n.items.removeAt(i)
 		mergeChild := n.children.removeAt(i + 1)
 		child.items = append(child.items, mergeItem)
 		child.items = append(child.items, mergeChild.items...)
 		child.children = append(child.children, mergeChild.children...)
-		n.t.freeNode(mergeChild)
+		n.cow.freeNode(mergeChild)
 	}
 	return n.remove(item, minItems, typ)
 }
@@ -535,10 +570,52 @@ func (n *node) print(w io.Writer, level int) {
 // Write operations are not safe for concurrent mutation by multiple
 // goroutines, but Read operations are.
 type BTree struct {
-	degree   int
-	length   int
-	root     *node
+	degree int
+	length int
+	root   *node
+	cow    *copyOnWriteContext
+}
+
+// copyOnWriteContext pointers determine node ownership... a tree with a write
+// context equivalent to a node's write context is allowed to modify that node.
+// A tree whose write context does not match a node's is not allowed to modify
+// it, and must create a new, writable copy (IE: it's a Clone).
+//
+// When doing any write operation, we maintain the invariant that the current
+// node's context is equal to the context of the tree that requested the write.
+// We do this by, before we descend into any node, creating a copy with the
+// correct context if the contexts don't match.
+//
+// Since the node we're currently visiting on any write has the requesting
+// tree's context, that node is modifiable in place.  Children of that node may
+// not share context, but before we descend into them, we'll make a mutable
+// copy.
+type copyOnWriteContext struct {
 	freelist *FreeList
+}
+
+// Clone clones the btree, lazily.  Clone should not be called concurrently,
+// but the original tree (t) and the new tree (t2) can be used concurrently
+// once the Clone call completes.
+//
+// The internal tree structure of b is marked read-only and shared between t and
+// t2.  Writes to both t and t2 use copy-on-write logic, creating new nodes
+// whenever one of b's original nodes would have been modified.  Read operations
+// should have no performance degredation.  Write operations for both t and t2
+// will initially experience minor slow-downs caused by additional allocs and
+// copies due to the aforementioned copy-on-write logic, but should converge to
+// the original performance characteristics of the original tree.
+func (t *BTree) Clone() (t2 *BTree) {
+	// Create two entirely new copy-on-write contexts.
+	// This operation effectively creates three trees:
+	//   the original, shared nodes (old b.cow)
+	//   the new b.cow nodes
+	//   the new out.cow nodes
+	cow1, cow2 := *t.cow, *t.cow
+	out := *t
+	t.cow = &cow1
+	out.cow = &cow2
+	return &out
 }
 
 // maxItems returns the max number of items to allow per node.
@@ -552,18 +629,20 @@ func (t *BTree) minItems() int {
 	return t.degree - 1
 }
 
-func (t *BTree) newNode() (n *node) {
-	n = t.freelist.newNode()
-	n.t = t
+func (c *copyOnWriteContext) newNode() (n *node) {
+	n = c.freelist.newNode()
+	n.cow = c
 	return
 }
 
-func (t *BTree) freeNode(n *node) {
-	// clear to allow GC
-	n.items.truncate(0)
-	n.children.truncate(0)
-	n.t = nil // clear to allow GC
-	t.freelist.freeNode(n)
+func (c *copyOnWriteContext) freeNode(n *node) {
+	if n.cow == c {
+		// clear to allow GC
+		n.items.truncate(0)
+		n.children.truncate(0)
+		n.cow = nil
+		c.freelist.freeNode(n)
+	}
 }
 
 // ReplaceOrInsert adds the given item to the tree.  If an item in the tree
@@ -576,16 +655,19 @@ func (t *BTree) ReplaceOrInsert(item Item) Item {
 		panic("nil item being added to BTree")
 	}
 	if t.root == nil {
-		t.root = t.newNode()
+		t.root = t.cow.newNode()
 		t.root.items = append(t.root.items, item)
 		t.length++
 		return nil
-	} else if len(t.root.items) >= t.maxItems() {
-		item2, second := t.root.split(t.maxItems() / 2)
-		oldroot := t.root
-		t.root = t.newNode()
-		t.root.items = append(t.root.items, item2)
-		t.root.children = append(t.root.children, oldroot, second)
+	} else {
+		t.root = t.root.mutableFor(t.cow)
+		if len(t.root.items) >= t.maxItems() {
+			item2, second := t.root.split(t.maxItems() / 2)
+			oldroot := t.root
+			t.root = t.cow.newNode()
+			t.root.items = append(t.root.items, item2)
+			t.root.children = append(t.root.children, oldroot, second)
+		}
 	}
 	out := t.root.insert(item, t.maxItems())
 	if out == nil {
@@ -616,11 +698,12 @@ func (t *BTree) deleteItem(item Item, typ toRemove) Item {
 	if t.root == nil || len(t.root.items) == 0 {
 		return nil
 	}
+	t.root = t.root.mutableFor(t.cow)
 	out := t.root.remove(item, t.minItems(), typ)
 	if len(t.root.items) == 0 && len(t.root.children) > 0 {
 		oldroot := t.root
 		t.root = t.root.children[0]
-		t.freeNode(oldroot)
+		t.cow.freeNode(oldroot)
 	}
 	if out != nil {
 		t.length--

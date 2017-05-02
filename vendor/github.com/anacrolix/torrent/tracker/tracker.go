@@ -39,6 +39,7 @@ func (e AnnounceEvent) String() string {
 type Peer struct {
 	IP   net.IP
 	Port int
+	ID   []byte
 }
 
 const (

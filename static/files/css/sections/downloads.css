@@ -1,5 +1,3 @@
-
-
 .nodownloads, .nouploads {
 	text-align: center;
 }
@@ -12,6 +10,18 @@
 	opacity: 0;
 	transition: opacity .3s ease-in-out;
 }
+
+@media (max-width: 480px) {
+	.downloads .ui.list .item .controls {
+		opacity: 0.5;
+	}
+}
+
 .downloads .ui.list .item:hover > .content > .header > .controls {
 	opacity: 1;
+}
+
+.downloads .preview video, .downloads .preview img, .downloads .preview audio {
+	margin-top: 5px;
+	max-width: 90%;
 }

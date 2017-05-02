@@ -18,9 +18,8 @@ import (
 
 	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/bitmap"
-	"github.com/anacrolix/missinggo/itertools"
+	"github.com/anacrolix/missinggo/iter"
 	"github.com/anacrolix/missinggo/prioritybitmap"
-	"github.com/bradfitz/iter"
 
 	"github.com/anacrolix/torrent/bencode"
 	pp "github.com/anacrolix/torrent/peer_protocol"
@@ -28,13 +27,14 @@ import (
 
 var optimizedCancels = expvar.NewInt("optimizedCancels")
 
-type peerSource byte
+type peerSource string
 
 const (
-	peerSourceTracker  = '\x00' // It's the default.
-	peerSourceIncoming = 'I'
-	peerSourceDHT      = 'H'
-	peerSourcePEX      = 'X'
+	peerSourceTracker         = "T" // It's the default.
+	peerSourceIncoming        = "I"
+	peerSourceDHTGetPeers     = "Hg"
+	peerSourceDHTAnnouncePeer = "Ha"
+	peerSourcePEX             = "X"
 )
 
 // Maintains the state of a connection with a peer.
@@ -155,9 +155,7 @@ func (cn *connection) connectionFlags() (ret string) {
 	if cn.encrypted {
 		c('E')
 	}
-	if cn.Discovery != 0 {
-		c(byte(cn.Discovery))
-	}
+	ret += string(cn.Discovery)
 	if cn.uTP {
 		c('T')
 	}
@@ -211,6 +209,18 @@ func (cn *connection) WriteStatus(w io.Writer, t *Torrent) {
 		len(cn.PeerRequests),
 		cn.statusFlags(),
 	)
+	fmt.Fprintf(w, "    next pieces: %v\n", priorityBitmapHeadAsSlice(&cn.pieceRequestOrder, 10))
+}
+
+func priorityBitmapHeadAsSlice(pb *prioritybitmap.PriorityBitmap, n int) (ret []int) {
+	pb.IterTyped(func(i int) bool {
+		if len(ret) >= n {
+			return false
+		}
+		ret = append(ret, i)
+		return true
+	})
+	return
 }
 
 func (cn *connection) Close() {
@@ -510,7 +520,7 @@ func (c *connection) requestPiecePendingChunks(piece int) (again bool) {
 		return true
 	}
 	chunkIndices := c.t.pieces[piece].undirtiedChunkIndices().ToSortedSlice()
-	return itertools.ForPerm(len(chunkIndices), func(i int) bool {
+	return iter.ForPerm(len(chunkIndices), func(i int) bool {
 		req := request{pp.Integer(piece), c.t.chunkIndexSpec(chunkIndices[i], piece)}
 		return c.Request(req)
 	})
@@ -520,6 +530,10 @@ func (cn *connection) stopRequestingPiece(piece int) {
 	cn.pieceRequestOrder.Remove(piece)
 }
 
+// This is distinct from Torrent piece priority, which is the user's
+// preference. Connection piece priority is specific to a connection,
+// pseudorandomly avoids connections always requesting the same pieces and
+// thus wasting effort.
 func (cn *connection) updatePiecePriority(piece int) {
 	tpp := cn.t.piecePriority(piece)
 	if !cn.PeerHasPiece(piece) {
@@ -539,7 +553,7 @@ func (cn *connection) updatePiecePriority(piece int) {
 	default:
 		panic(tpp)
 	}
-	prio += piece / 2
+	prio += piece / 3
 	cn.pieceRequestOrder.Set(piece, prio)
 	cn.updateRequests()
 }
@@ -737,7 +751,7 @@ func (c *connection) mainReadLoop() error {
 			cl.peerUnchoked(t, c)
 		case pp.Interested:
 			c.PeerInterested = true
-			cl.upload(t, c)
+			c.upload()
 		case pp.NotInterested:
 			c.PeerInterested = false
 			c.Choke()
@@ -763,7 +777,7 @@ func (c *connection) mainReadLoop() error {
 				c.PeerRequests = make(map[request]struct{}, maxRequests)
 			}
 			c.PeerRequests[newRequest(msg.Index, msg.Begin, msg.Length)] = struct{}{}
-			cl.upload(t, c)
+			c.upload()
 		case pp.Cancel:
 			req := newRequest(msg.Index, msg.Begin, msg.Length)
 			if !c.PeerCancel(req) {
@@ -776,7 +790,7 @@ func (c *connection) mainReadLoop() error {
 		case pp.HaveNone:
 			err = c.peerSentHaveNone()
 		case pp.Piece:
-			cl.downloadedChunk(t, c, &msg)
+			c.receiveChunk(&msg)
 			if len(msg.Piece) == int(t.chunkSize) {
 				t.chunkPool.Put(msg.Piece)
 			}
@@ -899,7 +913,7 @@ func (c *connection) mainReadLoop() error {
 			if msg.Port != 0 {
 				pingAddr.Port = int(msg.Port)
 			}
-			cl.dHT.Ping(pingAddr)
+			go cl.dHT.Ping(pingAddr)
 		default:
 			err = fmt.Errorf("received unknown message type: %#v", msg.Type)
 		}
@@ -921,4 +935,146 @@ func (cn *connection) rw() io.ReadWriter {
 		io.Reader
 		io.Writer
 	}{cn.r, cn.w}
+}
+
+// Handle a received chunk from a peer.
+func (c *connection) receiveChunk(msg *pp.Message) {
+	t := c.t
+	cl := t.cl
+	chunksReceived.Add(1)
+
+	req := newRequest(msg.Index, msg.Begin, pp.Integer(len(msg.Piece)))
+
+	// Request has been satisfied.
+	if cl.connDeleteRequest(t, c, req) {
+		defer c.updateRequests()
+	} else {
+		unexpectedChunksReceived.Add(1)
+	}
+
+	// Do we actually want this chunk?
+	if !t.wantPiece(req) {
+		unwantedChunksReceived.Add(1)
+		c.UnwantedChunksReceived++
+		return
+	}
+
+	index := int(req.Index)
+	piece := &t.pieces[index]
+
+	c.UsefulChunksReceived++
+	c.lastUsefulChunkReceived = time.Now()
+
+	c.upload()
+
+	// Need to record that it hasn't been written yet, before we attempt to do
+	// anything with it.
+	piece.incrementPendingWrites()
+	// Record that we have the chunk.
+	piece.unpendChunkIndex(chunkIndex(req.chunkSpec, t.chunkSize))
+
+	// Cancel pending requests for this chunk.
+	for c := range t.conns {
+		if cl.connCancel(t, c, req) {
+			c.updateRequests()
+		}
+	}
+
+	cl.mu.Unlock()
+	// Write the chunk out. Note that the upper bound on chunk writing
+	// concurrency will be the number of connections.
+	err := t.writeChunk(int(msg.Index), int64(msg.Begin), msg.Piece)
+	cl.mu.Lock()
+
+	piece.decrementPendingWrites()
+
+	if err != nil {
+		log.Printf("%s (%x): error writing chunk %v: %s", t, t.infoHash, req, err)
+		t.pendRequest(req)
+		t.updatePieceCompletion(int(msg.Index))
+		return
+	}
+
+	// It's important that the piece is potentially queued before we check if
+	// the piece is still wanted, because if it is queued, it won't be wanted.
+	if t.pieceAllDirty(index) {
+		t.queuePieceCheck(int(req.Index))
+	}
+
+	if c.peerTouchedPieces == nil {
+		c.peerTouchedPieces = make(map[int]struct{})
+	}
+	c.peerTouchedPieces[index] = struct{}{}
+
+	cl.event.Broadcast()
+	t.publishPieceChange(int(req.Index))
+	return
+}
+
+// Also handles choking and unchoking of the remote peer.
+func (c *connection) upload() {
+	t := c.t
+	cl := t.cl
+	if cl.config.NoUpload {
+		return
+	}
+	if !c.PeerInterested {
+		return
+	}
+	seeding := t.seeding()
+	if !seeding && !t.connHasWantedPieces(c) {
+		// There's no reason to upload to this peer.
+		return
+	}
+	// Breaking or completing this loop means we don't want to upload to the
+	// peer anymore, and we choke them.
+another:
+	for seeding || c.chunksSent < c.UsefulChunksReceived+6 {
+		// We want to upload to the peer.
+		c.Unchoke()
+		for r := range c.PeerRequests {
+			res := cl.uploadLimit.ReserveN(time.Now(), int(r.Length))
+			delay := res.Delay()
+			if delay > 0 {
+				res.Cancel()
+				go func() {
+					time.Sleep(delay)
+					cl.mu.Lock()
+					defer cl.mu.Unlock()
+					c.upload()
+				}()
+				return
+			}
+			err := cl.sendChunk(t, c, r)
+			if err != nil {
+				i := int(r.Index)
+				if t.pieceComplete(i) {
+					t.updatePieceCompletion(i)
+					if !t.pieceComplete(i) {
+						// We had the piece, but not anymore.
+						break another
+					}
+				}
+				log.Printf("error sending chunk %+v to peer: %s", r, err)
+				// If we failed to send a chunk, choke the peer to ensure they
+				// flush all their requests. We've probably dropped a piece,
+				// but there's no way to communicate this to the peer. If they
+				// ask for it again, we'll kick them to allow us to send them
+				// an updated bitfield.
+				break another
+			}
+			delete(c.PeerRequests, r)
+			goto another
+		}
+		return
+	}
+	c.Choke()
+}
+
+func (cn *connection) Drop() {
+	cn.t.dropConnection(cn)
+}
+
+func (cn *connection) netGoodPiecesDirtied() int {
+	return cn.goodPiecesDirtied - cn.badPiecesDirtied
 }

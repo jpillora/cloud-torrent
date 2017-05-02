@@ -3,6 +3,7 @@
 package ctstatic
 
 import (
+	"log"
 	"net/http"
 	"os"
 
@@ -13,6 +14,7 @@ import (
 func FileSystemHandler() http.Handler {
 	var h http.Handler
 	if info, err := os.Stat("static/files/"); err == nil && info.IsDir() {
+		log.Println("Using local static files")
 		h = http.FileServer(http.Dir("static/files/"))
 	} else {
 		h = http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "files"})

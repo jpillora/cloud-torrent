@@ -111,6 +111,8 @@ func (x1 *Bitmap) repairAfterLazy() {
 				c.(*bitmapContainer).computeCardinality()
 				if c.(*bitmapContainer).getCardinality() <= arrayDefaultMaxSize {
 					x1.highlowcontainer.setContainerAtIndex(pos, c.(*bitmapContainer).toArrayContainer())
+				} else if c.(*bitmapContainer).isFull() {
+					x1.highlowcontainer.setContainerAtIndex(pos, newRunContainer16Range(0, MaxUint16))
 				}
 			}
 		}
@@ -145,6 +147,7 @@ func FastOr(bitmaps ...*Bitmap) *Bitmap {
 	for _, bm := range bitmaps[2:] {
 		answer = answer.lazyOR(bm)
 	}
+	// here is where repairAfterLazy is called.
 	answer.repairAfterLazy()
 	return answer
 }

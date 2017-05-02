@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -26,20 +25,32 @@ type httpResponse struct {
 }
 
 func (r *httpResponse) UnmarshalPeers() (ret []Peer, err error) {
-	s, ok := r.Peers.(string)
-	if !ok {
+	switch v := r.Peers.(type) {
+	case string:
+		var cps []util.CompactPeer
+		cps, err = util.UnmarshalIPv4CompactPeers([]byte(v))
+		if err != nil {
+			return
+		}
+		ret = make([]Peer, 0, len(cps))
+		for _, cp := range cps {
+			ret = append(ret, Peer{
+				IP:   cp.IP[:],
+				Port: int(cp.Port),
+			})
+		}
+		return
+	case []interface{}:
+		for _, i := range v {
+			var p Peer
+			p.fromDictInterface(i.(map[string]interface{}))
+			ret = append(ret, p)
+		}
+		return
+	default:
 		err = fmt.Errorf("unsupported peers value type: %T", r.Peers)
 		return
 	}
-	cp, err := util.UnmarshalIPv4CompactPeers([]byte(s))
-	if err != nil {
-		return
-	}
-	ret = make([]Peer, 0, len(cp))
-	for _, p := range cp {
-		ret = append(ret, Peer{net.IP(p.IP[:]), int(p.Port)})
-	}
-	return
 }
 
 func setAnnounceParams(_url *url.URL, ar *AnnounceRequest) {

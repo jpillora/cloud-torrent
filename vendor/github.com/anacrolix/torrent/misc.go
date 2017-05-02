@@ -81,3 +81,7 @@ func chunkIndexSpec(index int, pieceLength, chunkSize pp.Integer) chunkSpec {
 	}
 	return ret
 }
+
+func connLessTrusted(l, r *connection) bool {
+	return l.netGoodPiecesDirtied() < r.netGoodPiecesDirtied()
+}

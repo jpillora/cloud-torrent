@@ -36,7 +36,6 @@ func (t *Torrent) NewReader() (ret *Reader) {
 		t:         t,
 		readahead: 5 * 1024 * 1024,
 	}
-	ret.pieces = ret.piecesUncached()
 	t.addReader(ret)
 	return
 }
@@ -132,12 +131,10 @@ func (t *Torrent) addReader(r *Reader) {
 		t.readers = make(map[*Reader]struct{})
 	}
 	t.readers[r] = struct{}{}
-	t.readersChanged()
+	r.posChanged()
 }
 
 func (t *Torrent) deleteReader(r *Reader) {
-	t.cl.mu.Lock()
-	defer t.cl.mu.Unlock()
 	delete(t.readers, r)
 	t.readersChanged()
 }

@@ -1,11 +1,21 @@
 package roaring
 
 import (
-	"unsafe"
+	"fmt"
 )
+
+//go:generate msgp -unexported
 
 type arrayContainer struct {
 	content []uint16
+}
+
+func (ac *arrayContainer) String() string {
+	s := "{"
+	for it := ac.getShortIterator(); it.hasNext(); {
+		s += fmt.Sprintf("%v, ", it.next())
+	}
+	return s + "}"
 }
 
 func (ac *arrayContainer) fillLeastSignificant16bits(x []uint32, i int, mask uint32) {
@@ -18,39 +28,46 @@ func (ac *arrayContainer) getShortIterator() shortIterable {
 	return &shortIterator{ac.content, 0}
 }
 
-func (ac *arrayContainer) getSizeInBytes() int {
-	// unsafe.Sizeof calculates the memory used by the top level of the slice
-	// descriptor - not including the size of the memory referenced by the slice.
-	// http://golang.org/pkg/unsafe/#Sizeof
-	return ac.getCardinality()*2 + int(unsafe.Sizeof(ac.content))
+func (ac *arrayContainer) minimum() uint16 {
+	return ac.content[0] // assume not empty
 }
 
-func (ac *arrayContainer) serializedSizeInBytes() int {
-	// based on https://golang.org/src/pkg/encoding/binary/binary.go#265
-	// there is no serialization overhead for writing an array of fixed size vals
+func (ac *arrayContainer) maximum() uint16 {
+	return ac.content[len(ac.content)-1] // assume not empty
+}
+
+func (ac *arrayContainer) getSizeInBytes() int {
 	return ac.getCardinality() * 2
 }
 
-// add the values in the range [firstOfRange,lastofRange)
-func (ac *arrayContainer) iaddRange(firstOfRange, lastOfRange int) container {
-	if firstOfRange >= lastOfRange {
+func (ac *arrayContainer) serializedSizeInBytes() int {
+	return ac.getCardinality() * 2
+}
+
+func arrayContainerSizeInBytes(card int) int {
+	return card * 2
+}
+
+// add the values in the range [firstOfRange,endx)
+func (ac *arrayContainer) iaddRange(firstOfRange, endx int) container {
+	if firstOfRange >= endx {
 		return ac
 	}
 	indexstart := binarySearch(ac.content, uint16(firstOfRange))
 	if indexstart < 0 {
 		indexstart = -indexstart - 1
 	}
-	indexend := binarySearch(ac.content, uint16(lastOfRange-1))
+	indexend := binarySearch(ac.content, uint16(endx-1))
 	if indexend < 0 {
 		indexend = -indexend - 1
 	} else {
 		indexend++
 	}
-	rangelength := lastOfRange - firstOfRange
+	rangelength := endx - firstOfRange
 	newcardinality := indexstart + (ac.getCardinality() - indexend) + rangelength
 	if newcardinality > arrayDefaultMaxSize {
 		a := ac.toBitmapContainer()
-		return a.iaddRange(firstOfRange, lastOfRange)
+		return a.iaddRange(firstOfRange, endx)
 	}
 	if cap(ac.content) < newcardinality {
 		tmp := make([]uint16, newcardinality, newcardinality)
@@ -69,16 +86,16 @@ func (ac *arrayContainer) iaddRange(firstOfRange, lastOfRange int) container {
 	return ac
 }
 
-// remove the values in the range [firstOfRange,lastOfRange)
-func (ac *arrayContainer) iremoveRange(firstOfRange, lastOfRange int) container {
-	if firstOfRange >= lastOfRange {
+// remove the values in the range [firstOfRange,endx)
+func (ac *arrayContainer) iremoveRange(firstOfRange, endx int) container {
+	if firstOfRange >= endx {
 		return ac
 	}
 	indexstart := binarySearch(ac.content, uint16(firstOfRange))
 	if indexstart < 0 {
 		indexstart = -indexstart - 1
 	}
-	indexend := binarySearch(ac.content, uint16(lastOfRange-1))
+	indexend := binarySearch(ac.content, uint16(endx-1))
 	if indexend < 0 {
 		indexend = -indexend - 1
 	} else {
@@ -91,26 +108,30 @@ func (ac *arrayContainer) iremoveRange(firstOfRange, lastOfRange int) container 
 	return answer
 }
 
-// flip the values in the range [firstOfRange,lastOfRange)
-func (ac *arrayContainer) not(firstOfRange, lastOfRange int) container {
-	if firstOfRange >= lastOfRange {
+// flip the values in the range [firstOfRange,endx)
+func (ac *arrayContainer) not(firstOfRange, endx int) container {
+	if firstOfRange >= endx {
+		//p("arrayContainer.not(): exiting early with ac.clone()")
 		return ac.clone()
 	}
-	return ac.notClose(firstOfRange, lastOfRange-1) // remove everything in [firstOfRange,lastOfRange-1]
+	return ac.notClose(firstOfRange, endx-1) // remove everything in [firstOfRange,endx-1]
 }
 
 // flip the values in the range [firstOfRange,lastOfRange]
 func (ac *arrayContainer) notClose(firstOfRange, lastOfRange int) container {
 	if firstOfRange > lastOfRange { // unlike add and remove, not uses an inclusive range [firstOfRange,lastOfRange]
+		//p("arrayContainer.notClose(): exiting early with ac.clone()")
 		return ac.clone()
 	}
 
 	// determine the span of array indices to be affected^M
 	startIndex := binarySearch(ac.content, uint16(firstOfRange))
+	//p("startIndex=%v", startIndex)
 	if startIndex < 0 {
 		startIndex = -startIndex - 1
 	}
 	lastIndex := binarySearch(ac.content, uint16(lastOfRange))
+	//p("lastIndex=%v", lastIndex)
 	if lastIndex < 0 {
 		lastIndex = -lastIndex - 2
 	}
@@ -119,8 +140,9 @@ func (ac *arrayContainer) notClose(firstOfRange, lastOfRange int) container {
 	newValuesInRange := spanToBeFlipped - currentValuesInRange
 	cardinalityChange := newValuesInRange - currentValuesInRange
 	newCardinality := len(ac.content) + cardinalityChange
-
+	//p("new card is %v", newCardinality)
 	if newCardinality > arrayDefaultMaxSize {
+		//p("new card over arrayDefaultMaxSize, so returning bitmap")
 		return ac.toBitmapContainer().not(firstOfRange, lastOfRange+1)
 	}
 	answer := newArrayContainer()
@@ -153,7 +175,8 @@ func (ac *arrayContainer) notClose(firstOfRange, lastOfRange int) container {
 
 }
 
-func (ac *arrayContainer) equals(o interface{}) bool {
+func (ac *arrayContainer) equals(o container) bool {
+
 	srb, ok := o.(*arrayContainer)
 	if ok {
 		// Check if the containers are the same object.
@@ -172,7 +195,22 @@ func (ac *arrayContainer) equals(o interface{}) bool {
 		}
 		return true
 	}
-	return false
+
+	// use generic comparison
+	bCard := o.getCardinality()
+	aCard := ac.getCardinality()
+	if bCard != aCard {
+		return false
+	}
+
+	ait := ac.getShortIterator()
+	bit := o.getShortIterator()
+	for ait.hasNext() {
+		if bit.next() != ait.next() {
+			return false
+		}
+	}
+	return true
 }
 
 func (ac *arrayContainer) toBitmapContainer() *bitmapContainer {
@@ -181,7 +219,29 @@ func (ac *arrayContainer) toBitmapContainer() *bitmapContainer {
 	return bc
 
 }
-func (ac *arrayContainer) add(x uint16) container {
+func (ac *arrayContainer) iadd(x uint16) (wasNew bool) {
+	// Special case adding to the end of the container.
+	l := len(ac.content)
+	if l > 0 && l < arrayDefaultMaxSize && ac.content[l-1] < x {
+		ac.content = append(ac.content, x)
+		return true
+	}
+
+	loc := binarySearch(ac.content, x)
+
+	if loc < 0 {
+		s := ac.content
+		i := -loc - 1
+		s = append(s, 0)
+		copy(s[i+1:], s[i:])
+		s[i] = x
+		ac.content = s
+		return true
+	}
+	return false
+}
+
+func (ac *arrayContainer) iaddReturnMinimized(x uint16) container {
 	// Special case adding to the end of the container.
 	l := len(ac.content)
 	if l > 0 && l < arrayDefaultMaxSize && ac.content[l-1] < x {
@@ -194,7 +254,7 @@ func (ac *arrayContainer) add(x uint16) container {
 	if loc < 0 {
 		if len(ac.content) >= arrayDefaultMaxSize {
 			a := ac.toBitmapContainer()
-			a.add(x)
+			a.iadd(x)
 			return a
 		}
 		s := ac.content
@@ -207,52 +267,143 @@ func (ac *arrayContainer) add(x uint16) container {
 	return ac
 }
 
-func (ac *arrayContainer) remove(x uint16) container {
+// iremoveReturnMinimized is allowed to change the return type to minimize storage.
+func (ac *arrayContainer) iremoveReturnMinimized(x uint16) container {
+	ac.iremove(x)
+	return ac
+}
+
+func (ac *arrayContainer) iremove(x uint16) bool {
 	loc := binarySearch(ac.content, x)
 	if loc >= 0 {
 		s := ac.content
 		s = append(s[:loc], s[loc+1:]...)
 		ac.content = s
+		return true
 	}
-	return ac
+	return false
+}
+
+func (ac *arrayContainer) remove(x uint16) container {
+	out := &arrayContainer{make([]uint16, len(ac.content))}
+	copy(out.content, ac.content[:])
+
+	loc := binarySearch(out.content, x)
+	if loc >= 0 {
+		s := out.content
+		s = append(s[:loc], s[loc+1:]...)
+		out.content = s
+	}
+	return out
 }
 
 func (ac *arrayContainer) or(a container) container {
-	switch a.(type) {
+	switch x := a.(type) {
 	case *arrayContainer:
-		return ac.orArray(a.(*arrayContainer))
+		return ac.orArray(x)
 	case *bitmapContainer:
-		return a.or(ac)
+		return x.orArray(ac)
+	case *runContainer16:
+		if x.isFull() {
+			return x.clone()
+		}
+		return x.orArray(ac)
+	}
+	panic("unsupported container type")
+}
+
+func (ac *arrayContainer) orCardinality(a container) int {
+	switch x := a.(type) {
+	case *arrayContainer:
+		return ac.orArrayCardinality(x)
+	case *bitmapContainer:
+		return x.orArrayCardinality(ac)
+	case *runContainer16:
+		return x.orArrayCardinality(ac)
 	}
 	panic("unsupported container type")
 }
 
 func (ac *arrayContainer) ior(a container) container {
-	switch a.(type) {
+	switch x := a.(type) {
 	case *arrayContainer:
-		return ac.orArray(a.(*arrayContainer))
+		return ac.iorArray(x)
 	case *bitmapContainer:
-		return a.ior(ac)
+		return ac.iorBitmap(x)
+	case *runContainer16:
+		if x.isFull() {
+			return x.clone()
+		}
+		return ac.iorRun16(x)
 	}
 	panic("unsupported container type")
+}
+
+func (ac *arrayContainer) iorArray(ac2 *arrayContainer) container {
+	bc1 := ac.toBitmapContainer()
+	bc2 := ac2.toBitmapContainer()
+	bc1.iorBitmap(bc2)
+	*ac = *newArrayContainerFromBitmap(bc1)
+	return ac
+}
+
+func (ac *arrayContainer) iorBitmap(bc2 *bitmapContainer) container {
+	bc1 := ac.toBitmapContainer()
+	bc1.iorBitmap(bc2)
+	*ac = *newArrayContainerFromBitmap(bc1)
+	return ac
+}
+
+func (ac *arrayContainer) iorRun16(rc *runContainer16) container {
+	bc1 := ac.toBitmapContainer()
+	bc2 := rc.toBitmapContainer()
+	bc1.iorBitmap(bc2)
+	*ac = *newArrayContainerFromBitmap(bc1)
+	return ac
 }
 
 func (ac *arrayContainer) lazyIOR(a container) container {
-	switch a.(type) {
+	switch x := a.(type) {
 	case *arrayContainer:
-		return ac.lazyorArray(a.(*arrayContainer))
+		return ac.lazyIorArray(x)
 	case *bitmapContainer:
-		return a.lazyOR(ac)
+		return ac.lazyIorBitmap(x)
+	case *runContainer16:
+		if x.isFull() {
+			return x.clone()
+		}
+		return ac.lazyIorRun16(x)
+
 	}
 	panic("unsupported container type")
 }
 
+func (ac *arrayContainer) lazyIorArray(ac2 *arrayContainer) container {
+	// TODO actually make this lazy
+	return ac.iorArray(ac2)
+}
+
+func (ac *arrayContainer) lazyIorBitmap(bc *bitmapContainer) container {
+	// TODO actually make this lazy
+	return ac.iorBitmap(bc)
+}
+
+func (ac *arrayContainer) lazyIorRun16(rc *runContainer16) container {
+	// TODO actually make this lazy
+	return ac.iorRun16(rc)
+}
+
 func (ac *arrayContainer) lazyOR(a container) container {
-	switch a.(type) {
+	switch x := a.(type) {
 	case *arrayContainer:
-		return ac.lazyorArray(a.(*arrayContainer))
+		return ac.lazyorArray(x)
 	case *bitmapContainer:
 		return a.lazyOR(ac)
+	case *runContainer16:
+		if x.isFull() {
+			return x.clone()
+		}
+		return x.orArray(ac)
 	}
 	panic("unsupported container type")
 }
@@ -260,7 +411,7 @@ func (ac *arrayContainer) lazyOR(a container) container {
 func (ac *arrayContainer) orArray(value2 *arrayContainer) container {
 	value1 := ac
 	maxPossibleCardinality := value1.getCardinality() + value2.getCardinality()
-	if maxPossibleCardinality > arrayDefaultMaxSize { // it could be a bitmap!^M
+	if maxPossibleCardinality > arrayDefaultMaxSize { // it could be a bitmap!
 		bc := newBitmapContainer()
 		for k := 0; k < len(value2.content); k++ {
 			v := value2.content[k]
@@ -284,6 +435,10 @@ func (ac *arrayContainer) orArray(value2 *arrayContainer) container {
 	nl := union2by2(value1.content, value2.content, answer.content)
 	answer.content = answer.content[:nl] // reslice to match actual used capacity
 	return answer
+}
+
+func (ac *arrayContainer) orArrayCardinality(value2 *arrayContainer) int {
+	return union2by2Cardinality(ac.content, value2.content)
 }
 
 func (ac *arrayContainer) lazyorArray(value2 *arrayContainer) container {
@@ -313,43 +468,76 @@ func (ac *arrayContainer) lazyorArray(value2 *arrayContainer) container {
 }
 
 func (ac *arrayContainer) and(a container) container {
-	switch a.(type) {
+	//p("ac.and() called")
+	switch x := a.(type) {
 	case *arrayContainer:
-		return ac.andArray(a.(*arrayContainer))
+		return ac.andArray(x)
 	case *bitmapContainer:
-		return a.and(ac)
+		return x.and(ac)
+	case *runContainer16:
+		if x.isFull() {
+			return ac.clone()
+		}
+		return x.andArray(ac)
+	}
+	panic("unsupported container type")
+}
+
+func (ac *arrayContainer) andCardinality(a container) int {
+	switch x := a.(type) {
+	case *arrayContainer:
+		return ac.andArrayCardinality(x)
+	case *bitmapContainer:
+		return x.andCardinality(ac)
+	case *runContainer16:
+		return x.andArrayCardinality(ac)
 	}
 	panic("unsupported container type")
 }
 
 func (ac *arrayContainer) intersects(a container) bool {
-	switch a.(type) {
+	switch x := a.(type) {
 	case *arrayContainer:
-		return ac.intersectsArray(a.(*arrayContainer))
+		return ac.intersectsArray(x)
 	case *bitmapContainer:
-		return a.intersects(ac)
+		return x.intersects(ac)
+	case *runContainer16:
+		return x.intersects(ac)
 	}
 	panic("unsupported container type")
 }
 
 func (ac *arrayContainer) iand(a container) container {
-	switch a.(type) {
+	switch x := a.(type) {
 	case *arrayContainer:
-		return ac.iandArray(a.(*arrayContainer))
+		return ac.iandArray(x)
 	case *bitmapContainer:
-		return ac.iandBitmap(a.(*bitmapContainer))
+		return ac.iandBitmap(x)
+	case *runContainer16:
+		if x.isFull() {
+			return ac.clone()
+		}
+		return ac.iandRun16(x)
 	}
 	panic("unsupported container type")
 }
 
-func (ac *arrayContainer) iandBitmap(bc *bitmapContainer) *arrayContainer {
+func (ac *arrayContainer) iandRun16(rc *runContainer16) container {
+	bc1 := ac.toBitmapContainer()
+	bc2 := newBitmapContainerFromRun(rc)
+	bc2.iandBitmap(bc1)
+	*ac = *newArrayContainerFromBitmap(bc2)
+	return ac
+}
+
+func (ac *arrayContainer) iandBitmap(bc *bitmapContainer) container {
 	pos := 0
 	c := ac.getCardinality()
 	for k := 0; k < c; k++ {
-		if bc.contains(ac.content[k]) {
-			ac.content[pos] = ac.content[k]
-			pos++
-		}
+		// branchless
+		v := ac.content[k]
+		ac.content[pos] = v
+		pos += int(bc.bitValue(v))
 	}
 	ac.content = ac.content[:pos]
 	return ac
@@ -357,11 +545,13 @@ func (ac *arrayContainer) iandBitmap(bc *bitmapContainer) *arrayContainer {
 }
 
 func (ac *arrayContainer) xor(a container) container {
-	switch a.(type) {
+	switch x := a.(type) {
 	case *arrayContainer:
-		return ac.xorArray(a.(*arrayContainer))
+		return ac.xorArray(x)
 	case *bitmapContainer:
 		return a.xor(ac)
+	case *runContainer16:
+		return x.xorArray(ac)
 	}
 	panic("unsupported container type")
 }
@@ -396,23 +586,41 @@ func (ac *arrayContainer) xorArray(value2 *arrayContainer) container {
 }
 
 func (ac *arrayContainer) andNot(a container) container {
-	switch a.(type) {
+	switch x := a.(type) {
 	case *arrayContainer:
-		return ac.andNotArray(a.(*arrayContainer))
+		return ac.andNotArray(x)
 	case *bitmapContainer:
-		return ac.andNotBitmap(a.(*bitmapContainer))
+		return ac.andNotBitmap(x)
+	case *runContainer16:
+		return ac.andNotRun16(x)
 	}
 	panic("unsupported container type")
 }
 
+func (ac *arrayContainer) andNotRun16(rc *runContainer16) container {
+	acb := ac.toBitmapContainer()
+	rcb := rc.toBitmapContainer()
+	return acb.andNotBitmap(rcb)
+}
+
 func (ac *arrayContainer) iandNot(a container) container {
-	switch a.(type) {
+	switch x := a.(type) {
 	case *arrayContainer:
-		return ac.iandNotArray(a.(*arrayContainer))
+		return ac.iandNotArray(x)
 	case *bitmapContainer:
-		return ac.iandNotBitmap(a.(*bitmapContainer))
+		return ac.iandNotBitmap(x)
+	case *runContainer16:
+		return ac.iandNotRun16(x)
 	}
 	panic("unsupported container type")
+}
+
+func (ac *arrayContainer) iandNotRun16(rc *runContainer16) container {
+	rcb := rc.toBitmapContainer()
+	acb := ac.toBitmapContainer()
+	acb.iandNotBitmapSurely(rcb)
+	*ac = *(acb.toArrayContainer())
+	return ac
 }
 
 func (ac *arrayContainer) andNotArray(value2 *arrayContainer) container {
@@ -436,10 +644,8 @@ func (ac *arrayContainer) andNotBitmap(value2 *bitmapContainer) container {
 	answer.content = answer.content[:desiredcapacity]
 	pos := 0
 	for _, v := range ac.content {
-		if !value2.contains(v) {
-			answer.content[pos] = v
-			pos++
-		}
+		answer.content[pos] = v
+		pos += 1 - int(value2.bitValue(v))
 	}
 	answer.content = answer.content[:pos]
 	return answer
@@ -451,10 +657,8 @@ func (ac *arrayContainer) andBitmap(value2 *bitmapContainer) container {
 	answer.content = answer.content[:desiredcapacity]
 	pos := 0
 	for _, v := range ac.content {
-		if value2.contains(v) {
-			answer.content[pos] = v
-			pos++
-		}
+		answer.content[pos] = v
+		pos += int(value2.bitValue(v))
 	}
 	answer.content = answer.content[:pos]
 	return answer
@@ -463,10 +667,8 @@ func (ac *arrayContainer) andBitmap(value2 *bitmapContainer) container {
 func (ac *arrayContainer) iandNotBitmap(value2 *bitmapContainer) container {
 	pos := 0
 	for _, v := range ac.content {
-		if !value2.contains(v) {
-			ac.content[pos] = v
-			pos++
-		}
+		ac.content[pos] = v
+		pos += 1 - int(value2.bitValue(v))
 	}
 	ac.content = ac.content[:pos]
 	return ac
@@ -483,16 +685,17 @@ func copyOf(array []uint16, size int) []uint16 {
 	return result
 }
 
-// flip the values in the range [firstOfRange,lastOfRange)
-func (ac *arrayContainer) inot(firstOfRange, lastOfRange int) container {
-	if firstOfRange >= lastOfRange {
+// flip the values in the range [firstOfRange,endx)
+func (ac *arrayContainer) inot(firstOfRange, endx int) container {
+	if firstOfRange >= endx {
 		return ac
 	}
-	return ac.inotClose(firstOfRange, lastOfRange-1) // remove everything in [firstOfRange,lastOfRange-1]
+	return ac.inotClose(firstOfRange, endx-1) // remove everything in [firstOfRange,endx-1]
 }
 
 // flip the values in the range [firstOfRange,lastOfRange]
 func (ac *arrayContainer) inotClose(firstOfRange, lastOfRange int) container {
+	//p("ac.inotClose() starting")
 	if firstOfRange > lastOfRange { // unlike add and remove, not uses an inclusive range [firstOfRange,lastOfRange]
 		return ac
 	}
@@ -515,7 +718,11 @@ func (ac *arrayContainer) inotClose(firstOfRange, lastOfRange int) container {
 	if cardinalityChange > 0 {
 		if newCardinality > len(ac.content) {
 			if newCardinality > arrayDefaultMaxSize {
-				return ac.toBitmapContainer().inot(firstOfRange, lastOfRange+1)
+				//p("ac.inotClose() converting to bitmap and doing inot there")
+				bcRet := ac.toBitmapContainer()
+				bcRet.inot(firstOfRange, lastOfRange+1)
+				*ac = *bcRet.toArrayContainer()
+				return bcRet
 			}
 			ac.content = copyOf(ac.content, newCardinality)
 		}
@@ -532,6 +739,7 @@ func (ac *arrayContainer) inotClose(firstOfRange, lastOfRange int) container {
 		}
 	}
 	ac.content = ac.content[:newCardinality]
+	//p("bottom of ac.inotClose(): returning ac")
 	return ac
 }
 
@@ -574,7 +782,12 @@ func min(a, b int) int {
 	}
 	return b
 }
-func (ac *arrayContainer) andArray(value2 *arrayContainer) *arrayContainer {
+
+func (ac *arrayContainer) isFull() bool {
+	return false
+}
+
+func (ac *arrayContainer) andArray(value2 *arrayContainer) container {
 	desiredcapacity := min(ac.getCardinality(), value2.getCardinality())
 	answer := newArrayContainerCapacity(desiredcapacity)
 	length := intersection2by2(
@@ -585,13 +798,19 @@ func (ac *arrayContainer) andArray(value2 *arrayContainer) *arrayContainer {
 	return answer
 }
 
+func (ac *arrayContainer) andArrayCardinality(value2 *arrayContainer) int {
+	return intersection2by2Cardinality(
+		ac.content,
+		value2.content)
+}
+
 func (ac *arrayContainer) intersectsArray(value2 *arrayContainer) bool {
 	return intersects2by2(
 		ac.content,
 		value2.content)
 }
 
-func (ac *arrayContainer) iandArray(value2 *arrayContainer) *arrayContainer {
+func (ac *arrayContainer) iandArray(value2 *arrayContainer) container {
 	length := intersection2by2(
 		ac.content,
 		value2.content,
@@ -636,6 +855,12 @@ func newArrayContainer() *arrayContainer {
 	return p
 }
 
+func newArrayContainerFromBitmap(bc *bitmapContainer) *arrayContainer {
+	ac := &arrayContainer{}
+	ac.loadData(bc)
+	return ac
+}
+
 func newArrayContainerCapacity(size int) *arrayContainer {
 	p := new(arrayContainer)
 	p.content = make([]uint16, 0, size)
@@ -655,4 +880,61 @@ func newArrayContainerRange(firstOfRun, lastOfRun int) *arrayContainer {
 		this.content = append(this.content, uint16(firstOfRun+i))
 	}
 	return this
+}
+
+func (ac *arrayContainer) numberOfRuns() (nr int) {
+	n := len(ac.content)
+	var runlen uint16
+	var cur, prev uint16
+
+	switch n {
+	case 0:
+		return 0
+	case 1:
+		return 1
+	default:
+		for i := 1; i < n; i++ {
+			prev = ac.content[i-1]
+			cur = ac.content[i]
+
+			if cur == prev+1 {
+				runlen++
+			} else {
+				if cur < prev {
+					panic("then fundamental arrayContainer assumption of sorted ac.content was broken")
+				}
+				if cur == prev {
+					panic("then fundamental arrayContainer assumption of deduplicated content was broken")
+				} else {
+					nr++
+					runlen = 0
+				}
+			}
+		}
+		nr++
+	}
+	return
+}
+
+// convert to run or array *if needed*
+func (ac *arrayContainer) toEfficientContainer() container {
+
+	numRuns := ac.numberOfRuns()
+
+	sizeAsRunContainer := runContainer16SerializedSizeInBytes(numRuns)
+	sizeAsBitmapContainer := bitmapContainerSizeInBytes()
+	card := int(ac.getCardinality())
+	sizeAsArrayContainer := arrayContainerSizeInBytes(card)
+
+	if sizeAsRunContainer <= min(sizeAsBitmapContainer, sizeAsArrayContainer) {
+		return newRunContainer16FromArray(ac)
+	}
+	if card <= arrayDefaultMaxSize {
+		return ac
+	}
+	return ac.toBitmapContainer()
+}
+
+func (ac *arrayContainer) containerType() contype {
+	return arrayContype
 }

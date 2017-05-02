@@ -13,6 +13,21 @@ type responseWriter struct {
 	r             http.Response
 	headerWritten missinggo.Event
 	bodyWriter    io.WriteCloser
+	closed        missinggo.SynchronizedEvent
+}
+
+var _ interface {
+	http.ResponseWriter
+	http.CloseNotifier
+} = &responseWriter{}
+
+func (me *responseWriter) CloseNotify() <-chan bool {
+	ret := make(chan bool, 1)
+	go func() {
+		<-me.closed.C()
+		ret <- true
+	}()
+	return ret
 }
 
 func (me *responseWriter) Header() http.Header {
@@ -46,10 +61,26 @@ func (me *responseWriter) writeHeader(status int) {
 }
 
 func (me *responseWriter) runHandler(h http.Handler, req *http.Request) {
-	me.r.Body, me.bodyWriter = io.Pipe()
+	var pr *io.PipeReader
+	pr, me.bodyWriter = io.Pipe()
+	me.r.Body = struct {
+		io.Reader
+		io.Closer
+	}{pr, eventCloser{pr, &me.closed}}
 	defer me.bodyWriter.Close()
 	defer me.WriteHeader(200)
 	h.ServeHTTP(me, req)
+}
+
+type eventCloser struct {
+	c      io.Closer
+	closed *missinggo.SynchronizedEvent
+}
+
+func (me eventCloser) Close() (err error) {
+	err = me.c.Close()
+	me.closed.Set()
+	return
 }
 
 func RoundTripHandler(req *http.Request, h http.Handler) (*http.Response, error) {

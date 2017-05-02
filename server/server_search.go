@@ -26,6 +26,7 @@ func (s *Server) fetchSearchConfigLoop() {
 	}
 }
 
+var fetches = 0
 var currentConfig = defaultSearchConfig
 
 func (s *Server) fetchSearchConfig() error {
@@ -33,6 +34,7 @@ func (s *Server) fetchSearchConfig() error {
 	if err != nil {
 		return err
 	}
+	fetches++
 	defer resp.Body.Close()
 	newConfig, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -45,8 +47,10 @@ func (s *Server) fetchSearchConfig() error {
 		return err
 	}
 	s.state.SearchProviders = s.scraper.Config
-	s.state.Update()
-	log.Printf("Loaded new search providers")
+	s.state.Push()
+	if fetches >= 2 {
+		log.Printf("Loaded new search providers")
+	}
 	currentConfig = newConfig
 	return nil
 }
@@ -98,7 +102,7 @@ var defaultSearchConfig = []byte(`{
 		"result": {
 			"name": "td:nth-child(2) a",
 			"url": ["td:nth-child(2) a", "@href"],
-			"magent": ["td:nth-child(3) a:nth-child(1)", "@href"],
+			"magnet": ["td:nth-child(3) a:nth-child(1)", "@href"],
 			"size": "td:nth-child(4)",
 			"seeds": "td:nth-child(6)"
 		}
@@ -139,6 +143,19 @@ var defaultSearchConfig = []byte(`{
 		"result": {
 			"infohash": "/td>([a-f0-9]+)</",
 			"tracker": "table tr td:nth-child(2)"
+		}
+	},
+	"tpb": {
+		"name": "The Pirate Bay",
+		"url": "https://thepiratebay.org/search/{{query}}/{{page:0}}/7//",
+		"list": "#searchResult > tbody > tr",
+		"result": {
+			"name":"a.detLink",
+			"path":["a.detLink","@href"],
+			"magnet": ["a[title=Download\\ this\\ torrent\\ using\\ magnet]","@href"],
+			"size": "/Size (\\d+(\\.\\d+).[KMG]iB)/",
+			"seeds": "td:nth-child(3)",
+			"peers": "td:nth-child(4)"
 		}
 	}
 }`)

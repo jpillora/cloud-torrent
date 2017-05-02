@@ -56,7 +56,6 @@ the workdir where you should be able to find the panic goroutine stack
 traces.
 */
 
-
 package roaring
 
 import (
@@ -124,6 +123,7 @@ var smatActionMap = smat.ActionMap{
 	smat.ActionID('A'): smatAction(" andCardinality", smatWrap(smatAndCardinality)),
 
 	smat.ActionID('c'): smatAction(" clear", smatWrap(smatClear)),
+	smat.ActionID('r'): smatAction(" runOptimize", smatWrap(smatRunOptimize)),
 
 	smat.ActionID('e'): smatAction(" isEmpty", smatWrap(smatIsEmpty)),
 
@@ -279,6 +279,13 @@ func smatOrCardinality(c *smatContext) {
 			px.checkEquals()
 			py.checkEquals()
 		})
+	})
+}
+
+func smatRunOptimize(c *smatContext) {
+	c.withPair(c.x, func(px *smatPair) {
+		px.bm.RunOptimize()
+		px.checkEquals()
 	})
 }
 

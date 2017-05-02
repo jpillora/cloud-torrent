@@ -33,8 +33,11 @@ package boom
 
 import (
 	"bytes"
+	"encoding/binary"
+	"encoding/gob"
 	"hash"
 	"hash/fnv"
+	"io"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -137,4 +140,130 @@ func (i *InverseBloomFilter) index(data []byte) uint32 {
 // SetHashFactory sets the hashing function factory used in the filter.
 func (i *InverseBloomFilter) SetHashFactory(h func() hash.Hash32) {
 	i.hashPool = &sync.Pool{New: func() interface{} { return h() }}
+}
+
+// WriteTo writes a binary representation of the InverseBloomFilter to an i/o stream.
+// It returns the number of bytes written.
+func (i *InverseBloomFilter) WriteTo(stream io.Writer) (int64, error) {
+	err := binary.Write(stream, binary.BigEndian, uint64(i.capacity))
+	if err != nil {
+		return 0, err
+	}
+
+	// Dereference all pointers to []byte
+	array := make([][]byte, int(i.capacity))
+	for b := range i.array {
+		if i.array[b] != nil {
+			array[b] = *i.array[b]
+		} else {
+			array[b] = nil
+		}
+	}
+
+	// Encode array into a []byte
+	var buf bytes.Buffer
+	gob.NewEncoder(&buf).Encode(array)
+	serialized := buf.Bytes()
+
+	// Write the length of encoded slice
+	err = binary.Write(stream, binary.BigEndian, int64(len(serialized)))
+	if err != nil {
+		return 0, err
+	}
+
+	// Write the serialized bytes
+	written, err := stream.Write(serialized)
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(written) + int64(2*binary.Size(uint64(0))), err
+}
+
+// ReadFrom reads a binary representation of InverseBloomFilter (such as might
+// have been written by WriteTo()) from an i/o stream. ReadFrom replaces the
+// array of its filter with the one read from disk. It returns the number
+// of bytes read.
+func (i *InverseBloomFilter) ReadFrom(stream io.Reader) (int64, error) {
+	decoded, capacity, size, err := i.decodeToArray(stream)
+	if err != nil {
+		return int64(0), err
+	}
+
+	// Create []*[]byte and point to each item in decoded
+	decodedWithPointers := make([]*[]byte, capacity)
+	for p := range decodedWithPointers {
+		if len(decoded[p]) == 0 {
+			decodedWithPointers[p] = nil
+		} else {
+			decodedWithPointers[p] = &decoded[p]
+		}
+	}
+
+	i.array = decodedWithPointers
+	i.capacity = uint(capacity)
+	return int64(size) + int64(2*binary.Size(uint64(0))), nil
+}
+
+// ImportElementsFrom reads a binary representation of InverseBloomFilter (such as might
+// have been written by WriteTo()) from an i/o stream into a new bloom filter using the
+// Add() method (skipping empty elements, if any). It returns the number of
+// elements decoded from disk.
+func (i *InverseBloomFilter) ImportElementsFrom(stream io.Reader) (int, error) {
+	decoded, _, _, err := i.decodeToArray(stream)
+	if err != nil {
+		return 0, err
+	}
+
+	// Create []*[]byte and point to each item in decoded
+	for p := range decoded {
+		if len(decoded[p]) > 0 {
+			i.Add(decoded[p])
+		}
+	}
+
+	return len(decoded), nil
+}
+
+// decodeToArray decodes an inverse bloom filter from an i/o stream into a 2-d byte slice.
+func (i *InverseBloomFilter) decodeToArray(stream io.Reader) ([][]byte, uint64, uint64, error) {
+	var capacity, size uint64
+
+	err := binary.Read(stream, binary.BigEndian, &capacity)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	err = binary.Read(stream, binary.BigEndian, &size)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	// Read the encoded slice and decode into [][]byte
+	encoded := make([]byte, size)
+	stream.Read(encoded)
+	buf := bytes.NewBuffer(encoded)
+	dec := gob.NewDecoder(buf)
+	decoded := make([][]byte, capacity)
+	dec.Decode(&decoded)
+
+	return decoded, capacity, size, nil
+}
+
+// GobEncode implements gob.GobEncoder interface.
+func (i *InverseBloomFilter) GobEncode() ([]byte, error) {
+	var buf bytes.Buffer
+	_, err := i.WriteTo(&buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// GobDecode implements gob.GobDecoder interface.
+func (i *InverseBloomFilter) GobDecode(data []byte) error {
+	buf := bytes.NewBuffer(data)
+	_, err := i.ReadFrom(buf)
+	return err
 }

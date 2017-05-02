@@ -1,53 +1,42 @@
 package roaring
 
-const (
-	arrayDefaultMaxSize = 4096 // containers with 4096 or fewer integers should be array containers.
-	arrayLazyLowerBound = 1024
-	maxCapacity         = 1 << 16
-	serialCookie        = 12346
-	invalidCardinality  = -1
+import (
+	"math/rand"
+	"sort"
 )
 
+const (
+	arrayDefaultMaxSize        = 4096 // containers with 4096 or fewer integers should be array containers.
+	arrayLazyLowerBound        = 1024
+	maxCapacity                = 1 << 16
+	serialCookieNoRunContainer = 12346 // only arrays and bitmaps
+	invalidCardinality         = -1
+	serialCookie               = 12347 // runs, arrays, and bitmaps
+	noOffsetThreshold          = 4
+
+	// Compute wordSizeInBytes, the size of a word in bytes.
+	_m              = ^word(0)
+	_logS           = _m>>8&1 + _m>>16&1 + _m>>32&1
+	wordSizeInBytes = 1 << _logS
+
+	// other constants used in ctz_generic.go
+	wordSizeInBits = wordSizeInBytes << 3 // word size in bits
+	digitBase      = 1 << wordSizeInBits  // digit base
+	digitMask      = digitBase - 1        // digit mask
+)
+
+type word uintptr
+
+const maxWord = 1<<wordSizeInBits - 1
+
+// doesn't apply to runContainers
 func getSizeInBytesFromCardinality(card int) int {
 	if card > arrayDefaultMaxSize {
+		// bitmapContainer
 		return maxCapacity / 8
 	}
-	return 2 * int(card)
-}
-
-// should be replaced with optimized assembly instructions
-func numberOfTrailingZeros(i uint64) int {
-	if i == 0 {
-		return 64
-	}
-	x := i
-	n := int64(63)
-	y := x << 32
-	if y != 0 {
-		n -= 32
-		x = y
-	}
-	y = x << 16
-	if y != 0 {
-		n -= 16
-		x = y
-	}
-	y = x << 8
-	if y != 0 {
-		n -= 8
-		x = y
-	}
-	y = x << 4
-	if y != 0 {
-		n -= 4
-		x = y
-	}
-	y = x << 2
-	if y != 0 {
-		n -= 2
-		x = y
-	}
-	return int(n - int64(uint64(x<<1)>>63))
+	// arrayContainer
+	return 2 * card
 }
 
 func fill(arr []uint64, val uint64) {
@@ -119,13 +108,7 @@ func lowbits(x uint32) uint16 {
 	return uint16(x & 0xFFFF)
 }
 
-func maxLowBit() uint16 {
-	return uint16(0xFFFF)
-}
-
-func toIntUnsigned(x uint16) uint32 {
-	return uint32(x)
-}
+const maxLowBit = 0xFFFF
 
 func flipBitmapRange(bitmap []uint64, start int, end int) {
 	if start >= end {
@@ -135,6 +118,7 @@ func flipBitmapRange(bitmap []uint64, start int, end int) {
 	endword := (end - 1) / 64
 	bitmap[firstword] ^= ^(^uint64(0) << uint(start%64))
 	for i := firstword; i < endword; i++ {
+		//p("flipBitmapRange on i=%v", i)
 		bitmap[i] = ^bitmap[i]
 	}
 	bitmap[endword] ^= ^uint64(0) >> (uint(-end) % 64)
@@ -252,4 +236,35 @@ func selectBitPosition(w uint64, j int) int {
 	}
 	return seen + int(counter)
 
+}
+
+func panicOn(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+type ph struct {
+	orig int
+	rand int
+}
+
+type pha []ph
+
+func (p pha) Len() int           { return len(p) }
+func (p pha) Less(i, j int) bool { return p[i].rand < p[j].rand }
+func (p pha) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+func getRandomPermutation(n int) []int {
+	r := make([]ph, n)
+	for i := 0; i < n; i++ {
+		r[i].orig = i
+		r[i].rand = rand.Intn(1 << 29)
+	}
+	sort.Sort(pha(r))
+	m := make([]int, n)
+	for i := range m {
+		m[i] = r[i].orig
+	}
+	return m
 }

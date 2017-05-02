@@ -30,7 +30,7 @@ const (
 	backlog = 50
 
 	// IPv6 min MTU is 1280, -40 for IPv6 header, and ~8 for fragment header?
-	minMTU = 1438
+	minMTU = 1438 // Why?
 	// uTP header of 20, +2 for the next extension, and an optional selective
 	// ACK.
 	maxHeaderSize  = 20 + 2 + (((maxUnackedInbound+7)/8)+3)/4*4
@@ -107,10 +107,9 @@ func init() {
 }
 
 var (
-	errClosed                   = errors.New("closed")
-	errNotImplemented           = errors.New("not implemented")
-	errTimeout        net.Error = timeoutError{"i/o timeout"}
-	errAckTimeout               = timeoutError{"timed out waiting for ack"}
+	errClosed               = errors.New("closed")
+	errTimeout    net.Error = timeoutError{"i/o timeout"}
+	errAckTimeout           = timeoutError{"timed out waiting for ack"}
 )
 
 type timeoutError struct {
@@ -157,10 +156,6 @@ type recv struct {
 	Type st
 }
 
-func packetDebugString(h *header, payload []byte) string {
-	return fmt.Sprintf("%s->%d: %q", h.Type, h.ConnID, payload)
-}
-
 // Attempt to connect to a remote uTP listener, creating a Socket just for
 // this connection.
 func Dial(addr string) (net.Conn, error) {
@@ -179,6 +174,11 @@ func DialTimeout(addr string, timeout time.Duration) (nc net.Conn, err error) {
 	return s.DialTimeout(addr, timeout)
 }
 
+// Listen creates listener Socket to accept incoming connections.
+func Listen(laddr string) (net.Listener, error) {
+	return NewSocket("udp", laddr)
+}
+
 func nowTimestamp() uint32 {
 	return uint32(time.Now().UnixNano() / int64(time.Microsecond))
 }
@@ -189,9 +189,4 @@ func seqLess(a, b uint16) bool {
 	} else {
 		return a < b && a >= b-0x8000
 	}
-}
-
-type packet struct {
-	h       header
-	payload []byte
 }

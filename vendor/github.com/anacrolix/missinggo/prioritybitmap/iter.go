@@ -1,7 +1,7 @@
 package prioritybitmap
 
-import "github.com/anacrolix/missinggo/itertools"
+import "github.com/anacrolix/missinggo/iter"
 
 type Iter struct {
-	it itertools.Iterator
+	it iter.Iterator
 }

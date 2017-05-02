@@ -57,7 +57,7 @@ func (s *Server) api(r *http.Request) error {
 	}
 
 	//update after action completes
-	defer s.state.Update()
+	defer s.state.Push()
 
 	//interface with engine
 	switch action {

@@ -36,7 +36,6 @@ type Conn struct {
 	synAcked  bool // Syn is acked by the acceptor. Initiator also tracks it.
 	gotFin    missinggo.Event
 	wroteFin  missinggo.Event
-	finAcked  bool
 	err       error
 	closed    missinggo.Event
 	destroyed missinggo.Event
@@ -229,15 +228,6 @@ func (c *Conn) latency() (ret time.Duration) {
 	return
 }
 
-func (c *Conn) numUnackedSends() (num int) {
-	for _, s := range c.unackedSends {
-		if !s.acked.IsSet() {
-			num++
-		}
-	}
-	return
-}
-
 func (c *Conn) sendState() {
 	c.send(stState, c.send_id, nil, c.seq_nr)
 	sentStatePackets.Add(1)
@@ -262,7 +252,9 @@ func (c *Conn) ack(nr uint16) {
 	}
 	i := nr - c.lastAck - 1
 	if int(i) >= len(c.unackedSends) {
-		log.Printf("got ack ahead of syn (%x > %x)", nr, c.seq_nr-1)
+		// Remote has acknowledged receipt of packets we haven't even sent.
+		acksReceivedAheadOfSyn.Add(1)
+		// log.Printf("got ack ahead of syn (%x > %x)", nr, c.seq_nr-1)
 		return
 	}
 	s := c.unackedSends[i]

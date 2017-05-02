@@ -87,6 +87,7 @@ type cipherReader struct {
 }
 
 func (cr *cipherReader) Read(b []byte) (n int, err error) {
+	// inefficient to allocate here
 	be := make([]byte, len(b))
 	n, err = cr.r.Read(be)
 	cr.c.XORKeyStream(b[:n], be[:n])
@@ -187,10 +188,10 @@ func newPadLen() int64 {
 type handshake struct {
 	conn   io.ReadWriter
 	s      [96]byte
-	initer bool     // Whether we're initiating or receiving.
-	skeys  [][]byte // Skeys we'll accept if receiving.
-	skey   []byte   // Skey we're initiating with.
-	ia     []byte   // Initial payload. Only used by the initiator.
+	initer bool          // Whether we're initiating or receiving.
+	skeys  SecretKeyIter // Skeys we'll accept if receiving.
+	skey   []byte        // Skey we're initiating with.
+	ia     []byte        // Initial payload. Only used by the initiator.
 
 	writeMu    sync.Mutex
 	writes     [][]byte
@@ -405,13 +406,14 @@ func (h *handshake) receiverSteps() (ret io.ReadWriter, err error) {
 		return
 	}
 	err = ErrNoSecretKeyMatch
-	for _, skey := range h.skeys {
+	h.skeys(func(skey []byte) bool {
 		if bytes.Equal(xor(hash(req2, skey), hash(req3, h.s[:])), b[:]) {
 			h.skey = skey
 			err = nil
-			break
+			return false
 		}
-	}
+		return true
+	})
 	if err != nil {
 		return
 	}
@@ -494,7 +496,33 @@ func InitiateHandshake(rw io.ReadWriter, skey []byte, initialPayload []byte) (re
 	}
 	return h.Do()
 }
+
 func ReceiveHandshake(rw io.ReadWriter, skeys [][]byte) (ret io.ReadWriter, err error) {
+	h := handshake{
+		conn:   rw,
+		initer: false,
+		skeys:  sliceIter(skeys),
+	}
+	return h.Do()
+}
+
+func sliceIter(skeys [][]byte) SecretKeyIter {
+	return func(callback func([]byte) bool) {
+		for _, sk := range skeys {
+			if !callback(sk) {
+				break
+			}
+		}
+	}
+}
+
+// A function that given a function, calls it with secret keys until it
+// returns false or exhausted.
+type SecretKeyIter func(callback func(skey []byte) (more bool))
+
+// Doesn't unpack the secret keys until it needs to, and through the passed
+// function.
+func ReceiveHandshakeLazy(rw io.ReadWriter, skeys SecretKeyIter) (ret io.ReadWriter, err error) {
 	h := handshake{
 		conn:   rw,
 		initer: false,

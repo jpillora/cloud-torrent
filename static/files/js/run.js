@@ -2,27 +2,25 @@
 
 //RootController
 app.run(function($rootScope, search, api) {
+  var $scope = (window.scope = $rootScope);
 
-  var $scope = window.scope = $rootScope;
-
-  //link up to angular
-	var rt = realtime("/realtime");
-	$scope.state = {};
-	rt.add("state", $scope.state, function() {
-		$scope.$apply();
-	});
-	rt.onstatus = function(online) {
-		$scope.$apply(function() {
-			$scope.connected = online;
-		});
-	};
-
+  //velox
+  $scope.state = {};
+  var v = velox("/sync", $scope.state);
+  v.onupdate = function() {
+    $scope.$applyAsync();
+  };
+  v.onchange = function(connected) {
+    $scope.$applyAsync(function() {
+      $scope.connected = connected;
+    });
+  };
   //expose services
   $scope.search = search;
   $scope.api = api;
 
   $scope.inputType = function(v) {
-    switch(typeof v) {
+    switch (typeof v) {
       case "number":
         return "number";
       case "boolean":
@@ -38,7 +36,7 @@ app.run(function($rootScope, search, api) {
 
   $scope.previews = {};
   $scope.ext = function(path) {
-    return (/\.([^\.]+)$/).test(path) ? RegExp.$1 : null;
+    return /\.([^\.]+)$/.test(path) ? RegExp.$1 : null;
   };
 
   $scope.isEmpty = function(obj) {
@@ -49,12 +47,12 @@ app.run(function($rootScope, search, api) {
     return obj ? Object.keys(obj).length : 0;
   };
 
-	$scope.ago = function(t) {
-		return moment(t).fromNow();
-	};
+  $scope.ago = function(t) {
+    return moment(t).fromNow();
+  };
 
   $scope.agoHrs = function(t) {
-    return moment().diff(moment(t), 'hours');
+    return moment().diff(moment(t), "hours");
   };
 
   $scope.withHrs = function(t, hrs) {

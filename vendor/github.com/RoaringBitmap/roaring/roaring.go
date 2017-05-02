@@ -38,14 +38,55 @@ func (rb *Bitmap) FromBase64(str string) (int64, error) {
 	return rb.ReadFrom(buf)
 }
 
-// WriteTo writes a serialized version of this bitmap to stream
+// WriteTo writes a serialized version of this bitmap to stream.
+// The format is compatible with other RoaringBitmap
+// implementations (Java, C) and is documented here:
+// https://github.com/RoaringBitmap/RoaringFormatSpec
 func (rb *Bitmap) WriteTo(stream io.Writer) (int64, error) {
 	return rb.highlowcontainer.writeTo(stream)
 }
 
-// ReadFrom reads a serialized version of this bitmap from stream
+// ToBytes returns an array of bytes corresponding to what is written
+// when calling WriteTo
+func (rb *Bitmap) ToBytes() ([]byte, error) {
+	return rb.highlowcontainer.toBytes()
+}
+
+// WriteToMsgpack writes a msgpack2/snappy-streaming compressed serialized
+// version of this bitmap to stream. The format is not
+// compatible with the WriteTo() format, and is
+// experimental: it may produce smaller on disk
+// footprint and/or be faster to read, depending
+// on your content. Currently only the Go roaring
+// implementation supports this format.
+func (rb *Bitmap) WriteToMsgpack(stream io.Writer) (int64, error) {
+	return 0, rb.highlowcontainer.writeToMsgpack(stream)
+}
+
+// ReadFrom reads a serialized version of this bitmap from stream.
+// The format is compatible with other RoaringBitmap
+// implementations (Java, C) and is documented here:
+// https://github.com/RoaringBitmap/RoaringFormatSpec
 func (rb *Bitmap) ReadFrom(stream io.Reader) (int64, error) {
 	return rb.highlowcontainer.readFrom(stream)
+}
+
+// RunOptimize attempts to further compress the runs of consecutive values found in the bitmap
+func (rb *Bitmap) RunOptimize() {
+	rb.highlowcontainer.runOptimize()
+}
+
+// HasRunCompression returns true if the bitmap benefits from run compression
+func (rb *Bitmap) HasRunCompression() bool {
+	return rb.highlowcontainer.hasRunCompression()
+}
+
+// ReadFromMsgpack reads a msgpack2/snappy-streaming serialized
+// version of this bitmap from stream. The format is
+// expected is that written by the WriteToMsgpack()
+// call; see additional notes there.
+func (rb *Bitmap) ReadFromMsgpack(stream io.Reader) (int64, error) {
+	return 0, rb.highlowcontainer.readFromMsgpack(stream)
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface for the bitmap
@@ -97,7 +138,7 @@ func (rb *Bitmap) ToArray() []uint32 {
 	pos2 := 0
 
 	for pos < rb.highlowcontainer.size() {
-		hs := toIntUnsigned(rb.highlowcontainer.getKeyAtIndex(pos)) << 16
+		hs := uint32(rb.highlowcontainer.getKeyAtIndex(pos)) << 16
 		c := rb.highlowcontainer.getContainerAtIndex(pos)
 		pos++
 		c.fillLeastSignificant16bits(array, pos2, hs)
@@ -116,8 +157,10 @@ func (rb *Bitmap) GetSizeInBytes() uint64 {
 	return size
 }
 
-// GetSerializedSizeInBytes computes the serialized size in bytes  the Bitmap. It should correspond to the
-// number of bytes written when invoking WriteTo
+// GetSerializedSizeInBytes computes the serialized size in bytes
+// of the Bitmap. It should correspond to the
+// number of bytes written when invoking WriteTo. You can expect
+// that this function is much cheaper computationally than WriteTo.
 func (rb *Bitmap) GetSerializedSizeInBytes() uint64 {
 	return rb.highlowcontainer.serializedSizeInBytes()
 }
@@ -136,8 +179,8 @@ func BoundSerializedSizeInBytes(cardinality uint64, universeSize uint64) uint64 
 	} else {
 		headermax += (contnbr + 7) / 8
 	}
-	valsarray := 2 * cardinality
-	valsbitmap := contnbr * 8192
+	valsarray := uint64(arrayContainerSizeInBytes(int(cardinality)))
+	valsbitmap := contnbr * uint64(bitmapContainerSizeInBytes())
 	valsbest := valsarray
 	if valsbest > valsbitmap {
 		valsbest = valsbitmap
@@ -166,13 +209,13 @@ func (ii *intIterator) HasNext() bool {
 func (ii *intIterator) init() {
 	if ii.highlowcontainer.size() > ii.pos {
 		ii.iter = ii.highlowcontainer.getContainerAtIndex(ii.pos).getShortIterator()
-		ii.hs = toIntUnsigned(ii.highlowcontainer.getKeyAtIndex(ii.pos)) << 16
+		ii.hs = uint32(ii.highlowcontainer.getKeyAtIndex(ii.pos)) << 16
 	}
 }
 
 // Next returns the next integer
 func (ii *intIterator) Next() uint32 {
-	x := toIntUnsigned(ii.iter.next()) | ii.hs
+	x := uint32(ii.iter.next()) | ii.hs
 	if !ii.iter.hasNext() {
 		ii.pos = ii.pos + 1
 		ii.init()
@@ -226,6 +269,17 @@ func (rb *Bitmap) Clone() *Bitmap {
 	return ptr
 }
 
+// Minimum get the smallest value stored in this roaring bitmap, assumes that it is not empty
+func (rb *Bitmap) Minimum() uint32 {
+	return uint32(rb.highlowcontainer.containers[0].minimum()) | (uint32(rb.highlowcontainer.keys[0]) << 16)
+}
+
+// Maximum get the largest value stored in this roaring bitmap, assumes that it is not empty
+func (rb *Bitmap) Maximum() uint32 {
+	lastindex := len(rb.highlowcontainer.containers) - 1
+	return uint32(rb.highlowcontainer.containers[lastindex].maximum()) | (uint32(rb.highlowcontainer.keys[lastindex]) << 16)
+}
+
 // Contains returns true if the integer is contained in the bitmap
 func (rb *Bitmap) Contains(x uint32) bool {
 	hb := highbits(x)
@@ -254,12 +308,11 @@ func (rb *Bitmap) Add(x uint32) {
 	i := ra.getIndex(hb)
 	if i >= 0 {
 		var c container
-		c = ra.getWritableContainerAtIndex(i)
-		c = c.add(lowbits(x))
+		c = ra.getWritableContainerAtIndex(i).iaddReturnMinimized(lowbits(x))
 		rb.highlowcontainer.setContainerAtIndex(i, c)
 	} else {
 		newac := newArrayContainer()
-		rb.highlowcontainer.insertNewKeyValueAt(-i-1, hb, newac.add(lowbits(x)))
+		rb.highlowcontainer.insertNewKeyValueAt(-i-1, hb, newac.iaddReturnMinimized(lowbits(x)))
 	}
 }
 
@@ -270,13 +323,12 @@ func (rb *Bitmap) addwithptr(x uint32) (int, container) {
 	i := ra.getIndex(hb)
 	var c container
 	if i >= 0 {
-		c = ra.getWritableContainerAtIndex(i)
-		c = c.add(lowbits(x))
+		c = ra.getWritableContainerAtIndex(i).iaddReturnMinimized(lowbits(x))
 		rb.highlowcontainer.setContainerAtIndex(i, c)
 		return i, c
 	}
 	newac := newArrayContainer()
-	c = newac.add(lowbits(x))
+	c = newac.iaddReturnMinimized(lowbits(x))
 	rb.highlowcontainer.insertNewKeyValueAt(-i-1, hb, c)
 	return -i - 1, c
 }
@@ -289,12 +341,12 @@ func (rb *Bitmap) CheckedAdd(x uint32) bool {
 	if i >= 0 {
 		C := rb.highlowcontainer.getWritableContainerAtIndex(i)
 		oldcard := C.getCardinality()
-		C = C.add(lowbits(x))
+		C = C.iaddReturnMinimized(lowbits(x))
 		rb.highlowcontainer.setContainerAtIndex(i, C)
 		return C.getCardinality() > oldcard
 	}
 	newac := newArrayContainer()
-	rb.highlowcontainer.insertNewKeyValueAt(-i-1, hb, newac.add(lowbits(x)))
+	rb.highlowcontainer.insertNewKeyValueAt(-i-1, hb, newac.iaddReturnMinimized(lowbits(x)))
 	return true
 
 }
@@ -309,8 +361,8 @@ func (rb *Bitmap) Remove(x uint32) {
 	hb := highbits(x)
 	i := rb.highlowcontainer.getIndex(hb)
 	if i >= 0 {
-		c := rb.highlowcontainer.getWritableContainerAtIndex(i).remove(lowbits(x))
-		rb.highlowcontainer.setContainerAtIndex(i, c.remove(lowbits(x)))
+		c := rb.highlowcontainer.getWritableContainerAtIndex(i).iremoveReturnMinimized(lowbits(x))
+		rb.highlowcontainer.setContainerAtIndex(i, c)
 		if rb.highlowcontainer.getContainerAtIndex(i).getCardinality() == 0 {
 			rb.highlowcontainer.removeAtIndex(i)
 		}
@@ -325,7 +377,7 @@ func (rb *Bitmap) CheckedRemove(x uint32) bool {
 	if i >= 0 {
 		C := rb.highlowcontainer.getWritableContainerAtIndex(i)
 		oldcard := C.getCardinality()
-		C = C.remove(lowbits(x))
+		C = C.iremoveReturnMinimized(lowbits(x))
 		rb.highlowcontainer.setContainerAtIndex(i, C)
 		if rb.highlowcontainer.getContainerAtIndex(i).getCardinality() == 0 {
 			rb.highlowcontainer.removeAtIndex(i)
@@ -507,8 +559,7 @@ main:
 				if s1 == s2 {
 					c1 := rb.highlowcontainer.getContainerAtIndex(pos1)
 					c2 := x2.highlowcontainer.getContainerAtIndex(pos2)
-					diff := c1.and(c2)
-					answer += uint64(diff.getCardinality()) // TODO: could be faster if we did not have to compute diff
+					answer += uint64(c1.andCardinality(c2))
 					pos1++
 					pos2++
 					if (pos1 == length1) || (pos2 == length2) {
@@ -886,10 +937,10 @@ func (rb *Bitmap) AddMany(dat []uint32) {
 	idx, c := rb.addwithptr(prev)
 	for _, i := range dat[1:] {
 		if highbits(prev) == highbits(i) {
-			c = c.add(lowbits(i))
+			c = c.iaddReturnMinimized(lowbits(i))
 			rb.highlowcontainer.setContainerAtIndex(idx, c)
 		} else {
-			idx, c = rb.addwithptr(prev)
+			idx, c = rb.addwithptr(i)
 		}
 		prev = i
 	}
@@ -908,6 +959,13 @@ func BitmapOf(dat ...uint32) *Bitmap {
 // while uint64(0x100000000) cannot be represented as a 32-bit value.
 func (rb *Bitmap) Flip(rangeStart, rangeEnd uint64) {
 
+	if rangeEnd > MaxUint32+1 {
+		panic("rangeEnd > MaxUint32+1")
+	}
+	if rangeStart > MaxUint32+1 {
+		panic("rangeStart > MaxUint32+1")
+	}
+
 	if rangeStart >= rangeEnd {
 		return
 	}
@@ -917,15 +975,15 @@ func (rb *Bitmap) Flip(rangeStart, rangeEnd uint64) {
 	hbLast := highbits(uint32(rangeEnd - 1))
 	lbLast := lowbits(uint32(rangeEnd - 1))
 
-	max := toIntUnsigned(maxLowBit())
+	var max uint32 = maxLowBit
 	for hb := hbStart; hb <= hbLast; hb++ {
-		containerStart := uint32(0)
+		var containerStart uint32
 		if hb == hbStart {
-			containerStart = toIntUnsigned(lbStart)
+			containerStart = uint32(lbStart)
 		}
 		containerLast := max
 		if hb == hbLast {
-			containerLast = toIntUnsigned(lbLast)
+			containerLast = uint32(lbLast)
 		}
 
 		i := rb.highlowcontainer.getIndex(hb)
@@ -957,12 +1015,12 @@ func (rb *Bitmap) AddRange(rangeStart, rangeEnd uint64) {
 		return
 	}
 
-	hbStart := toIntUnsigned(highbits(uint32(rangeStart)))
-	lbStart := toIntUnsigned(lowbits(uint32(rangeStart)))
-	hbLast := toIntUnsigned(highbits(uint32(rangeEnd - 1)))
-	lbLast := toIntUnsigned(lowbits(uint32(rangeEnd - 1)))
+	hbStart := uint32(highbits(uint32(rangeStart)))
+	lbStart := uint32(lowbits(uint32(rangeStart)))
+	hbLast := uint32(highbits(uint32(rangeEnd - 1)))
+	lbLast := uint32(lowbits(uint32(rangeEnd - 1)))
 
-	max := toIntUnsigned(maxLowBit())
+	var max uint32 = maxLowBit
 	for hb := uint16(hbStart); hb <= uint16(hbLast); hb++ {
 		containerStart := uint32(0)
 		if hb == uint16(hbStart) {
@@ -976,7 +1034,7 @@ func (rb *Bitmap) AddRange(rangeStart, rangeEnd uint64) {
 		i := rb.highlowcontainer.getIndex(hb)
 
 		if i >= 0 {
-			c := rb.highlowcontainer.getWritableContainerAtIndex(i).iaddRange(int(containerStart), int(containerLast+1))
+			c := rb.highlowcontainer.getWritableContainerAtIndex(i).iaddRange(int(containerStart), int(containerLast)+1)
 			rb.highlowcontainer.setContainerAtIndex(i, c)
 		} else { // *think* the range of ones must never be
 			// empty.
@@ -993,12 +1051,12 @@ func (rb *Bitmap) RemoveRange(rangeStart, rangeEnd uint64) {
 		return
 	}
 
-	hbStart := toIntUnsigned(highbits(uint32(rangeStart)))
-	lbStart := toIntUnsigned(lowbits(uint32(rangeStart)))
-	hbLast := toIntUnsigned(highbits(uint32(rangeEnd - 1)))
-	lbLast := toIntUnsigned(lowbits(uint32(rangeEnd - 1)))
+	hbStart := uint32(highbits(uint32(rangeStart)))
+	lbStart := uint32(lowbits(uint32(rangeStart)))
+	hbLast := uint32(highbits(uint32(rangeEnd - 1)))
+	lbLast := uint32(lowbits(uint32(rangeEnd - 1)))
 
-	max := toIntUnsigned(maxLowBit())
+	var max uint32 = maxLowBit
 
 	if hbStart == hbLast {
 		i := rb.highlowcontainer.getIndex(uint16(hbStart))
@@ -1054,6 +1112,13 @@ func Flip(bm *Bitmap, rangeStart, rangeEnd uint64) *Bitmap {
 		return bm.Clone()
 	}
 
+	if rangeStart > MaxUint32 {
+		panic("rangeStart > MaxUint32")
+	}
+	if rangeEnd-1 > MaxUint32 {
+		panic("rangeEnd-1 > MaxUint32")
+	}
+
 	answer := NewBitmap()
 	hbStart := highbits(uint32(rangeStart))
 	lbStart := lowbits(uint32(rangeStart))
@@ -1063,15 +1128,15 @@ func Flip(bm *Bitmap, rangeStart, rangeEnd uint64) *Bitmap {
 	// copy the containers before the active area
 	answer.highlowcontainer.appendCopiesUntil(bm.highlowcontainer, hbStart)
 
-	max := toIntUnsigned(maxLowBit())
+	var max uint32 = maxLowBit
 	for hb := hbStart; hb <= hbLast; hb++ {
-		containerStart := uint32(0)
+		var containerStart uint32
 		if hb == hbStart {
-			containerStart = toIntUnsigned(lbStart)
+			containerStart = uint32(lbStart)
 		}
 		containerLast := max
 		if hb == hbLast {
-			containerLast = toIntUnsigned(lbLast)
+			containerLast = uint32(lbLast)
 		}
 
 		i := bm.highlowcontainer.getIndex(hb)
@@ -1110,4 +1175,47 @@ func (rb *Bitmap) GetCopyOnWrite() (val bool) {
 // FlipInt calls Flip after casting the parameters (convenience method)
 func FlipInt(bm *Bitmap, rangeStart, rangeEnd int) *Bitmap {
 	return Flip(bm, uint64(rangeStart), uint64(rangeEnd))
+}
+
+// Statistics provides details on the container types in use.
+type Statistics struct {
+	Cardinality uint64
+	Containers  uint64
+
+	ArrayContainers      uint64
+	ArrayContainerBytes  uint64
+	ArrayContainerValues uint64
+
+	BitmapContainers      uint64
+	BitmapContainerBytes  uint64
+	BitmapContainerValues uint64
+
+	RunContainers      uint64
+	RunContainerBytes  uint64
+	RunContainerValues uint64
+}
+
+// Stats returns details on container type usage in a Statistics struct.
+func (rb *Bitmap) Stats() Statistics {
+	stats := Statistics{}
+	stats.Containers = uint64(len(rb.highlowcontainer.containers))
+	for _, c := range rb.highlowcontainer.containers {
+		stats.Cardinality += uint64(c.getCardinality())
+
+		switch c.(type) {
+		case *arrayContainer:
+			stats.ArrayContainers++
+			stats.ArrayContainerBytes += uint64(c.getSizeInBytes())
+			stats.ArrayContainerValues += uint64(c.getCardinality())
+		case *bitmapContainer:
+			stats.BitmapContainers++
+			stats.BitmapContainerBytes += uint64(c.getSizeInBytes())
+			stats.BitmapContainerValues += uint64(c.getCardinality())
+		case *runContainer16:
+			stats.RunContainers++
+			stats.RunContainerBytes += uint64(c.getSizeInBytes())
+			stats.RunContainerValues += uint64(c.getCardinality())
+		}
+	}
+	return stats
 }

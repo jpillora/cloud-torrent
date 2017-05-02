@@ -17,14 +17,12 @@ See [Future Features here](#future-features)
 
 **Binaries**
 
-See [the latest release](https://github.com/jpillora/cloud-torrent/releases/latest) or download it now with `curl i.jpillora.com/cloud-torrent | bash`
+[![Releases](https://img.shields.io/github/release/jpillora/cloud-torrent.svg)](https://github.com/jpillora/cloud-torrent/releases) [![Releases](https://img.shields.io/github/downloads/jpillora/cloud-torrent/total.svg)](https://github.com/jpillora/cloud-torrent/releases)
 
-**Source**
+See [the latest release](https://github.com/jpillora/cloud-torrent/releases/latest) or download and install it now with
 
-*[Go](https://golang.org/dl/) is required to install from source*
-
-``` sh
-$ go get -v github.com/jpillora/cloud-torrent
+```
+curl https://i.jpillora.com/cloud-torrent | bash
 ```
 
 **Docker**
@@ -35,6 +33,14 @@ $ go get -v github.com/jpillora/cloud-torrent
 
 ``` sh
 $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-torrent
+```
+
+**Source**
+
+*[Go](https://golang.org/dl/) is required to install from source*
+
+``` sh
+$ go get -v github.com/jpillora/cloud-torrent
 ```
 
 **VPS**
@@ -54,19 +60,17 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-
   11. Follow the prompts to set a new password
   12. Run `cloud-torrent` with:
 
-    ```
     docker run --name ct -d -p 63000:63000 \
       --restart always \
       -v /root/downloads:/downloads \
       jpillora/cloud-torrent --port 63000
-    ```
 
   13. Visit `http://<IP Address from email>:63000/`
   14. **OPTIONAL** In addition to `--port` you can specify the options below
 
 [Vultr](http://www.vultr.com/?ref=6947403-3B)
 
-* [Sign up with free $30 credit here](http://www.vultr.com/?ref=6947403-3B)
+* [Sign up with free $10 credit here](http://www.vultr.com/?ref=6947403-3B)
 * Follow the DO tutorial above, very similar steps ("Applications" instead of "One-Click Apps")
 * Offers different server locations
 
@@ -130,7 +134,7 @@ If you'd like to buy me a coffee or more, you can donate via [PayPal](https://ww
 
 ### Notes
 
-This project is the version 2 rewrite of the original [Node version](https://github.com/jpillora/node-torrent-cloud).
+This project is the rewrite of the original [Node version](https://github.com/jpillora/node-torrent-cloud).
 
 ![overview](https://docs.google.com/drawings/d/1ekyeGiehwQRyi6YfFA4_tQaaEpUaS8qihwJ-s3FT_VU/pub?w=606&h=305)
 

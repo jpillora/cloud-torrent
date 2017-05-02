@@ -50,12 +50,16 @@ func RedirectedRequest(r *http.Request, newUrl string) (ret *http.Request, err e
 	return
 }
 
-func ForwardResponse(w http.ResponseWriter, r *http.Response) {
+func CopyHeaders(w http.ResponseWriter, r *http.Response) {
 	for h, vs := range r.Header {
 		for _, v := range vs {
 			w.Header().Add(h, v)
 		}
 	}
+}
+
+func ForwardResponse(w http.ResponseWriter, r *http.Response) {
+	CopyHeaders(w, r)
 	w.WriteHeader(r.StatusCode)
 	// Errors frequently occur writing the body when the client hangs up.
 	io.Copy(w, r.Body)
@@ -121,10 +125,11 @@ func ReverseProxy(w http.ResponseWriter, r *http.Request, originUrl string, clie
 	if r.Header.Get("Connection") == "Upgrade" {
 		return ReverseProxyUpgrade(w, originRequest, originUrl)
 	}
-	if client == nil {
-		client = http.DefaultClient
+	rt := client.Transport
+	if rt == nil {
+		rt = http.DefaultTransport
 	}
-	originResp, err := client.Do(originRequest)
+	originResp, err := rt.RoundTrip(originRequest)
 	if err != nil {
 		return
 	}

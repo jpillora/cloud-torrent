@@ -6,7 +6,7 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
-// Implementations track the completion of pieces.
+// Implementations track the completion of pieces. It must be concurrent-safe.
 type pieceCompletion interface {
 	Get(metainfo.PieceKey) (bool, error)
 	Set(metainfo.PieceKey, bool) error

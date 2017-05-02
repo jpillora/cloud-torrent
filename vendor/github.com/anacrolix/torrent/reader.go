@@ -98,7 +98,6 @@ func (r *Reader) tickleClient() {
 func (r *Reader) waitReadable(off int64) {
 	// We may have been sent back here because we were told we could read but
 	// it failed.
-	r.tickleClient()
 	r.t.cl.event.Wait()
 }
 
@@ -202,24 +201,26 @@ func (r *Reader) readOnceAt(b []byte, pos int64, ctxErr *error) (n int, err erro
 		log.Printf("error reading torrent %q piece %d offset %d, %d bytes: %s", r.t, pi, po, len(b1), err)
 		r.t.cl.mu.Lock()
 		r.t.updateAllPieceCompletions()
-		r.t.updatePiecePriorities()
+		r.t.updateAllPiecePriorities()
 		r.t.cl.mu.Unlock()
 	}
 }
 
 func (r *Reader) Close() error {
+	r.t.cl.mu.Lock()
+	defer r.t.cl.mu.Unlock()
 	r.t.deleteReader(r)
-	r.t = nil
 	return nil
 }
 
 func (r *Reader) posChanged() {
-	p := r.piecesUncached()
-	if p == r.pieces {
+	to := r.piecesUncached()
+	from := r.pieces
+	if to == from {
 		return
 	}
-	r.pieces = p
-	r.t.readersChanged()
+	r.pieces = to
+	r.t.readerPosChanged(from, to)
 }
 
 func (r *Reader) Seek(off int64, whence int) (ret int64, err error) {

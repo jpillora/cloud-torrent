@@ -194,6 +194,54 @@ func union2by2(set1 []uint16, set2 []uint16, buffer []uint16) int {
 	return pos
 }
 
+func union2by2Cardinality(set1 []uint16, set2 []uint16) int {
+	pos := 0
+	k1 := 0
+	k2 := 0
+	if 0 == len(set2) {
+		return len(set1)
+	}
+	if 0 == len(set1) {
+		return len(set2)
+	}
+	s1 := set1[k1]
+	s2 := set2[k2]
+	for {
+		if s1 < s2 {
+			pos++
+			k1++
+			if k1 >= len(set1) {
+				pos += len(set2) - k2
+				break
+			}
+			s1 = set1[k1]
+		} else if s1 == s2 {
+			pos++
+			k1++
+			k2++
+			if k1 >= len(set1) {
+				pos += len(set2) - k2
+				break
+			}
+			if k2 >= len(set2) {
+				pos += len(set1) - k1
+				break
+			}
+			s1 = set1[k1]
+			s2 = set2[k2]
+		} else { // if (set1[k1]>set2[k2])
+			pos++
+			k2++
+			if k2 >= len(set2) {
+				pos += len(set1) - k1
+				break
+			}
+			s2 = set2[k2]
+		}
+	}
+	return pos
+}
+
 func intersection2by2(
 	set1 []uint16,
 	set2 []uint16,
@@ -205,6 +253,19 @@ func intersection2by2(
 		return onesidedgallopingintersect2by2(set2, set1, buffer)
 	} else {
 		return localintersect2by2(set1, set2, buffer)
+	}
+}
+
+func intersection2by2Cardinality(
+	set1 []uint16,
+	set2 []uint16) int {
+
+	if len(set1)*64 < len(set2) {
+		return onesidedgallopingintersect2by2Cardinality(set1, set2)
+	} else if len(set2)*64 < len(set1) {
+		return onesidedgallopingintersect2by2Cardinality(set2, set1)
+	} else {
+		return localintersect2by2Cardinality(set1, set2)
 	}
 }
 
@@ -270,7 +331,6 @@ func localintersect2by2(
 	s2 := set2[k2]
 mainwhile:
 	for {
-
 		if s2 < s1 {
 			for {
 				k2++
@@ -298,6 +358,62 @@ mainwhile:
 		} else {
 			// (set2[k2] == set1[k1])
 			buffer[pos] = s1
+			pos++
+			k1++
+			if k1 == len(set1) {
+				break
+			}
+			s1 = set1[k1]
+			k2++
+			if k2 == len(set2) {
+				break
+			}
+			s2 = set2[k2]
+		}
+	}
+	return pos
+}
+
+func localintersect2by2Cardinality(
+	set1 []uint16,
+	set2 []uint16) int {
+
+	if (0 == len(set1)) || (0 == len(set2)) {
+		return 0
+	}
+	k1 := 0
+	k2 := 0
+	pos := 0
+	s1 := set1[k1]
+	s2 := set2[k2]
+mainwhile:
+	for {
+		if s2 < s1 {
+			for {
+				k2++
+				if k2 == len(set2) {
+					break mainwhile
+				}
+				s2 = set2[k2]
+				if s2 >= s1 {
+					break
+				}
+			}
+		}
+		if s1 < s2 {
+			for {
+				k1++
+				if k1 == len(set1) {
+					break mainwhile
+				}
+				s1 = set1[k1]
+				if s1 >= s2 {
+					break
+				}
+			}
+
+		} else {
+			// (set2[k2] == set1[k1])
 			pos++
 			k1++
 			if k1 == len(set1) {
@@ -402,6 +518,53 @@ mainwhile:
 		} else {
 
 			buffer[pos] = s2
+			pos++
+			k2++
+			if k2 == len(smallset) {
+				break
+			}
+			s2 = smallset[k2]
+			k1 = advanceUntil(largeset, k1, len(largeset), s2)
+			if k1 == len(largeset) {
+				break mainwhile
+			}
+			s1 = largeset[k1]
+		}
+
+	}
+	return pos
+}
+
+func onesidedgallopingintersect2by2Cardinality(
+	smallset []uint16,
+	largeset []uint16) int {
+
+	if 0 == len(smallset) {
+		return 0
+	}
+	k1 := 0
+	k2 := 0
+	pos := 0
+	s1 := largeset[k1]
+	s2 := smallset[k2]
+mainwhile:
+
+	for {
+		if s1 < s2 {
+			k1 = advanceUntil(largeset, k1, len(largeset), s2)
+			if k1 == len(largeset) {
+				break mainwhile
+			}
+			s1 = largeset[k1]
+		}
+		if s2 < s1 {
+			k2++
+			if k2 == len(smallset) {
+				break mainwhile
+			}
+			s2 = smallset[k2]
+		} else {
+
 			pos++
 			k2++
 			if k2 == len(smallset) {

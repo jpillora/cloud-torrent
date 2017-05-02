@@ -1,9 +1,9 @@
-
 @import url("./sections/omni.css");
 @import url("./sections/torrents.css");
 @import url("./sections/downloads.css");
 
 /* global styles  */
+
 html, body {
 	width: 100%;
 	margin: 0;
@@ -11,18 +11,19 @@ html, body {
 }
 
 .cage {
-	padding-top: 10px;
+	padding-top: 25px;
 	padding-bottom: 40px;
 	max-width: 700px;
-	margin: 10px auto;
+	margin: 0 auto;
 }
 
 @media (max-width: 740px) {
-    .cage {
-		margin: 10px;
-		padding-top: 0;
-    }
+	.cage {
+		margin: 0 10px;
+		padding-top: 10px;
+	}
 }
+
 @media (max-width: 480px) {
 	body .title a {
 		font-size: 1.65rem;
@@ -41,6 +42,7 @@ footer {
 	opacity: 0.25;
 	transition: opacity .3s ease-in-out;
 }
+
 footer:hover {
 	opacity: 1;
 }
@@ -67,14 +69,15 @@ footer:hover {
 .app .connect-warning {
 	padding-top: 50px;
 	position: fixed;
-    z-index: 10000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,1);
-    opacity: 0.95;
+	z-index: 10000;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 1);
+	opacity: 0.95;
 }
+
 
 /*
 	================
@@ -84,9 +87,11 @@ footer:hover {
 .title {
 	position: relative;
 }
+
 .title a {
 	font-size: 2.35rem;
 }
+
 .title .status {
 	position: absolute;
 	top: 2px;
@@ -96,9 +101,11 @@ footer:hover {
 .app .config form.edit {
 	margin-bottom: 1rem;
 }
+
 .app .config form.edit input {
 	font-family: monospace;
 }
+
 .app .config form.edit .buttons {
 	text-align: center;
 }

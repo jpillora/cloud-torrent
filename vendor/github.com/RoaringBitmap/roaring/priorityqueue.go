@@ -94,8 +94,8 @@ func (pq *containerPriorityQueue) Pop() interface{} {
 	return item
 }
 
-func (pq *containerPriorityQueue) update(item *containeritem, value *Bitmap, keyindex int) {
-	item.value = value
-	item.keyindex = keyindex
-	heap.Fix(pq, item.index)
-}
+//func (pq *containerPriorityQueue) update(item *containeritem, value *Bitmap, keyindex int) {
+//	item.value = value
+//	item.keyindex = keyindex
+//	heap.Fix(pq, item.index)
+//}

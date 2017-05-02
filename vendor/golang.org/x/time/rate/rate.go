@@ -10,8 +10,6 @@ import (
 	"math"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // Limit defines the maximum frequency of some events.
@@ -199,9 +197,10 @@ func (lim *Limiter) Reserve() *Reservation {
 // The Limiter takes this Reservation into account when allowing future events.
 // ReserveN returns false if n exceeds the Limiter's burst size.
 // Usage example:
-//   r, ok := lim.ReserveN(time.Now(), 1)
-//   if !ok {
+//   r := lim.ReserveN(time.Now(), 1)
+//   if !r.OK() {
 //     // Not allowed to act! Did you remember to set lim.burst to be > 0 ?
+//     return
 //   }
 //   time.Sleep(r.Delay())
 //   Act()
@@ -213,8 +212,19 @@ func (lim *Limiter) ReserveN(now time.Time, n int) *Reservation {
 	return &r
 }
 
+// contextContext is a temporary(?) copy of the context.Context type
+// to support both Go 1.6 using golang.org/x/net/context and Go 1.7+
+// with the built-in context package. If people ever stop using Go 1.6
+// we can remove this.
+type contextContext interface {
+	Deadline() (deadline time.Time, ok bool)
+	Done() <-chan struct{}
+	Err() error
+	Value(key interface{}) interface{}
+}
+
 // Wait is shorthand for WaitN(ctx, 1).
-func (lim *Limiter) Wait(ctx context.Context) (err error) {
+func (lim *Limiter) wait(ctx contextContext) (err error) {
 	return lim.WaitN(ctx, 1)
 }
 
@@ -222,7 +232,7 @@ func (lim *Limiter) Wait(ctx context.Context) (err error) {
 // It returns an error if n exceeds the Limiter's burst size, the Context is
 // canceled, or the expected wait time exceeds the Context's Deadline.
 // The burst limit is ignored if the rate limit is Inf.
-func (lim *Limiter) WaitN(ctx context.Context, n int) (err error) {
+func (lim *Limiter) waitN(ctx contextContext, n int) (err error) {
 	if n > lim.burst && lim.limit != Inf {
 		return fmt.Errorf("rate: Wait(n=%d) exceeds limiter's burst %d", n, lim.burst)
 	}

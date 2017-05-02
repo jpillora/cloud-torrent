@@ -49,3 +49,11 @@ func (b *bitmapContainer) readFrom(stream io.Reader) (int, error) {
 	}
 	return 8 * len(b.bitmap), nil
 }
+
+func (bc *bitmapContainer) asLittleEndianByteSlice() []byte {
+	by := make([]byte, len(bc.bitmap)*8)
+	for i := range bc.bitmap {
+		binary.LittleEndian.PutUint64(by[i*8:], bc.bitmap[i])
+	}
+	return by
+}
