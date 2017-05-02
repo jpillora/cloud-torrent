@@ -22,7 +22,7 @@ See [Future Features here](#future-features)
 See [the latest release](https://github.com/jpillora/cloud-torrent/releases/latest) or download and install it now with
 
 ```
-curl https://i.jpillora.com/cloud-torrent | bash
+curl https://i.jpillora.com/cloud-torrent! | bash
 ```
 
 **Docker**
