@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -60,8 +61,8 @@ type Server struct {
 
 func (s *Server) Run(version string) error {
 
-	tls := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
-	if tls && (s.CertPath == "" || s.KeyPath == "") {
+	isTLS := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
+	if isTLS && (s.CertPath == "" || s.KeyPath == "") {
 		return fmt.Errorf("You must provide both key and cert paths")
 	}
 
@@ -132,7 +133,7 @@ func (s *Server) Run(version string) error {
 	}
 	addr := fmt.Sprintf("%s:%d", host, s.Port)
 	proto := "http"
-	if tls {
+	if isTLS {
 		proto += "s"
 	}
 	if s.Open {
@@ -163,10 +164,18 @@ func (s *Server) Run(version string) error {
 	}
 	log.Printf("Listening at %s://%s", proto, addr)
 	//serve!
-	if tls {
-		return http.ListenAndServeTLS(addr, s.CertPath, s.KeyPath, h)
+	server := http.Server{
+		//disable http2 due to velox bug
+		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){},
+		//address
+		Addr: addr,
+		//handler stack
+		Handler: h,
 	}
-	return http.ListenAndServe(addr, h)
+	if isTLS {
+		return server.ListenAndServeTLS(s.CertPath, s.KeyPath)
+	}
+	return server.ListenAndServe()
 }
 
 func (s *Server) reconfigure(c engine.Config) error {
