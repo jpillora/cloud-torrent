@@ -98,7 +98,7 @@ app.controller("NodeController", function($scope, $rootScope, $http, $timeout) {
   };
 
   $scope.remove = function() {
-    $http.delete("/download/" + n.$path);
+    $http.delete("download/" + n.$path);
   };
 
   $scope.togglePreview = function() {

@@ -3,7 +3,7 @@
 app.factory('api', function($rootScope, $http, reqerr) {
   window.http = $http;
   var request = function(action, data) {
-    var url = "/api/"+action;
+    var url = "api/"+action;
     $rootScope.apiing = true;
     return $http.post(url, data).error(reqerr).finally(function() {
       $rootScope.apiing = false;
@@ -23,7 +23,7 @@ app.factory('search', function($rootScope, $http, reqerr) {
       var params = {query:query};
       if(page !== undefined) params.page = page;
       $rootScope.searching = true;
-      var req = $http.get("/search/"+provider, { params: params });
+      var req = $http.get("search/"+provider, { params: params });
       req.error(reqerr);
       req.finally(function() {
         $rootScope.searching = false;
@@ -33,7 +33,7 @@ app.factory('search', function($rootScope, $http, reqerr) {
     one: function(provider, path) {
       var opts = { params: { item: path } };
       $rootScope.searching = true;
-      var req = $http.get("/search/"+provider+"/item", opts);
+      var req = $http.get("search/"+provider+"/item", opts);
       req.error(reqerr);
       req.finally(function() {
         $rootScope.searching = false;
