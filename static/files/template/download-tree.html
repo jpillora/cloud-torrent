@@ -8,7 +8,7 @@
 <div class="content">
   <div class="header">
     <span ng-if="isdir()">{{ node.Name }}</span>
-    <a ng-if="isfile() && !isdownloading()" ng-href="/download/{{ node.$path }}">{{ node.Name }}</a>
+    <a ng-if="isfile() && !isdownloading()" ng-href="download/{{ node.$path }}">{{ node.Name }}</a>
     <span ng-if="isfile() && isdownloading()">{{ node.Name }}</span>
     <span ng-if="!isdownloading()" class="controls">
       <i ng-show="!confirm" ng-click="preremove()" class="red trash icon"></i>
@@ -20,11 +20,11 @@
   <div class="description">{{ node.Size | bytes }} updated {{ ago(node.Modified) }}</div>
   <div class="preview" ng-if="showPreview">
     <audio ng-if="audioPreview" controls>
-      <source ng-src="{{ showPreview ? ('/download/'+node.$path) : '' }}">
+      <source ng-src="{{ showPreview ? ('download/'+node.$path) : '' }}">
     </audio>
-    <img ng-if="imagePreview" ng-src="{{ showPreview ? ('/download/'+node.$path) : '' }}">
+    <img ng-if="imagePreview" ng-src="{{ showPreview ? ('download/'+node.$path) : '' }}">
     <video controls autoplay ng-if="videoPreview">
-      <source ng-src="{{ showPreview ? ('/download/'+node.$path) : '' }}">
+      <source ng-src="{{ showPreview ? ('download/'+node.$path) : '' }}">
     </video>
   </div>
   <div class="list" ng-if="isdir() && !closed()">
