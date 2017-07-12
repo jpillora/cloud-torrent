@@ -57,6 +57,7 @@
 		<section class="downloads" ng-controller="DownloadsController" ng-include src="'template/downloads.html'"></section>
 
 		<footer>
+			<span ng-if="state.Stats.Uptime">up {{ ago(state.Stats.Uptime) }}	-	</span>
 			<span>github.com/<a href="https://github.com/jpillora" target="_blank">jpillora</a>/<a href="https://github.com/jpillora/cloud-torrent" target="_blank">cloud-torrent</a> version {{ state.Stats.Version }}	-	</span>
 			<span ng-if="numKeys(state.Users) > 1">{{ numKeys(state.Users) }} users connected	-	</span>
 			<span><a href="https://golang.org" target="_blank">Go</a> {{ state.Stats.Runtime }}</span>
