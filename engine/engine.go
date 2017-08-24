@@ -41,6 +41,7 @@ func (e *Engine) Configure(c Config) error {
 		NoUpload:          !c.EnableUpload,
 		Seed:              c.EnableSeeding,
 		DisableEncryption: c.DisableEncryption,
+		PeerID:            "-GT0810-", 
 	}
 	client, err := torrent.NewClient(&tc)
 	if err != nil {
