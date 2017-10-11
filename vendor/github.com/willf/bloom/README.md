@@ -4,6 +4,7 @@ Bloom filters
 [![Master Build Status](https://secure.travis-ci.org/willf/bloom.png?branch=master)](https://travis-ci.org/willf/bloom?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/willf/bloom/badge.svg?branch=master)](https://coveralls.io/github/willf/bloom?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/willf/bloom)](https://goreportcard.com/report/github.com/willf/bloom)
+[![GoDoc](https://godoc.org/github.com/willf/bloom?status.svg)](http://godoc.org/github.com/willf/bloom)
 
 A Bloom filter is a representation of a set of _n_ items, where the main
 requirement is to make membership queries; _i.e._, whether an item is a
@@ -16,7 +17,7 @@ In this implementation, the hashing functions used is [murmurhash](github.com/sp
 This implementation accepts keys for setting and testing as `[]byte`. Thus, to
 add a string item, `"Love"`:
 
-    uint n = 1000
+    n := uint(1000)
     filter := bloom.New(20*n, 5) // load of 20, 5 keys
     filter.Add([]byte("Love"))
 
@@ -24,7 +25,7 @@ Similarly, to test if `"Love"` is in bloom:
 
     if filter.Test([]byte("Love"))
 
-For numeric data, I recommend that you look into the binary/encoding library. But, for example, to add a `uint32` to the filter:
+For numeric data, I recommend that you look into the encoding/binary library. But, for example, to add a `uint32` to the filter:
 
     i := uint32(100)
     n1 := make([]byte, 4)

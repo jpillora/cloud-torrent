@@ -4,16 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
-
-	"github.com/PuerkitoBio/goquery"
 )
 
-//a single result
-type result map[string]string
+// Result represents a result
+type Result map[string]string
 
 //the configuration file
 type Config map[string]*Endpoint
@@ -48,7 +45,18 @@ func (h *Handler) LoadConfig(b []byte) error {
 				c[k] = e
 			}
 			logf("Loaded endpoint: /%s", k)
-			e.debug = h.Debug
+			// Copy the Debug attribute
+			e.Debug = h.Debug
+			// Copy the Header attributes (only if they are not yet set)
+			if e.Headers == nil {
+				e.Headers = h.Headers
+			} else {
+				for k, v := range h.Headers {
+					if _, ok := e.Headers[k]; !ok {
+						e.Headers[k] = v
+					}
+				}
+			}
 		}
 	}
 	if h.Debug {
@@ -60,9 +68,7 @@ func (h *Handler) LoadConfig(b []byte) error {
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	//basic auth
+	// basic auth
 	if h.Auth != "" {
 		u, p, _ := r.BasicAuth()
 		if h.Auth != u+":"+p {
@@ -71,11 +77,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-	//always JSON!
+	// always JSON!
 	w.Header().Set("Content-Type", "application/json")
-
-	//admin actions
+	// admin actions
 	if r.URL.Path == "" || r.URL.Path == "/" {
 		get := false
 		if r.Method == "GET" {
@@ -94,113 +98,49 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			get = true
 		}
-
 		if !get {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			w.Write(jsonerr(errors.New("Use GET or POST")))
+			return
 		}
 		b, _ := json.MarshalIndent(h.Config, "", "  ")
 		w.Write(b)
 		return
 	}
-	//search actions
-	id := r.URL.Path[1:] //exclude root slash
-	if e, ok := h.Config[id]; ok {
-		h.execute(e, w, r)
+	// endpoint id (excludes root slash)
+	id := r.URL.Path[1:]
+	// load endpoint
+	endpoint := h.Endpoint(id)
+	if endpoint == nil {
+		w.WriteHeader(404)
+		w.Write(jsonerr(fmt.Errorf("Endpoint /%s not found", id)))
 		return
 	}
-	w.WriteHeader(404)
-	w.Write(jsonerr(fmt.Errorf("Endpoint /%s not found", id)))
-}
-
-func (h *Handler) execute(e *Endpoint, w http.ResponseWriter, r *http.Request) {
-
-	values := r.URL.Query()
-
-	url, err := template(true, e.URL, values)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(jsonerr(err))
-		return
+	// convert url.Values into map[string]string
+	values := map[string]string{}
+	for k, v := range r.URL.Query() {
+		values[k] = v[0]
 	}
-
-	method := e.Method
-	if method == "" {
-		method = "GET"
-	}
-
-	body := io.Reader(nil)
-	if e.Body != "" {
-		if s, err := template(true, e.Body, values); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(jsonerr(err))
-			return
-		} else {
-			body = strings.NewReader(s)
-		}
-	}
-
-	req, err := http.NewRequest(method, url, body)
+	// execute query
+	res, err := endpoint.Execute(values)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(jsonerr(err))
 		return
 	}
-
-	if h.Headers != nil {
-		for k, v := range h.Headers {
-			req.Header.Set(k, v)
-		}
-	}
-	if e.Headers != nil {
-		for k, v := range e.Headers {
-			req.Header.Set(k, v)
-		}
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(jsonerr(err))
-		return
-	}
-
-	if h.Log {
-		logf("%s %s => %s", method, url, resp.Status)
-	}
-
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(jsonerr(err))
-	}
-	sel := doc.Selection
-
-	var out interface{}
-	//out will be either a list of results, or a single result
-	if e.List != "" {
-		var results []result
-		sels := sel.Find(e.List)
-		if h.Debug {
-			logf("list: %s => #%d elements", e.List, sels.Length())
-		}
-		sels.Each(func(i int, sel *goquery.Selection) {
-			r := e.extract(sel)
-			if len(r) == len(e.Result) {
-				results = append(results, r)
-			} else if h.Debug {
-				logf("excluded #%d: has %d fields, expected %d", i, len(r), len(e.Result))
-			}
-		})
-		out = results
-	} else {
-		out = e.extract(sel)
-	}
-
+	// encode as JSON
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(out); err != nil {
+	if err := enc.Encode(res); err != nil {
 		w.Write([]byte("JSON Error: " + err.Error()))
 	}
+}
+
+// Endpoint will return the Handler's Endpoint from its Config
+func (h *Handler) Endpoint(path string) *Endpoint {
+	if e, ok := h.Config[path]; ok {
+		return e
+	}
+	return nil
 }

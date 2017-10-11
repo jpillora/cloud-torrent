@@ -216,7 +216,7 @@ func newRunContainer32FromBitmapContainer(bc *bitmapContainer) *runContainer32 {
 			// wrap up, no more runs
 			return rc
 		}
-		localRunStart := countTrailingZerosDeBruijn(curWord)
+		localRunStart := countTrailingZeros(curWord)
 		runStart := localRunStart + 64*longCtr
 		// stuff 1s into number's LSBs
 		curWordWith1s := curWord | (curWord - 1)
@@ -235,7 +235,7 @@ func newRunContainer32FromBitmapContainer(bc *bitmapContainer) *runContainer32 {
 			rc.iv[runCount].last = uint32(runEnd) - 1
 			return rc
 		}
-		localRunEnd := countTrailingZerosDeBruijn(^curWordWith1s)
+		localRunEnd := countTrailingZeros(^curWordWith1s)
 		runEnd = localRunEnd + longCtr*64
 		rc.iv[runCount].start = uint32(runStart)
 		rc.iv[runCount].last = uint32(runEnd) - 1

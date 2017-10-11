@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/anacrolix/dht"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
@@ -36,12 +37,16 @@ func (e *Engine) Configure(c Config) error {
 		return fmt.Errorf("Invalid incoming port (%d)", c.IncomingPort)
 	}
 	tc := torrent.Config{
-		DataDir:           c.DownloadDirectory,
-		ListenAddr:        "0.0.0.0:" + strconv.Itoa(c.IncomingPort),
-		NoUpload:          !c.EnableUpload,
-		Seed:              c.EnableSeeding,
-		DisableEncryption: c.DisableEncryption,
+		DHTConfig: dht.ServerConfig{
+			StartingNodes: dht.GlobalBootstrapAddrs,
+		},
+		DataDir:    c.DownloadDirectory,
+		ListenAddr: "0.0.0.0:" + strconv.Itoa(c.IncomingPort),
+		NoUpload:   !c.EnableUpload,
+		Seed:       c.EnableSeeding,
 	}
+	tc.DisableEncryption = c.DisableEncryption
+
 	client, err := torrent.NewClient(&tc)
 	if err != nil {
 		return err

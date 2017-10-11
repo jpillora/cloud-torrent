@@ -1,4 +1,4 @@
-// +build amd64,!appengine
+// +build amd64,!appengine,!go1.9
 
 TEXT ·hasAsm(SB),4,$0-1
 MOVQ $1, AX

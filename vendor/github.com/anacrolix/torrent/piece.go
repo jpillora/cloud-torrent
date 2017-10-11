@@ -29,18 +29,21 @@ const (
 	PiecePriorityNow // A Reader is reading in this piece.
 )
 
-type piece struct {
+type Piece struct {
 	// The completed piece SHA1 hash, from the metainfo "pieces" field.
-	Hash  metainfo.Hash
+	hash  metainfo.Hash
 	t     *Torrent
 	index int
 	// Chunks we've written to since the last check. The chunk offset and
 	// length can be determined by the request chunkSize in use.
-	DirtyChunks      bitmap.Bitmap
-	Hashing          bool
-	QueuedForHash    bool
-	EverHashed       bool
-	PublicPieceState PieceState
+	dirtyChunks bitmap.Bitmap
+
+	hashing       bool
+	queuedForHash bool
+	everHashed    bool
+	numVerifies   int64
+
+	publicPieceState PieceState
 	priority         piecePriority
 
 	pendingWritesMutex sync.Mutex
@@ -48,55 +51,55 @@ type piece struct {
 	noPendingWrites    sync.Cond
 }
 
-func (p *piece) Info() metainfo.Piece {
+func (p *Piece) Info() metainfo.Piece {
 	return p.t.info.Piece(p.index)
 }
 
-func (p *piece) Storage() storage.Piece {
+func (p *Piece) Storage() storage.Piece {
 	return p.t.storage.Piece(p.Info())
 }
 
-func (p *piece) pendingChunkIndex(chunkIndex int) bool {
-	return !p.DirtyChunks.Contains(chunkIndex)
+func (p *Piece) pendingChunkIndex(chunkIndex int) bool {
+	return !p.dirtyChunks.Contains(chunkIndex)
 }
 
-func (p *piece) pendingChunk(cs chunkSpec, chunkSize pp.Integer) bool {
+func (p *Piece) pendingChunk(cs chunkSpec, chunkSize pp.Integer) bool {
 	return p.pendingChunkIndex(chunkIndex(cs, chunkSize))
 }
 
-func (p *piece) hasDirtyChunks() bool {
-	return p.DirtyChunks.Len() != 0
+func (p *Piece) hasDirtyChunks() bool {
+	return p.dirtyChunks.Len() != 0
 }
 
-func (p *piece) numDirtyChunks() (ret int) {
-	return p.DirtyChunks.Len()
+func (p *Piece) numDirtyChunks() (ret int) {
+	return p.dirtyChunks.Len()
 }
 
-func (p *piece) unpendChunkIndex(i int) {
-	p.DirtyChunks.Add(i)
+func (p *Piece) unpendChunkIndex(i int) {
+	p.dirtyChunks.Add(i)
 }
 
-func (p *piece) pendChunkIndex(i int) {
-	p.DirtyChunks.Remove(i)
+func (p *Piece) pendChunkIndex(i int) {
+	p.dirtyChunks.Remove(i)
 }
 
-func (p *piece) numChunks() int {
+func (p *Piece) numChunks() int {
 	return p.t.pieceNumChunks(p.index)
 }
 
-func (p *piece) undirtiedChunkIndices() (ret bitmap.Bitmap) {
-	ret = p.DirtyChunks.Copy()
+func (p *Piece) undirtiedChunkIndices() (ret bitmap.Bitmap) {
+	ret = p.dirtyChunks.Copy()
 	ret.FlipRange(0, p.numChunks())
 	return
 }
 
-func (p *piece) incrementPendingWrites() {
+func (p *Piece) incrementPendingWrites() {
 	p.pendingWritesMutex.Lock()
 	p.pendingWrites++
 	p.pendingWritesMutex.Unlock()
 }
 
-func (p *piece) decrementPendingWrites() {
+func (p *Piece) decrementPendingWrites() {
 	p.pendingWritesMutex.Lock()
 	if p.pendingWrites == 0 {
 		panic("assertion")
@@ -108,7 +111,7 @@ func (p *piece) decrementPendingWrites() {
 	p.pendingWritesMutex.Unlock()
 }
 
-func (p *piece) waitNoPendingWrites() {
+func (p *Piece) waitNoPendingWrites() {
 	p.pendingWritesMutex.Lock()
 	for p.pendingWrites != 0 {
 		p.noPendingWrites.Wait()
@@ -116,20 +119,20 @@ func (p *piece) waitNoPendingWrites() {
 	p.pendingWritesMutex.Unlock()
 }
 
-func (p *piece) chunkIndexDirty(chunk int) bool {
-	return p.DirtyChunks.Contains(chunk)
+func (p *Piece) chunkIndexDirty(chunk int) bool {
+	return p.dirtyChunks.Contains(chunk)
 }
 
-func (p *piece) chunkIndexSpec(chunk int) chunkSpec {
+func (p *Piece) chunkIndexSpec(chunk int) chunkSpec {
 	return chunkIndexSpec(chunk, p.length(), p.chunkSize())
 }
 
-func (p *piece) numDirtyBytes() (ret pp.Integer) {
-	defer func() {
-		if ret > p.length() {
-			panic("too many dirty bytes")
-		}
-	}()
+func (p *Piece) numDirtyBytes() (ret pp.Integer) {
+	// defer func() {
+	// 	if ret > p.length() {
+	// 		panic("too many dirty bytes")
+	// 	}
+	// }()
 	numRegularDirtyChunks := p.numDirtyChunks()
 	if p.chunkIndexDirty(p.numChunks() - 1) {
 		numRegularDirtyChunks--
@@ -139,21 +142,34 @@ func (p *piece) numDirtyBytes() (ret pp.Integer) {
 	return
 }
 
-func (p *piece) length() pp.Integer {
+func (p *Piece) length() pp.Integer {
 	return p.t.pieceLength(p.index)
 }
 
-func (p *piece) chunkSize() pp.Integer {
+func (p *Piece) chunkSize() pp.Integer {
 	return p.t.chunkSize
 }
 
-func (p *piece) lastChunkIndex() int {
+func (p *Piece) lastChunkIndex() int {
 	return p.numChunks() - 1
 }
 
-func (p *piece) bytesLeft() (ret pp.Integer) {
+func (p *Piece) bytesLeft() (ret pp.Integer) {
 	if p.t.pieceComplete(p.index) {
 		return 0
 	}
 	return p.length() - p.numDirtyBytes()
+}
+
+func (p *Piece) VerifyData() {
+	p.t.cl.mu.Lock()
+	defer p.t.cl.mu.Unlock()
+	target := p.numVerifies + 1
+	if p.hashing {
+		target++
+	}
+	p.t.queuePieceCheck(p.index)
+	for p.numVerifies < target {
+		p.t.cl.event.Wait()
+	}
 }

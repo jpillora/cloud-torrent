@@ -9,11 +9,11 @@ branches:
 branches:
   only:
     - master
+    - develop
     - travis
 
 go:
-  - 1.6
-  - 1.7
+  - 1.8
   - tip
 
 matrix:
@@ -35,4 +35,4 @@ after_failure:
   - cat ./target/test/report.xml
 
 after_success:
-  - if [ "$TRAVIS_GO_VERSION" = "1.7" ]; then $HOME/gopath/bin/goveralls -covermode=count -coverprofile=target/report/coverage.out -service=travis-ci; fi;
+  - if [ "$TRAVIS_GO_VERSION" = "1.8" ]; then $HOME/gopath/bin/goveralls -covermode=count -coverprofile=target/report/coverage.out -service=travis-ci; fi;

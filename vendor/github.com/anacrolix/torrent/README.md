@@ -6,7 +6,7 @@
 
 This repository implements BitTorrent-related packages and command-line utilities in Go. The emphasis is on use as a library from other projects. It's been used 24/7 in production by a downstream, private service since late 2014.
 
-There is support for protocol encryption, [DHT](https://github.com/anacrolix/dht), PEX, [uTP](https://github.com/anacrolix/utp), and various extensions. See the package documentation for a more complete list. There are several data storage backends provided: blob, file, and mmap, and you can write your own, such as to store data on S3, or in a database. You can use the provided binaries in `./cmd`, or use `torrent` as a library for your own applications.
+There is support for protocol encryption, [DHT](https://github.com/anacrolix/dht), PEX, [uTP](https://github.com/anacrolix/utp), and various extensions. See the package documentation for a more complete list. There are several data storage backends provided: blob, file, and mmap, and you can write your own, such as to store data on S3, or in a database. You can use the provided binaries in `./cmd`, or use package `torrent` as a library for your own applications.
 
 Many of the sub-packages can be used for other purposes: [bencode](https://godoc.org/github.com/anacrolix/torrent/bencode), and [tracker](https://godoc.org/github.com/anacrolix/torrent/tracker), in particular.
 
@@ -26,10 +26,6 @@ There is a small example in the [package documentation](https://godoc.org/github
  * [Android libtorrent](https://gitlab.com/axet/libtorrent)
  * [Trickl - Torrent Client](https://play.google.com/store/apps/details?id=com.shwifty.tex)
  * [Confluence](https://github.com/anacrolix/confluence)
-
-## Mobile
-
-There's a branch called `mobile` that supports binding to torrent with the [gomobile](https://github.com/golang/go/wiki/Mobile) tool. It has some API changes as required by `gomobile`. Checkout the [`mobile` branch](https://github.com/anacrolix/torrent/tree/mobile), and bind as usual.
 
 ## Commands
 
@@ -53,10 +49,10 @@ Downloads torrents from the command-line. This first example does not use `godo`
 
 ### torrentfs
 
-torrentfs mounts a FUSE filesystem at `-mountDir`. The contents are the torrents described by the torrent files and magnet links at `-torrentPath`. Data for read requests is fetched only as required from the torrent network, and stored at `-downloadDir`.
+torrentfs mounts a FUSE filesystem at `-mountDir`. The contents are the torrents described by the torrent files and magnet links at `-metainfoDir`. Data for read requests is fetched only as required from the torrent network, and stored at `-downloadDir`.
 
     $ mkdir mnt torrents
-    $ godo github.com/anacrolix/torrent/cmd/torrentfs -mountDir mnt -torrentPath torrents &
+    $ godo github.com/anacrolix/torrent/cmd/torrentfs -mountDir=mnt -metainfoDir=torrents &
     $ cd torrents
     $ wget http://releases.ubuntu.com/14.04.2/ubuntu-14.04.2-desktop-amd64.iso.torrent
     $ cd ..
@@ -72,14 +68,3 @@ Creates a magnet link from a torrent file. Note the extracted trackers, display 
 
     $ godo github.com/anacrolix/torrent/cmd/torrent-magnet < ubuntu-14.04.2-desktop-amd64.iso.torrent
 	magnet:?xt=urn:btih:546cf15f724d19c4319cc17b179d7e035f89c1f4&dn=ubuntu-14.04.2-desktop-amd64.iso&tr=http%3A%2F%2Ftorrent.ubuntu.com%3A6969%2Fannounce&tr=http%3A%2F%2Fipv6.torrent.ubuntu.com%3A6969%2Fannounce
-
-### dht-ping
-
-Pings DHT nodes with the given network addresses.
-
-    $ godo ./cmd/dht-ping router.bittorrent.com:6881 router.utorrent.com:6881
-    2015/04/01 17:21:23 main.go:33: dht server on [::]:60058
-    32f54e697351ff4aec29cdbaabf2fbe3467cc267 (router.bittorrent.com:6881): 648.218621ms
-    ebff36697351ff4aec29cdbaabf2fbe3467cc267 (router.utorrent.com:6881): 873.864706ms
-    2/2 responses (100.000000%)
-

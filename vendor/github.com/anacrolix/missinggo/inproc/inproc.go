@@ -19,15 +19,15 @@ var (
 	conns        = map[int]*packetConn{}
 )
 
-type addr struct {
+type Addr struct {
 	Port int
 }
 
-func (addr) Network() string {
+func (Addr) Network() string {
 	return "inproc"
 }
 
-func (me addr) String() string {
+func (me Addr) String() string {
 	return ":" + strconv.FormatInt(int64(me.Port), 10)
 }
 
@@ -43,7 +43,7 @@ func ResolveAddr(network, str string) (net.Addr, error) {
 	return ResolveInprocAddr(network, str)
 }
 
-func ResolveInprocAddr(network, str string) (addr addr, err error) {
+func ResolveInprocAddr(network, str string) (addr Addr, err error) {
 	if str == "" {
 		addr.Port = getPort()
 		return
@@ -86,12 +86,12 @@ func ListenPacket(network, addrStr string) (nc net.PacketConn, err error) {
 
 type packet struct {
 	data []byte
-	addr addr
+	addr Addr
 }
 
 type packetConn struct {
 	closed        bool
-	addr          addr
+	addr          Addr
 	reads         []packet
 	readDeadline  *condDeadline
 	writeDeadline *condDeadline

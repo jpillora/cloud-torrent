@@ -51,7 +51,7 @@ func (bc *bitmapContainer) minimum() uint16 {
 	for i := 0; i < len(bc.bitmap); i += 1 {
 		w := bc.bitmap[i]
 		if w != 0 {
-			r := countTrailingZerosDeBruijn(w)
+			r := countTrailingZeros(w)
 			return uint16(r + i*64)
 		}
 	}
@@ -847,12 +847,12 @@ func (bc *bitmapContainer) NextSetBit(i int) int {
 	w := bc.bitmap[x]
 	w = w >> uint(i%64)
 	if w != 0 {
-		return i + countTrailingZerosDeBruijn(w)
+		return i + countTrailingZeros(w)
 	}
 	x++
 	for ; x < len(bc.bitmap); x++ {
 		if bc.bitmap[x] != 0 {
-			return (x * 64) + countTrailingZerosDeBruijn(bc.bitmap[x])
+			return (x * 64) + countTrailingZeros(bc.bitmap[x])
 		}
 	}
 	return -1

@@ -126,9 +126,6 @@ func (info *Info) TotalLength() (ret int64) {
 }
 
 func (info *Info) NumPieces() int {
-	if len(info.Pieces)%20 != 0 {
-		panic(len(info.Pieces))
-	}
 	return len(info.Pieces) / 20
 }
 

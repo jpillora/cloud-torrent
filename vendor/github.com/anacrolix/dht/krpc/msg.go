@@ -19,26 +19,27 @@ import (
 // may be correlated with multiple queries to the same node. The transaction ID should be encoded as a short string of binary numbers, typically 2 characters are enough as they cover 2^16 outstanding queries. The other key contained in every KRPC message is "y" with a single character value describing the type of message. The value of the "y" key is one of "q" for query, "r" for response, or "e" for error.
 // 3 message types:  QUERY, RESPONSE, ERROR
 type Msg struct {
-	Q  string           `bencode:"q,omitempty"` // Query method (one of 4: "ping", "find_node", "get_peers", "announce_peer")
-	A  *MsgArgs         `bencode:"a,omitempty"` // named arguments sent with a query
-	T  string           `bencode:"t"`           // required: transaction ID
-	Y  string           `bencode:"y"`           // required: type of the message: q for QUERY, r for RESPONSE, e for ERROR
-	R  *Return          `bencode:"r,omitempty"` // RESPONSE type only
-	E  *Error           `bencode:"e,omitempty"` // ERROR type only
-	IP util.CompactPeer `bencode:"ip,omitempty"`
+	Q        string           `bencode:"q,omitempty"` // Query method (one of 4: "ping", "find_node", "get_peers", "announce_peer")
+	A        *MsgArgs         `bencode:"a,omitempty"` // named arguments sent with a query
+	T        string           `bencode:"t"`           // required: transaction ID
+	Y        string           `bencode:"y"`           // required: type of the message: q for QUERY, r for RESPONSE, e for ERROR
+	R        *Return          `bencode:"r,omitempty"` // RESPONSE type only
+	E        *Error           `bencode:"e,omitempty"` // ERROR type only
+	IP       util.CompactPeer `bencode:"ip,omitempty"`
+	ReadOnly bool             `bencode:"ro,omitempty"`
 }
 
 type MsgArgs struct {
-	ID          string `bencode:"id"`           // ID of the quirying Node
-	InfoHash    string `bencode:"info_hash"`    // InfoHash of the torrent
-	Target      string `bencode:"target"`       // ID of the node sought
-	Token       string `bencode:"token"`        // Token received from an earlier get_peers query
-	Port        int    `bencode:"port"`         // Senders torrent port
-	ImpliedPort int    `bencode:"implied_port"` // Use senders apparent DHT port
+	ID          ID     `bencode:"id"`                     // ID of the querying Node
+	InfoHash    ID     `bencode:"info_hash,omitempty"`    // InfoHash of the torrent
+	Target      ID     `bencode:"target,omitempty"`       // ID of the node sought
+	Token       string `bencode:"token,omitempty"`        // Token received from an earlier get_peers query
+	Port        int    `bencode:"port,omitempty"`         // Senders torrent port
+	ImpliedPort bool   `bencode:"implied_port,omitempty"` // Use senders apparent DHT port
 }
 
 type Return struct {
-	ID     string              `bencode:"id"`               // ID of the querying node
+	ID     ID                  `bencode:"id"`               // ID of the querying node
 	Nodes  CompactIPv4NodeInfo `bencode:"nodes,omitempty"`  // K closest nodes to the requested target
 	Token  string              `bencode:"token,omitempty"`  // Token for future announce_peer
 	Values []util.CompactPeer  `bencode:"values,omitempty"` // Torrent peers
@@ -51,14 +52,14 @@ func (m Msg) String() string {
 }
 
 // The node ID of the source of this Msg.
-func (m Msg) SenderID() string {
+func (m Msg) SenderID() *ID {
 	switch m.Y {
 	case "q":
-		return m.A.ID
+		return &m.A.ID
 	case "r":
-		return m.R.ID
+		return &m.R.ID
 	}
-	return ""
+	return nil
 }
 
 func (m Msg) Error() *Error {

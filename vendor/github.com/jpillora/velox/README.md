@@ -2,14 +2,13 @@
 
 [![GoDoc](https://godoc.org/github.com/jpillora/velox?status.svg)](https://godoc.org/github.com/jpillora/velox)
 
-Real-time Go struct to JS object synchronisation over SSE and WebSockets
-
-:warning: *This is beta software. Be wary of using this in production. Please report any [issues](https://github.com/jpillora/velox/issues) you encounter.*
+Real-time JS object synchronisation over SSE and WebSockets in Go and JavaScript (Node.js and browser)
 
 ### Features
 
 * Simple API
-* Synchronise any JSON marshallable struct
+* Synchronise any JSON marshallable struct in Go
+* Synchronise any JSON stringifiable struct in Node
 * Delta updates using [JSONPatch (RFC6902)](https://tools.ietf.org/html/rfc6902)
 * Supports [Server-Sent Events (EventSource)](https://en.wikipedia.org/wiki/Server-sent_events) and [WebSockets](https://en.wikipedia.org/wiki/WebSocket)
 * SSE [client-side poly-fill](https://github.com/remy/polyfills/blob/master/EventSource.js) to fallback to long-polling in older browsers (IE8+).
@@ -17,7 +16,7 @@ Real-time Go struct to JS object synchronisation over SSE and WebSockets
 
 ### Quick Usage
 
-Server
+Server (Go)
 
 ``` go
 //syncable struct
@@ -37,12 +36,33 @@ foo.B = 21
 foo.Push()
 ```
 
-Client
+Server (Node)
+
+``` js
+//syncable object
+foo := &Foo{
+	a: 1,
+	b: 2
+}
+//express server
+let app = express();
+//serve velox.js client library (assets/dist/velox.min.js)
+app.get("/velox.js", velox.JS)
+//serve velox sync endpoint for foo
+app.get("/sync", velox.handle(foo))
+//make changes
+foo.a = 42
+foo.b = 21
+//push to client
+foo.$push()
+```
+
+Client (Node and Browser)
 
 ``` js
 // load script /velox.js
 var foo = {};
-var v = velox("/sync", foo); //uses websockets if supported, otherwise, use sse
+var v = velox("/sync", foo);
 v.onupdate = function() {
 	//foo.A === 42 and foo.B === 21
 };
@@ -50,13 +70,19 @@ v.onupdate = function() {
 
 ### API
 
-Server API
+Server API (Go)
 
 [![GoDoc](https://godoc.org/github.com/jpillora/velox?status.svg)](https://godoc.org/github.com/jpillora/velox)
 
-Client API
+Server API (Node)
 
-* `velox(url, object)` *function* returns `v` - Creates a new auto-detect velox connection
+* `velox.handle(object)` *function* returns `v` - Creates a new route handler for use with express
+* `velox.state(object)` *function* returns `state` - Creates or restores a velox state from a given object
+* `state.handle(req, res)` *function* returns `Promise` - Handle the provided `express` request/response. Resolves on connection close. Rejects on any error.
+
+Client API (Node and Browser)
+
+* `velox(url, object)` *function* returns `v` - Creates a new SSE velox connection
 * `velox.sse(url, object)` *function* returns `v` - Creates a new SSE velox connection
 * `velox.ws(url, object)` *function* returns `v` - Creates a new WS velox connection
 * `v.onupdate(object)` *function* - Called when a server push is received
@@ -95,15 +121,17 @@ See this [simple `example/`](example/) and view it live here: https://velox.jpil
 ### Known issues
 
 * Object synchronization is currently one way (server to client) only.
-* Object diff has not been optimized. It is a simple property-by-property comparison. :warning: Performance testing has not been done yet.
+* Object diff has not been optimized. It is a simple property-by-property comparison.
 
 ### TODO
 
 * WebRTC support
+* Plain [`http`](https://nodejs.org/api/http.html#http_http_createserver_requestlistener) server support in Node
+* WebSockets support in Node
 
 #### MIT License
 
-Copyright © 2016 Jaime Pillora &lt;dev@jpillora.com&gt;
+Copyright © 2017 Jaime Pillora &lt;dev@jpillora.com&gt;
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

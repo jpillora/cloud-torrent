@@ -14,6 +14,17 @@ type Iterator interface {
 	Stop()
 }
 
+func ToFunc(it Iterator) Func {
+	return func(cb Callback) {
+		defer it.Stop()
+		for it.Next() {
+			if !cb(it.Value()) {
+				break
+			}
+		}
+	}
+}
+
 type sliceIterator struct {
 	slice []interface{}
 	value interface{}
@@ -49,9 +60,10 @@ func StringIterator(a string) Iterator {
 	return Slice(slices.ToEmptyInterface(a))
 }
 
-func ToSlice(it Iterator) (ret []interface{}) {
-	for it.Next() {
-		ret = append(ret, it.Value())
-	}
+func ToSlice(f Func) (ret []interface{}) {
+	f(func(v interface{}) bool {
+		ret = append(ret, v)
+		return true
+	})
 	return
 }

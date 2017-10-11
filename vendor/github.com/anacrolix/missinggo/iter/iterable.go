@@ -7,7 +7,7 @@ import (
 )
 
 type Iterable interface {
-	Iter(func(value interface{}) (more bool))
+	Iter(Callback)
 }
 
 type iterator struct {

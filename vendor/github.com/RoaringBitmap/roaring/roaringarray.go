@@ -735,11 +735,11 @@ func (ra *roaringArray) advanceUntil(min uint16, pos int) int {
 	}
 
 	// we know that the next-smallest span was too small
-	lower += (spansize / 2)
+	lower += (spansize >> 1)
 
 	mid := 0
 	for lower+1 != upper {
-		mid = (lower + upper) / 2
+		mid = (lower + upper) >> 1
 		if ra.keys[mid] == min {
 			return mid
 		} else if ra.keys[mid] < min {

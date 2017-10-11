@@ -14,15 +14,15 @@ import (
 
 var templateRe = regexp.MustCompile(`\{\{\s*(\w+)\s*(:(\w+))?\s*\}\}`)
 
-func template(isurl bool, str string, vars url.Values) (out string, err error) {
+func template(isurl bool, str string, vars map[string]string) (out string, err error) {
 	out = templateRe.ReplaceAllStringFunc(str, func(key string) string {
 		m := templateRe.FindStringSubmatch(key)
 		k := m[1]
-		v := vars.Get(k)
+		value, ok := vars[k]
 		//missing - apply defaults or error
-		if v == "" {
+		if !ok {
 			if m[3] != "" {
-				v = m[3]
+				value = m[3]
 			} else {
 				err = errors.New("Missing param: " + k)
 			}
@@ -32,10 +32,10 @@ func template(isurl bool, str string, vars url.Values) (out string, err error) {
 			queryi := strings.Index(str, "?")
 			keyi := strings.Index(str, key)
 			if queryi != -1 && keyi > queryi {
-				v = url.QueryEscape(v)
+				value = url.QueryEscape(value)
 			}
 		}
-		return v
+		return value
 	})
 	return
 }

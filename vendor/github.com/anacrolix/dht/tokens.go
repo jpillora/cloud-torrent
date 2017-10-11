@@ -10,8 +10,11 @@ import (
 
 // Manages creation and validation of tokens issued to querying nodes.
 type tokenServer struct {
-	secret           []byte
-	interval         time.Duration
+	// Something only we know that peers can't guess, so they can't deduce valid tokens.
+	secret []byte
+	// How long between token changes.
+	interval time.Duration
+	// How many intervals may pass between the current interval, and one used to generate a token before it is invalid.
 	maxIntervalDelta int
 	timeNow          func() time.Time
 }
