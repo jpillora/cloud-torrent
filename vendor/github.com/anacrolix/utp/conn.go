@@ -98,8 +98,6 @@ func (c *Conn) wndSize() uint32 {
 }
 
 func (c *Conn) makePacket(_type st, connID, seqNr uint16, payload []byte) (p []byte) {
-	// Always selectively ack the first 64 packets. Don't bother with rest for
-	// now.
 	var selAck selectiveAckBitmask
 	for i := 1; i < len(c.inbound); i++ {
 		if c.inbound[i].seen {
@@ -115,11 +113,17 @@ func (c *Conn) makePacket(_type st, connID, seqNr uint16, payload []byte) (p []b
 		WndSize:       c.wndSize(),
 		Timestamp:     c.timestamp(),
 		TimestampDiff: c.lastTimeDiff,
-		// Currently always send an 8 byte selective ack.
-		Extensions: []extensionField{{
+	}
+	if len(selAck.Bytes) != 0 {
+		// The spec requires the number of bytes for a selective ACK to be at
+		// least 4, and a multiple of 4.
+		if len(selAck.Bytes)%4 != 0 {
+			panic(len(selAck.Bytes))
+		}
+		h.Extensions = append(h.Extensions, extensionField{
 			Type:  extensionTypeSelectiveAck,
 			Bytes: selAck.Bytes,
-		}},
+		})
 	}
 	p = sendBufferPool.Get().([]byte)[:0:minMTU]
 	n := h.Marshal(p)

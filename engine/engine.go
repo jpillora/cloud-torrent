@@ -27,6 +27,10 @@ func New() *Engine {
 	return &Engine{ts: map[string]*Torrent{}}
 }
 
+func (e *Engine) Config() Config {
+	return e.config
+}
+
 func (e *Engine) Configure(c Config) error {
 	//recieve config
 	if e.client != nil {

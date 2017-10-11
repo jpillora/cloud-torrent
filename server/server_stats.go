@@ -2,7 +2,6 @@ package server
 
 import (
 	"runtime"
-	"time"
 
 	velox "github.com/jpillora/velox/go"
 	"github.com/shirou/gopsutil/cpu"
@@ -24,14 +23,7 @@ type stats struct {
 	pusher      velox.Pusher
 }
 
-func (s *stats) loadStatsEvery(interval time.Duration) {
-	for {
-		s.loadStats()
-		time.Sleep(interval)
-	}
-}
-
-func (s *stats) loadStats() {
+func (s *stats) loadStats(diskDir string) {
 	//count cpu cycles between last count
 	if stats, err := cpu.CPUTimes(false); err == nil {
 		stat := stats[0]
@@ -51,7 +43,7 @@ func (s *stats) loadStats() {
 		s.lastCPUStat = &stat
 	}
 	//count disk usage
-	if stat, err := disk.DiskUsage("/"); err == nil {
+	if stat, err := disk.DiskUsage(diskDir); err == nil {
 		s.DiskUsed = int64(stat.Used)
 		s.DiskTotal = int64(stat.Total)
 	}

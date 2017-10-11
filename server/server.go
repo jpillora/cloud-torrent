@@ -61,8 +61,8 @@ type Server struct {
 	}
 }
 
+// Run the server
 func (s *Server) Run(version string) error {
-
 	isTLS := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
 	if isTLS && (s.CertPath == "" || s.KeyPath == "") {
 		return fmt.Errorf("You must provide both key and cert paths")
@@ -125,9 +125,14 @@ func (s *Server) Run(version string) error {
 			time.Sleep(1 * time.Second)
 		}
 	}()
-
 	//start collecting stats
-	go s.state.Stats.System.loadStatsEvery(5 * time.Second)
+	go func() {
+		for {
+			c := s.engine.Config()
+			s.state.Stats.System.loadStats(c.DownloadDirectory)
+			time.Sleep(5 * time.Second)
+		}
+	}()
 
 	host := s.Host
 	if host == "" {
