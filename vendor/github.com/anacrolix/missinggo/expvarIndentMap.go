@@ -10,7 +10,7 @@ type IndentMap struct {
 	expvar.Map
 }
 
-var _ expvar.Var = &IndentMap{}
+var _ expvar.Var = (*IndentMap)(nil)
 
 func NewExpvarIndentMap(name string) *IndentMap {
 	v := new(IndentMap)

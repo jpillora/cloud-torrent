@@ -18,8 +18,8 @@ type Error struct {
 }
 
 var (
-	_ bencode.Unmarshaler = &Error{}
-	_ bencode.Marshaler   = &Error{}
+	_ bencode.Unmarshaler = (*Error)(nil)
+	_ bencode.Marshaler   = (*Error)(nil)
 	_ error               = Error{}
 )
 
@@ -31,8 +31,17 @@ func (e *Error) UnmarshalBencode(_b []byte) (err error) {
 	}
 	switch v := _v.(type) {
 	case []interface{}:
-		e.Code = int(v[0].(int64))
-		e.Msg = v[1].(string)
+		func() {
+			defer func() {
+				r := recover()
+				if r == nil {
+					return
+				}
+				err = fmt.Errorf("unpacking %#v: %s", v, r)
+			}()
+			e.Code = int(v[0].(int64))
+			e.Msg = v[1].(string)
+		}()
 	case string:
 		e.Msg = v
 	default:

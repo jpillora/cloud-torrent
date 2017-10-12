@@ -6,6 +6,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,8 +16,9 @@ import (
 )
 
 const (
-	cacheSize = 1024
-	fortnight = 14 * 24 * time.Hour
+	cacheSize      = 1024
+	fortnight      = 14 * 24 * time.Hour
+	setCookieAfter = 24 * time.Hour
 )
 
 var params = scrypt.Params{N: 16384, R: 8, P: 1, SaltLen: 16, DKLen: 32}
@@ -25,6 +28,7 @@ func New() *CookieAuth {
 	ca := &CookieAuth{
 		id:     "cookieauth",
 		expiry: fortnight,
+		path:   "/",
 		auth:   nil,
 		logger: nil,
 		cache:  l,
@@ -38,6 +42,7 @@ type CookieAuth struct {
 	id     string
 	auth   []byte
 	expiry time.Duration
+	path   string
 	logger *log.Logger
 	cache  *lru.Cache
 	next   http.Handler
@@ -56,14 +61,15 @@ func (ca *CookieAuth) Wrap(next http.Handler) http.Handler {
 
 //SetNextHandler sets the next http.Handler to use in
 //this middle chain
-func (ca *CookieAuth) SetNextHandler(next http.Handler) {
+func (ca *CookieAuth) SetNextHandler(next http.Handler) *CookieAuth {
 	ca.mut.Lock()
 	ca.next = next
 	ca.mut.Unlock()
+	return ca
 }
 
 //SetUserPass sets the current username and password
-func (ca *CookieAuth) SetUserPass(user, pass string) {
+func (ca *CookieAuth) SetUserPass(user, pass string) *CookieAuth {
 	ca.mut.Lock()
 	if user == "" && pass == "" {
 		ca.auth = nil
@@ -72,29 +78,42 @@ func (ca *CookieAuth) SetUserPass(user, pass string) {
 	}
 	ca.cache.Purge()
 	ca.mut.Unlock()
+	return ca
 }
 
 //SetExpiry defines the cookie expiration time
-func (ca *CookieAuth) SetExpiry(expiry time.Duration) {
+func (ca *CookieAuth) SetExpiry(expiry time.Duration) *CookieAuth {
 	ca.mut.Lock()
 	ca.expiry = expiry
 	ca.mut.Unlock()
+	return ca
+}
+
+//SetPath defines the cookie path. Set to
+//the empty string to use the request path.
+func (ca *CookieAuth) SetPath(path string) *CookieAuth {
+	ca.mut.Lock()
+	ca.path = path
+	ca.mut.Unlock()
+	return ca
 }
 
 //SetLogger sets the log.Logger used to
 //display actions
-func (ca *CookieAuth) SetLogger(l *log.Logger) {
+func (ca *CookieAuth) SetLogger(l *log.Logger) *CookieAuth {
 	ca.mut.Lock()
 	ca.logger = l
 	ca.mut.Unlock()
+	return ca
 }
 
 //SetID changes the cookie ID, defaults
 //to "cookieauth"
-func (ca *CookieAuth) SetID(id string) {
+func (ca *CookieAuth) SetID(id string) *CookieAuth {
 	ca.mut.Lock()
 	ca.id = id
 	ca.mut.Unlock()
+	return ca
 }
 
 func (ca *CookieAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -106,45 +125,43 @@ func (ca *CookieAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ca.next.ServeHTTP(w, r)
 		return
 	}
-	//login with creds
-	if u, p, ok := r.BasicAuth(); ok {
-		b64, err := ca.authWithCreds(u, p)
-		if err != nil {
-			ca.logf("login error: %s", err)
-			ca.authFailed(w)
-			return
-		}
-		//set cookie
-		http.SetCookie(w, &http.Cookie{
-			Name:    caid,
-			Value:   b64,
-			Expires: time.Now().Add(ca.expiry),
-		})
-		ca.logf("login success")
-		ca.next.ServeHTTP(w, r)
-		return
-	}
 	//login with token
 	for _, c := range r.Cookies() {
 		if c.Name == caid {
-			b64 := c.Value
-			if err := ca.authWithToken(b64); err != nil {
+			c2, err := ca.authWithCookie(c)
+			if err != nil {
 				ca.logf("token error:  %s", err)
 				ca.authFailed(w)
 				return
 			}
-			ca.mut.RLock()
-			expires := time.Now().Add(ca.expiry)
-			ca.mut.RUnlock()
-			http.SetCookie(w, &http.Cookie{
-				Name:    ca.id,
-				Value:   b64,
-				Expires: expires,
-			})
-			ca.logf("token success")
+			if c2 == nil {
+				ca.logf("token success (keep cookie)")
+			} else {
+				//set a new cookie
+				http.SetCookie(w, c2)
+				ca.logf("token success (new cookie)")
+			}
 			ca.next.ServeHTTP(w, r)
 			return
 		}
+	}
+	//login with creds
+	if u, p, ok := r.BasicAuth(); ok {
+		b64, err := ca.authWithCreds(u, p)
+		if err != nil {
+			ca.logf("basic-auth error: %s", err)
+			ca.authFailed(w)
+			return
+		}
+		//load expiry
+		ca.mut.RLock()
+		expires := time.Now().Add(ca.expiry)
+		ca.mut.RUnlock()
+		//set cookie
+		http.SetCookie(w, ca.generateCookie(b64, expires))
+		ca.logf("basic-auth success")
+		ca.next.ServeHTTP(w, r)
+		return
 	}
 	//no auth detected!
 	ca.logf("not authenticated")
@@ -157,6 +174,15 @@ func (ca *CookieAuth) getAuth() []byte {
 	copy(b, ca.auth)
 	ca.mut.RUnlock()
 	return b
+}
+
+func (ca *CookieAuth) generateCookie(b64 string, expires time.Time) *http.Cookie {
+	return &http.Cookie{
+		Name:    ca.id,
+		Value:   b64 + "|" + strconv.FormatInt(expires.Unix(), 10),
+		Path:    ca.path,
+		Expires: expires,
+	}
 }
 
 func (ca *CookieAuth) authFailed(w http.ResponseWriter) {
@@ -186,23 +212,43 @@ func (ca *CookieAuth) authWithCreds(user, pass string) (string, error) {
 	return b64, nil
 }
 
-func (ca *CookieAuth) authWithToken(b64 string) error {
+func (ca *CookieAuth) authWithCookie(c *http.Cookie) (*http.Cookie, error) {
+	b64 := c.Value
+	//optionally extract an epoch integer from the end
+	epoch := int64(0)
+	if pair := strings.SplitN(b64, "|", 2); len(pair) == 2 {
+		if i, err := strconv.ParseInt(pair[1], 10, 64); err == nil {
+			epoch = i
+			b64 = pair[0]
+		}
+	}
+	//load expiry
+	ca.mut.RLock()
+	expires := time.Now().Add(ca.expiry)
+	ca.mut.RUnlock()
+	//new cookie? set when cookie's expiry
+	//the passes the preset threshold
+	var c2 *http.Cookie
+	if epoch == 0 || expires.Sub(time.Unix(epoch, 0)) > setCookieAfter {
+		c2 = ca.generateCookie(b64, expires)
+	}
 	//cached token?
 	if ca.cache.Contains(b64) {
-		return nil
+		return c2, nil
 	}
 	//decode base64
 	hash, err := base64.StdEncoding.DecodeString(b64)
 	if err != nil {
-		return errors.New("b64 error")
+		return nil, errors.New("b64 error")
 	}
 	//check password hash
 	if err := scrypt.CompareHashAndPassword(hash, ca.getAuth()); err != nil {
-		return err
+		return nil, err
 	}
-	//cache success
+	//cache result!
 	ca.cache.Add(b64, true)
-	return nil
+	//success
+	return c2, nil
 }
 
 func (ca *CookieAuth) logf(format string, args ...interface{}) {

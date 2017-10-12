@@ -1,6 +1,7 @@
 package server
 
 import (
+	"compress/gzip"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -14,10 +15,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/NYTimes/gziphandler"
 	"github.com/jpillora/cloud-torrent/engine"
 	"github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/cookieauth"
-	"github.com/jpillora/gziphandler"
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/scraper/scraper"
 	"github.com/jpillora/velox"
@@ -55,22 +56,22 @@ type Server struct {
 			Version string
 			Runtime string
 			Uptime  time.Time
+			System  stats
 		}
 	}
 }
 
+// Run the server
 func (s *Server) Run(version string) error {
-
 	isTLS := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
 	if isTLS && (s.CertPath == "" || s.KeyPath == "") {
 		return fmt.Errorf("You must provide both key and cert paths")
 	}
-
 	s.state.Stats.Title = s.Title
 	s.state.Stats.Version = version
 	s.state.Stats.Runtime = strings.TrimPrefix(runtime.Version(), "go")
 	s.state.Stats.Uptime = time.Now()
-
+	s.state.Stats.System.pusher = velox.Pusher(&s.state)
 	//init maps
 	s.state.Users = map[string]string{}
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
@@ -86,13 +87,12 @@ func (s *Server) Run(version string) error {
 	if err := s.scraper.LoadConfig(defaultSearchConfig); err != nil {
 		log.Fatal(err)
 	}
-
+	//scraper
 	s.state.SearchProviders = s.scraper.Config //share scraper config
 	go s.fetchSearchConfigLoop()
 	s.scraperh = http.StripPrefix("/search", s.scraper)
-
+	//torrent engine
 	s.engine = engine.New()
-
 	//configure engine
 	c := engine.Config{
 		DownloadDirectory: "./downloads",
@@ -114,7 +114,6 @@ func (s *Server) Run(version string) error {
 	if err := s.reconfigure(c); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)
 	}
-
 	//poll torrents and files
 	go func() {
 		for {
@@ -124,6 +123,14 @@ func (s *Server) Run(version string) error {
 			s.state.Unlock()
 			s.state.Push()
 			time.Sleep(1 * time.Second)
+		}
+	}()
+	//start collecting stats
+	go func() {
+		for {
+			c := s.engine.Config()
+			s.state.Stats.System.loadStats(c.DownloadDirectory)
+			time.Sleep(5 * time.Second)
 		}
 	}()
 
@@ -148,7 +155,12 @@ func (s *Server) Run(version string) error {
 	}
 	//define handler chain, from last to first
 	h := http.Handler(http.HandlerFunc(s.handle))
-	h = gziphandler.GzipHandler(h)
+	//gzip
+	compression := gzip.DefaultCompression
+	minSize := 0 //IMPORTANT
+	gzipWrap, _ := gziphandler.NewGzipLevelAndMinSize(compression, minSize)
+	h = gzipWrap(h)
+	//auth
 	if s.Auth != "" {
 		user := s.Auth
 		pass := ""
@@ -156,7 +168,7 @@ func (s *Server) Run(version string) error {
 			user = s[0]
 			pass = s[1]
 		}
-		h = cookieauth.Wrap(h, user, pass)
+		h = cookieauth.New().SetUserPass(user, pass).Wrap(h)
 		log.Printf("Enabled HTTP authentication")
 	}
 	if s.Log {

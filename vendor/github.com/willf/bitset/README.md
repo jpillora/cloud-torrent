@@ -5,6 +5,7 @@
 [![Master Build Status](https://secure.travis-ci.org/willf/bitset.png?branch=master)](https://travis-ci.org/willf/bitset?branch=master)
 [![Master Coverage Status](https://coveralls.io/repos/willf/bitset/badge.svg?branch=master&service=github)](https://coveralls.io/github/willf/bitset?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/willf/bitset)](https://goreportcard.com/report/github.com/willf/bitset)
+[![GoDoc](https://godoc.org/github.com/willf/bitset?status.svg)](http://godoc.org/github.com/willf/bitset)
 
 
 ## Description
@@ -22,27 +23,54 @@ Many of the methods, including Set, Clear, and Flip, return a BitSet pointer, wh
 
 ### Example use:
 
-    import "bitset"
-    var b BitSet
-    b.Set(10).Set(11)
-    if b.Test(1000) {
-        b.Clear(1000)
-    }
-    for i,e := v.NextSet(0); e; i,e = v.NextSet(i + 1) {
-       fmt.Println("The following bit is set:",i);
-    }
-    if B.Intersection(bitset.New(100).Set(10)).Count() > 1 {
-        fmt.Println("Intersection works.")
-    }
+```go
+package main
+
+import (
+	"fmt"
+	"math/rand"
+
+	"github.com/willf/bitset"
+)
+
+func main() {
+	fmt.Printf("Hello from BitSet!\n")
+	var b bitset.BitSet
+	// play some Go Fish
+	for i := 0; i < 100; i++ {
+		card1 := uint(rand.Intn(52))
+		card2 := uint(rand.Intn(52))
+		b.Set(card1)
+		if b.Test(card2) {
+			fmt.Println("Go Fish!")
+		}
+		b.Clear(card1)
+	}
+
+	// Chaining
+	b.Set(10).Set(11)
+
+	for i, e := b.NextSet(0); e; i, e = b.NextSet(i + 1) {
+		fmt.Println("The following bit is set:", i)
+	}
+	if b.Intersection(bitset.New(100).Set(10)).Count() == 1 {
+		fmt.Println("Intersection works.")
+	} else {
+		fmt.Println("Intersection doesn't work???")
+	}
+}
+```
 
 As an alternative to BitSets, one should check out the 'big' package, which provides a (less set-theoretical) view of bitsets.
 
-Discussions golang-nuts Google Group:
-
-* [Revised BitSet](https://groups.google.com/forum/#!topic/golang-nuts/5i3l0CXDiBg)
-* [simple bitset?](https://groups.google.com/d/topic/golang-nuts/7n1VkRTlBf4/discussion)
-
 Godoc documentation is at: https://godoc.org/github.com/willf/bitset
+
+
+## Implementation Note
+
+Go 1.9 introduced a native `math/bits` library. We provide backward compatibility to Go 1.7, which might be removed.
+
+It is possible that a later version will match the `math/bits` return signature for counts (which is `int`, rather than our library's `unit64`). If so, the version will be bumped.
 
 ## Installation
 

@@ -1,6 +1,7 @@
 package utp
 
 import (
+	"context"
 	"errors"
 	"io"
 	"log"
@@ -344,7 +345,7 @@ func (s *Socket) newConn(addr net.Addr) (c *Conn) {
 }
 
 func (s *Socket) Dial(addr string) (net.Conn, error) {
-	return s.DialTimeout(addr, 0)
+	return s.DialContext(context.Background(), addr)
 }
 
 func (s *Socket) resolveAddr(addr string) (net.Addr, error) {
@@ -359,16 +360,10 @@ func (s *Socket) network() string {
 	return s.pc.LocalAddr().Network()
 }
 
-// A zero timeout is no timeout. This will fallback onto the write ack
-// timeout.
-func (s *Socket) DialTimeout(addr string, timeout time.Duration) (nc net.Conn, err error) {
-	netAddr, err := s.resolveAddr(addr)
-	if err != nil {
-		return
-	}
-
+func (s *Socket) startOutboundConn(addr net.Addr) (c *Conn, err error) {
 	mu.Lock()
-	c := s.newConn(netAddr)
+	defer mu.Unlock()
+	c = s.newConn(addr)
 	c.recv_id = s.newConnID(resolvedAddrStr(c.RemoteAddr().String()))
 	c.send_id = c.recv_id + 1
 	if logLevel >= 1 {
@@ -383,20 +378,33 @@ func (s *Socket) DialTimeout(addr string, timeout time.Duration) (nc net.Conn, e
 		log.Printf("that's %d connections", len(s.conns))
 	}
 	if err != nil {
-		mu.Unlock()
 		return
 	}
 	c.seq_nr = 1
 	c.writeSyn()
-	mu.Unlock()
+	return
+}
+
+// A zero timeout is no timeout. This will fallback onto the write ack
+// timeout.
+func (s *Socket) DialContext(ctx context.Context, addr string) (nc net.Conn, err error) {
+	netAddr, err := s.resolveAddr(addr)
+	if err != nil {
+		return
+	}
+
+	c, err := s.startOutboundConn(netAddr)
+	if err != nil {
+		return
+	}
 
 	connErr := make(chan error, 1)
 	go func() {
 		connErr <- c.recvSynAck()
 	}()
 	var timeoutCh <-chan time.Time
-	if timeout != 0 {
-		timeoutCh = time.After(timeout)
+	if dl, ok := ctx.Deadline(); ok {
+		timeoutCh = time.After(time.Until(dl))
 	}
 	select {
 	case err = <-connErr:

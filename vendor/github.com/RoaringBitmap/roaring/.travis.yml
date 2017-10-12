@@ -10,6 +10,7 @@ notifications:
 go:
 - 1.7
 - 1.8
+- 1.9
 - tip
 
 # Next lines seem to fail horribly

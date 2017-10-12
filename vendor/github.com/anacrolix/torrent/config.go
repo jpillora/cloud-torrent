@@ -51,12 +51,16 @@ type Config struct {
 	// used.
 	DefaultStorage storage.ClientImpl
 
-	DisableEncryption  bool `long:"disable-encryption"`
-	ForceEncryption    bool // Don't allow unobfuscated connections.
-	PreferNoEncryption bool
+	EncryptionPolicy
 
 	IPBlocklist iplist.Ranger
 	DisableIPv6 bool `long:"disable-ipv6"`
 	// Perform logging and any other behaviour that will help debug.
 	Debug bool `help:"enable debug logging"`
+}
+
+type EncryptionPolicy struct {
+	DisableEncryption  bool
+	ForceEncryption    bool // Don't allow unobfuscated connections.
+	PreferNoEncryption bool
 }

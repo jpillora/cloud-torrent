@@ -12,6 +12,7 @@
 package utp
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -159,19 +160,19 @@ type recv struct {
 // Attempt to connect to a remote uTP listener, creating a Socket just for
 // this connection.
 func Dial(addr string) (net.Conn, error) {
-	return DialTimeout(addr, 0)
+	return DialContext(context.Background(), addr)
 }
 
 // Same as Dial with a timeout parameter. Creates a Socket just for the
 // connection, which will be closed with the Conn is. To reuse another Socket,
 // see Socket.Dial.
-func DialTimeout(addr string, timeout time.Duration) (nc net.Conn, err error) {
+func DialContext(ctx context.Context, addr string) (nc net.Conn, err error) {
 	s, err := NewSocket("udp", ":0")
 	if err != nil {
 		return
 	}
 	defer s.Close()
-	return s.DialTimeout(addr, timeout)
+	return s.DialContext(ctx, addr)
 }
 
 // Listen creates listener Socket to accept incoming connections.

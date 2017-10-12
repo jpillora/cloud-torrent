@@ -87,8 +87,8 @@ func (b *BitSet) Bytes() []uint64 {
 
 // wordsNeeded calculates the number of words needed for i bits
 func wordsNeeded(i uint) int {
-	if i > ((^uint(0)) - wordSize + 1) {
-		return int((^uint(0)) >> log2WordSize)
+	if i > (Cap() - wordSize + 1) {
+		return int(Cap() >> log2WordSize)
 	}
 	return int((i + (wordSize - 1)) >> log2WordSize)
 }
@@ -112,7 +112,7 @@ func New(length uint) (bset *BitSet) {
 	return bset
 }
 
-// Cap returns the total possible capicity, or number of bits
+// Cap returns the total possible capacity, or number of bits
 func Cap() uint {
 	return ^uint(0)
 }
@@ -241,13 +241,15 @@ func (b *BitSet) NextClear(i uint) (uint, bool) {
 	w := b.set[x]
 	w = w >> (i & (wordSize - 1))
 	wA := allBits >> (i & (wordSize - 1))
-	if w != wA {
-		return i + trailingZeroes64(^w), true
+	index := i + trailingZeroes64(^w)
+	if w != wA && index < b.length {
+		return index, true
 	}
 	x++
 	for x < len(b.set) {
-		if b.set[x] != allBits {
-			return uint(x)*wordSize + trailingZeroes64(^b.set[x]), true
+		index = uint(x)*wordSize + trailingZeroes64(^b.set[x])
+		if b.set[x] != allBits && index < b.length {
+			return index, true
 		}
 		x++
 	}
@@ -301,17 +303,6 @@ func (b *BitSet) Count() uint {
 		return uint(popcntSlice(b.set))
 	}
 	return 0
-}
-
-var deBruijn = [...]byte{
-	0, 1, 56, 2, 57, 49, 28, 3, 61, 58, 42, 50, 38, 29, 17, 4,
-	62, 47, 59, 36, 45, 43, 51, 22, 53, 39, 33, 30, 24, 18, 12, 5,
-	63, 55, 48, 27, 60, 41, 37, 16, 46, 35, 44, 21, 52, 32, 23, 11,
-	54, 26, 40, 15, 34, 20, 31, 10, 25, 14, 19, 9, 13, 8, 7, 6,
-}
-
-func trailingZeroes64(v uint64) uint {
-	return uint(deBruijn[((v&-v)*0x03f79d71b4ca8b09)>>58])
 }
 
 // Equal tests the equvalence of two BitSets.
@@ -439,7 +430,6 @@ func (b *BitSet) InPlaceIntersection(compare *BitSet) {
 	if compare.length > 0 {
 		b.extendSetMaybe(compare.length - 1)
 	}
-	return
 }
 
 // Union of base set and other set

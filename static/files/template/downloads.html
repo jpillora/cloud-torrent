@@ -1,4 +1,11 @@
-<h3 class="ui header">Downloads</h3>
+<div class="section-header">
+  <h3 class="ui header">
+    Downloads
+  </h3>
+  <h5 class="right" ng-show="state.Stats.System.set">
+    {{ (state.Stats.System.diskTotal-state.Stats.System.diskUsed) | bytes }} free
+  </h5>
+</div>
 
 <div ng-if="numDownloads() == 0" class="ui message nodownloads">
   <p>Download files above</p>
@@ -6,8 +13,7 @@
 
 <div ng-if="numDownloads() > 0" class="ui segment">
   <div class="ui list">
-    <div class="item" ng-repeat="node in state.Downloads.Children"
-        ng-controller="NodeController"
-        ng-include src="'template/download-tree.html'"></div>
+    <div class="item" ng-repeat="node in state.Downloads.Children" ng-controller="NodeController"
+      ng-include src="'template/download-tree.html'"></div>
   </div>
 </div>

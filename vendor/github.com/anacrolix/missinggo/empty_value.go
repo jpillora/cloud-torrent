@@ -2,6 +2,10 @@ package missinggo
 
 import "reflect"
 
+func IsZeroValue(i interface{}) bool {
+	return IsEmptyValue(reflect.ValueOf(i))
+}
+
 // Returns whether the value represents the empty value for its type. Used for
 // example to determine if complex types satisfy the common "omitempty" tag
 // option for marshalling. Taken from

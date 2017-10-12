@@ -11,7 +11,11 @@ type mapPieceCompletion struct {
 	m  map[metainfo.PieceKey]struct{}
 }
 
-func (mapPieceCompletion) Close() error { return nil }
+func NewMapPieceCompletion() PieceCompletion {
+	return &mapPieceCompletion{m: make(map[metainfo.PieceKey]struct{})}
+}
+
+func (*mapPieceCompletion) Close() error { return nil }
 
 func (me *mapPieceCompletion) Get(pk metainfo.PieceKey) (bool, error) {
 	me.mu.Lock()

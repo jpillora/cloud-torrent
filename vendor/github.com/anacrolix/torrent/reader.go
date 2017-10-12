@@ -44,6 +44,11 @@ func (r *Reader) SetResponsive() {
 	r.responsive = true
 }
 
+// Disable responsive mode.
+func (r *Reader) SetNonResponsive() {
+	r.responsive = false
+}
+
 // Configure the number of bytes ahead of a read that should also be
 // prioritized in preparation for further reads.
 func (r *Reader) SetReadahead(readahead int64) {
@@ -53,6 +58,11 @@ func (r *Reader) SetReadahead(readahead int64) {
 	r.t.cl.mu.Lock()
 	defer r.t.cl.mu.Unlock()
 	r.posChanged()
+}
+
+// Return reader's current position.
+func (r *Reader) CurrentPos() int64 {
+	return r.pos
 }
 
 func (r *Reader) readable(off int64) (ret bool) {
@@ -91,10 +101,6 @@ func (r *Reader) available(off, max int64) (ret int64) {
 	return
 }
 
-func (r *Reader) tickleClient() {
-	r.t.readersChanged()
-}
-
 func (r *Reader) waitReadable(off int64) {
 	// We may have been sent back here because we were told we could read but
 	// it failed.
@@ -113,10 +119,10 @@ func (r *Reader) piecesUncached() (ret pieceRange) {
 }
 
 func (r *Reader) Read(b []byte) (n int, err error) {
-	return r.ReadContext(b, context.Background())
+	return r.ReadContext(context.Background(), b)
 }
 
-func (r *Reader) ReadContext(b []byte, ctx context.Context) (n int, err error) {
+func (r *Reader) ReadContext(ctx context.Context, b []byte) (n int, err error) {
 	// This is set under the Client lock if the Context is canceled.
 	var ctxErr error
 	if ctx.Done() != nil {
@@ -189,17 +195,17 @@ func (r *Reader) readOnceAt(b []byte, pos int64, ctxErr *error) (n int, err erro
 			}
 		}
 		b1 := b[:avail]
-		pi := int(pos / r.t.Info().PieceLength)
-		ip := r.t.Info().Piece(pi)
-		po := pos % r.t.Info().PieceLength
+		pi := int(pos / r.t.info.PieceLength)
+		ip := r.t.info.Piece(pi)
+		po := pos % r.t.info.PieceLength
 		missinggo.LimitLen(&b1, ip.Length()-po)
 		n, err = r.t.readAt(b1, pos)
 		if n != 0 {
 			err = nil
 			return
 		}
-		log.Printf("error reading torrent %q piece %d offset %d, %d bytes: %s", r.t, pi, po, len(b1), err)
 		r.t.cl.mu.Lock()
+		log.Printf("error reading torrent %q piece %d offset %d, %d bytes: %s", r.t, pi, po, len(b1), err)
 		r.t.updateAllPieceCompletions()
 		r.t.updateAllPiecePriorities()
 		r.t.cl.mu.Unlock()

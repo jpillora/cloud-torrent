@@ -4,80 +4,88 @@
 
 /* global styles  */
 
-html, body {
-	width: 100%;
-	margin: 0;
-	padding: 0;
+html,
+body {
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .cage {
-	padding-top: 25px;
-	padding-bottom: 40px;
-	max-width: 700px;
-	margin: 0 auto;
+  padding-top: 25px;
+  padding-bottom: 40px;
+  max-width: 700px;
+  margin: 0 auto;
 }
 
 @media (max-width: 740px) {
-	.cage {
-		margin: 0 10px;
-		padding-top: 10px;
-	}
+  .cage {
+    margin: 0 10px;
+    padding-top: 10px;
+  }
 }
 
 @media (max-width: 480px) {
-	body .title a {
-		font-size: 1.65rem;
-	}
+  body .title a {
+    font-size: 1.65rem;
+  }
 }
 
 html body .muted {
-	color: gray;
+  color: gray;
 }
 
 footer {
-	text-align: right;
-	color: grey;
-	font-style: italic;
-	font-size: 0.8em;
-	opacity: 0.25;
-	transition: opacity .3s ease-in-out;
+  text-align: right;
+  color: grey;
+  font-style: italic;
+  font-size: 0.8em;
+  opacity: 0.25;
+  transition: opacity 0.3s ease-in-out;
 }
 
 footer:hover {
-	opacity: 1;
+  opacity: 1;
+}
+
+footer:hover .extra {
+  display: inline;
+}
+
+footer .extra {
+  display: none;
 }
 
 .ellipsis {
-	display: inline-block;
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 [ng-click] {
-	cursor: pointer;
+  cursor: pointer;
 }
 
 .disabled {
-	cursor: default !important;
+  cursor: default !important;
 }
 
 .icon[ng-click] {
-	font-size: 1.2em;
+  font-size: 1.2em;
 }
 
 .app .connect-warning {
-	padding-top: 50px;
-	position: fixed;
-	z-index: 10000;
-	left: 0;
-	top: 0;
-	width: 100%;
-	height: 100%;
-	background-color: rgba(0, 0, 0, 1);
-	opacity: 0.95;
+  padding-top: 50px;
+  position: fixed;
+  z-index: 10000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 1);
+  opacity: 0.95;
 }
-
 
 /*
 	================
@@ -85,50 +93,50 @@ footer:hover {
 */
 
 .title {
-	position: relative;
+  position: relative;
 }
 
 .title a {
-	font-size: 2.35rem;
+  font-size: 2.35rem;
 }
 
 .title .status {
-	position: absolute;
-	top: 2px;
-	right: 10px;
+  position: absolute;
+  top: 2px;
+  right: 10px;
 }
 
 .app .config form.edit {
-	margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
 
 .app .config form.edit input {
-	font-family: monospace;
+  font-family: monospace;
 }
 
 .app .config form.edit .buttons {
-	text-align: center;
+  text-align: center;
 }
 
-.torrents-header {
-	margin-top: 20px;
-	position: relative;
+.section-header {
+  margin-top: 20px;
+  position: relative;
 }
 
-.torrents-header .files.downloading {
-	position: absolute;
-	right: 0px;
-	top: 1px;
-	margin: 9px;
-	font-size: 0.75rem;
-	color: grey;
+.section-header .right {
+  position: absolute;
+  right: 0px;
+  top: 1px;
+  margin: 9px;
+  font-size: 0.75rem;
+  color: grey;
 }
 
 table.tcld .name {
-	text-align: right !important;
-	word-break: break-all;
+  text-align: right !important;
+  word-break: break-all;
 }
 
 .uploads .upload .size {
-	width: 100px;
+  width: 100px;
 }

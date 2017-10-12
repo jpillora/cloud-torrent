@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jpillora/archive"
 )
 
 const fileNumberLimit = 1000
@@ -50,13 +52,22 @@ func (s *Server) serveFiles(w http.ResponseWriter, r *http.Request) {
 		}
 		switch r.Method {
 		case "GET":
-			f, err := os.Open(file)
-			if err != nil {
-				http.Error(w, "File open error: "+err.Error(), http.StatusBadRequest)
-				return
+			if info.IsDir() {
+				w.Header().Set("Content-Type", "application/zip")
+				w.WriteHeader(200)
+				//write .zip archive directly into response
+				a := archive.NewZipWriter(w)
+				a.AddDir(file)
+				a.Close()
+			} else {
+				f, err := os.Open(file)
+				if err != nil {
+					http.Error(w, "File open error: "+err.Error(), http.StatusBadRequest)
+					return
+				}
+				http.ServeContent(w, r, info.Name(), info.ModTime(), f)
+				f.Close()
 			}
-			http.ServeContent(w, r, info.Name(), info.ModTime(), f)
-			f.Close()
 		case "DELETE":
 			if err := os.RemoveAll(file); err != nil {
 				http.Error(w, "Delete failed: "+err.Error(), http.StatusInternalServerError)

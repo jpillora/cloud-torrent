@@ -10,40 +10,26 @@ import (
 // Transaction keeps track of a message exchange between nodes, such as a
 // query message and a response message.
 type Transaction struct {
-	mu             sync.Mutex
-	remoteAddr     Addr
-	t              string
-	response       chan krpc.Msg
-	onResponse     func(krpc.Msg) // Called with the server locked.
-	done           chan struct{}
-	queryPacket    []byte
-	timer          *time.Timer
-	s              *Server
-	retries        int
-	lastSend       time.Time
-	userOnResponse func(krpc.Msg, bool)
+	remoteAddr       Addr
+	t                string
+	onResponse       func(krpc.Msg)
+	onTimeout        func()
+	onSendError      func(error)
+	querySender      func() error
+	queryResendDelay func() time.Duration
+
+	mu          sync.Mutex
+	gotResponse bool
+	timer       *time.Timer
+	retries     int
+	lastSend    time.Time
 }
 
-// SetResponseHandler sets up a function to be called when the query response
-// is available.
-func (t *Transaction) SetResponseHandler(f func(krpc.Msg, bool)) {
+func (t *Transaction) handleResponse(m krpc.Msg) {
 	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.userOnResponse = f
-	t.tryHandleResponse()
-}
-
-func (t *Transaction) tryHandleResponse() {
-	if t.userOnResponse == nil {
-		return
-	}
-	select {
-	case r, ok := <-t.response:
-		t.userOnResponse(r, ok)
-		// Shouldn't be called more than once.
-		t.userOnResponse = nil
-	default:
-	}
+	t.gotResponse = true
+	t.mu.Unlock()
+	t.onResponse(m)
 }
 
 func (t *Transaction) key() transactionKey {
@@ -53,98 +39,34 @@ func (t *Transaction) key() transactionKey {
 	}
 }
 
-func (t *Transaction) startTimer() {
-	t.timer = time.AfterFunc(jitterDuration(queryResendEvery, time.Second), t.timerCallback)
+func (t *Transaction) startResendTimer() {
+	t.timer = time.AfterFunc(t.queryResendDelay(), t.resendCallback)
 }
 
-func (t *Transaction) timerCallback() {
+func (t *Transaction) resendCallback() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	select {
-	case <-t.done:
+	if t.gotResponse {
 		return
-	default:
 	}
 	if t.retries == 2 {
-		t.timeout()
+		go t.onTimeout()
 		return
 	}
 	t.retries++
-	t.sendQuery()
-	if t.timer.Reset(jitterDuration(queryResendEvery, time.Second)) {
+	if err := t.sendQuery(); err != nil {
+		go t.onSendError(err)
+		return
+	}
+	if t.timer.Reset(t.queryResendDelay()) {
 		panic("timer should have fired to get here")
 	}
 }
 
 func (t *Transaction) sendQuery() error {
-	err := t.s.writeToNode(t.queryPacket, t.remoteAddr)
-	if err != nil {
+	if err := t.querySender(); err != nil {
 		return err
 	}
 	t.lastSend = time.Now()
 	return nil
-}
-
-func (t *Transaction) timeout() {
-	go func() {
-		t.s.mu.Lock()
-		defer t.s.mu.Unlock()
-		t.s.nodeTimedOut(t.remoteAddr)
-	}()
-	t.close()
-}
-
-func (t *Transaction) close() {
-	if t.closing() {
-		return
-	}
-	t.queryPacket = nil
-	close(t.response)
-	t.tryHandleResponse()
-	close(t.done)
-	t.timer.Stop()
-	go func() {
-		t.s.mu.Lock()
-		defer t.s.mu.Unlock()
-		t.s.deleteTransaction(t)
-	}()
-}
-
-func (t *Transaction) closing() bool {
-	select {
-	case <-t.done:
-		return true
-	default:
-		return false
-	}
-}
-
-// Close (abandon) the transaction.
-func (t *Transaction) Close() {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.close()
-}
-
-func (t *Transaction) handleResponse(m krpc.Msg) {
-	t.mu.Lock()
-	if t.closing() {
-		t.mu.Unlock()
-		return
-	}
-	close(t.done)
-	t.mu.Unlock()
-	if t.onResponse != nil {
-		t.s.mu.Lock()
-		t.onResponse(m)
-		t.s.mu.Unlock()
-	}
-	t.queryPacket = nil
-	select {
-	case t.response <- m:
-	default:
-		panic("blocked handling response")
-	}
-	close(t.response)
-	t.tryHandleResponse()
 }

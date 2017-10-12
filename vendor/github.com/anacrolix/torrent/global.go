@@ -63,7 +63,6 @@ var (
 
 	uploadChunksPosted = expvar.NewInt("uploadChunksPosted")
 	unexpectedCancels  = expvar.NewInt("unexpectedCancels")
-	postedCancels      = expvar.NewInt("postedCancels")
 
 	pieceHashedCorrect    = expvar.NewInt("pieceHashedCorrect")
 	pieceHashedNotCorrect = expvar.NewInt("pieceHashedNotCorrect")
@@ -81,16 +80,22 @@ var (
 	connsToSelf = expvar.NewInt("connsToSelf")
 	// Number of completed connections to a client we're already connected with.
 	duplicateClientConns       = expvar.NewInt("duplicateClientConns")
-	receivedMessageTypes       = expvar.NewMap("receivedMessageTypes")
 	receivedKeepalives         = expvar.NewInt("receivedKeepalives")
 	supportedExtensionMessages = expvar.NewMap("supportedExtensionMessages")
-	postedMessageTypes         = expvar.NewMap("postedMessageTypes")
 	postedKeepalives           = expvar.NewInt("postedKeepalives")
 	// Requests received for pieces we don't have.
 	requestsReceivedForMissingPieces = expvar.NewInt("requestsReceivedForMissingPieces")
+
+	messageTypesReceived = expvar.NewMap("messageTypesReceived")
+	messageTypesSent     = expvar.NewMap("messageTypesSent")
+	messageTypesPosted   = expvar.NewMap("messageTypesPosted")
 
 	// Track the effectiveness of Torrent.connPieceInclinationPool.
 	pieceInclinationsReused = expvar.NewInt("pieceInclinationsReused")
 	pieceInclinationsNew    = expvar.NewInt("pieceInclinationsNew")
 	pieceInclinationsPut    = expvar.NewInt("pieceInclinationsPut")
+
+	fillBufferSentCancels  = expvar.NewInt("fillBufferSentCancels")
+	fillBufferSentRequests = expvar.NewInt("fillBufferSentRequests")
+	numFillBuffers         = expvar.NewInt("numFillBuffers")
 )

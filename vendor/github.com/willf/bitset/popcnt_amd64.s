@@ -1,3 +1,4 @@
+// +build !go1.9
 // +build amd64,!appengine
 
 TEXT ·hasAsm(SB),4,$0-1

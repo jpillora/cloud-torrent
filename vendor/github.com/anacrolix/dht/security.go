@@ -1,7 +1,6 @@
 package dht
 
 import (
-	"fmt"
 	"hash/crc32"
 	"net"
 )
@@ -33,7 +32,7 @@ func crcIP(ip net.IP, rand uint8) uint32 {
 
 // Makes a node ID secure, in-place. The ID is 20 raw bytes.
 // http://www.libtorrent.org/dht_sec.html
-func SecureNodeId(id []byte, ip net.IP) {
+func SecureNodeId(id *[20]byte, ip net.IP) {
 	crc := crcIP(ip, id[19])
 	id[0] = byte(crc >> 24 & 0xff)
 	id[1] = byte(crc >> 16 & 0xff)
@@ -42,12 +41,9 @@ func SecureNodeId(id []byte, ip net.IP) {
 
 // Returns whether the node ID is considered secure. The id is the 20 raw
 // bytes. http://www.libtorrent.org/dht_sec.html
-func NodeIdSecure(id string, ip net.IP) bool {
+func NodeIdSecure(id [20]byte, ip net.IP) bool {
 	if isLocalNetwork(ip) {
 		return true
-	}
-	if len(id) != 20 {
-		panic(fmt.Sprintf("%q", id))
 	}
 	if ip4 := ip.To4(); ip4 != nil {
 		ip = ip4

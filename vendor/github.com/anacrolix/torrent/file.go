@@ -54,6 +54,8 @@ type FilePieceState struct {
 
 // Returns the state of pieces in this file.
 func (f *File) State() (ret []FilePieceState) {
+	f.t.cl.mu.RLock()
+	defer f.t.cl.mu.RUnlock()
 	pieceSize := int64(f.t.usualPieceSize())
 	off := f.offset % pieceSize
 	remaining := f.length
@@ -65,9 +67,7 @@ func (f *File) State() (ret []FilePieceState) {
 		if len1 > remaining {
 			len1 = remaining
 		}
-		f.t.cl.mu.RLock()
 		ps := f.t.pieceState(i)
-		f.t.cl.mu.RUnlock()
 		ret = append(ret, FilePieceState{len1, ps})
 		off = 0
 		remaining -= len1

@@ -128,6 +128,7 @@ func MMapPacked(filename string) (ret Ranger, err error) {
 	if err != nil {
 		return
 	}
+	// TODO: Need a destructor that unmaps this.
 	ret = NewFromPacked(mm)
 	return
 }

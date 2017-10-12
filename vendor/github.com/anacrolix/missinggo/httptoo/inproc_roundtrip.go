@@ -1,6 +1,7 @@
 package httptoo
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"sync"
@@ -13,18 +14,20 @@ type responseWriter struct {
 	r             http.Response
 	headerWritten missinggo.Event
 	bodyWriter    io.WriteCloser
-	closed        missinggo.SynchronizedEvent
+	bodyClosed    missinggo.SynchronizedEvent
 }
 
 var _ interface {
 	http.ResponseWriter
+	// We're able to emulate this easily enough.
 	http.CloseNotifier
 } = &responseWriter{}
 
+// Use Request.Context.Done instead.
 func (me *responseWriter) CloseNotify() <-chan bool {
 	ret := make(chan bool, 1)
 	go func() {
-		<-me.closed.C()
+		<-me.bodyClosed.C()
 		ret <- true
 	}()
 	return ret
@@ -66,10 +69,20 @@ func (me *responseWriter) runHandler(h http.Handler, req *http.Request) {
 	me.r.Body = struct {
 		io.Reader
 		io.Closer
-	}{pr, eventCloser{pr, &me.closed}}
+	}{pr, eventCloser{pr, &me.bodyClosed}}
+	// Shouldn't be writing to the response after the handler returns.
 	defer me.bodyWriter.Close()
+	// Send a 200 if nothing was written yet.
 	defer me.WriteHeader(200)
-	h.ServeHTTP(me, req)
+	// Wrap the context in the given Request with one that closes when either
+	// the handler returns, or the response body is closed.
+	ctx, cancel := context.WithCancel(req.Context())
+	defer cancel()
+	go func() {
+		<-me.bodyClosed.C()
+		cancel()
+	}()
+	h.ServeHTTP(me, req.WithContext(ctx))
 }
 
 type eventCloser struct {

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/binary"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -18,7 +19,8 @@ type boltPieceCompletion struct {
 	db *bolt.DB
 }
 
-func newBoltPieceCompletion(dir string) (ret *boltPieceCompletion, err error) {
+func NewBoltPieceCompletion(dir string) (ret PieceCompletion, err error) {
+	os.MkdirAll(dir, 0770)
 	p := filepath.Join(dir, ".torrent.bolt.db")
 	db, err := bolt.Open(p, 0660, &bolt.Options{
 		Timeout: time.Second,

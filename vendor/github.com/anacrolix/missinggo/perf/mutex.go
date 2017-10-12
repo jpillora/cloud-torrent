@@ -14,7 +14,7 @@ type TimedLocker struct {
 func (me *TimedLocker) Lock() {
 	tr := NewTimer()
 	me.L.Lock()
-	tr.Stop(me.Desc)
+	tr.Mark(me.Desc)
 }
 
 func (me *TimedLocker) Unlock() {
@@ -30,7 +30,7 @@ type TimedRWLocker struct {
 func (me *TimedRWLocker) Lock() {
 	tr := NewTimer()
 	me.RWL.Lock()
-	tr.Stop(me.WriteDesc)
+	tr.Mark(me.WriteDesc)
 }
 
 func (me *TimedRWLocker) Unlock() {
@@ -40,7 +40,7 @@ func (me *TimedRWLocker) Unlock() {
 func (me *TimedRWLocker) RLock() {
 	tr := NewTimer()
 	me.RWL.RLock()
-	tr.Stop(me.ReadDesc)
+	tr.Mark(me.ReadDesc)
 }
 
 func (me *TimedRWLocker) RUnlock() {

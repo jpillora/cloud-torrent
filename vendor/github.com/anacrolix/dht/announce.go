@@ -3,8 +3,6 @@ package dht
 // get_peers and announce_peers.
 
 import (
-	"errors"
-	"log"
 	"time"
 
 	"github.com/anacrolix/sync"
@@ -31,7 +29,7 @@ type Announce struct {
 	// How many transactions are still ongoing.
 	pending  int
 	server   *Server
-	infoHash string
+	infoHash int160
 	// Count of (probably) distinct addresses we've sent get_peers requests
 	// to.
 	numContacted int
@@ -49,38 +47,28 @@ func (a *Announce) NumContacted() int {
 	return a.numContacted
 }
 
+func newBloomFilterForTraversal() *bloom.BloomFilter {
+	return bloom.NewWithEstimates(1000, 0.5)
+}
+
 // This is kind of the main thing you want to do with DHT. It traverses the
 // graph toward nodes that store peers for the infohash, streaming them to the
 // caller, and announcing the local node to each node if allowed and
 // specified.
 func (s *Server) Announce(infoHash [20]byte, port int, impliedPort bool) (*Announce, error) {
-	startAddrs := func() (ret []Addr) {
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		for _, n := range s.closestGoodNodes(160, string(infoHash[:])) {
-			ret = append(ret, n.addr)
-		}
-		return
-	}()
-	if len(startAddrs) == 0 && !s.config.NoDefaultBootstrap {
-		addrs, err := bootstrapAddrs(s.bootstrapNodes)
-		if err != nil {
-			return nil, err
-		}
-		for _, addr := range addrs {
-			startAddrs = append(startAddrs, NewAddr(addr))
-		}
-	}
-	if len(startAddrs) == 0 {
-		return nil, errors.New("server has no starting nodes")
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	startAddrs, err := s.traversalStartingAddrs()
+	if err != nil {
+		return nil, err
 	}
 	disc := &Announce{
 		Peers:               make(chan PeersValues, 100),
 		stop:                make(chan struct{}),
 		values:              make(chan PeersValues),
-		triedAddrs:          bloom.NewWithEstimates(1000, 0.5),
+		triedAddrs:          newBloomFilterForTraversal(),
 		server:              s,
-		infoHash:            string(infoHash[:]),
+		infoHash:            int160FromByteArray(infoHash),
 		announcePort:        port,
 		announcePortImplied: impliedPort,
 	}
@@ -142,12 +130,6 @@ func (a *Announce) gotNodeAddr(addr Addr) {
 	if a.server.ipBlocked(addr.UDPAddr().IP) {
 		return
 	}
-	a.server.mu.Lock()
-	if a.server.badNodes.Test([]byte(addr.String())) {
-		a.server.mu.Unlock()
-		return
-	}
-	a.server.mu.Unlock()
 	a.contact(addr)
 }
 
@@ -156,7 +138,6 @@ func (a *Announce) contact(addr Addr) {
 	a.numContacted++
 	a.triedAddrs.Add([]byte(addr.String()))
 	if err := a.getPeers(addr); err != nil {
-		log.Printf("error sending get_peers request to %s: %#v", addr, err)
 		return
 	}
 	a.pending++
@@ -177,23 +158,14 @@ func (a *Announce) responseNode(node krpc.NodeInfo) {
 	a.gotNodeAddr(NewAddr(node.Addr))
 }
 
-func (a *Announce) closingCh() chan struct{} {
-	return a.stop
-}
-
 // Announce to a peer, if appropriate.
-func (a *Announce) maybeAnnouncePeer(to Addr, token, peerId string) {
+func (a *Announce) maybeAnnouncePeer(to Addr, token string, peerId [20]byte) {
+	if !a.server.config.NoSecurity && !NodeIdSecure(peerId, to.UDPAddr().IP) {
+		return
+	}
 	a.server.mu.Lock()
 	defer a.server.mu.Unlock()
-	if !a.server.config.NoSecurity {
-		if len(peerId) != 20 {
-			return
-		}
-		if !NodeIdSecure(peerId, to.UDPAddr().IP) {
-			return
-		}
-	}
-	err := a.server.announcePeer(to, a.infoHash, a.announcePort, token, a.announcePortImplied)
+	err := a.server.announcePeer(to, a.infoHash, a.announcePort, token, a.announcePortImplied, nil)
 	if err != nil {
 		logonce.Stderr.Printf("error announcing peer: %s", err)
 	}
@@ -202,11 +174,7 @@ func (a *Announce) maybeAnnouncePeer(to Addr, token, peerId string) {
 func (a *Announce) getPeers(addr Addr) error {
 	a.server.mu.Lock()
 	defer a.server.mu.Unlock()
-	t, err := a.server.getPeers(addr, a.infoHash)
-	if err != nil {
-		return err
-	}
-	t.SetResponseHandler(func(m krpc.Msg, ok bool) {
+	return a.server.getPeers(addr, a.infoHash, func(m krpc.Msg, err error) {
 		// Register suggested nodes closer to the target info-hash.
 		if m.R != nil {
 			a.mu.Lock()
@@ -217,9 +185,9 @@ func (a *Announce) getPeers(addr Addr) error {
 
 			if vs := m.R.Values; len(vs) != 0 {
 				nodeInfo := krpc.NodeInfo{
-					Addr: t.remoteAddr.UDPAddr(),
+					Addr: addr.UDPAddr(),
+					ID:   *m.SenderID(),
 				}
-				copy(nodeInfo.ID[:], m.SenderID())
 				select {
 				case a.values <- PeersValues{
 					Peers: func() (ret []Peer) {
@@ -234,14 +202,13 @@ func (a *Announce) getPeers(addr Addr) error {
 				}
 			}
 
-			a.maybeAnnouncePeer(addr, m.R.Token, m.SenderID())
+			a.maybeAnnouncePeer(addr, m.R.Token, *m.SenderID())
 		}
 
 		a.mu.Lock()
 		a.transactionClosed()
 		a.mu.Unlock()
 	})
-	return nil
 }
 
 // Corresponds to the "values" key in a get_peers KRPC response. A list of
