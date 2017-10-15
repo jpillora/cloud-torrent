@@ -86,14 +86,14 @@ app.filter("bytes", function(bytes) {
 app.factory("bytes", function() {
   return function(n, d) {
     // set defaults
-    if (typeof n !== "number" || isNaN(n)) n = 0;
+    if (typeof n !== "number" || isNaN(n) || n == 0) return "0 B";
     if (!d || typeof d !== "number") d = 1;
     // set scale index 1000,100000,... becomes 1,2,...
-    var i = Math.floor(Math.floor(Math.log10(n)) / 3);
+    var i = Math.floor(Math.floor(Math.log(n) * Math.LOG10E) / 3);
+    // set rounding factor
     var f = Math.pow(10, d);
-    var s;
-    s = n / Math.pow(10, i * 3);
-    s = Math.round(s * f) / f;
+    // scale n down and round
+    var s = Math.round(n / Math.pow(10, i * 3) * f) / f;
     // concat (no trailing 0s) and choose scale letter
     return (
       s.toString().replace(/\.0+$/, "") +
