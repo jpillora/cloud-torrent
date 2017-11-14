@@ -1,4 +1,4 @@
-<img src="https://cloud.githubusercontent.com/assets/633843/9855504/f30a715c-5b51-11e5-83f3-f4fab03e5459.png" alt="screenshot"/>
+<img src="https://user-images.githubusercontent.com/633843/32198822-e59a0fc4-be1d-11e7-9b92-03ce17ba05ba.png" alt="screenshot"/>
 
 **Cloud torrent** is a a self-hosted remote torrent client, written in Go (golang). You start torrents remotely, which are downloaded as sets of files on the local disk of the server, which are then retrievable or streamable via HTTP.
 
@@ -24,6 +24,8 @@ See [the latest release](https://github.com/jpillora/cloud-torrent/releases/late
 ```
 curl https://i.jpillora.com/cloud-torrent! | bash
 ```
+
+*Tip*: [Auto-run `cloud-torrent` on boot](https://github.com/jpillora/cloud-torrent/wiki/Auto-Run-on-Reboot)
 
 **Docker**
 
@@ -140,8 +142,4 @@ This project is the rewrite of the original [Node version](https://github.com/jp
 
 Credits to @anacrolix for https://github.com/anacrolix/torrent
 
-#### License
-
-Copyright (c) 2016 Jaime Pillora
-
-[Creative Commons Legal Code - Attribution-NonCommercial 3.0 Unported](LICENSE)
+Copyright (c) 2017 Jaime Pillora

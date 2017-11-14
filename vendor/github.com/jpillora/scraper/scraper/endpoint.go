@@ -101,7 +101,7 @@ func (e *Endpoint) Execute(params map[string]string) ([]Result, error) {
 			}
 		})
 	} else {
-		results[0] = e.extract(sel)
+		results = append(results, e.extract(sel))
 	}
 	return results, nil
 }
