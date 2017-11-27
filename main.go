@@ -14,6 +14,8 @@ func main() {
 		Title:      "Cloud Torrent",
 		Port:       3000,
 		ConfigPath: "cloud-torrent.json",
+
+		//HostName:   "example.org", // domain name on which https is enabled
 	}
 
 	o := opts.New(&s)
