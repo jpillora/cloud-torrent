@@ -833,40 +833,40 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"files/cloud-favicon.png": filesCloudFaviconPng,
-	"files/css/Lato/Lato-1.woff": filesCssLatoLato1Woff,
-	"files/css/Lato/Lato-2.woff": filesCssLatoLato2Woff,
-	"files/css/Lato/Lato-3.woff": filesCssLatoLato3Woff,
-	"files/css/Lato/Lato-4.woff": filesCssLatoLato4Woff,
-	"files/css/Lato/Lato.css": filesCssLatoLatoCss,
-	"files/css/app.css": filesCssAppCss,
-	"files/css/sections/downloads.css": filesCssSectionsDownloadsCss,
-	"files/css/sections/omni.css": filesCssSectionsOmniCss,
-	"files/css/sections/torrents.css": filesCssSectionsTorrentsCss,
-	"files/css/semantic.min.css": filesCssSemanticMinCss,
-	"files/css/themes/default/assets/fonts/icons.eot": filesCssThemesDefaultAssetsFontsIconsEot,
-	"files/css/themes/default/assets/fonts/icons.otf": filesCssThemesDefaultAssetsFontsIconsOtf,
-	"files/css/themes/default/assets/fonts/icons.svg": filesCssThemesDefaultAssetsFontsIconsSvg,
-	"files/css/themes/default/assets/fonts/icons.ttf": filesCssThemesDefaultAssetsFontsIconsTtf,
-	"files/css/themes/default/assets/fonts/icons.woff": filesCssThemesDefaultAssetsFontsIconsWoff,
+	"files/cloud-favicon.png":                           filesCloudFaviconPng,
+	"files/css/Lato/Lato-1.woff":                        filesCssLatoLato1Woff,
+	"files/css/Lato/Lato-2.woff":                        filesCssLatoLato2Woff,
+	"files/css/Lato/Lato-3.woff":                        filesCssLatoLato3Woff,
+	"files/css/Lato/Lato-4.woff":                        filesCssLatoLato4Woff,
+	"files/css/Lato/Lato.css":                           filesCssLatoLatoCss,
+	"files/css/app.css":                                 filesCssAppCss,
+	"files/css/sections/downloads.css":                  filesCssSectionsDownloadsCss,
+	"files/css/sections/omni.css":                       filesCssSectionsOmniCss,
+	"files/css/sections/torrents.css":                   filesCssSectionsTorrentsCss,
+	"files/css/semantic.min.css":                        filesCssSemanticMinCss,
+	"files/css/themes/default/assets/fonts/icons.eot":   filesCssThemesDefaultAssetsFontsIconsEot,
+	"files/css/themes/default/assets/fonts/icons.otf":   filesCssThemesDefaultAssetsFontsIconsOtf,
+	"files/css/themes/default/assets/fonts/icons.svg":   filesCssThemesDefaultAssetsFontsIconsSvg,
+	"files/css/themes/default/assets/fonts/icons.ttf":   filesCssThemesDefaultAssetsFontsIconsTtf,
+	"files/css/themes/default/assets/fonts/icons.woff":  filesCssThemesDefaultAssetsFontsIconsWoff,
 	"files/css/themes/default/assets/fonts/icons.woff2": filesCssThemesDefaultAssetsFontsIconsWoff2,
-	"files/css/themes/default/assets/images/flags.png": filesCssThemesDefaultAssetsImagesFlagsPng,
-	"files/index.html": filesIndexHtml,
-	"files/js/config-controller.js": filesJsConfigControllerJs,
-	"files/js/downloads-controller.js": filesJsDownloadsControllerJs,
-	"files/js/omni-controller.js": filesJsOmniControllerJs,
-	"files/js/run.js": filesJsRunJs,
-	"files/js/semantic-checkbox.js": filesJsSemanticCheckboxJs,
-	"files/js/torrents-controller.js": filesJsTorrentsControllerJs,
-	"files/js/utils.js": filesJsUtilsJs,
-	"files/js/vendor/angular.min.js": filesJsVendorAngularMinJs,
-	"files/js/vendor/moment.min.js": filesJsVendorMomentMinJs,
-	"files/js/vendor/query-string.js": filesJsVendorQueryStringJs,
-	"files/template/config.html": filesTemplateConfigHtml,
-	"files/template/download-tree.html": filesTemplateDownloadTreeHtml,
-	"files/template/downloads.html": filesTemplateDownloadsHtml,
-	"files/template/omni.html": filesTemplateOmniHtml,
-	"files/template/torrents.html": filesTemplateTorrentsHtml,
+	"files/css/themes/default/assets/images/flags.png":  filesCssThemesDefaultAssetsImagesFlagsPng,
+	"files/index.html":                                  filesIndexHtml,
+	"files/js/config-controller.js":                     filesJsConfigControllerJs,
+	"files/js/downloads-controller.js":                  filesJsDownloadsControllerJs,
+	"files/js/omni-controller.js":                       filesJsOmniControllerJs,
+	"files/js/run.js":                                   filesJsRunJs,
+	"files/js/semantic-checkbox.js":                     filesJsSemanticCheckboxJs,
+	"files/js/torrents-controller.js":                   filesJsTorrentsControllerJs,
+	"files/js/utils.js":                                 filesJsUtilsJs,
+	"files/js/vendor/angular.min.js":                    filesJsVendorAngularMinJs,
+	"files/js/vendor/moment.min.js":                     filesJsVendorMomentMinJs,
+	"files/js/vendor/query-string.js":                   filesJsVendorQueryStringJs,
+	"files/template/config.html":                        filesTemplateConfigHtml,
+	"files/template/download-tree.html":                 filesTemplateDownloadTreeHtml,
+	"files/template/downloads.html":                     filesTemplateDownloadsHtml,
+	"files/template/omni.html":                          filesTemplateOmniHtml,
+	"files/template/torrents.html":                      filesTemplateTorrentsHtml,
 }
 
 // AssetDir returns the file names below a certain
@@ -908,6 +908,7 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
 	"files": &bintree{nil, map[string]*bintree{
 		"cloud-favicon.png": &bintree{filesCloudFaviconPng, map[string]*bintree{}},
@@ -917,24 +918,24 @@ var _bintree = &bintree{nil, map[string]*bintree{
 				"Lato-2.woff": &bintree{filesCssLatoLato2Woff, map[string]*bintree{}},
 				"Lato-3.woff": &bintree{filesCssLatoLato3Woff, map[string]*bintree{}},
 				"Lato-4.woff": &bintree{filesCssLatoLato4Woff, map[string]*bintree{}},
-				"Lato.css": &bintree{filesCssLatoLatoCss, map[string]*bintree{}},
+				"Lato.css":    &bintree{filesCssLatoLatoCss, map[string]*bintree{}},
 			}},
 			"app.css": &bintree{filesCssAppCss, map[string]*bintree{}},
 			"sections": &bintree{nil, map[string]*bintree{
 				"downloads.css": &bintree{filesCssSectionsDownloadsCss, map[string]*bintree{}},
-				"omni.css": &bintree{filesCssSectionsOmniCss, map[string]*bintree{}},
-				"torrents.css": &bintree{filesCssSectionsTorrentsCss, map[string]*bintree{}},
+				"omni.css":      &bintree{filesCssSectionsOmniCss, map[string]*bintree{}},
+				"torrents.css":  &bintree{filesCssSectionsTorrentsCss, map[string]*bintree{}},
 			}},
 			"semantic.min.css": &bintree{filesCssSemanticMinCss, map[string]*bintree{}},
 			"themes": &bintree{nil, map[string]*bintree{
 				"default": &bintree{nil, map[string]*bintree{
 					"assets": &bintree{nil, map[string]*bintree{
 						"fonts": &bintree{nil, map[string]*bintree{
-							"icons.eot": &bintree{filesCssThemesDefaultAssetsFontsIconsEot, map[string]*bintree{}},
-							"icons.otf": &bintree{filesCssThemesDefaultAssetsFontsIconsOtf, map[string]*bintree{}},
-							"icons.svg": &bintree{filesCssThemesDefaultAssetsFontsIconsSvg, map[string]*bintree{}},
-							"icons.ttf": &bintree{filesCssThemesDefaultAssetsFontsIconsTtf, map[string]*bintree{}},
-							"icons.woff": &bintree{filesCssThemesDefaultAssetsFontsIconsWoff, map[string]*bintree{}},
+							"icons.eot":   &bintree{filesCssThemesDefaultAssetsFontsIconsEot, map[string]*bintree{}},
+							"icons.otf":   &bintree{filesCssThemesDefaultAssetsFontsIconsOtf, map[string]*bintree{}},
+							"icons.svg":   &bintree{filesCssThemesDefaultAssetsFontsIconsSvg, map[string]*bintree{}},
+							"icons.ttf":   &bintree{filesCssThemesDefaultAssetsFontsIconsTtf, map[string]*bintree{}},
+							"icons.woff":  &bintree{filesCssThemesDefaultAssetsFontsIconsWoff, map[string]*bintree{}},
 							"icons.woff2": &bintree{filesCssThemesDefaultAssetsFontsIconsWoff2, map[string]*bintree{}},
 						}},
 						"images": &bintree{nil, map[string]*bintree{
@@ -946,25 +947,25 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		}},
 		"index.html": &bintree{filesIndexHtml, map[string]*bintree{}},
 		"js": &bintree{nil, map[string]*bintree{
-			"config-controller.js": &bintree{filesJsConfigControllerJs, map[string]*bintree{}},
+			"config-controller.js":    &bintree{filesJsConfigControllerJs, map[string]*bintree{}},
 			"downloads-controller.js": &bintree{filesJsDownloadsControllerJs, map[string]*bintree{}},
-			"omni-controller.js": &bintree{filesJsOmniControllerJs, map[string]*bintree{}},
-			"run.js": &bintree{filesJsRunJs, map[string]*bintree{}},
-			"semantic-checkbox.js": &bintree{filesJsSemanticCheckboxJs, map[string]*bintree{}},
-			"torrents-controller.js": &bintree{filesJsTorrentsControllerJs, map[string]*bintree{}},
-			"utils.js": &bintree{filesJsUtilsJs, map[string]*bintree{}},
+			"omni-controller.js":      &bintree{filesJsOmniControllerJs, map[string]*bintree{}},
+			"run.js":                  &bintree{filesJsRunJs, map[string]*bintree{}},
+			"semantic-checkbox.js":    &bintree{filesJsSemanticCheckboxJs, map[string]*bintree{}},
+			"torrents-controller.js":  &bintree{filesJsTorrentsControllerJs, map[string]*bintree{}},
+			"utils.js":                &bintree{filesJsUtilsJs, map[string]*bintree{}},
 			"vendor": &bintree{nil, map[string]*bintree{
-				"angular.min.js": &bintree{filesJsVendorAngularMinJs, map[string]*bintree{}},
-				"moment.min.js": &bintree{filesJsVendorMomentMinJs, map[string]*bintree{}},
+				"angular.min.js":  &bintree{filesJsVendorAngularMinJs, map[string]*bintree{}},
+				"moment.min.js":   &bintree{filesJsVendorMomentMinJs, map[string]*bintree{}},
 				"query-string.js": &bintree{filesJsVendorQueryStringJs, map[string]*bintree{}},
 			}},
 		}},
 		"template": &bintree{nil, map[string]*bintree{
-			"config.html": &bintree{filesTemplateConfigHtml, map[string]*bintree{}},
+			"config.html":        &bintree{filesTemplateConfigHtml, map[string]*bintree{}},
 			"download-tree.html": &bintree{filesTemplateDownloadTreeHtml, map[string]*bintree{}},
-			"downloads.html": &bintree{filesTemplateDownloadsHtml, map[string]*bintree{}},
-			"omni.html": &bintree{filesTemplateOmniHtml, map[string]*bintree{}},
-			"torrents.html": &bintree{filesTemplateTorrentsHtml, map[string]*bintree{}},
+			"downloads.html":     &bintree{filesTemplateDownloadsHtml, map[string]*bintree{}},
+			"omni.html":          &bintree{filesTemplateOmniHtml, map[string]*bintree{}},
+			"torrents.html":      &bintree{filesTemplateTorrentsHtml, map[string]*bintree{}},
 		}},
 	}},
 }}
@@ -1015,4 +1016,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-

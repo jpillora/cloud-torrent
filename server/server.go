@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"net"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/jpillora/cloud-torrent/engine"
@@ -23,6 +24,7 @@ import (
 	"github.com/jpillora/scraper/scraper"
 	"github.com/jpillora/velox"
 	"github.com/skratchdot/open-golang/open"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 //Server is the "State" portion of the diagram
@@ -33,8 +35,7 @@ type Server struct {
 	Host       string `help:"Listening interface (default all)"`
 	Auth       string `help:"Optional basic auth in form 'user:password'" env:"AUTH"`
 	ConfigPath string `help:"Configuration file path"`
-	KeyPath    string `help:"TLS Key file path"`
-	CertPath   string `help:"TLS Certicate file path" short:"r"`
+	HostName   string `help: HostName for SSL`
 	Log        bool   `help:"Enable request logging"`
 	Open       bool   `help:"Open now with your default browser"`
 	//http handlers
@@ -63,9 +64,10 @@ type Server struct {
 
 // Run the server
 func (s *Server) Run(version string) error {
-	isTLS := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
-	if isTLS && (s.CertPath == "" || s.KeyPath == "") {
-		return fmt.Errorf("You must provide both key and cert paths")
+	isTLS := s.HostName != ""
+	_, err := net.LookupHost(s.HostName)
+	if err != nil {
+		return fmt.Errorf("Couldnt lookup provided domain name")
 	}
 	s.state.Stats.Title = s.Title
 	s.state.Stats.Version = version
@@ -185,7 +187,17 @@ func (s *Server) Run(version string) error {
 		Handler: h,
 	}
 	if isTLS {
-		return server.ListenAndServeTLS(s.CertPath, s.KeyPath)
+		certManager := autocert.Manager{
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(s.HostName),
+			Cache:      autocert.DirCache("certs"), //folder for storing certificates
+		}
+
+		server.TLSConfig = &tls.Config{
+			GetCertificate: certManager.GetCertificate,
+		}
+
+		return server.ListenAndServeTLS("", "")
 	}
 	return server.ListenAndServe()
 }

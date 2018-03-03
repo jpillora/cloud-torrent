@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"flag"
 
 	"github.com/jpillora/cloud-torrent/server"
 	"github.com/jpillora/opts"
@@ -10,10 +11,17 @@ import (
 var VERSION = "0.0.0-src" //set with ldflags
 
 func main() {
+	hostName := flag.String("h", "",  "Host name for SSL")		
+	flag.Parse()
+
 	s := server.Server{
 		Title:      "Cloud Torrent",
 		Port:       3000,
-		ConfigPath: "cloud-torrent.json",
+		ConfigPath: "cloud-torrent.json",		
+	}
+
+	if hostName != "" {
+		s.HostName = *hostName
 	}
 
 	o := opts.New(&s)
