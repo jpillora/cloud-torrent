@@ -59,16 +59,16 @@
 
 /*omni upload input icon*/
 .upload-label {
-	padding: 10px 45px;
+	padding: 10px;
 	cursor: pointer;
 }
 .upload-label .icon {
 	margin-top: 8px;
 }
-
 .upload-icon{
 	z-index: 99;
-	margin-left: -30px;
+	position: absolute;
+	right: 0;
 }
 .upload-icon input {
 	display: none;

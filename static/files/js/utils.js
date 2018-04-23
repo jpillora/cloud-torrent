@@ -5,15 +5,14 @@ app.factory("api", function($rootScope, $http, reqerr) {
   var request = function(action, data) {
     var url = "api/" + action;
     $rootScope.apiing = true;
-    return $http
-      .post(url, data)
-      .error(reqerr)
-      .finally(function() {
-        $rootScope.apiing = false;
-      });
+    return $http({url: url, method: 'POST', data: data, transformRequest: []})
+        .error(reqerr)
+        .finally(function () {
+            $rootScope.apiing = false;
+        });
   };
   var api = {};
-  var actions = ["configure", "magnet", "url", "torrent", "file"];
+  var actions = ["configure", "magnet", "url", "torrent", "file","torrentfile"];
   actions.forEach(function(action) {
     api[action] = request.bind(null, action);
   });

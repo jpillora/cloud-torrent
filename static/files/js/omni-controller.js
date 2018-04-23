@@ -200,4 +200,18 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
       $scope.omnierr = err;
     });
   };
+
+  $scope.uploadFile = function (element) {
+    if (element.files.length === 0) {
+        alert("no files be selected")
+    } else {
+        var reader = new FileReader();
+        reader.onload = function () {
+            var data = new Uint8Array(reader.result);
+            element.value = null;
+            api.torrentfile(data);
+        };
+        reader.readAsArrayBuffer(element.files[0]);
+    }
+  };
 });
