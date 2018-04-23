@@ -56,3 +56,20 @@
 .omni .form {
 	margin-top: 5px;
 }
+
+/*omni upload input icon*/
+.upload-label {
+	padding: 10px 45px;
+	cursor: pointer;
+}
+.upload-label .icon {
+	margin-top: 8px;
+}
+
+.upload-icon{
+	z-index: 99;
+	margin-left: -30px;
+}
+.upload-icon input {
+	display: none;
+}
