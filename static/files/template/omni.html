@@ -39,13 +39,14 @@
 <!-- OMNI BAR -->
 <div class="omni ui fluid icon input">
   <input
-    placeholder="Enter search query, torrent URL or magnet URI"
+    placeholder="Enter search query, torrent URL, magnet URI or upload from right button"
     ng-model="inputs.omni"
     ng-change="parse()"
     ng-enter="submitOmni()"/>
-  <i class="icon"
-    ng-class="{search: mode.search, magnet: mode.magnet || mode.torrent,
-          help: !mode.search && !mode.magnet && !mode.torrent}"></i>
+    <div class="upload-icon">
+        <input type="file" name="upload-input" id="upload-input" accept=".torrent" onchange="angular.element(this).scope().uploadFile(this)" />
+        <label for="upload-input" class="upload-label"><i class="icon" ng-class="{search: mode.search, magnet: mode.magnet || mode.torrent, upload: !mode.search && !mode.magnet && !mode.torrent}"></i></label>
+    </div>
 </div>
 
 <!-- MAGNET FIELD ERROR -->
