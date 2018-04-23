@@ -44,7 +44,7 @@
     ng-change="parse()"
     ng-enter="submitOmni()"/>
     <div class="upload-icon">
-        <input type="file" name="upload-input" id="upload-input" accept=".torrent" onchange="angular.element(this).scope().uploadFile(this)" />
+        <input type="file" name="upload-input"  ng-disabled="mode.search || mode.magnet || mode.torrent" id="upload-input" accept=".torrent" onchange="angular.element(this).scope().uploadFile(this)" />
         <label for="upload-input" class="upload-label"><i class="icon" ng-class="{search: mode.search, magnet: mode.magnet || mode.torrent, upload: !mode.search && !mode.magnet && !mode.torrent}"></i></label>
     </div>
 </div>
