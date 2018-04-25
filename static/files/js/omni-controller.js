@@ -201,6 +201,7 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
     });
   };
 
+
   $scope.uploadFile = function (element) {
     if (element.files.length === 0) {
         alert("no files be selected")
@@ -214,4 +215,31 @@ app.controller("OmniController", function($scope, $rootScope, storage, api, sear
         reader.readAsArrayBuffer(element.files[0]);
     }
   };
+
+  $scope.dropUploadFile = function (status,element, event) {
+      event.stopPropagation();
+      event.preventDefault();
+      if (status === 'genter') {
+          element.className = 'dragging';
+      } else if (status === 'leave') {
+          element.className = '';
+      } else if (status === 'over') {
+          element.className = 'dragging';
+      } else if  (status === 'drop') {
+          element.className = '';
+          var files = [].slice.call(event.dataTransfer.files);
+          if (files.length === 0 || !files[0].name.endsWith('.torrent')) {
+              alert("file must be a .torrent file");
+              return;
+          }
+          var reader = new FileReader();
+          reader.onload = function () {
+              var data = new Uint8Array(reader.result);
+              element.value = null;
+              api.torrentfile(data);
+          };
+          reader.readAsArrayBuffer(files[0]);
+      }
+  };
+
 });

@@ -1,5 +1,5 @@
-
-
+<!-- dropper uploader -->
+<div id="dropper" ondragenter="angular.element(this).scope().dropUploadFile('genter',this, event)" ondragleave="angular.element(this).scope().dropUploadFile('leave',this, event)" ondragover="angular.element(this).scope().dropUploadFile('over',this, event)" ondrop="angular.element(this).scope().dropUploadFile('drop',this, event)"></div>
 <!-- MAGNET EDITOR -->
 <div class="ui segment" ng-show="edit" >
   <form class="ui edit form">
@@ -39,7 +39,7 @@
 <!-- OMNI BAR -->
 <div class="omni ui fluid icon input">
   <input
-    placeholder="Enter search query, torrent URL, magnet URI or upload from right button"
+    placeholder="Enter search query, torrent URL, magnet URI or upload a .torrent file"
     ng-model="inputs.omni"
     ng-change="parse()"
     ng-enter="submitOmni()"/>
