@@ -1,5 +1,3 @@
-<!-- dropper uploader -->
-<div id="dropper" ondragenter="angular.element(this).scope().dropUploadFile('genter',this, event)" ondragleave="angular.element(this).scope().dropUploadFile('leave',this, event)" ondragover="angular.element(this).scope().dropUploadFile('over',this, event)" ondrop="angular.element(this).scope().dropUploadFile('drop',this, event)"></div>
 <!-- MAGNET EDITOR -->
 <div class="ui segment" ng-show="edit" >
   <form class="ui edit form">
@@ -42,7 +40,12 @@
     placeholder="Enter search query, torrent URL, magnet URI or upload a .torrent file"
     ng-model="inputs.omni"
     ng-change="parse()"
-    ng-enter="submitOmni()"/>
+    ng-enter="submitOmni()"
+    ondragenter="angular.element(this).scope().dropUploadFile('genter',this, event)"
+    ondragleave="angular.element(this).scope().dropUploadFile('leave',this, event)"
+    ondragover="angular.element(this).scope().dropUploadFile('over',this, event)"
+    ondrop="angular.element(this).scope().dropUploadFile('drop',this, event)"
+  />
     <div class="upload-icon">
         <input type="file" name="upload-input"  ng-disabled="mode.search || mode.magnet || mode.torrent" id="upload-input" accept=".torrent" onchange="angular.element(this).scope().uploadFile(this)" />
         <label for="upload-input" class="upload-label"><i class="icon" ng-class="{search: mode.search, magnet: mode.magnet || mode.torrent, upload: !mode.search && !mode.magnet && !mode.torrent}"></i></label>

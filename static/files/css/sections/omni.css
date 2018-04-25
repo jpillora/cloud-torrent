@@ -58,6 +58,7 @@
 }
 
 /*omni upload input icon*/
+
 .upload-label {
 	padding: 10px;
 	cursor: pointer;
@@ -74,15 +75,7 @@
 	display: none;
 }
 
-#dropper {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-}
-
-#dropper.dragging {
+.omni input.dragging {
 	opacity: 0.5;
 	background: lightblue;
 	z-index: 100;
