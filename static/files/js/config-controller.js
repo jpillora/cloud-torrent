@@ -7,6 +7,7 @@ app.controller("ConfigController", function($scope, $rootScope, storage, api) {
     $scope.edit = b === undefined ? !$scope.edit : b;
   };
   $scope.submitConfig = function() {
-    api.configure($rootScope.state.Config);
+    var data = JSON.stringify($rootScope.state.Config);
+    api.configure(data);
   };
 });

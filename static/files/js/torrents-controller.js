@@ -14,8 +14,4 @@ app.controller("TorrentsController", function($scope, $rootScope, api) {
   $scope.downloading = function(f) {
     return f.Completed > 0 && f.Completed < f.Chunks;
   };
-
-  // $scope.downloading = function(f) {
-  //   return f.Completed > 0 && f.Completed < f.Chunks;
-  // };
 });

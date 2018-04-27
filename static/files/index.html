@@ -15,11 +15,11 @@
 </head>
 
 <body class="app">
-	<div ng-cloak class="cage">
+	<div ng-cloak class="cage" ondropfile="uploadTorrent($event)" placeholder="Drop torrent files here">
 		<div ng-if="!connected" class="connect-warning ui inverted vertical masthead center aligned segment">
 			<div class="ui text container">
 				<h1 class="ui inverted header">
-					Disconnected
+					{{ hasConnected ? 'Disconnected' : 'Connecting' }}
 				</h1>
 				<h1 class="ui inverted header">
 					<i class="red lightning icon"></i>
