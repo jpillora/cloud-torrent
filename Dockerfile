@@ -10,6 +10,7 @@ ENV GOLANG_SRC_URL https://golang.org/dl/go$GOLANG_VERSION.src.tar.gz
 ENV GOLANG_SRC_SHA256 a84afc9dc7d64fe0fa84d4d735e2ece23831a22117b50dafc75c1484f1cb550e
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 ENV CGO_ENABLED 0
+ENV AUTH 'admin:admin'
 # in one step (to prevent creating superfluous layers):
 # 1. fetch and install temporary build programs,
 # 2. build cloud-torrent alpine binary
@@ -42,4 +43,4 @@ RUN set -ex \
 	&& apk del .build-deps \
 	&& rm -rf /no-pic.patch $GOPATH /usr/local/go
 #run!
-ENTRYPOINT ["cloud-torrent"]
+ENTRYPOINT ["/bin/sh", "-c","cloud-torrent","--auth","$AUTH"]
