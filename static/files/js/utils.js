@@ -5,15 +5,26 @@ app.factory("api", function($rootScope, $http, reqerr) {
   var request = function(action, data) {
     var url = "api/" + action;
     $rootScope.apiing = true;
-    return $http
-      .post(url, data)
+    return $http({
+      method: "POST",
+      url: url,
+      data: data,
+      transformRequest: []
+    })
       .error(reqerr)
       .finally(function() {
         $rootScope.apiing = false;
       });
   };
   var api = {};
-  var actions = ["configure", "magnet", "url", "torrent", "file"];
+  var actions = [
+    "configure",
+    "magnet",
+    "url",
+    "torrent",
+    "file",
+    "torrentfile"
+  ];
   actions.forEach(function(action) {
     api[action] = request.bind(null, action);
   });
@@ -23,10 +34,10 @@ app.factory("api", function($rootScope, $http, reqerr) {
 app.factory("search", function($rootScope, $http, reqerr) {
   return {
     all: function(provider, query, page) {
-      var params = {query: query};
+      var params = { query: query };
       if (page !== undefined) params.page = page;
       $rootScope.searching = true;
-      var req = $http.get("search/" + provider, {params: params});
+      var req = $http.get("search/" + provider, { params: params });
       req.error(reqerr);
       req.finally(function() {
         $rootScope.searching = false;
@@ -34,7 +45,7 @@ app.factory("search", function($rootScope, $http, reqerr) {
       return req;
     },
     one: function(provider, path) {
-      var opts = {params: {item: path}};
+      var opts = { params: { item: path } };
       $rootScope.searching = true;
       var req = $http.get("search/" + provider + "/item", opts);
       req.error(reqerr);
@@ -63,12 +74,13 @@ app.filter("keys", function() {
 
 app.filter("addspaces", function() {
   return function(s) {
-    if (typeof s !== "string") return s;
-    return s
-      .replace(/([A-Z]+[a-z]*)/g, function(_, word) {
-        return " " + word;
-      })
-      .replace(/^\ /, "");
+    return typeof s !== "string"
+      ? s
+      : s
+          .replace(/([A-Z]+[a-z]*)/g, function(_, word) {
+            return " " + word;
+          })
+          .replace(/^\ /, "");
   };
 });
 
@@ -132,5 +144,86 @@ app.directive("jpSrc", function() {
     scope.$watch(attrs.jpSrc, function(src) {
       element.attr("src", src);
     });
+  };
+});
+
+app.directive("ondropfile", function() {
+  return {
+    restrict: "A",
+    link: function(scope, elem, attrs) {
+      if (!window.FileReader) {
+        return console.info("File API not available");
+      }
+      var placeholder = attrs.placeholder || "Drop your file here";
+      //prepare cover
+      var cover = angular.element("<div>");
+      cover.addClass("file-drop-cover");
+      var dots = angular.element("<div>");
+      dots.addClass("dots");
+      cover.append(dots);
+      var msg = angular.element("<div>");
+      msg.addClass("msg");
+      msg.text(placeholder);
+      dots.append(msg);
+      elem.prepend(cover);
+      //bind to events
+      elem.on("dragenter", function(e) {
+        cover.addClass("shown");
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+      });
+      function remove() {
+        cover.removeClass("shown");
+      }
+      elem.on("drop", function(event) {
+        event.preventDefault();
+        scope.$eval(attrs.ondropfile, {
+          $event: event
+        });
+        remove();
+      });
+      elem.on("dragover", function(e) {
+        //move "drop here"
+        var y = e.pageY - elem[0].offsetTop - 60;
+        msg.css({ top: y + "px" });
+        //queue remove
+        clearTimeout(remove.t);
+        remove.t = setTimeout(remove, 300);
+        e.preventDefault();
+      });
+    }
+  };
+});
+
+app.directive("onfileclick", function() {
+  return {
+    restrict: "A",
+    link: function(scope, elem, attrs) {
+      if (!window.FileReader) {
+        console.info("File API not available");
+        return;
+      }
+      //create hidden file input
+      var file = angular.element("<input type='file'>");
+      if ("multiple" in attrs) {
+        file.attr("multiple", attrs.multiple);
+      }
+      if ("accept" in attrs) {
+        file.attr("accept", attrs.accept);
+      }
+      file.css("display", "none");
+      file.on("change", function(event) {
+        event.preventDefault();
+        scope.$eval(attrs.onfileclick, {
+          $event: event
+        });
+        file[0].value = null;
+      });
+      elem.append(file);
+      //proxy click from elem to file
+      elem.on("click", function() {
+        file[0].click();
+      });
+    }
   };
 });

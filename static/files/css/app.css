@@ -140,3 +140,46 @@ table.tcld .name {
 .uploads .upload .size {
   width: 100px;
 }
+
+[onfileclick] {
+  cursor: pointer;
+}
+
+[ondropfile] {
+  position: relative;
+}
+
+[ondropfile] .file-drop-cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 102%;
+  margin-top: 1%;
+  margin-left: -1%;
+  pointer-events: none;
+  background: rgba(173, 216, 230, 0.5);
+  opacity: 0;
+  transition: opacity ease 0.3s;
+  z-index: 5;
+  overflow: hidden;
+}
+
+[ondropfile] .file-drop-cover.shown {
+  opacity: 1;
+}
+
+[ondropfile] .file-drop-cover .dots {
+  height: 100%;
+  border: 1px dotted #333;
+  border-radius: 3px;
+}
+
+[ondropfile] .file-drop-cover .dots .msg {
+  position: absolute;
+  text-align: center;
+  font-size: 2em;
+  left: 0;
+  top: 30px;
+  width: 100%;
+}
