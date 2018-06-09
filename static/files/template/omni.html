@@ -42,8 +42,9 @@
 <!-- START TORRENT BUTTONS -->
 <div class="search buttons" ng-show="mode.torrent">
   <div ng-click="submitTorrent()" class="ui tiny blue button" ng-class="{loading: apiing, disabled: apiing }">
-    <span ng-show="mode.torrent">Start Torrent</span>
+    <span>Start Torrent</span>
   </div>
+  <div ng-click="resetOmni()" class="ui tiny button">Reset</div>
 </div>
 
 <!-- SEARCH BUTTONS -->
@@ -56,6 +57,7 @@
     <span ng-show="noResults">No results!</span>
     <span ng-show="!noResults">Search</span>
   </div>
+  <div ng-click="resetOmni()" class="ui tiny button">Reset</div>
 </div>
 
 <div class="ui error message" ng-show="mode.search && !inputs.provider">
@@ -94,7 +96,8 @@
   <div ng-click="submitTorrent()" class="ui tiny blue button" ng-class="{loading: apiing}">
     Load Magnet
   </div>
-  <div ng-show="mode.magnet" ng-click="edit = !edit" ng-class="{green: edit}" class="ui tiny button">Edit</div>
+  <div ng-click="edit = !edit" ng-class="{green: edit}" class="ui tiny button">Edit</div>
+  <div ng-show="!edit" ng-click="resetOmni()" class="ui tiny button">Reset</div>
 </div>
 
 <!-- TORRENT BUTTON -->
