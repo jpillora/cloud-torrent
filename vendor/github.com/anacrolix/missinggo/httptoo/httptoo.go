@@ -37,3 +37,6 @@ func NukeCookie(w http.ResponseWriter, r *http.Request, name, path string) {
 func EncodeQuotedString(s string) string {
 	return strconv.Quote(s)
 }
+
+// https://httpstatuses.com/499
+const StatusClientCancelledRequest = 499

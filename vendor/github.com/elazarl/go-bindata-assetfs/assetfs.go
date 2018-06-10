@@ -146,8 +146,10 @@ func (fs *AssetFS) Open(name string) (http.File, error) {
 	}
 	if b, err := fs.Asset(name); err == nil {
 		timestamp := defaultFileTimestamp
-		if info, err := fs.AssetInfo(name); err == nil {
-			timestamp = info.ModTime()
+		if fs.AssetInfo != nil {
+			if info, err := fs.AssetInfo(name); err == nil {
+				timestamp = info.ModTime()
+			}
 		}
 		return NewAssetFile(name, b, timestamp), nil
 	}

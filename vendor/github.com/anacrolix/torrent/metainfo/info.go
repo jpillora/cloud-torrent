@@ -66,6 +66,8 @@ func (info *Info) BuildFromFilePath(root string) (err error) {
 	return
 }
 
+// Concatenates all the files in the torrent into w. open is a function that
+// gets at the contents of the given file.
 func (info *Info) writeFiles(w io.Writer, open func(fi FileInfo) (io.ReadCloser, error)) error {
 	for _, fi := range info.UpvertedFiles() {
 		r, err := open(fi)
@@ -74,14 +76,15 @@ func (info *Info) writeFiles(w io.Writer, open func(fi FileInfo) (io.ReadCloser,
 		}
 		wn, err := io.CopyN(w, r, fi.Length)
 		r.Close()
-		if wn != fi.Length || err != nil {
-			return fmt.Errorf("error hashing %v: %s", fi, err)
+		if wn != fi.Length {
+			return fmt.Errorf("error copying %v: %s", fi, err)
 		}
 	}
 	return nil
 }
 
-// Set info.Pieces by hashing info.Files.
+// Sets Pieces (the block of piece hashes in the Info) by using the passed
+// function to get at the torrent data.
 func (info *Info) GeneratePieces(open func(fi FileInfo) (io.ReadCloser, error)) error {
 	if info.PieceLength == 0 {
 		return errors.New("piece length must be non-zero")

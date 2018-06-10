@@ -61,3 +61,53 @@ func uint16SliceAsByteSlice(slice []uint16) []byte {
 func (bc *bitmapContainer) asLittleEndianByteSlice() []byte {
 	return uint64SliceAsByteSlice(bc.bitmap)
 }
+
+// Deserialization code follows
+
+func byteSliceAsUint16Slice(slice []byte) []uint16 {
+	if len(slice)%2 != 0 {
+		panic("Slice size should be divisible by 2")
+	}
+
+	// make a new slice header
+	header := *(*reflect.SliceHeader)(unsafe.Pointer(&slice))
+
+	// update its capacity and length
+	header.Len /= 2
+	header.Cap /= 2
+
+	// return it
+	return *(*[]uint16)(unsafe.Pointer(&header))
+}
+
+func byteSliceAsUint64Slice(slice []byte) []uint64 {
+	if len(slice)%8 != 0 {
+		panic("Slice size should be divisible by 8")
+	}
+
+	// make a new slice header
+	header := *(*reflect.SliceHeader)(unsafe.Pointer(&slice))
+
+	// update its capacity and length
+	header.Len /= 8
+	header.Cap /= 8
+
+	// return it
+	return *(*[]uint64)(unsafe.Pointer(&header))
+}
+
+func byteSliceAsInterval16Slice(slice []byte) []interval16 {
+	if len(slice)%4 != 0 {
+		panic("Slice size should be divisible by 4")
+	}
+
+	// make a new slice header
+	header := *(*reflect.SliceHeader)(unsafe.Pointer(&slice))
+
+	// update its capacity and length
+	header.Len /= 4
+	header.Cap /= 4
+
+	// return it
+	return *(*[]interval16)(unsafe.Pointer(&header))
+}

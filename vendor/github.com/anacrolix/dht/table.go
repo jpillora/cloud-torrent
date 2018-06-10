@@ -81,7 +81,9 @@ func (tbl *table) closestNodes(k int, target int160, filter func(*node) bool) (r
 		}
 	}(); bi >= 0 && len(ret) < k; bi-- {
 		for n := range tbl.buckets[bi].nodes {
-			ret = append(ret, n)
+			if filter(n) {
+				ret = append(ret, n)
+			}
 		}
 	}
 	// TODO: Keep only the closest.

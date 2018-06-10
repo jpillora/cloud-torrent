@@ -35,7 +35,7 @@ func (n *node) idString() string {
 }
 
 func (n *node) NodeInfo() (ret krpc.NodeInfo) {
-	ret.Addr = n.addr.UDPAddr()
+	ret.Addr = n.addr.KRPC()
 	if n := copy(ret.ID[:], n.idString()); n != 20 {
 		panic(n)
 	}

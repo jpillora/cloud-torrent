@@ -3,6 +3,7 @@
 package cpu
 
 import (
+	"context"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -21,7 +22,11 @@ const (
 // default value. from time.h
 var ClocksPerSec = float64(128)
 
-func CPUTimes(percpu bool) ([]CPUTimesStat, error) {
+func Times(percpu bool) ([]TimesStat, error) {
+	return TimesWithContext(context.Background(), percpu)
+}
+
+func TimesWithContext(ctx context.Context, percpu bool) ([]TimesStat, error) {
 	if percpu {
 		return perCPUTimes()
 	}
@@ -30,15 +35,22 @@ func CPUTimes(percpu bool) ([]CPUTimesStat, error) {
 }
 
 // Returns only one CPUInfoStat on FreeBSD
-func CPUInfo() ([]CPUInfoStat, error) {
-	var ret []CPUInfoStat
+func Info() ([]InfoStat, error) {
+	return InfoWithContext(context.Background())
+}
 
-	out, err := exec.Command("/usr/sbin/sysctl", "machdep.cpu").Output()
+func InfoWithContext(ctx context.Context) ([]InfoStat, error) {
+	var ret []InfoStat
+	sysctl, err := exec.LookPath("/usr/sbin/sysctl")
+	if err != nil {
+		return ret, err
+	}
+	out, err := invoke.CommandWithContext(ctx, sysctl, "machdep.cpu")
 	if err != nil {
 		return ret, err
 	}
 
-	c := CPUInfoStat{}
+	c := InfoStat{}
 	for _, line := range strings.Split(string(out), "\n") {
 		values := strings.Fields(line)
 		if len(values) < 1 {
@@ -87,17 +99,17 @@ func CPUInfo() ([]CPUInfoStat, error) {
 
 	// Use the rated frequency of the CPU. This is a static value and does not
 	// account for low power or Turbo Boost modes.
-	out, err = exec.Command("/usr/sbin/sysctl", "hw.cpufrequency").Output()
+	out, err = invoke.CommandWithContext(ctx, sysctl, "hw.cpufrequency")
 	if err != nil {
 		return ret, err
 	}
 
 	values := strings.Fields(string(out))
-	mhz, err := strconv.ParseFloat(values[1], 64)
+	hz, err := strconv.ParseFloat(values[1], 64)
 	if err != nil {
 		return ret, err
 	}
-	c.Mhz = mhz / 1000000.0
+	c.Mhz = hz / 1000000.0
 
 	return append(ret, c), nil
 }

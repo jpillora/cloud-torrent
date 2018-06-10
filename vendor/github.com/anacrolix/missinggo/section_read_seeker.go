@@ -1,9 +1,9 @@
 package missinggo
 
 import (
+	"context"
 	"fmt"
 	"io"
-	"os"
 )
 
 type sectionReadSeeker struct {
@@ -11,14 +11,19 @@ type sectionReadSeeker struct {
 	off, size int64
 }
 
+type ReadSeekContexter interface {
+	io.ReadSeeker
+	ReadContexter
+}
+
 // Returns a ReadSeeker on a section of another ReadSeeker.
-func NewSectionReadSeeker(base io.ReadSeeker, off, size int64) (ret io.ReadSeeker) {
+func NewSectionReadSeeker(base io.ReadSeeker, off, size int64) (ret ReadSeekContexter) {
 	ret = &sectionReadSeeker{
 		base: base,
 		off:  off,
 		size: size,
 	}
-	seekOff, err := ret.Seek(0, os.SEEK_SET)
+	seekOff, err := ret.Seek(0, io.SeekStart)
 	if err != nil {
 		panic(err)
 	}
@@ -30,12 +35,12 @@ func NewSectionReadSeeker(base io.ReadSeeker, off, size int64) (ret io.ReadSeeke
 
 func (me *sectionReadSeeker) Seek(off int64, whence int) (ret int64, err error) {
 	switch whence {
-	case os.SEEK_SET:
+	case io.SeekStart:
 		off += me.off
-	case os.SEEK_CUR:
-	case os.SEEK_END:
+	case io.SeekCurrent:
+	case io.SeekEnd:
 		off += me.off + me.size
-		whence = os.SEEK_SET
+		whence = io.SeekStart
 	default:
 		err = fmt.Errorf("unhandled whence: %d", whence)
 		return
@@ -45,18 +50,26 @@ func (me *sectionReadSeeker) Seek(off int64, whence int) (ret int64, err error) 
 	return
 }
 
-func (me *sectionReadSeeker) Read(b []byte) (n int, err error) {
-	off, err := me.Seek(0, os.SEEK_CUR)
+func (me *sectionReadSeeker) ReadContext(ctx context.Context, b []byte) (int, error) {
+	off, err := me.Seek(0, io.SeekCurrent)
 	if err != nil {
-		return
+		return 0, err
 	}
 	left := me.size - off
 	if left <= 0 {
-		err = io.EOF
-		return
+		return 0, io.EOF
 	}
-	if int64(len(b)) > left {
-		b = b[:left]
+	b = LimitLen(b, left)
+	if rc, ok := me.base.(ReadContexter); ok {
+		return rc.ReadContext(ctx, b)
+	}
+	if ctx != context.Background() {
+		// Can't handle cancellation.
+		panic(ctx)
 	}
 	return me.base.Read(b)
+}
+
+func (me *sectionReadSeeker) Read(b []byte) (int, error) {
+	return me.ReadContext(context.Background(), b)
 }

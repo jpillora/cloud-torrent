@@ -1,4 +1,4 @@
-.PHONY: help all test format fmtcheck vet lint     qa deps clean nuke rle backrle ser fetch-real-roaring-datasets
+.PHONY: help all test format fmtcheck vet lint     qa deps clean nuke ser fetch-real-roaring-datasets
 
 
 
@@ -24,13 +24,15 @@ help:
 	@echo "    make clean       : Remove any build artifact"
 	@echo "    make nuke        : Deletes any intermediate file"
 	@echo ""
-	@echo "    make fuzz       : Fuzzy testing"
+	@echo "    make fuzz-smat   : Fuzzy testing with smat"
+	@echo "    make fuzz-stream : Fuzzy testing with stream deserialization"
+	@echo "    make fuzz-buffer : Fuzzy testing with buffer deserialization"
 	@echo ""
 
 # Alias for help target
 all: help
-test: 
-	go test 
+test:
+	go test
 	go test -race -run TestConcurrent*
 # Format the source code
 format:
@@ -55,22 +57,35 @@ lint:
 
 
 # Alias to run all quality-assurance checks
-qa: fmtcheck test vet lint    
+qa: fmtcheck test vet lint
 
 # --- INSTALL ---
 
 # Get the dependencies
 deps:
 	GOPATH=$(GOPATH) go get github.com/smartystreets/goconvey/convey
-	GOPATH=$(GOPATH) go get github.com/willf/bitset 
+	GOPATH=$(GOPATH) go get github.com/willf/bitset
 	GOPATH=$(GOPATH) go get github.com/golang/lint/golint
 	GOPATH=$(GOPATH) go get github.com/mschoch/smat
 	GOPATH=$(GOPATH) go get github.com/dvyukov/go-fuzz/go-fuzz
 	GOPATH=$(GOPATH) go get github.com/dvyukov/go-fuzz/go-fuzz-build
+	GOPATH=$(GOPATH) go get github.com/glycerine/go-unsnap-stream
+	GOPATH=$(GOPATH) go get github.com/philhofer/fwd
+	GOPATH=$(GOPATH) go get github.com/jtolds/gls
 
-fuzz:
+fuzz-smat:
 	go test -tags=gofuzz -run=TestGenerateSmatCorpus
-	go-fuzz-build github.com/RoaringBitmap/roaring
+	go-fuzz-build -func FuzzSmat github.com/RoaringBitmap/roaring
+	go-fuzz -bin=./roaring-fuzz.zip -workdir=workdir/ -timeout=200
+
+
+fuzz-stream:
+	go-fuzz-build -func FuzzSerializationStream github.com/RoaringBitmap/roaring
+	go-fuzz -bin=./roaring-fuzz.zip -workdir=workdir/ -timeout=200
+
+
+fuzz-buffer:
+	go-fuzz-build -func FuzzSerializationBuffer github.com/RoaringBitmap/roaring
 	go-fuzz -bin=./roaring-fuzz.zip -workdir=workdir/ -timeout=200
 
 # Remove any build artifact
@@ -82,22 +97,12 @@ nuke:
 	rm -rf ./target
 	GOPATH=$(GOPATH) go clean -i ./...
 
-rle:
-	cp rle.go rle16.go
-	perl -pi -e 's/32/16/g' rle16.go
-	cp rle_test.go rle16_test.go
-	perl -pi -e 's/32/16/g' rle16_test.go
 
-backrle:
-	cp rle16.go rle.go
-	perl -pi -e 's/16/32/g' rle.go
-	perl -pi -e 's/2032/2016/g' rle.go
-
-ser: rle
+ser: 
 	go generate
 
 cover:
-	go test -coverprofile=coverage.out 
+	go test -coverprofile=coverage.out
 	go tool cover -html=coverage.out
 
 fetch-real-roaring-datasets:

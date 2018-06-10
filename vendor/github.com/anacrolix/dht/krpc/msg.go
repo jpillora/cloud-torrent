@@ -2,8 +2,6 @@ package krpc
 
 import (
 	"fmt"
-
-	"github.com/anacrolix/torrent/util"
 )
 
 // Msg represents messages that nodes in the network send to each other as specified by the protocol.
@@ -19,14 +17,14 @@ import (
 // may be correlated with multiple queries to the same node. The transaction ID should be encoded as a short string of binary numbers, typically 2 characters are enough as they cover 2^16 outstanding queries. The other key contained in every KRPC message is "y" with a single character value describing the type of message. The value of the "y" key is one of "q" for query, "r" for response, or "e" for error.
 // 3 message types:  QUERY, RESPONSE, ERROR
 type Msg struct {
-	Q        string           `bencode:"q,omitempty"` // Query method (one of 4: "ping", "find_node", "get_peers", "announce_peer")
-	A        *MsgArgs         `bencode:"a,omitempty"` // named arguments sent with a query
-	T        string           `bencode:"t"`           // required: transaction ID
-	Y        string           `bencode:"y"`           // required: type of the message: q for QUERY, r for RESPONSE, e for ERROR
-	R        *Return          `bencode:"r,omitempty"` // RESPONSE type only
-	E        *Error           `bencode:"e,omitempty"` // ERROR type only
-	IP       util.CompactPeer `bencode:"ip,omitempty"`
-	ReadOnly bool             `bencode:"ro,omitempty"`
+	Q        string   `bencode:"q,omitempty"` // Query method (one of 4: "ping", "find_node", "get_peers", "announce_peer")
+	A        *MsgArgs `bencode:"a,omitempty"` // named arguments sent with a query
+	T        string   `bencode:"t"`           // required: transaction ID
+	Y        string   `bencode:"y"`           // required: type of the message: q for QUERY, r for RESPONSE, e for ERROR
+	R        *Return  `bencode:"r,omitempty"` // RESPONSE type only
+	E        *Error   `bencode:"e,omitempty"` // ERROR type only
+	IP       NodeAddr `bencode:"ip,omitempty"`
+	ReadOnly bool     `bencode:"ro,omitempty"`
 }
 
 type MsgArgs struct {
@@ -36,13 +34,22 @@ type MsgArgs struct {
 	Token       string `bencode:"token,omitempty"`        // Token received from an earlier get_peers query
 	Port        int    `bencode:"port,omitempty"`         // Senders torrent port
 	ImpliedPort bool   `bencode:"implied_port,omitempty"` // Use senders apparent DHT port
+	Want        []Want `bencode:"want,omitempty"`         // Contains strings like "n4" and "n6" from BEP 32.
 }
+
+type Want string
+
+const (
+	WantNodes  Want = "n4"
+	WantNodes6 Want = "n6"
+)
 
 type Return struct {
 	ID     ID                  `bencode:"id"`               // ID of the querying node
 	Nodes  CompactIPv4NodeInfo `bencode:"nodes,omitempty"`  // K closest nodes to the requested target
+	Nodes6 CompactIPv6NodeInfo `bencode:"nodes6,omitempty"` // K closest nodes to the requested target
 	Token  string              `bencode:"token,omitempty"`  // Token for future announce_peer
-	Values []util.CompactPeer  `bencode:"values,omitempty"` // Torrent peers
+	Values []NodeAddr          `bencode:"values,omitempty"` // Torrent peers
 }
 
 var _ fmt.Stringer = Msg{}
@@ -51,12 +58,20 @@ func (m Msg) String() string {
 	return fmt.Sprintf("%#v", m)
 }
 
-// The node ID of the source of this Msg.
+// The node ID of the source of this Msg. Returns nil if it isn't present.
+// TODO: Can we verify Msgs more aggressively so this is guaranteed to return
+// a valid ID for a checked Msg?
 func (m Msg) SenderID() *ID {
 	switch m.Y {
 	case "q":
+		if m.A == nil {
+			return nil
+		}
 		return &m.A.ID
 	case "r":
+		if m.R == nil {
+			return nil
+		}
 		return &m.R.ID
 	}
 	return nil

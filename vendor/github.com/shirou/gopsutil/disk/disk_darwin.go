@@ -3,20 +3,26 @@
 package disk
 
 import (
-	"syscall"
+	"context"
+	"path"
 	"unsafe"
 
 	"github.com/shirou/gopsutil/internal/common"
+	"golang.org/x/sys/unix"
 )
 
-func DiskPartitions(all bool) ([]DiskPartitionStat, error) {
-	var ret []DiskPartitionStat
+func Partitions(all bool) ([]PartitionStat, error) {
+	return PartitionsWithContext(context.Background(), all)
+}
+
+func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, error) {
+	var ret []PartitionStat
 
 	count, err := Getfsstat(nil, MntWait)
 	if err != nil {
 		return ret, err
 	}
-	fs := make([]Statfs_t, count)
+	fs := make([]Statfs, count)
 	_, err = Getfsstat(fs, MntWait)
 	for _, stat := range fs {
 		opts := "rw"
@@ -68,30 +74,36 @@ func DiskPartitions(all bool) ([]DiskPartitionStat, error) {
 		if stat.Flags&MntNFS4ACLs != 0 {
 			opts += ",nfs4acls"
 		}
-		d := DiskPartitionStat{
+		d := PartitionStat{
 			Device:     common.IntToString(stat.Mntfromname[:]),
 			Mountpoint: common.IntToString(stat.Mntonname[:]),
 			Fstype:     common.IntToString(stat.Fstypename[:]),
 			Opts:       opts,
 		}
+		if all == false {
+			if !path.IsAbs(d.Device) || !common.PathExists(d.Device) {
+				continue
+			}
+		}
+
 		ret = append(ret, d)
 	}
 
 	return ret, nil
 }
 
-func DiskIOCounters() (map[string]DiskIOCountersStat, error) {
-	return nil, common.NotImplementedError
+func Getfsstat(buf []Statfs, flags int) (n int, err error) {
+	return GetfsstatWithContext(context.Background(), buf, flags)
 }
 
-func Getfsstat(buf []Statfs_t, flags int) (n int, err error) {
+func GetfsstatWithContext(ctx context.Context, buf []Statfs, flags int) (n int, err error) {
 	var _p0 unsafe.Pointer
 	var bufsize uintptr
 	if len(buf) > 0 {
 		_p0 = unsafe.Pointer(&buf[0])
-		bufsize = unsafe.Sizeof(Statfs_t{}) * uintptr(len(buf))
+		bufsize = unsafe.Sizeof(Statfs{}) * uintptr(len(buf))
 	}
-	r0, _, e1 := syscall.Syscall(SYS_GETFSSTAT64, uintptr(_p0), bufsize, uintptr(flags))
+	r0, _, e1 := unix.Syscall(SYS_GETFSSTAT64, uintptr(_p0), bufsize, uintptr(flags))
 	n = int(r0)
 	if e1 != 0 {
 		err = e1
@@ -99,6 +111,6 @@ func Getfsstat(buf []Statfs_t, flags int) (n int, err error) {
 	return
 }
 
-func getFsType(stat syscall.Statfs_t) string {
+func getFsType(stat unix.Statfs_t) string {
 	return common.IntToString(stat.Fstypename[:])
 }

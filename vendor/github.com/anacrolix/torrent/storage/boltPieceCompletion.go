@@ -11,13 +11,20 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
+const (
+	boltDbCompleteValue   = "c"
+	boltDbIncompleteValue = "i"
+)
+
 var (
-	value = []byte{}
+	completionBucketKey = []byte("completion")
 )
 
 type boltPieceCompletion struct {
 	db *bolt.DB
 }
+
+var _ PieceCompletion = (*boltPieceCompletion)(nil)
 
 func NewBoltPieceCompletion(dir string) (ret PieceCompletion, err error) {
 	os.MkdirAll(dir, 0770)
@@ -28,31 +35,40 @@ func NewBoltPieceCompletion(dir string) (ret PieceCompletion, err error) {
 	if err != nil {
 		return
 	}
+	db.NoSync = true
 	ret = &boltPieceCompletion{db}
 	return
 }
 
-func (me *boltPieceCompletion) Get(pk metainfo.PieceKey) (ret bool, err error) {
+func (me boltPieceCompletion) Get(pk metainfo.PieceKey) (cn Completion, err error) {
 	err = me.db.View(func(tx *bolt.Tx) error {
-		c := tx.Bucket(completed)
-		if c == nil {
+		cb := tx.Bucket(completionBucketKey)
+		if cb == nil {
 			return nil
 		}
-		ih := c.Bucket(pk.InfoHash[:])
+		ih := cb.Bucket(pk.InfoHash[:])
 		if ih == nil {
 			return nil
 		}
 		var key [4]byte
 		binary.BigEndian.PutUint32(key[:], uint32(pk.Index))
-		ret = ih.Get(key[:]) != nil
+		cn.Ok = true
+		switch string(ih.Get(key[:])) {
+		case boltDbCompleteValue:
+			cn.Complete = true
+		case boltDbIncompleteValue:
+			cn.Complete = false
+		default:
+			cn.Ok = false
+		}
 		return nil
 	})
 	return
 }
 
-func (me *boltPieceCompletion) Set(pk metainfo.PieceKey, b bool) error {
+func (me boltPieceCompletion) Set(pk metainfo.PieceKey, b bool) error {
 	return me.db.Update(func(tx *bolt.Tx) error {
-		c, err := tx.CreateBucketIfNotExists(completed)
+		c, err := tx.CreateBucketIfNotExists(completionBucketKey)
 		if err != nil {
 			return err
 		}
@@ -62,11 +78,13 @@ func (me *boltPieceCompletion) Set(pk metainfo.PieceKey, b bool) error {
 		}
 		var key [4]byte
 		binary.BigEndian.PutUint32(key[:], uint32(pk.Index))
-		if b {
-			return ih.Put(key[:], value)
-		} else {
-			return ih.Delete(key[:])
-		}
+		return ih.Put(key[:], []byte(func() string {
+			if b {
+				return boltDbCompleteValue
+			} else {
+				return boltDbIncompleteValue
+			}
+		}()))
 	})
 }
 

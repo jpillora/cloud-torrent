@@ -2,6 +2,7 @@ package bencode
 
 import (
 	"io"
+	"math/big"
 	"reflect"
 	"runtime"
 	"sort"
@@ -107,6 +108,14 @@ func (e *Encoder) reflectMarshaler(v reflect.Value) bool {
 func (e *Encoder) reflectValue(v reflect.Value) {
 
 	if e.reflectMarshaler(v) {
+		return
+	}
+
+	switch t := v.Interface().(type) {
+	case big.Int:
+		e.writeString("i")
+		e.writeString(t.String())
+		e.writeString("e")
 		return
 	}
 
@@ -231,17 +240,14 @@ func encodeFields(t reflect.Type) []encodeField {
 		ef.i = i
 		ef.tag = f.Name
 
-		tv := f.Tag.Get("bencode")
-		if tv != "" {
-			if tv == "-" {
-				continue
-			}
-			name, opts := parseTag(tv)
-			if name != "" {
-				ef.tag = name
-			}
-			ef.omit_empty = opts.contains("omitempty")
+		tv := getTag(f.Tag)
+		if tv.Ignore() {
+			continue
 		}
+		if tv.Key() != "" {
+			ef.tag = tv.Key()
+		}
+		ef.omit_empty = tv.OmitEmpty()
 		fs = append(fs, ef)
 	}
 	fss := encodeFieldsSortType(fs)

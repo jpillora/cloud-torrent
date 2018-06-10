@@ -31,14 +31,15 @@ func (t *Torrent) Info() *metainfo.Info {
 
 // Returns a Reader bound to the torrent's data. All read calls block until
 // the data requested is actually available.
-func (t *Torrent) NewReader() (ret *Reader) {
-	ret = &Reader{
+func (t *Torrent) NewReader() Reader {
+	r := reader{
 		mu:        &t.cl.mu,
 		t:         t,
 		readahead: 5 * 1024 * 1024,
+		length:    *t.length,
 	}
-	t.addReader(ret)
-	return
+	t.addReader(&r)
+	return &r
 }
 
 // Returns the state of pieces of the torrent. They are grouped into runs of
@@ -79,7 +80,10 @@ func (t *Torrent) Drop() {
 	t.cl.mu.Unlock()
 }
 
-// Number of bytes of the entire torrent we have completed.
+// Number of bytes of the entire torrent we have completed. This is the sum of
+// completed pieces, and dirtied chunks of incomplete pieces. Do not use this
+// for download rate, as it can go down when pieces are lost or fail checks.
+// Sample Torrent.Stats.DataBytesRead for actual file data download rate.
 func (t *Torrent) BytesCompleted() int64 {
 	t.cl.mu.RLock()
 	defer t.cl.mu.RUnlock()
@@ -119,10 +123,7 @@ func (t *Torrent) Name() string {
 // The completed length of all the torrent data, in all its files. This is
 // derived from the torrent info, when it is available.
 func (t *Torrent) Length() int64 {
-	if t.info == nil {
-		panic("not valid until info obtained")
-	}
-	return t.length
+	return *t.length
 }
 
 // Returns a run-time generated metainfo for the torrent that includes the
@@ -133,52 +134,76 @@ func (t *Torrent) Metainfo() metainfo.MetaInfo {
 	return t.newMetaInfo()
 }
 
-func (t *Torrent) addReader(r *Reader) {
+func (t *Torrent) addReader(r *reader) {
 	t.cl.mu.Lock()
 	defer t.cl.mu.Unlock()
 	if t.readers == nil {
-		t.readers = make(map[*Reader]struct{})
+		t.readers = make(map[*reader]struct{})
 	}
 	t.readers[r] = struct{}{}
 	r.posChanged()
 }
 
-func (t *Torrent) deleteReader(r *Reader) {
+func (t *Torrent) deleteReader(r *reader) {
 	delete(t.readers, r)
 	t.readersChanged()
 }
 
+// Raise the priorities of pieces in the range [begin, end) to at least Normal
+// priority. Piece indexes are not the same as bytes. Requires that the info
+// has been obtained, see Torrent.Info and Torrent.GotInfo.
 func (t *Torrent) DownloadPieces(begin, end int) {
 	t.cl.mu.Lock()
 	defer t.cl.mu.Unlock()
-	t.pendPieceRange(begin, end)
+	t.downloadPiecesLocked(begin, end)
+}
+
+func (t *Torrent) downloadPiecesLocked(begin, end int) {
+	for i := begin; i < end; i++ {
+		if t.pieces[i].priority.Raise(PiecePriorityNormal) {
+			t.updatePiecePriority(i)
+		}
+	}
 }
 
 func (t *Torrent) CancelPieces(begin, end int) {
 	t.cl.mu.Lock()
 	defer t.cl.mu.Unlock()
-	t.unpendPieceRange(begin, end)
+	t.cancelPiecesLocked(begin, end)
 }
 
-// Returns handles to the files in the torrent. This requires the metainfo is
-// available first.
-func (t *Torrent) Files() (ret []File) {
-	info := t.Info()
-	if info == nil {
-		return
+func (t *Torrent) cancelPiecesLocked(begin, end int) {
+	for i := begin; i < end; i++ {
+		p := &t.pieces[i]
+		if p.priority == PiecePriorityNone {
+			continue
+		}
+		p.priority = PiecePriorityNone
+		t.updatePiecePriority(i)
 	}
+}
+
+func (t *Torrent) initFiles() {
 	var offset int64
-	for _, fi := range info.UpvertedFiles() {
-		ret = append(ret, File{
+	t.files = new([]*File)
+	for _, fi := range t.info.UpvertedFiles() {
+		*t.files = append(*t.files, &File{
 			t,
-			strings.Join(append([]string{info.Name}, fi.Path...), "/"),
+			strings.Join(append([]string{t.info.Name}, fi.Path...), "/"),
 			offset,
 			fi.Length,
 			fi,
+			PiecePriorityNone,
 		})
 		offset += fi.Length
 	}
-	return
+
+}
+
+// Returns handles to the files in the torrent. This requires that the Info is
+// available first.
+func (t *Torrent) Files() []*File {
+	return *t.files
 }
 
 func (t *Torrent) AddPeers(pp []Peer) {
@@ -189,11 +214,9 @@ func (t *Torrent) AddPeers(pp []Peer) {
 }
 
 // Marks the entire torrent for download. Requires the info first, see
-// GotInfo.
+// GotInfo. Sets piece priorities for historical reasons.
 func (t *Torrent) DownloadAll() {
-	t.cl.mu.Lock()
-	defer t.cl.mu.Unlock()
-	t.pendPieceRange(0, t.numPieces())
+	t.DownloadPieces(0, t.numPieces())
 }
 
 func (t *Torrent) String() string {

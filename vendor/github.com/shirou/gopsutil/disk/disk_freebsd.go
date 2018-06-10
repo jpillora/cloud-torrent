@@ -4,19 +4,26 @@ package disk
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
+	"path"
 	"strconv"
-	"syscall"
 	"unsafe"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/shirou/gopsutil/internal/common"
 )
 
-func DiskPartitions(all bool) ([]DiskPartitionStat, error) {
-	var ret []DiskPartitionStat
+func Partitions(all bool) ([]PartitionStat, error) {
+	return PartitionsWithContext(context.Background(), all)
+}
+
+func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, error) {
+	var ret []PartitionStat
 
 	// get length
-	count, err := syscall.Getfsstat(nil, MNT_WAIT)
+	count, err := unix.Getfsstat(nil, MNT_WAIT)
 	if err != nil {
 		return ret, err
 	}
@@ -75,24 +82,34 @@ func DiskPartitions(all bool) ([]DiskPartitionStat, error) {
 			opts += ",nfs4acls"
 		}
 
-		d := DiskPartitionStat{
+		d := PartitionStat{
 			Device:     common.IntToString(stat.Mntfromname[:]),
 			Mountpoint: common.IntToString(stat.Mntonname[:]),
 			Fstype:     common.IntToString(stat.Fstypename[:]),
 			Opts:       opts,
 		}
+		if all == false {
+			if !path.IsAbs(d.Device) || !common.PathExists(d.Device) {
+				continue
+			}
+		}
+
 		ret = append(ret, d)
 	}
 
 	return ret, nil
 }
 
-func DiskIOCounters() (map[string]DiskIOCountersStat, error) {
+func IOCounters(names ...string) (map[string]IOCountersStat, error) {
+	return IOCountersWithContext(context.Background(), names...)
+}
+
+func IOCountersWithContext(ctx context.Context, names ...string) (map[string]IOCountersStat, error) {
 	// statinfo->devinfo->devstat
 	// /usr/include/devinfo.h
-	ret := make(map[string]DiskIOCountersStat)
+	ret := make(map[string]IOCountersStat)
 
-	r, err := syscall.Sysctl("kern.devstat.all")
+	r, err := unix.Sysctl("kern.devstat.all")
 	if err != nil {
 		return nil, err
 	}
@@ -112,13 +129,18 @@ func DiskIOCounters() (map[string]DiskIOCountersStat, error) {
 		un := strconv.Itoa(int(d.Unit_number))
 		name := common.IntToString(d.Device_name[:]) + un
 
-		ds := DiskIOCountersStat{
+		if len(names) > 0 && !common.StringsHas(names, name) {
+			continue
+		}
+
+		ds := IOCountersStat{
 			ReadCount:  d.Operations[DEVSTAT_READ],
 			WriteCount: d.Operations[DEVSTAT_WRITE],
 			ReadBytes:  d.Bytes[DEVSTAT_READ],
 			WriteBytes: d.Bytes[DEVSTAT_WRITE],
-			ReadTime:   d.Duration[DEVSTAT_READ].Compute(),
-			WriteTime:  d.Duration[DEVSTAT_WRITE].Compute(),
+			ReadTime:   uint64(d.Duration[DEVSTAT_READ].Compute() * 1000),
+			WriteTime:  uint64(d.Duration[DEVSTAT_WRITE].Compute() * 1000),
+			IoTime:     uint64(d.Busy_time.Compute() * 1000),
 			Name:       name,
 		}
 		ret[name] = ds
@@ -127,9 +149,9 @@ func DiskIOCounters() (map[string]DiskIOCountersStat, error) {
 	return ret, nil
 }
 
-func (b Bintime) Compute() uint64 {
+func (b Bintime) Compute() float64 {
 	BINTIME_SCALE := 5.42101086242752217003726400434970855712890625e-20
-	return uint64(b.Sec) + b.Frac*uint64(BINTIME_SCALE)
+	return float64(b.Sec) + float64(b.Frac)*BINTIME_SCALE
 }
 
 // BT2LD(time)     ((long double)(time).sec + (time).frac * BINTIME_SCALE)
@@ -137,13 +159,17 @@ func (b Bintime) Compute() uint64 {
 // Getfsstat is borrowed from pkg/syscall/syscall_freebsd.go
 // change Statfs_t to Statfs in order to get more information
 func Getfsstat(buf []Statfs, flags int) (n int, err error) {
+	return GetfsstatWithContext(context.Background(), buf, flags)
+}
+
+func GetfsstatWithContext(ctx context.Context, buf []Statfs, flags int) (n int, err error) {
 	var _p0 unsafe.Pointer
 	var bufsize uintptr
 	if len(buf) > 0 {
 		_p0 = unsafe.Pointer(&buf[0])
 		bufsize = unsafe.Sizeof(Statfs{}) * uintptr(len(buf))
 	}
-	r0, _, e1 := syscall.Syscall(syscall.SYS_GETFSSTAT, uintptr(_p0), bufsize, uintptr(flags))
+	r0, _, e1 := unix.Syscall(unix.SYS_GETFSSTAT, uintptr(_p0), bufsize, uintptr(flags))
 	n = int(r0)
 	if e1 != 0 {
 		err = e1
@@ -163,6 +189,6 @@ func parseDevstat(buf []byte) (Devstat, error) {
 	return ds, nil
 }
 
-func getFsType(stat syscall.Statfs_t) string {
+func getFsType(stat unix.Statfs_t) string {
 	return common.IntToString(stat.Fstypename[:])
 }

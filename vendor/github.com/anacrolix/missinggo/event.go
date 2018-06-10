@@ -3,6 +3,8 @@ package missinggo
 import "sync"
 
 // Events are boolean flags that provide a channel that's closed when true.
+// This could go in the sync package, but that's more of a debug wrapper on
+// the standard library sync.
 type Event struct {
 	ch     chan struct{}
 	closed bool
@@ -23,6 +25,7 @@ func (me *Event) C() <-chan struct{} {
 	return me.ch
 }
 
+// TODO: Merge into Set.
 func (me *Event) Clear() {
 	if me.closed {
 		me.ch = nil
@@ -43,6 +46,7 @@ func (me *Event) Set() (first bool) {
 	return true
 }
 
+// TODO: Change to Get.
 func (me *Event) IsSet() bool {
 	return me.closed
 }
@@ -51,6 +55,7 @@ func (me *Event) Wait() {
 	<-me.C()
 }
 
+// TODO: Merge into Set.
 func (me *Event) SetBool(b bool) {
 	if b {
 		me.Set()

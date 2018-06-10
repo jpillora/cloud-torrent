@@ -86,7 +86,7 @@ func (fts *fileTorrentImpl) Piece(p metainfo.Piece) PieceImpl {
 	// Create a view onto the file-based torrent storage.
 	_io := fileTorrentImplIO{fts}
 	// Return the appropriate segments of this.
-	return &fileStoragePiece{
+	return &filePieceImpl{
 		fts,
 		p,
 		missinggo.NewSectionWriter(_io, p.Offset(), p.Length()),
@@ -107,7 +107,7 @@ func CreateNativeZeroLengthFiles(info *metainfo.Info, dir string) (err error) {
 			continue
 		}
 		name := filepath.Join(append([]string{dir, info.Name}, fi.Path...)...)
-		os.MkdirAll(filepath.Dir(name), 0750)
+		os.MkdirAll(filepath.Dir(name), 0777)
 		var f io.Closer
 		f, err = os.Create(name)
 		if err != nil {
@@ -192,9 +192,9 @@ func (fst fileTorrentImplIO) WriteAt(p []byte, off int64) (n int, err error) {
 			n1 = int(fi.Length - off)
 		}
 		name := fst.fts.fileInfoName(fi)
-		os.MkdirAll(filepath.Dir(name), 0770)
+		os.MkdirAll(filepath.Dir(name), 0777)
 		var f *os.File
-		f, err = os.OpenFile(name, os.O_WRONLY|os.O_CREATE, 0660)
+		f, err = os.OpenFile(name, os.O_WRONLY|os.O_CREATE, 0666)
 		if err != nil {
 			return
 		}

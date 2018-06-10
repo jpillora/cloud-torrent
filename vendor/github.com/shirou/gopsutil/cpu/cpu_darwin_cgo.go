@@ -10,7 +10,9 @@ package cpu
 #include <mach/mach_init.h>
 #include <mach/mach_host.h>
 #include <mach/host_info.h>
+#if TARGET_OS_MAC
 #include <libproc.h>
+#endif
 #include <mach/processor_info.h>
 #include <mach/vm_map.h>
 */
@@ -25,7 +27,7 @@ import (
 
 // these CPU times for darwin is borrowed from influxdb/telegraf.
 
-func perCPUTimes() ([]CPUTimesStat, error) {
+func perCPUTimes() ([]TimesStat, error) {
 	var (
 		count   C.mach_msg_type_number_t
 		cpuload *C.processor_cpu_load_info_data_t
@@ -55,11 +57,11 @@ func perCPUTimes() ([]CPUTimesStat, error) {
 	// copy the cpuload array to a []byte buffer
 	// where we can binary.Read the data
 	size := int(ncpu) * binary.Size(cpu_ticks)
-	buf := C.GoBytes(unsafe.Pointer(cpuload), C.int(size))
+	buf := (*[1 << 30]byte)(unsafe.Pointer(cpuload))[:size:size]
 
 	bbuf := bytes.NewBuffer(buf)
 
-	var ret []CPUTimesStat
+	var ret []TimesStat
 
 	for i := 0; i < int(ncpu); i++ {
 		err := binary.Read(bbuf, binary.LittleEndian, &cpu_ticks)
@@ -67,7 +69,7 @@ func perCPUTimes() ([]CPUTimesStat, error) {
 			return nil, err
 		}
 
-		c := CPUTimesStat{
+		c := TimesStat{
 			CPU:    fmt.Sprintf("cpu%d", i),
 			User:   float64(cpu_ticks[C.CPU_STATE_USER]) / ClocksPerSec,
 			System: float64(cpu_ticks[C.CPU_STATE_SYSTEM]) / ClocksPerSec,
@@ -81,9 +83,11 @@ func perCPUTimes() ([]CPUTimesStat, error) {
 	return ret, nil
 }
 
-func allCPUTimes() ([]CPUTimesStat, error) {
-	var count C.mach_msg_type_number_t = C.HOST_CPU_LOAD_INFO_COUNT
+func allCPUTimes() ([]TimesStat, error) {
+	var count C.mach_msg_type_number_t
 	var cpuload C.host_cpu_load_info_data_t
+
+	count = C.HOST_CPU_LOAD_INFO_COUNT
 
 	status := C.host_statistics(C.host_t(C.mach_host_self()),
 		C.HOST_CPU_LOAD_INFO,
@@ -94,7 +98,7 @@ func allCPUTimes() ([]CPUTimesStat, error) {
 		return nil, fmt.Errorf("host_statistics error=%d", status)
 	}
 
-	c := CPUTimesStat{
+	c := TimesStat{
 		CPU:    "cpu-total",
 		User:   float64(cpuload.cpu_ticks[C.CPU_STATE_USER]) / ClocksPerSec,
 		System: float64(cpuload.cpu_ticks[C.CPU_STATE_SYSTEM]) / ClocksPerSec,
@@ -102,6 +106,6 @@ func allCPUTimes() ([]CPUTimesStat, error) {
 		Idle:   float64(cpuload.cpu_ticks[C.CPU_STATE_IDLE]) / ClocksPerSec,
 	}
 
-	return []CPUTimesStat{c}, nil
+	return []TimesStat{c}, nil
 
 }

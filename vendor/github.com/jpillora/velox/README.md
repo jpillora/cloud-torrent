@@ -40,21 +40,21 @@ Server (Node)
 
 ``` js
 //syncable object
-foo := &Foo{
+let foo = {
 	a: 1,
 	b: 2
-}
+};
 //express server
 let app = express();
 //serve velox.js client library (assets/dist/velox.min.js)
-app.get("/velox.js", velox.JS)
+app.get("/velox.js", velox.JS);
 //serve velox sync endpoint for foo
-app.get("/sync", velox.handle(foo))
+app.get("/sync", velox.handle(foo));
 //make changes
-foo.a = 42
-foo.b = 21
+foo.a = 42;
+foo.b = 21;
 //push to client
-foo.$push()
+foo.$push();
 ```
 
 Client (Node and Browser)

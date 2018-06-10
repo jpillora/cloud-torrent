@@ -4,8 +4,8 @@ import "sync"
 
 // This RWMutex's RLock and RUnlock methods don't allow shared reading because
 // there's no way to determine what goroutine has stopped holding the read
-// lock when RUnlock is called. So for debugging purposes, it's just like
-// Mutex.
+// lock when RUnlock is called. So for debugging purposes when the package is
+// Enable()d, it's just like Mutex.
 type RWMutex struct {
 	ins Mutex        // Instrumented
 	rw  sync.RWMutex // Real McCoy

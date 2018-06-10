@@ -3,6 +3,7 @@
 package cpu
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os/exec"
@@ -15,7 +16,11 @@ import (
 var cpu_tick = float64(100)
 
 func init() {
-	out, err := exec.Command("/usr/bin/getconf", "CLK_TCK").Output()
+	getconf, err := exec.LookPath("/usr/bin/getconf")
+	if err != nil {
+		return
+	}
+	out, err := invoke.CommandWithContext(context.Background(), getconf, "CLK_TCK")
 	// ignore errors
 	if err == nil {
 		i, err := strconv.ParseFloat(strings.TrimSpace(string(out)), 64)
@@ -25,25 +30,29 @@ func init() {
 	}
 }
 
-func CPUTimes(percpu bool) ([]CPUTimesStat, error) {
+func Times(percpu bool) ([]TimesStat, error) {
+	return TimesWithContext(context.Background(), percpu)
+}
+
+func TimesWithContext(ctx context.Context, percpu bool) ([]TimesStat, error) {
 	filename := common.HostProc("stat")
 	var lines = []string{}
 	if percpu {
-		var startIdx uint = 1
-		for {
-			linen, _ := common.ReadLinesOffsetN(filename, startIdx, 1)
-			line := linen[0]
+		statlines, err := common.ReadLines(filename)
+		if err != nil || len(statlines) < 2 {
+			return []TimesStat{}, nil
+		}
+		for _, line := range statlines[1:] {
 			if !strings.HasPrefix(line, "cpu") {
 				break
 			}
 			lines = append(lines, line)
-			startIdx += 1
 		}
 	} else {
 		lines, _ = common.ReadLinesOffsetN(filename, 0, 1)
 	}
 
-	ret := make([]CPUTimesStat, 0, len(lines))
+	ret := make([]TimesStat, 0, len(lines))
 
 	for _, line := range lines {
 		ct, err := parseStatLine(line)
@@ -56,26 +65,38 @@ func CPUTimes(percpu bool) ([]CPUTimesStat, error) {
 	return ret, nil
 }
 
-func sysCpuPath(cpu int32, relPath string) string {
+func sysCPUPath(cpu int32, relPath string) string {
 	return common.HostSys(fmt.Sprintf("devices/system/cpu/cpu%d", cpu), relPath)
 }
 
-func finishCPUInfo(c *CPUInfoStat) error {
-	if c.Mhz == 0 {
-		lines, err := common.ReadLines(sysCpuPath(c.CPU, "cpufreq/cpuinfo_max_freq"))
-		if err == nil {
-			value, err := strconv.ParseFloat(lines[0], 64)
-			if err != nil {
-				return err
-			}
-			c.Mhz = value
-		}
-	}
+func finishCPUInfo(c *InfoStat) error {
+	var lines []string
+	var err error
+	var value float64
+
 	if len(c.CoreID) == 0 {
-		lines, err := common.ReadLines(sysCpuPath(c.CPU, "topology/core_id"))
+		lines, err = common.ReadLines(sysCPUPath(c.CPU, "topology/core_id"))
 		if err == nil {
 			c.CoreID = lines[0]
 		}
+	}
+
+	// override the value of c.Mhz with cpufreq/cpuinfo_max_freq regardless
+	// of the value from /proc/cpuinfo because we want to report the maximum
+	// clock-speed of the CPU for c.Mhz, matching the behaviour of Windows
+	lines, err = common.ReadLines(sysCPUPath(c.CPU, "cpufreq/cpuinfo_max_freq"))
+	// if we encounter errors below such as there are no cpuinfo_max_freq file,
+	// we just ignore. so let Mhz is 0.
+	if err != nil {
+		return nil
+	}
+	value, err = strconv.ParseFloat(lines[0], 64)
+	if err != nil {
+		return nil
+	}
+	c.Mhz = value / 1000.0 // value is in kHz
+	if c.Mhz > 9999 {
+		c.Mhz = c.Mhz / 1000.0 // value in Hz
 	}
 	return nil
 }
@@ -87,13 +108,18 @@ func finishCPUInfo(c *CPUInfoStat) error {
 // Sockets often come with many physical CPU cores.
 // For example a single socket board with two cores each with HT will
 // return 4 CPUInfoStat structs on Linux and the "Cores" field set to 1.
-func CPUInfo() ([]CPUInfoStat, error) {
+func Info() ([]InfoStat, error) {
+	return InfoWithContext(context.Background())
+}
+
+func InfoWithContext(ctx context.Context) ([]InfoStat, error) {
 	filename := common.HostProc("cpuinfo")
 	lines, _ := common.ReadLines(filename)
 
-	var ret []CPUInfoStat
+	var ret []InfoStat
+	var processorName string
 
-	c := CPUInfoStat{CPU: -1, Cores: 1}
+	c := InfoStat{CPU: -1, Cores: 1}
 	for _, line := range lines {
 		fields := strings.Split(line, ":")
 		if len(fields) < 2 {
@@ -103,6 +129,8 @@ func CPUInfo() ([]CPUInfoStat, error) {
 		value := strings.TrimSpace(fields[1])
 
 		switch key {
+		case "Processor":
+			processorName = value
 		case "processor":
 			if c.CPU >= 0 {
 				err := finishCPUInfo(&c)
@@ -111,32 +139,43 @@ func CPUInfo() ([]CPUInfoStat, error) {
 				}
 				ret = append(ret, c)
 			}
-			c = CPUInfoStat{Cores: 1}
+			c = InfoStat{Cores: 1, ModelName: processorName}
 			t, err := strconv.ParseInt(value, 10, 64)
 			if err != nil {
 				return ret, err
 			}
 			c.CPU = int32(t)
-		case "vendor_id":
+		case "vendorId", "vendor_id":
 			c.VendorID = value
 		case "cpu family":
 			c.Family = value
 		case "model":
 			c.Model = value
-		case "model name":
+		case "model name", "cpu":
 			c.ModelName = value
-		case "stepping":
-			t, err := strconv.ParseInt(value, 10, 64)
+			if strings.Contains(value, "POWER8") ||
+				strings.Contains(value, "POWER7") {
+				c.Model = strings.Split(value, " ")[0]
+				c.Family = "POWER"
+				c.VendorID = "IBM"
+			}
+		case "stepping", "revision":
+			val := value
+
+			if key == "revision" {
+				val = strings.Split(value, ".")[0]
+			}
+
+			t, err := strconv.ParseInt(val, 10, 64)
 			if err != nil {
 				return ret, err
 			}
 			c.Stepping = int32(t)
-		case "cpu MHz":
-			t, err := strconv.ParseFloat(value, 64)
-			if err != nil {
-				return ret, err
+		case "cpu MHz", "clock":
+			// treat this as the fallback value, thus we ignore error
+			if t, err := strconv.ParseFloat(strings.Replace(value, "MHz", "", 1), 64); err == nil {
+				c.Mhz = t
 			}
-			c.Mhz = t
 		case "cache size":
 			t, err := strconv.ParseInt(strings.Replace(value, " KB", "", 1), 10, 64)
 			if err != nil {
@@ -151,6 +190,8 @@ func CPUInfo() ([]CPUInfoStat, error) {
 			c.Flags = strings.FieldsFunc(value, func(r rune) bool {
 				return r == ',' || r == ' '
 			})
+		case "microcode":
+			c.Microcode = value
 		}
 	}
 	if c.CPU >= 0 {
@@ -163,8 +204,12 @@ func CPUInfo() ([]CPUInfoStat, error) {
 	return ret, nil
 }
 
-func parseStatLine(line string) (*CPUTimesStat, error) {
+func parseStatLine(line string) (*TimesStat, error) {
 	fields := strings.Fields(line)
+
+	if len(fields) == 0 {
+		return nil, errors.New("stat does not contain cpu info")
+	}
 
 	if strings.HasPrefix(fields[0], "cpu") == false {
 		//		return CPUTimesStat{}, e
@@ -204,7 +249,7 @@ func parseStatLine(line string) (*CPUTimesStat, error) {
 		return nil, err
 	}
 
-	ct := &CPUTimesStat{
+	ct := &TimesStat{
 		CPU:     cpu,
 		User:    float64(user) / cpu_tick,
 		Nice:    float64(nice) / cpu_tick,

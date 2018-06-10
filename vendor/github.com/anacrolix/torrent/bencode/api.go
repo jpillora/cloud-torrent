@@ -123,13 +123,26 @@ func Marshal(v interface{}) ([]byte, error) {
 
 // Unmarshal the bencode value in the 'data' to a value pointed by the 'v'
 // pointer, return a non-nil error if any.
-func Unmarshal(data []byte, v interface{}) error {
-	e := Decoder{r: bytes.NewBuffer(data)}
-	return e.Decode(v)
+func Unmarshal(data []byte, v interface{}) (err error) {
+	buf := bytes.NewBuffer(data)
+	e := Decoder{r: buf}
+	err = e.Decode(v)
+	if err == nil && buf.Len() != 0 {
+		err = ErrUnusedTrailingBytes{buf.Len()}
+	}
+	return
+}
+
+type ErrUnusedTrailingBytes struct {
+	NumUnusedBytes int
+}
+
+func (me ErrUnusedTrailingBytes) Error() string {
+	return fmt.Sprintf("%d unused trailing bytes", me.NumUnusedBytes)
 }
 
 func NewDecoder(r io.Reader) *Decoder {
-	return &Decoder{r: bufio.NewReader(r)}
+	return &Decoder{r: &scanner{r: r}}
 }
 
 func NewEncoder(w io.Writer) *Encoder {

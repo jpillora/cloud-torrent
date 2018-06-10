@@ -6,8 +6,10 @@ import (
 	"fmt"
 )
 
+const HashSize = 20
+
 // 20-byte SHA1 hash used for info and pieces.
-type Hash [20]byte
+type Hash [HashSize]byte
 
 func (h Hash) Bytes() []byte {
 	return h[:]
@@ -26,7 +28,7 @@ func (h Hash) HexString() string {
 }
 
 func (h *Hash) FromHexString(s string) (err error) {
-	if len(s) != 40 {
+	if len(s) != 2*HashSize {
 		err = fmt.Errorf("hash hex string has bad length: %d", len(s))
 		return
 	}
@@ -34,7 +36,7 @@ func (h *Hash) FromHexString(s string) (err error) {
 	if err != nil {
 		return
 	}
-	if n != 20 {
+	if n != HashSize {
 		panic(n)
 	}
 	return
