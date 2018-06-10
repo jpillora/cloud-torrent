@@ -1,4 +1,4 @@
-// +build !cgo
+// +build !cgo disable_libutp
 
 package torrent
 

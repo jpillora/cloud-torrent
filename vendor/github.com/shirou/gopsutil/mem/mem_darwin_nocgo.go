@@ -4,15 +4,21 @@
 package mem
 
 import (
+	"context"
 	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 // Runs vm_stat and returns Free and inactive pages
 func getVMStat(vms *VirtualMemoryStat) error {
-	out, err := exec.Command("vm_stat").Output()
+	vm_stat, err := exec.LookPath("vm_stat")
+	if err != nil {
+		return err
+	}
+	out, err := invoke.Command(vm_stat)
 	if err != nil {
 		return err
 	}
@@ -23,7 +29,7 @@ func parseVMStat(out string, vms *VirtualMemoryStat) error {
 	var err error
 
 	lines := strings.Split(out, "\n")
-	pagesize := uint64(syscall.Getpagesize())
+	pagesize := uint64(unix.Getpagesize())
 	for _, line := range lines {
 		fields := strings.Split(line, ":")
 		if len(fields) < 2 {
@@ -63,6 +69,10 @@ func parseVMStat(out string, vms *VirtualMemoryStat) error {
 
 // VirtualMemory returns VirtualmemoryStat.
 func VirtualMemory() (*VirtualMemoryStat, error) {
+	return VirtualMemoryWithContext(context.Background())
+}
+
+func VirtualMemoryWithContext(ctx context.Context) (*VirtualMemoryStat, error) {
 	ret := &VirtualMemoryStat{}
 
 	total, err := getHwMemsize()

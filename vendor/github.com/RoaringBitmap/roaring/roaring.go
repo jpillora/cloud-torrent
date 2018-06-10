@@ -52,7 +52,7 @@ func (rb *Bitmap) ToBytes() ([]byte, error) {
 	return rb.highlowcontainer.toBytes()
 }
 
-// WriteToMsgpack writes a msgpack2/snappy-streaming compressed serialized
+// Deprecated: WriteToMsgpack writes a msgpack2/snappy-streaming compressed serialized
 // version of this bitmap to stream. The format is not
 // compatible with the WriteTo() format, and is
 // experimental: it may produce smaller on disk
@@ -71,6 +71,26 @@ func (rb *Bitmap) ReadFrom(stream io.Reader) (int64, error) {
 	return rb.highlowcontainer.readFrom(stream)
 }
 
+// FromBuffer creates a bitmap from its serialized version stored in buffer
+//
+// The format specification is available here:
+// https://github.com/RoaringBitmap/RoaringFormatSpec
+//
+// The provided byte array (buf) is expected to be a constant.
+// The function makes the best effort attempt not to copy data.
+// You should take care not to modify buff as it will
+// likely result in unexpected program behavior.
+//
+// Resulting bitmaps are effectively immutable in the following sense:
+// a copy-on-write marker is used so that when you modify the resulting
+// bitmap, copies of selected data (containers) are made.
+// You should *not* change the copy-on-write status of the resulting
+// bitmaps (SetCopyOnWrite).
+//
+func (rb *Bitmap) FromBuffer(buf []byte) (int64, error) {
+	return rb.highlowcontainer.fromBuffer(buf)
+}
+
 // RunOptimize attempts to further compress the runs of consecutive values found in the bitmap
 func (rb *Bitmap) RunOptimize() {
 	rb.highlowcontainer.runOptimize()
@@ -81,7 +101,7 @@ func (rb *Bitmap) HasRunCompression() bool {
 	return rb.highlowcontainer.hasRunCompression()
 }
 
-// ReadFromMsgpack reads a msgpack2/snappy-streaming serialized
+// Deprecated: ReadFromMsgpack reads a msgpack2/snappy-streaming serialized
 // version of this bitmap from stream. The format is
 // expected is that written by the WriteToMsgpack()
 // call; see additional notes there.
@@ -118,17 +138,18 @@ func (rb *Bitmap) UnmarshalBinary(data []byte) error {
 
 // NewBitmap creates a new empty Bitmap (see also New)
 func NewBitmap() *Bitmap {
-	return &Bitmap{*newRoaringArray()}
+	return &Bitmap{}
 }
 
 // New creates a new empty Bitmap (same as NewBitmap)
 func New() *Bitmap {
-	return &Bitmap{*newRoaringArray()}
+	return &Bitmap{}
 }
 
-// Clear removes all content from the Bitmap and frees the memory
+// Clear resets the Bitmap to be logically empty, but may retain
+// some memory allocations that may speed up future operations
 func (rb *Bitmap) Clear() {
-	rb.highlowcontainer = *newRoaringArray()
+	rb.highlowcontainer.clear()
 }
 
 // ToArray creates a new slice containing all of the integers stored in the Bitmap in sorted order
@@ -231,6 +252,90 @@ func newIntIterator(a *Bitmap) *intIterator {
 	return p
 }
 
+type intReverseIterator struct {
+	pos              int
+	hs               uint32
+	iter             shortIterable
+	highlowcontainer *roaringArray
+}
+
+// HasNext returns true if there are more integers to iterate over
+func (ii *intReverseIterator) HasNext() bool {
+	return ii.pos >= 0
+}
+
+func (ii *intReverseIterator) init() {
+	if ii.pos >= 0 {
+		ii.iter = ii.highlowcontainer.getContainerAtIndex(ii.pos).getReverseIterator()
+		ii.hs = uint32(ii.highlowcontainer.getKeyAtIndex(ii.pos)) << 16
+	}
+}
+
+// Next returns the next integer
+func (ii *intReverseIterator) Next() uint32 {
+	x := uint32(ii.iter.next()) | ii.hs
+	if !ii.iter.hasNext() {
+		ii.pos = ii.pos - 1
+		ii.init()
+	}
+	return x
+}
+
+func newIntReverseIterator(a *Bitmap) *intReverseIterator {
+	p := new(intReverseIterator)
+	p.highlowcontainer = &a.highlowcontainer
+	p.pos = len(a.highlowcontainer.containers) - 1
+	p.init()
+	return p
+}
+
+// ManyIntIterable allows you to iterate over the values in a Bitmap
+type ManyIntIterable interface {
+	// pass in a buffer to fill up with values, returns how many values were returned
+	NextMany([]uint32) int
+}
+
+type manyIntIterator struct {
+	pos              int
+	hs               uint32
+	iter             manyIterable
+	highlowcontainer *roaringArray
+}
+
+func (ii *manyIntIterator) init() {
+	if ii.highlowcontainer.size() > ii.pos {
+		ii.iter = ii.highlowcontainer.getContainerAtIndex(ii.pos).getManyIterator()
+		ii.hs = uint32(ii.highlowcontainer.getKeyAtIndex(ii.pos)) << 16
+	} else {
+		ii.iter = nil
+	}
+}
+
+func (ii *manyIntIterator) NextMany(buf []uint32) int {
+	n := 0
+	for n < len(buf) {
+		if ii.iter == nil {
+			break
+		}
+		moreN := ii.iter.nextMany(ii.hs, buf[n:])
+		n += moreN
+		if moreN == 0 {
+			ii.pos = ii.pos + 1
+			ii.init()
+		}
+	}
+
+	return n
+}
+
+func newManyIntIterator(a *Bitmap) *manyIntIterator {
+	p := new(manyIntIterator)
+	p.pos = 0
+	p.highlowcontainer = &a.highlowcontainer
+	p.init()
+	return p
+}
+
 // String creates a string representation of the Bitmap
 func (rb *Bitmap) String() string {
 	// inspired by https://github.com/fzandona/goroar/
@@ -260,6 +365,16 @@ func (rb *Bitmap) String() string {
 // Iterator creates a new IntIterable to iterate over the integers contained in the bitmap, in sorted order
 func (rb *Bitmap) Iterator() IntIterable {
 	return newIntIterator(rb)
+}
+
+// ReverseIterator creates a new IntIterable to iterate over the integers contained in the bitmap, in sorted order
+func (rb *Bitmap) ReverseIterator() IntIterable {
+	return newIntReverseIterator(rb)
+}
+
+// ManyIterator creates a new ManyIntIterable to iterate over the integers contained in the bitmap, in sorted order
+func (rb *Bitmap) ManyIterator() ManyIntIterable {
+	return newManyIntIterator(rb)
 }
 
 // Clone creates a copy of the Bitmap
@@ -679,8 +794,46 @@ func (rb *Bitmap) Xor(x2 *Bitmap) {
 
 // Or computes the union between two bitmaps and stores the result in the current bitmap
 func (rb *Bitmap) Or(x2 *Bitmap) {
-	results := Or(rb, x2) // Todo: could be computed in-place for reduced memory usage
-	rb.highlowcontainer = results.highlowcontainer
+	pos1 := 0
+	pos2 := 0
+	length1 := rb.highlowcontainer.size()
+	length2 := x2.highlowcontainer.size()
+main:
+	for (pos1 < length1) && (pos2 < length2) {
+		s1 := rb.highlowcontainer.getKeyAtIndex(pos1)
+		s2 := x2.highlowcontainer.getKeyAtIndex(pos2)
+
+		for {
+			if s1 < s2 {
+				pos1++
+				if pos1 == length1 {
+					break main
+				}
+				s1 = rb.highlowcontainer.getKeyAtIndex(pos1)
+			} else if s1 > s2 {
+				rb.highlowcontainer.insertNewKeyValueAt(pos1, s2, x2.highlowcontainer.getContainerAtIndex(pos2).clone())
+				pos1++
+				length1++
+				pos2++
+				if pos2 == length2 {
+					break main
+				}
+				s2 = x2.highlowcontainer.getKeyAtIndex(pos2)
+			} else {
+				rb.highlowcontainer.replaceKeyAndContainerAtIndex(pos1, s1, rb.highlowcontainer.getWritableContainerAtIndex(pos1).ior(x2.highlowcontainer.getContainerAtIndex(pos2)), false)
+				pos1++
+				pos2++
+				if (pos1 == length1) || (pos2 == length2) {
+					break main
+				}
+				s1 = rb.highlowcontainer.getKeyAtIndex(pos1)
+				s2 = x2.highlowcontainer.getKeyAtIndex(pos2)
+			}
+		}
+	}
+	if pos1 == length1 {
+		rb.highlowcontainer.appendCopyMany(x2.highlowcontainer, pos2, length2)
+	}
 }
 
 // AndNot computes the difference between two bitmaps and stores the result in the current bitmap
@@ -1014,7 +1167,9 @@ func (rb *Bitmap) AddRange(rangeStart, rangeEnd uint64) {
 	if rangeStart >= rangeEnd {
 		return
 	}
-
+	if rangeEnd-1 > MaxUint32 {
+		panic("rangeEnd-1 > MaxUint32")
+	}
 	hbStart := uint32(highbits(uint32(rangeStart)))
 	lbStart := uint32(lowbits(uint32(rangeStart)))
 	hbLast := uint32(highbits(uint32(rangeEnd - 1)))
@@ -1050,7 +1205,12 @@ func (rb *Bitmap) RemoveRange(rangeStart, rangeEnd uint64) {
 	if rangeStart >= rangeEnd {
 		return
 	}
-
+	if rangeEnd-1 > MaxUint32 {
+		// logically, we should assume that the user wants to
+		// remove all values from rangeStart to infinity
+		// see https://github.com/RoaringBitmap/roaring/issues/141
+		rangeEnd = uint64(0x100000000)
+	}
 	hbStart := uint32(highbits(uint32(rangeStart)))
 	lbStart := uint32(lowbits(uint32(rangeStart)))
 	hbLast := uint32(highbits(uint32(rangeEnd - 1)))
@@ -1163,6 +1323,7 @@ func Flip(bm *Bitmap, rangeStart, rangeEnd uint64) *Bitmap {
 // SetCopyOnWrite sets this bitmap to use copy-on-write so that copies are fast and memory conscious
 // if the parameter is true, otherwise we leave the default where hard copies are made
 // (copy-on-write requires extra care in a threaded context).
+// Calling SetCopyOnWrite(true) on a bitmap created with FromBuffer is unsafe.
 func (rb *Bitmap) SetCopyOnWrite(val bool) {
 	rb.highlowcontainer.copyOnWrite = val
 }

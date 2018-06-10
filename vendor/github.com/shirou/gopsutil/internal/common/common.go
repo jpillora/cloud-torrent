@@ -1,14 +1,17 @@
+package common
+
 //
 // gopsutil is a port of psutil(http://pythonhosted.org/psutil/).
 // This covers these architectures.
 //  - linux (amd64, arm)
 //  - freebsd (amd64)
 //  - windows (amd64)
-package common
-
 import (
 	"bufio"
+	"bytes"
+	"context"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -19,22 +22,48 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
+)
+
+var (
+	Timeout    = 3 * time.Second
+	ErrTimeout = errors.New("command timed out")
 )
 
 type Invoker interface {
 	Command(string, ...string) ([]byte, error)
+	CommandWithContext(context.Context, string, ...string) ([]byte, error)
 }
 
 type Invoke struct{}
 
 func (i Invoke) Command(name string, arg ...string) ([]byte, error) {
-	return exec.Command(name, arg...).Output()
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+	return i.CommandWithContext(ctx, name, arg...)
+}
+
+func (i Invoke) CommandWithContext(ctx context.Context, name string, arg ...string) ([]byte, error) {
+	cmd := exec.CommandContext(ctx, name, arg...)
+
+	var buf bytes.Buffer
+	cmd.Stdout = &buf
+	cmd.Stderr = &buf
+
+	if err := cmd.Start(); err != nil {
+		return buf.Bytes(), err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return buf.Bytes(), err
+	}
+
+	return buf.Bytes(), nil
 }
 
 type FakeInvoke struct {
-	CommandExpectedDir string // CommandExpectedDir specifies dir which includes expected outputs.
-	Suffix             string // Suffix species expected file name suffix such as "fail"
-	Error              error  // If Error specfied, return the error.
+	Suffix string // Suffix species expected file name suffix such as "fail"
+	Error  error  // If Error specfied, return the error.
 }
 
 // Command in FakeInvoke returns from expected file if exists.
@@ -45,26 +74,25 @@ func (i FakeInvoke) Command(name string, arg ...string) ([]byte, error) {
 
 	arch := runtime.GOOS
 
-	fname := strings.Join(append([]string{name}, arg...), "")
+	commandName := filepath.Base(name)
+
+	fname := strings.Join(append([]string{commandName}, arg...), "")
 	fname = url.QueryEscape(fname)
-	var dir string
-	if i.CommandExpectedDir == "" {
-		dir = "expected"
-	} else {
-		dir = i.CommandExpectedDir
-	}
-	fpath := path.Join(dir, arch, fname)
+	fpath := path.Join("testdata", arch, fname)
 	if i.Suffix != "" {
 		fpath += "_" + i.Suffix
 	}
 	if PathExists(fpath) {
 		return ioutil.ReadFile(fpath)
-	} else {
-		return exec.Command(name, arg...).Output()
 	}
+	return []byte{}, fmt.Errorf("could not find testdata: %s", fpath)
 }
 
-var NotImplementedError = errors.New("not implemented yet")
+func (i FakeInvoke) CommandWithContext(ctx context.Context, name string, arg ...string) ([]byte, error) {
+	return i.Command(name, arg...)
+}
+
+var ErrNotImplementedError = errors.New("not implemented yet")
 
 // ReadLines reads contents from a file and splits them by new lines.
 // A convenience wrapper to ReadLinesOffsetN(filename, 0, -1).
@@ -102,6 +130,23 @@ func ReadLinesOffsetN(filename string, offset uint, n int) ([]string, error) {
 }
 
 func IntToString(orig []int8) string {
+	ret := make([]byte, len(orig))
+	size := -1
+	for i, o := range orig {
+		if o == 0 {
+			size = i
+			break
+		}
+		ret[i] = byte(o)
+	}
+	if size == -1 {
+		size = len(orig)
+	}
+
+	return string(ret[0:size])
+}
+
+func UintToString(orig []uint8) string {
 	ret := make([]byte, len(orig))
 	size := -1
 	for i, o := range orig {
@@ -277,4 +322,67 @@ func HostSys(combineWith ...string) string {
 
 func HostEtc(combineWith ...string) string {
 	return GetEnv("HOST_ETC", "/etc", combineWith...)
+}
+
+func HostVar(combineWith ...string) string {
+	return GetEnv("HOST_VAR", "/var", combineWith...)
+}
+
+// https://gist.github.com/kylelemons/1525278
+func Pipeline(cmds ...*exec.Cmd) ([]byte, []byte, error) {
+	// Require at least one command
+	if len(cmds) < 1 {
+		return nil, nil, nil
+	}
+
+	// Collect the output from the command(s)
+	var output bytes.Buffer
+	var stderr bytes.Buffer
+
+	last := len(cmds) - 1
+	for i, cmd := range cmds[:last] {
+		var err error
+		// Connect each command's stdin to the previous command's stdout
+		if cmds[i+1].Stdin, err = cmd.StdoutPipe(); err != nil {
+			return nil, nil, err
+		}
+		// Connect each command's stderr to a buffer
+		cmd.Stderr = &stderr
+	}
+
+	// Connect the output and error for the last command
+	cmds[last].Stdout, cmds[last].Stderr = &output, &stderr
+
+	// Start each command
+	for _, cmd := range cmds {
+		if err := cmd.Start(); err != nil {
+			return output.Bytes(), stderr.Bytes(), err
+		}
+	}
+
+	// Wait for each command to complete
+	for _, cmd := range cmds {
+		if err := cmd.Wait(); err != nil {
+			return output.Bytes(), stderr.Bytes(), err
+		}
+	}
+
+	// Return the pipeline output and the collected standard error
+	return output.Bytes(), stderr.Bytes(), nil
+}
+
+// getSysctrlEnv sets LC_ALL=C in a list of env vars for use when running
+// sysctl commands (see DoSysctrl).
+func getSysctrlEnv(env []string) []string {
+	foundLC := false
+	for i, line := range env {
+		if strings.HasPrefix(line, "LC_ALL") {
+			env[i] = "LC_ALL=C"
+			foundLC = true
+		}
+	}
+	if !foundLC {
+		env = append(env, "LC_ALL=C")
+	}
+	return env
 }

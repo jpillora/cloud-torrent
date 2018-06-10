@@ -330,7 +330,7 @@ func UnsnapOneFrame(r io.Reader, encBuf *FixedSizeRingBuf, outDecodedBuf *FixedS
 			}
 
 		default:
-			panic(fmt.Sprintf("unrecognized/unsupported chunk type %s", chunk_type))
+			panic(fmt.Sprintf("unrecognized/unsupported chunk type %#v", chunk_type))
 		}
 
 	} // end for{}
@@ -454,7 +454,7 @@ func Unsnappy(r io.Reader, w io.Writer) (err error) {
 			}
 
 		default:
-			panic(fmt.Sprintf("unrecognized/unsupported chunk type %s", chunk_type))
+			panic(fmt.Sprintf("unrecognized/unsupported chunk type %#v", chunk_type))
 		}
 
 	} // end for{}
@@ -462,6 +462,7 @@ func Unsnappy(r io.Reader, w io.Writer) (err error) {
 	return nil
 }
 
+// 0xff 0x06 0x00 0x00 sNaPpY
 var SnappyStreamHeaderMagic = []byte{0xff, 0x06, 0x00, 0x00, 0x73, 0x4e, 0x61, 0x50, 0x70, 0x59}
 
 const CHUNK_MAX = 65536

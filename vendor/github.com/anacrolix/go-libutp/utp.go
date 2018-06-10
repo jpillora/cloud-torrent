@@ -2,9 +2,9 @@ package utp
 
 /*
 #cgo CPPFLAGS: -DPOSIX -DUTP_DEBUG_LOGGING=0
-#cgo CFLAGS: -Wall -O3 -fno-exceptions
+#cgo CFLAGS: -Wall -O3
 // These are all copied from the libutp Makefile.
-#cgo CXXFLAGS: -Wall -O3 -fno-exceptions -fPIC -fno-rtti -Wno-sign-compare -fpermissive
+#cgo CXXFLAGS: -Wall -O3 -fPIC -Wno-sign-compare
 // There are some variables that aren't used unless UTP_DEBUG_LOGGING is defined.
 #cgo CXXFLAGS: -Wno-unused-const-variable
 // Windows additional flags
@@ -35,8 +35,8 @@ func (ctx *C.utp_context) setCallbacks() {
 	C.utp_set_callback(ctx, C.UTP_GET_READ_BUFFER_SIZE, (*C.utp_callback_t)(C.getReadBufferSizeCallback))
 }
 
-func (ctx *C.utp_context) setOption(opt, val int) int {
-	return int(C.utp_context_set_option(ctx, C.int(opt), C.int(val)))
+func (ctx *C.utp_context) setOption(opt Option, val int) int {
+	return int(C.utp_context_set_option(ctx, opt, C.int(val)))
 }
 
 func libStateName(state C.int) string {

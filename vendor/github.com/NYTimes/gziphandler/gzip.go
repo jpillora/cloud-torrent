@@ -28,9 +28,10 @@ const (
 	// The examples seem to indicate that it is.
 	DefaultQValue = 1.0
 
-	// DefaultMinSize defines the minimum size to reach to enable compression.
-	// It's 512 bytes.
-	DefaultMinSize = 512
+	// 1500 bytes is the MTU size for the internet since that is the largest size allowed at the network layer. 
+	// If you take a file that is 1300 bytes and compress it to 800 bytes, it’s still transmitted in that same 1500 byte packet regardless, so you’ve gained nothing. 
+	// That being the case, you should restrict the gzip compression to files with a size greater than a single packet, 1400 bytes (1.4KB) is a safe value.
+	DefaultMinSize = 1400
 )
 
 // gzipWriterPools stores a sync.Pool for each compression level for reuse of
@@ -82,6 +83,14 @@ type GzipResponseWriter struct {
 	buf     []byte // Holds the first part of the write before reaching the minSize or the end of the write.
 
 	contentTypes []string // Only compress if the response is one of these content-types. All are accepted if empty.
+}
+
+type GzipResponseWriterWithCloseNotify struct {
+	*GzipResponseWriter
+}
+
+func (w GzipResponseWriterWithCloseNotify) CloseNotify() <-chan bool {
+	return w.ResponseWriter.(http.CloseNotifier).CloseNotify()
 }
 
 // Write appends data to the gzip writer.
@@ -150,7 +159,9 @@ func (w *GzipResponseWriter) startGzip() error {
 
 // WriteHeader just saves the response code until close or GZIP effective writes.
 func (w *GzipResponseWriter) WriteHeader(code int) {
-	w.code = code
+	if w.code == 0 {
+		w.code = code
+	}
 }
 
 // init graps a new gzip writer from the gzipWriterPool and writes the correct
@@ -190,9 +201,15 @@ func (w *GzipResponseWriter) Close() error {
 // http.ResponseWriter if it is an http.Flusher. This makes GzipResponseWriter
 // an http.Flusher.
 func (w *GzipResponseWriter) Flush() {
-	if w.gw != nil {
-		w.gw.Flush()
+	if w.gw == nil {
+		// Only flush once startGzip has been called.
+		//
+		// Flush is thus a no-op until the written body
+		// exceeds minSize.
+		return
 	}
+
+	w.gw.Flush()
 
 	if fw, ok := w.ResponseWriter.(http.Flusher); ok {
 		fw.Flush()
@@ -256,7 +273,6 @@ func GzipHandlerWithOpts(opts ...option) (func(http.Handler) http.Handler, error
 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add(vary, acceptEncoding)
-
 			if acceptsGzip(r) {
 				gw := &GzipResponseWriter{
 					ResponseWriter: w,
@@ -266,7 +282,13 @@ func GzipHandlerWithOpts(opts ...option) (func(http.Handler) http.Handler, error
 				}
 				defer gw.Close()
 
-				h.ServeHTTP(gw, r)
+				if _, ok := w.(http.CloseNotifier); ok {
+					gwcn := GzipResponseWriterWithCloseNotify{gw}
+					h.ServeHTTP(gwcn, r)
+				} else {
+					h.ServeHTTP(gw, r)
+				}
+
 			} else {
 				h.ServeHTTP(w, r)
 			}

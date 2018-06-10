@@ -172,7 +172,7 @@ func DialContext(ctx context.Context, addr string) (nc net.Conn, err error) {
 		return
 	}
 	defer s.Close()
-	return s.DialContext(ctx, addr)
+	return s.DialContext(ctx, "", addr)
 }
 
 // Listen creates listener Socket to accept incoming connections.

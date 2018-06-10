@@ -2,18 +2,20 @@ package tracker
 
 import (
 	"bytes"
+	"encoding"
 	"encoding/binary"
 	"fmt"
 	"math/rand"
 	"net"
 
-	"github.com/anacrolix/torrent/util"
+	"github.com/anacrolix/dht/krpc"
+	"github.com/anacrolix/missinggo"
 )
 
 type torrent struct {
 	Leechers int32
 	Seeders  int32
-	Peers    util.CompactIPv4Peers
+	Peers    []krpc.NodeAddr
 }
 
 type server struct {
@@ -91,7 +93,14 @@ func (s *server) serveOne() (err error) {
 			return
 		}
 		t := s.t[ar.InfoHash]
-		b, err = t.Peers.MarshalBinary()
+		bm := func() encoding.BinaryMarshaler {
+			ip := missinggo.AddrIP(addr)
+			if ip.To4() != nil {
+				return krpc.CompactIPv4NodeAddrs(t.Peers)
+			}
+			return krpc.CompactIPv6NodeAddrs(t.Peers)
+		}()
+		b, err = bm.MarshalBinary()
 		if err != nil {
 			panic(err)
 		}

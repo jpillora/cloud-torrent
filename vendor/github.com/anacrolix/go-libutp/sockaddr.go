@@ -8,10 +8,9 @@ import (
 	"net"
 	"strconv"
 	"syscall"
+	"unsafe"
 
 	"github.com/anacrolix/missinggo/inproc"
-
-	"unsafe"
 )
 
 func toSockaddrInet(ip net.IP, port int, zone string) (*C.struct_sockaddr, C.socklen_t) {

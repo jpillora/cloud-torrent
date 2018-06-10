@@ -1,8 +1,9 @@
 package orderedmap
 
 import (
-	"github.com/anacrolix/missinggo/iter"
 	"github.com/google/btree"
+
+	"github.com/anacrolix/missinggo/iter"
 )
 
 type GoogleBTree struct {

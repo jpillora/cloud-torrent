@@ -1,7 +1,8 @@
 roaring [![Build Status](https://travis-ci.org/RoaringBitmap/roaring.png)](https://travis-ci.org/RoaringBitmap/roaring) [![Coverage Status](https://coveralls.io/repos/github/RoaringBitmap/roaring/badge.svg?branch=master)](https://coveralls.io/github/RoaringBitmap/roaring?branch=master) [![GoDoc](https://godoc.org/github.com/RoaringBitmap/roaring?status.svg)](https://godoc.org/github.com/RoaringBitmap/roaring) [![Go Report Card](https://goreportcard.com/badge/RoaringBitmap/roaring)](https://goreportcard.com/report/github.com/RoaringBitmap/roaring)
 =============
 
-This is a go port of the Roaring bitmap data structure.
+This is a go version of the Roaring bitmap data structure. 
+
 
 
 Roaring bitmaps are used by several major systems such as [Apache Lucene][lucene] and derivative systems such as [Solr][solr] and
@@ -29,6 +30,12 @@ Roaring bitmaps are found to work well in many important applications:
 The ``roaring`` Go library is used by
 * [Cloud Torrent](https://github.com/jpillora/cloud-torrent): a self-hosted remote torrent client
 * [runv](https://github.com/hyperhq/runv): an Hypervisor-based runtime for the Open Containers Initiative
+* [InfluxDB](https://www.influxdata.com)
+* [Pilosa](https://www.pilosa.com/)
+* [Bleve](http://www.blevesearch.com)
+
+This library is used in production in several systems, it is part of the [Awesome Go collection](https://awesome-go.com).
+
 
 There are also  [Java](https://github.com/RoaringBitmap/RoaringBitmap) and [C/C++](https://github.com/RoaringBitmap/CRoaring) versions.  The Java, C, C++ and Go version are binary compatible: e.g,  you can save bitmaps
 from a Java program and load them back in Go, and vice versa. We have a [format specification](https://github.com/RoaringBitmap/RoaringFormatSpec).
@@ -36,17 +43,17 @@ from a Java program and load them back in Go, and vice versa. We have a [format 
 
 This code is licensed under Apache License, Version 2.0 (ASL2.0).
 
-Copyright 2016 by the authors.
+Copyright 2016-... by the authors.
 
 
 ### References
 
-- Daniel Lemire, Owen Kaser, Nathan Kurz, Luca Deri, Chris O'Hara, François Saint-Jacques, Gregory Ssi-Yan-Kai, Roaring Bitmaps: Implementation of an Optimized Software Library [arXiv:1709.07821](https://arxiv.org/abs/1709.07821)
+- Daniel Lemire, Owen Kaser, Nathan Kurz, Luca Deri, Chris O'Hara, François Saint-Jacques, Gregory Ssi-Yan-Kai, Roaring Bitmaps: Implementation of an Optimized Software Library, Software: Practice and Experience 48 (4), 2018 [arXiv:1709.07821](https://arxiv.org/abs/1709.07821)
 -  Samy Chambi, Daniel Lemire, Owen Kaser, Robert Godin,
 Better bitmap performance with Roaring bitmaps,
-Software: Practice and Experience Volume 46, Issue 5, pages 709–719, May 2016
+Software: Practice and Experience 46 (5), 2016.
 http://arxiv.org/abs/1402.6407 This paper used data from http://lemire.me/data/realroaring2014.html
-- Daniel Lemire, Gregory Ssi-Yan-Kai, Owen Kaser, Consistently faster and smaller compressed bitmaps with Roaring, Software: Practice and Experience (accepted in 2016, to appear) http://arxiv.org/abs/1603.06549
+- Daniel Lemire, Gregory Ssi-Yan-Kai, Owen Kaser, Consistently faster and smaller compressed bitmaps with Roaring, Software: Practice and Experience 46 (11), 2016. http://arxiv.org/abs/1603.06549
 
 
 ### Dependencies
@@ -54,10 +61,12 @@ http://arxiv.org/abs/1402.6407 This paper used data from http://lemire.me/data/r
 Dependencies are fetched automatically by giving the `-t` flag to `go get`.
 
 they include
-
   - github.com/smartystreets/goconvey/convey
   - github.com/willf/bitset
   - github.com/mschoch/smat
+  - github.com/glycerine/go-unsnap-stream
+  - github.com/philhofer/fwd
+  - github.com/jtolds/gls
 
 Note that the smat library requires Go 1.6 or better.
 
@@ -89,7 +98,7 @@ func main() {
     rb2 := roaring.BitmapOf(3, 4, 1000)
     fmt.Println(rb2.String())
 
-    rb3 := roaring.NewBitmap()
+    rb3 := roaring.New()
     fmt.Println(rb3.String())
 
     fmt.Println("Cardinality: ", rb1.GetCardinality())
@@ -103,6 +112,12 @@ func main() {
 
     rb3.Or(rb1)
 
+    // computes union of the three bitmaps in parallel using 4 workers  
+    roaring.ParOr(4, rb1, rb2, rb3)
+    // computes intersection of the three bitmaps in parallel using 4 workers  
+    roaring.ParAnd(4, rb1, rb2, rb3)
+
+
     // prints 1, 3, 4, 5, 1000
     i := rb3.Iterator()
     for i.HasNext() {
@@ -113,11 +128,12 @@ func main() {
     // next we include an example of serialization
     buf := new(bytes.Buffer)
     rb1.WriteTo(buf) // we omit error handling
-    newrb:= roaring.NewBitmap()
+    newrb:= roaring.New()
     newrb.ReadFrom(buf)
     if rb1.Equals(newrb) {
     	fmt.Println("I wrote the content to a byte stream and read it back.")
     }
+    // you can iterate over bitmaps using ReverseIterator(), Iterator, ManyIterator()
 }
 ```
 
@@ -131,7 +147,7 @@ consider the following sample of code:
 	if err != nil {
 		t.Errorf("Failed writing")
 	}
-	newrb:= NewBitmap()
+	newrb:= New()
 	size,err=newrb.ReadFrom(buf)
 	if err != nil {
 		t.Errorf("Failed reading")
@@ -176,6 +192,14 @@ https://coveralls.io/github/RoaringBitmap/roaring?branch=master
 Type
 
          go test -bench Benchmark -run -
+         
+To run benchmarks on [Real Roaring Datasets](https://github.com/RoaringBitmap/real-roaring-datasets)
+run the following:
+
+```sh
+go get github.com/RoaringBitmap/real-roaring-datasets
+BENCH_REAL_DATA=1 go test -bench BenchmarkRealData -run -
+```
 
 ### Iterative use
 

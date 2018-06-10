@@ -2,6 +2,7 @@ package tracker
 
 import (
 	"bytes"
+	"encoding"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -11,10 +12,9 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/anacrolix/dht/krpc"
 	"github.com/anacrolix/missinggo"
 	"github.com/anacrolix/missinggo/pproffd"
-
-	"github.com/anacrolix/torrent/util"
 )
 
 type Action int32
@@ -81,6 +81,7 @@ type udpAnnounce struct {
 	connectionId         int64
 	socket               net.Conn
 	url                  url.URL
+	a                    *Announce
 }
 
 func (c *udpAnnounce) Close() error {
@@ -90,12 +91,26 @@ func (c *udpAnnounce) Close() error {
 	return nil
 }
 
-func (c *udpAnnounce) Do(req *AnnounceRequest) (res AnnounceResponse, err error) {
+func (c *udpAnnounce) ipv6() bool {
+	if c.a.UdpNetwork == "udp6" {
+		return true
+	}
+	rip := missinggo.AddrIP(c.socket.RemoteAddr())
+	return rip.To16() != nil && rip.To4() == nil
+}
+
+func (c *udpAnnounce) Do(req AnnounceRequest) (res AnnounceResponse, err error) {
 	err = c.connect()
 	if err != nil {
 		return
 	}
 	reqURI := c.url.RequestURI()
+	if c.ipv6() {
+		// BEP 15
+		req.IPAddress = 0
+	} else if req.IPAddress == 0 && c.a.ClientIp4.IP != nil {
+		req.IPAddress = binary.BigEndian.Uint32(c.a.ClientIp4.IP.To4())
+	}
 	// Clearly this limits the request URI to 255 bytes. BEP 41 supports
 	// longer but I'm not fussed.
 	options := append([]byte{optionTypeURLData, byte(len(reqURI))}, []byte(reqURI)...)
@@ -115,15 +130,22 @@ func (c *udpAnnounce) Do(req *AnnounceRequest) (res AnnounceResponse, err error)
 	res.Interval = h.Interval
 	res.Leechers = h.Leechers
 	res.Seeders = h.Seeders
-	cps, err := util.UnmarshalIPv4CompactPeers(b.Bytes())
+	nas := func() interface {
+		encoding.BinaryUnmarshaler
+		NodeAddrs() []krpc.NodeAddr
+	} {
+		if c.ipv6() {
+			return &krpc.CompactIPv6NodeAddrs{}
+		} else {
+			return &krpc.CompactIPv4NodeAddrs{}
+		}
+	}()
+	err = nas.UnmarshalBinary(b.Bytes())
 	if err != nil {
 		return
 	}
-	for _, cp := range cps {
-		res.Peers = append(res.Peers, Peer{
-			IP:   cp.IP[:],
-			Port: int(cp.Port),
-		})
+	for _, cp := range nas.NodeAddrs() {
+		res.Peers = append(res.Peers, Peer{}.FromNodeAddr(cp))
 	}
 	return
 }
@@ -226,6 +248,13 @@ func (c *udpAnnounce) connected() bool {
 	return !c.connectionIdReceived.IsZero() && time.Now().Before(c.connectionIdReceived.Add(time.Minute))
 }
 
+func (c *udpAnnounce) dialNetwork() string {
+	if c.a.UdpNetwork != "" {
+		return c.a.UdpNetwork
+	}
+	return "udp"
+}
+
 func (c *udpAnnounce) connect() (err error) {
 	if c.connected() {
 		return nil
@@ -237,7 +266,7 @@ func (c *udpAnnounce) connect() (err error) {
 			hmp.NoPort = false
 			hmp.Port = 80
 		}
-		c.socket, err = net.Dial("udp", hmp.String())
+		c.socket, err = net.Dial(c.dialNetwork(), hmp.String())
 		if err != nil {
 			return
 		}
@@ -257,10 +286,13 @@ func (c *udpAnnounce) connect() (err error) {
 	return
 }
 
-func announceUDP(ar *AnnounceRequest, _url *url.URL) (AnnounceResponse, error) {
+// TODO: Split on IPv6, as BEP 15 says response peer decoding depends on
+// network in use.
+func announceUDP(opt Announce, _url *url.URL) (AnnounceResponse, error) {
 	ua := udpAnnounce{
 		url: *_url,
+		a:   &opt,
 	}
 	defer ua.Close()
-	return ua.Do(ar)
+	return ua.Do(opt.Request)
 }

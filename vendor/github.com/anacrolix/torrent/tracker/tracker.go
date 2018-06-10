@@ -2,8 +2,10 @@ package tracker
 
 import (
 	"errors"
-	"net"
+	"net/http"
 	"net/url"
+
+	"github.com/anacrolix/dht/krpc"
 )
 
 // Marshalled as binary by the UDP client, so be careful making changes.
@@ -16,7 +18,7 @@ type AnnounceRequest struct {
 	// Apparently this is optional. None can be used for announces done at
 	// regular intervals.
 	Event     AnnounceEvent
-	IPAddress int32
+	IPAddress uint32
 	Key       int32
 	NumWant   int32 // How many peer addresses are desired. -1 for default.
 	Port      uint16
@@ -36,12 +38,6 @@ func (e AnnounceEvent) String() string {
 	return []string{"empty", "completed", "started", "stopped"}[e]
 }
 
-type Peer struct {
-	IP   net.IP
-	Port int
-	ID   []byte
-}
-
 const (
 	None      AnnounceEvent = iota
 	Completed               // The local peer just completed the torrent.
@@ -53,20 +49,31 @@ var (
 	ErrBadScheme = errors.New("unknown scheme")
 )
 
-func Announce(urlStr string, req *AnnounceRequest) (res AnnounceResponse, err error) {
-	return AnnounceHost(urlStr, req, "")
+type Announce struct {
+	TrackerUrl string
+	Request    AnnounceRequest
+	HostHeader string
+	UserAgent  string
+	HttpClient *http.Client
+	UdpNetwork string
+	// If the port is zero, it's assumed to be the same as the Request.Port
+	ClientIp4 krpc.NodeAddr
+	// If the port is zero, it's assumed to be the same as the Request.Port
+	ClientIp6 krpc.NodeAddr
 }
 
-func AnnounceHost(urlStr string, req *AnnounceRequest, host string) (res AnnounceResponse, err error) {
-	_url, err := url.Parse(urlStr)
+// In an FP language with currying, what order what you put these params?
+
+func (me Announce) Do() (res AnnounceResponse, err error) {
+	_url, err := url.Parse(me.TrackerUrl)
 	if err != nil {
 		return
 	}
 	switch _url.Scheme {
 	case "http", "https":
-		return announceHTTP(req, _url, host)
-	case "udp":
-		return announceUDP(req, _url)
+		return announceHTTP(me, _url)
+	case "udp", "udp4", "udp6":
+		return announceUDP(me, _url)
 	default:
 		err = ErrBadScheme
 		return

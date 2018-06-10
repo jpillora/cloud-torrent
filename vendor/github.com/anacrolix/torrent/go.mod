@@ -1,0 +1,36 @@
+module github.com/anacrolix/torrent
+
+require (
+	bazil.org/fuse v0.0.0-20180421153158-65cc252bf669
+	github.com/RoaringBitmap/roaring v0.4.7
+	github.com/anacrolix/dht v0.0.0-20180412060941-24cbf25b72a4
+	github.com/anacrolix/envpprof v0.0.0-20180404065416-323002cec2fa
+	github.com/anacrolix/go-libutp v0.0.0-20180522111405-6baeb806518d
+	github.com/anacrolix/log v0.0.0-20180412014343-2323884b361d
+	github.com/anacrolix/missinggo v0.0.0-20180522035225-b4a5853e62ff
+	github.com/anacrolix/mmsg v0.0.0-20180515031531-a4a3ba1fc8bb
+	github.com/anacrolix/sync v0.0.0-20171108081538-eee974e4f8c1
+	github.com/anacrolix/tagflag v0.0.0-20180109131632-2146c8d41bf0
+	github.com/anacrolix/utp v0.0.0-20180219060659-9e0e1d1d0572
+	github.com/boltdb/bolt v1.3.1
+	github.com/bradfitz/iter v0.0.0-20140124041915-454541ec3da2
+	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
+	github.com/dustin/go-humanize v0.0.0-20180421182945-02af3965c54e
+	github.com/fsnotify/fsnotify v1.4.7
+	github.com/glycerine/go-unsnap-stream v0.0.0-20180323001048-9f0cb55181dd
+	github.com/google/btree v0.0.0-20180124185431-e89373fe6b4a
+	github.com/gosuri/uilive v0.0.0-20170323041506-ac356e6e42cd
+	github.com/gosuri/uiprogress v0.0.0-20170224063937-d0567a9d84a1
+	github.com/huandu/xstrings v1.0.0
+	github.com/jessevdk/go-flags v1.4.0
+	github.com/mattn/go-sqlite3 v1.7.0
+	github.com/philhofer/fwd v1.0.0
+	github.com/ryszard/goskiplist v0.0.0-20150312221310-2dfbae5fcf46
+	github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72
+	github.com/stretchr/testify v1.2.1
+	github.com/syncthing/syncthing v0.14.48-rc.4
+	github.com/tinylib/msgp v1.0.2
+	github.com/willf/bitset v1.1.3
+	github.com/willf/bloom v0.0.0-20170505221640-54e3b963ee16
+	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
+)

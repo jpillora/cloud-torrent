@@ -32,7 +32,7 @@ type File struct {
 	//cloud torrent
 	Started bool
 	Percent float32
-	f       torrent.File
+	f       *torrent.File
 }
 
 func (torrent *Torrent) Update(t *torrent.Torrent) {

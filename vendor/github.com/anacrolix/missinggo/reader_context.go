@@ -1,6 +1,6 @@
 package missinggo
 
-import "golang.org/x/net/context"
+import "context"
 
 type ContextedReader struct {
 	R   ReadContexter

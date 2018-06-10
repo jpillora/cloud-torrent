@@ -1,34 +1,41 @@
 package bencode
 
 import (
+	"reflect"
 	"strings"
 )
 
-type tagOptions string
-
-func parseTag(tag string) (string, tagOptions) {
-	if idx := strings.Index(tag, ","); idx != -1 {
-		return tag[:idx], tagOptions(tag[idx+1:])
-	}
-	return tag, tagOptions("")
+func getTag(st reflect.StructTag) tag {
+	return parseTag(st.Get("bencode"))
 }
 
-func (opts tagOptions) contains(option_name string) bool {
-	if len(opts) == 0 {
-		return false
-	}
+type tag []string
 
-	s := string(opts)
-	for s != "" {
-		var next string
-		i := strings.Index(s, ",")
-		if i != -1 {
-			s, next = s[:i], s[i+1:]
-		}
-		if s == option_name {
+func parseTag(tagStr string) tag {
+	return strings.Split(tagStr, ",")
+}
+
+func (me tag) Ignore() bool {
+	return me[0] == "-"
+}
+
+func (me tag) Key() string {
+	return me[0]
+}
+
+func (me tag) HasOpt(opt string) bool {
+	for _, s := range me[1:] {
+		if s == opt {
 			return true
 		}
-		s = next
 	}
 	return false
+}
+
+func (me tag) OmitEmpty() bool {
+	return me.HasOpt("omitempty")
+}
+
+func (me tag) IgnoreUnmarshalTypeError() bool {
+	return me.HasOpt("ignore_unmarshal_type_error")
 }

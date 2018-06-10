@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,7 +14,7 @@ import (
 	"github.com/anacrolix/torrent/mmap_span"
 )
 
-type mmapStorage struct {
+type mmapClientImpl struct {
 	baseDir string
 	pc      PieceCompletion
 }
@@ -23,13 +24,13 @@ func NewMMap(baseDir string) ClientImpl {
 }
 
 func NewMMapWithCompletion(baseDir string, completion PieceCompletion) ClientImpl {
-	return &mmapStorage{
+	return &mmapClientImpl{
 		baseDir: baseDir,
 		pc:      completion,
 	}
 }
 
-func (s *mmapStorage) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (t TorrentImpl, err error) {
+func (s *mmapClientImpl) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (t TorrentImpl, err error) {
 	span, err := mMapTorrent(info, s.baseDir)
 	t = &mmapTorrentStorage{
 		infoHash: infoHash,
@@ -39,13 +40,13 @@ func (s *mmapStorage) OpenTorrent(info *metainfo.Info, infoHash metainfo.Hash) (
 	return
 }
 
-func (s *mmapStorage) Close() error {
+func (s *mmapClientImpl) Close() error {
 	return s.pc.Close()
 }
 
 type mmapTorrentStorage struct {
 	infoHash metainfo.Hash
-	span     mmap_span.MMapSpan
+	span     *mmap_span.MMapSpan
 	pc       PieceCompletion
 }
 
@@ -76,9 +77,9 @@ func (me mmapStoragePiece) pieceKey() metainfo.PieceKey {
 	return metainfo.PieceKey{me.ih, me.p.Index()}
 }
 
-func (sp mmapStoragePiece) GetIsComplete() (ret bool) {
-	ret, _ = sp.pc.Get(sp.pieceKey())
-	return
+func (sp mmapStoragePiece) Completion() Completion {
+	c, _ := sp.pc.Get(sp.pieceKey())
+	return c
 }
 
 func (sp mmapStoragePiece) MarkComplete() error {
@@ -91,7 +92,8 @@ func (sp mmapStoragePiece) MarkNotComplete() error {
 	return nil
 }
 
-func mMapTorrent(md *metainfo.Info, location string) (mms mmap_span.MMapSpan, err error) {
+func mMapTorrent(md *metainfo.Info, location string) (mms *mmap_span.MMapSpan, err error) {
+	mms = &mmap_span.MMapSpan{}
 	defer func() {
 		if err != nil {
 			mms.Close()
@@ -142,15 +144,18 @@ func mmapFile(name string, size int64) (ret mmap.MMap, err error) {
 		// Can't mmap() regions with length 0.
 		return
 	}
-	ret, err = mmap.MapRegion(file,
-		int(size), // Probably not great on <64 bit systems.
-		mmap.RDWR, 0, 0)
+	intLen := int(size)
+	if int64(intLen) != size {
+		err = errors.New("size too large for system")
+		return
+	}
+	ret, err = mmap.MapRegion(file, intLen, mmap.RDWR, 0, 0)
 	if err != nil {
-		err = fmt.Errorf("mapping file %q, length %d: %s", file.Name(), size, err)
+		err = fmt.Errorf("error mapping region: %s", err)
 		return
 	}
 	if int64(len(ret)) != size {
-		panic("mmap has wrong length")
+		panic(len(ret))
 	}
 	return
 }

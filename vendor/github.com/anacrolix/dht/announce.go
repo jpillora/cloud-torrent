@@ -137,10 +137,16 @@ func (a *Announce) gotNodeAddr(addr Addr) {
 func (a *Announce) contact(addr Addr) {
 	a.numContacted++
 	a.triedAddrs.Add([]byte(addr.String()))
-	if err := a.getPeers(addr); err != nil {
-		return
-	}
 	a.pending++
+	go func() {
+		err := a.getPeers(addr)
+		if err == nil {
+			return
+		}
+		a.mu.Lock()
+		a.transactionClosed()
+		a.mu.Unlock()
+	}()
 }
 
 func (a *Announce) maybeClose() {
@@ -155,12 +161,12 @@ func (a *Announce) transactionClosed() {
 }
 
 func (a *Announce) responseNode(node krpc.NodeInfo) {
-	a.gotNodeAddr(NewAddr(node.Addr))
+	a.gotNodeAddr(NewAddr(node.Addr.UDP()))
 }
 
 // Announce to a peer, if appropriate.
-func (a *Announce) maybeAnnouncePeer(to Addr, token string, peerId [20]byte) {
-	if !a.server.config.NoSecurity && !NodeIdSecure(peerId, to.UDPAddr().IP) {
+func (a *Announce) maybeAnnouncePeer(to Addr, token string, peerId *krpc.ID) {
+	if !a.server.config.NoSecurity && (peerId == nil || !NodeIdSecure(*peerId, to.UDPAddr().IP)) {
 		return
 	}
 	a.server.mu.Lock()
@@ -176,35 +182,29 @@ func (a *Announce) getPeers(addr Addr) error {
 	defer a.server.mu.Unlock()
 	return a.server.getPeers(addr, a.infoHash, func(m krpc.Msg, err error) {
 		// Register suggested nodes closer to the target info-hash.
-		if m.R != nil {
+		if m.R != nil && m.SenderID() != nil {
+			expvars.Add("announce get_peers response nodes values", int64(len(m.R.Nodes)))
+			expvars.Add("announce get_peers response nodes6 values", int64(len(m.R.Nodes6)))
 			a.mu.Lock()
 			for _, n := range m.R.Nodes {
 				a.responseNode(n)
 			}
-			a.mu.Unlock()
-
-			if vs := m.R.Values; len(vs) != 0 {
-				nodeInfo := krpc.NodeInfo{
-					Addr: addr.UDPAddr(),
-					ID:   *m.SenderID(),
-				}
-				select {
-				case a.values <- PeersValues{
-					Peers: func() (ret []Peer) {
-						for _, cp := range vs {
-							ret = append(ret, Peer(cp))
-						}
-						return
-					}(),
-					NodeInfo: nodeInfo,
-				}:
-				case <-a.stop:
-				}
+			for _, n := range m.R.Nodes6 {
+				a.responseNode(n)
 			}
-
-			a.maybeAnnouncePeer(addr, m.R.Token, *m.SenderID())
+			a.mu.Unlock()
+			select {
+			case a.values <- PeersValues{
+				Peers: m.R.Values,
+				NodeInfo: krpc.NodeInfo{
+					Addr: addr.KRPC(),
+					ID:   *m.SenderID(),
+				},
+			}:
+			case <-a.stop:
+			}
+			a.maybeAnnouncePeer(addr, m.R.Token, m.SenderID())
 		}
-
 		a.mu.Lock()
 		a.transactionClosed()
 		a.mu.Unlock()

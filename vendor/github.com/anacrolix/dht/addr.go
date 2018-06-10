@@ -1,6 +1,10 @@
 package dht
 
-import "net"
+import (
+	"net"
+
+	"github.com/anacrolix/dht/krpc"
+)
 
 // Used internally to refer to node network addresses. String() is called a
 // lot, and so can be optimized. Network() is not exposed, so that the
@@ -9,6 +13,7 @@ import "net"
 type Addr interface {
 	UDPAddr() *net.UDPAddr
 	String() string
+	KRPC() krpc.NodeAddr
 }
 
 // Speeds up some of the commonly called Addr methods.
@@ -23,6 +28,13 @@ func (ca cachedAddr) String() string {
 
 func (ca cachedAddr) UDPAddr() *net.UDPAddr {
 	return &ca.ua
+}
+
+func (ca cachedAddr) KRPC() krpc.NodeAddr {
+	return krpc.NodeAddr{
+		IP:   ca.ua.IP,
+		Port: ca.ua.Port,
+	}
 }
 
 func NewAddr(ua *net.UDPAddr) Addr {

@@ -177,6 +177,7 @@ void			utp_read_drained				(utp_socket *s);
 int				utp_get_delays					(utp_socket *s, uint32 *ours, uint32 *theirs, uint32 *age);
 utp_socket_stats* utp_get_stats					(utp_socket *s);
 utp_context*	utp_get_context					(utp_socket *s);
+void			utp_shutdown					(utp_socket *s, int how);
 void			utp_close						(utp_socket *s);
 
 #ifdef __cplusplus

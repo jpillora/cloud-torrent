@@ -49,6 +49,9 @@
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
 	#define IP_OPT_DONTFRAG IP_DONTFRAGMENT
+	#define SHUT_RD SD_RECEIVE
+	#define SHUT_WR SD_SEND
+	#define SHUT_RDWR SD_BOTH
 #else
 	#include <netinet/in.h>
 	#include <arpa/inet.h>

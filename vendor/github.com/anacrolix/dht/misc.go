@@ -1,6 +1,8 @@
 package dht
 
-import "net"
+import (
+	"net"
+)
 
 func mustListen(addr string) net.PacketConn {
 	ret, err := net.ListenPacket("udp", addr)

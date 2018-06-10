@@ -34,3 +34,16 @@ func FromMapKeys(m interface{}) interface{} {
 	}
 	return outValue.Interface()
 }
+
+// f: (T)T, input: []T, outout: []T
+func Map(f, input interface{}) interface{} {
+	inputValue := reflect.ValueOf(input)
+	funcValue := reflect.ValueOf(f)
+	_len := inputValue.Len()
+	retValue := reflect.MakeSlice(reflect.TypeOf(input), _len, _len)
+	for i := 0; i < _len; i++ {
+		out := funcValue.Call([]reflect.Value{inputValue.Index(i)})
+		retValue.Index(i).Set(out[0])
+	}
+	return retValue.Interface()
+}

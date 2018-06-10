@@ -3,11 +3,15 @@
 package disk
 
 import (
+	"context"
 	"fmt"
+	"io/ioutil"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/shirou/gopsutil/internal/common"
 )
@@ -211,24 +215,39 @@ var fsTypeMap = map[int64]string{
 	ZFS_SUPER_MAGIC:             "zfs",                 /* 0x2FC12FC1 local */
 }
 
-// Get disk partitions.
-// should use setmntent(3) but this implement use /etc/mtab file
-func DiskPartitions(all bool) ([]DiskPartitionStat, error) {
-	filename := common.HostEtc("mtab")
+// Partitions returns disk partitions. If all is false, returns
+// physical devices only (e.g. hard disks, cd-rom drives, USB keys)
+// and ignore all others (e.g. memory partitions such as /dev/shm)
+func Partitions(all bool) ([]PartitionStat, error) {
+	return PartitionsWithContext(context.Background(), all)
+}
+
+func PartitionsWithContext(ctx context.Context, all bool) ([]PartitionStat, error) {
+	filename := common.HostProc("self/mounts")
 	lines, err := common.ReadLines(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]DiskPartitionStat, 0, len(lines))
+	fs, err := getFileSystems()
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]PartitionStat, 0, len(lines))
 
 	for _, line := range lines {
 		fields := strings.Fields(line)
-		d := DiskPartitionStat{
+		d := PartitionStat{
 			Device:     fields[0],
 			Mountpoint: fields[1],
 			Fstype:     fields[2],
 			Opts:       fields[3],
+		}
+		if all == false {
+			if d.Device == "none" || !common.StringsHas(fs, d.Fstype) {
+				continue
+			}
 		}
 		ret = append(ret, d)
 	}
@@ -236,19 +255,64 @@ func DiskPartitions(all bool) ([]DiskPartitionStat, error) {
 	return ret, nil
 }
 
-func DiskIOCounters() (map[string]DiskIOCountersStat, error) {
+// getFileSystems returns supported filesystems from /proc/filesystems
+func getFileSystems() ([]string, error) {
+	filename := common.HostProc("filesystems")
+	lines, err := common.ReadLines(filename)
+	if err != nil {
+		return nil, err
+	}
+	var ret []string
+	for _, line := range lines {
+		if !strings.HasPrefix(line, "nodev") {
+			ret = append(ret, strings.TrimSpace(line))
+			continue
+		}
+		t := strings.Split(line, "\t")
+		if len(t) != 2 || t[1] != "zfs" {
+			continue
+		}
+		ret = append(ret, strings.TrimSpace(t[1]))
+	}
+
+	return ret, nil
+}
+
+func IOCounters(names ...string) (map[string]IOCountersStat, error) {
+	return IOCountersWithContext(context.Background(), names...)
+}
+
+func IOCountersWithContext(ctx context.Context, names ...string) (map[string]IOCountersStat, error) {
 	filename := common.HostProc("diskstats")
 	lines, err := common.ReadLines(filename)
 	if err != nil {
 		return nil, err
 	}
-	ret := make(map[string]DiskIOCountersStat, 0)
-	empty := DiskIOCountersStat{}
+	ret := make(map[string]IOCountersStat, 0)
+	empty := IOCountersStat{}
+
+	// use only basename such as "/dev/sda1" to "sda1"
+	for i, name := range names {
+		names[i] = filepath.Base(name)
+	}
 
 	for _, line := range lines {
 		fields := strings.Fields(line)
+		if len(fields) < 14 {
+			// malformed line in /proc/diskstats, avoid panic by ignoring.
+			continue
+		}
 		name := fields[2]
+
+		if len(names) > 0 && !common.StringsHas(names, name) {
+			continue
+		}
+
 		reads, err := strconv.ParseUint((fields[3]), 10, 64)
+		if err != nil {
+			return ret, err
+		}
+		mergedReads, err := strconv.ParseUint((fields[4]), 10, 64)
 		if err != nil {
 			return ret, err
 		}
@@ -264,6 +328,10 @@ func DiskIOCounters() (map[string]DiskIOCountersStat, error) {
 		if err != nil {
 			return ret, err
 		}
+		mergedWrites, err := strconv.ParseUint((fields[8]), 10, 64)
+		if err != nil {
+			return ret, err
+		}
 		wbytes, err := strconv.ParseUint((fields[9]), 10, 64)
 		if err != nil {
 			return ret, err
@@ -272,18 +340,30 @@ func DiskIOCounters() (map[string]DiskIOCountersStat, error) {
 		if err != nil {
 			return ret, err
 		}
+		iopsInProgress, err := strconv.ParseUint((fields[11]), 10, 64)
+		if err != nil {
+			return ret, err
+		}
 		iotime, err := strconv.ParseUint((fields[12]), 10, 64)
 		if err != nil {
 			return ret, err
 		}
-		d := DiskIOCountersStat{
-			ReadBytes:  rbytes * SectorSize,
-			WriteBytes: wbytes * SectorSize,
-			ReadCount:  reads,
-			WriteCount: writes,
-			ReadTime:   rtime,
-			WriteTime:  wtime,
-			IoTime:     iotime,
+		weightedIO, err := strconv.ParseUint((fields[13]), 10, 64)
+		if err != nil {
+			return ret, err
+		}
+		d := IOCountersStat{
+			ReadBytes:        rbytes * SectorSize,
+			WriteBytes:       wbytes * SectorSize,
+			ReadCount:        reads,
+			WriteCount:       writes,
+			MergedReadCount:  mergedReads,
+			MergedWriteCount: mergedWrites,
+			ReadTime:         rtime,
+			WriteTime:        wtime,
+			IopsInProgress:   iopsInProgress,
+			IoTime:           iotime,
+			WeightedIO:       weightedIO,
 		}
 		if d == empty {
 			continue
@@ -291,14 +371,27 @@ func DiskIOCounters() (map[string]DiskIOCountersStat, error) {
 		d.Name = name
 
 		d.SerialNumber = GetDiskSerialNumber(name)
+		d.Label = GetLabel(name)
+
 		ret[name] = d
 	}
 	return ret, nil
 }
 
+// GetDiskSerialNumber returns Serial Number of given device or empty string
+// on error. Name of device is expected, eg. /dev/sda
 func GetDiskSerialNumber(name string) string {
+	return GetDiskSerialNumberWithContext(context.Background(), name)
+}
+
+func GetDiskSerialNumberWithContext(ctx context.Context, name string) string {
 	n := fmt.Sprintf("--name=%s", name)
-	out, err := exec.Command("/sbin/udevadm", "info", "--query=property", n).Output()
+	udevadm, err := exec.LookPath("/sbin/udevadm")
+	if err != nil {
+		return ""
+	}
+
+	out, err := invoke.CommandWithContext(ctx, udevadm, "info", "--query=property", n)
 
 	// does not return error, just an empty string
 	if err != nil {
@@ -316,7 +409,27 @@ func GetDiskSerialNumber(name string) string {
 	return ""
 }
 
-func getFsType(stat syscall.Statfs_t) string {
+// GetLabel returns label of given device or empty string on error.
+// Name of device is expected, eg. /dev/sda
+// Supports label based on devicemapper name
+// See https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-block-dm
+func GetLabel(name string) string {
+	// Try label based on devicemapper name
+	dmname_filename := common.HostSys(fmt.Sprintf("block/%s/dm/name", name))
+
+	if !common.PathExists(dmname_filename) {
+		return ""
+	}
+
+	dmname, err := ioutil.ReadFile(dmname_filename)
+	if err != nil {
+		return ""
+	} else {
+		return string(dmname)
+	}
+}
+
+func getFsType(stat unix.Statfs_t) string {
 	t := int64(stat.Type)
 	ret, ok := fsTypeMap[t]
 	if !ok {

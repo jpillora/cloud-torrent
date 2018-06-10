@@ -1,35 +1,50 @@
 # torrent
 
-[![CircleCI](https://circleci.com/gh/anacrolix/torrent.svg?style=shield)](https://circleci.com/gh/anacrolix/torrent)
-[![GoDoc](https://godoc.org/github.com/anacrolix/torrent?status.svg)](https://godoc.org/github.com/anacrolix/torrent)
 [![Join the chat at https://gitter.im/anacrolix/torrent](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/anacrolix/torrent?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![GoDoc](https://godoc.org/github.com/anacrolix/torrent?status.svg)](https://godoc.org/github.com/anacrolix/torrent)
+[![CircleCI](https://circleci.com/gh/anacrolix/torrent.svg?style=shield)](https://circleci.com/gh/anacrolix/torrent)
 
-This repository implements BitTorrent-related packages and command-line utilities in Go. The emphasis is on use as a library from other projects. It's been used 24/7 in production by a downstream, private service since late 2014.
+This repository implements BitTorrent-related packages and command-line utilities in Go. The emphasis is on use as a library from other projects. It's been used 24/7 in production by downstream services since late 2014. The implementation was specifically created to explore Go's concurrency capabilities, and to include the ability to stream data directly from the BitTorrent network. To this end it [supports seeking, readaheads and other features](https://godoc.org/github.com/anacrolix/torrent#Reader) exposing torrents and their files with the various Go idiomatic `io` package interfaces. This is also demonstrated through [torrentfs](#torrentfs).
 
-There is support for protocol encryption, [DHT](https://github.com/anacrolix/dht), PEX, [uTP](https://github.com/anacrolix/utp), and various extensions. See the package documentation for a more complete list. There are several data storage backends provided: blob, file, and mmap, and you can write your own, such as to store data on S3, or in a database. You can use the provided binaries in `./cmd`, or use package `torrent` as a library for your own applications.
+There is [support for protocol encryption, DHT, PEX, uTP, and various extensions](https://godoc.org/github.com/anacrolix/torrent). There are [several data storage backends provided](https://godoc.org/github.com/anacrolix/torrent/storage): blob, file, bolt, and mmap, to name a few. You can [write your own](https://godoc.org/github.com/anacrolix/torrent/storage#ClientImpl) to store data for example on S3, or in a database. 
 
-Many of the sub-packages can be used for other purposes: [bencode](https://godoc.org/github.com/anacrolix/torrent/bencode), and [tracker](https://godoc.org/github.com/anacrolix/torrent/tracker), in particular.
+Some noteworthy package dependencies that can be used for other purposes include:
+
+ * [go-libutp](https://github.com/anacrolix/go-libutp)
+ * [dht](https://github.com/anacrolix/dht)
+ * [bencode](https://godoc.org/github.com/anacrolix/torrent/bencode)
+ * [tracker](https://godoc.org/github.com/anacrolix/torrent/tracker)
 
 ## Installation
 
 Install the library package with `go get github.com/anacrolix/torrent`, or the provided cmds with `go get github.com/anacrolix/torrent/cmd/...`.
 
-## Library example
+## Library examples
 
-There is a small example in the [package documentation](https://godoc.org/github.com/anacrolix/torrent).
+There are some small [examples](https://godoc.org/github.com/anacrolix/torrent#pkg-examples) in the package documentation.
 
-## Other public projects using torrent
+## Downstream projects
 
+There are several web-frontends and Android clients among the known public projects:
+
+ * [Torrent.Express](https://torrent.express/)
+ * [Confluence](https://github.com/anacrolix/confluence)
+ * [Trickl](https://github.com/arranlomas/Trickl)
+ * [Elementum](http://elementum.surge.sh/)
+ * [goTorrent](https://github.com/deranjer/goTorrent)
  * [Go Peerflix](https://github.com/Sioro-Neoku/go-peerflix)
  * [Cloud Torrent](https://github.com/jpillora/cloud-torrent)
  * [Android Torrent Client](https://gitlab.com/axet/android-torrent-client)
- * [Android libtorrent](https://gitlab.com/axet/libtorrent)
- * [Trickl - Torrent Client](https://play.google.com/store/apps/details?id=com.shwifty.tex)
- * [Confluence](https://github.com/anacrolix/confluence)
+ * [libtorrent](https://gitlab.com/axet/libtorrent)
+ * [Remote-Torrent](https://github.com/BruceWangNo1/remote-torrent)
+ 
+## Help
 
-## Commands
+Communication about the project is primarily through [Gitter](https://gitter.im/anacrolix/torrent) and the [issue tracker](https://github.com/anacrolix/torrent/issues).
 
-Here I'll describe what some of the provided commands in `./cmd` do.
+## Command packages
+
+Here I'll describe what some of the packages in `./cmd` do.
 
 Note that the [`godo`](https://github.com/anacrolix/godo) command which is invoked in the following examples builds and executes a Go import path, like `go run`. It's easier to use this convention than to spell out the install/invoke cycle for every single example.
 

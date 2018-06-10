@@ -48,9 +48,12 @@ type piecePerResourcePiece struct {
 	i resource.Instance
 }
 
-func (s piecePerResourcePiece) GetIsComplete() bool {
+func (s piecePerResourcePiece) Completion() Completion {
 	fi, err := s.c.Stat()
-	return err == nil && fi.Size() == s.p.Length()
+	return Completion{
+		Complete: err == nil && fi.Size() == s.p.Length(),
+		Ok:       true,
+	}
 }
 
 func (s piecePerResourcePiece) MarkComplete() error {
@@ -62,7 +65,7 @@ func (s piecePerResourcePiece) MarkNotComplete() error {
 }
 
 func (s piecePerResourcePiece) ReadAt(b []byte, off int64) (int, error) {
-	if s.GetIsComplete() {
+	if s.Completion().Complete {
 		return s.c.ReadAt(b, off)
 	} else {
 		return s.i.ReadAt(b, off)

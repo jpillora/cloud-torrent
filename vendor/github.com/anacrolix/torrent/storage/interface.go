@@ -31,5 +31,10 @@ type PieceImpl interface {
 	MarkComplete() error
 	MarkNotComplete() error
 	// Returns true if the piece is complete.
-	GetIsComplete() bool
+	Completion() Completion
+}
+
+type Completion struct {
+	Complete bool
+	Ok       bool
 }

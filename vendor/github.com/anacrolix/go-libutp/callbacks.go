@@ -31,16 +31,24 @@ func sendtoCallback(a *C.utp_callback_arguments) (ret C.uint64) {
 	sa := *(**C.struct_sockaddr)(unsafe.Pointer(&a.anon0[0]))
 	b := a.bufBytes()
 	addr := structSockaddrToUDPAddr(sa)
-	atomic.AddInt64(&sends, 1)
+	newSends := atomic.AddInt64(&sends, 1)
 	if logCallbacks {
-		Logger.Printf("sending %d bytes, %d packets", len(b), sends)
+		Logger.Printf("sending %d bytes, %d packets", len(b), newSends)
 	}
+	expMap.Add("socket PacketConn writes", 1)
 	n, err := s.pc.WriteTo(b, addr)
+	c := s.conns[a.socket]
 	if err != nil {
-		Logger.Printf("error sending packet: %s", err)
+		expMap.Add("socket PacketConn write errors", 1)
+		if c != nil && c.userOnError != nil {
+			go c.userOnError(err)
+		} else {
+			Logger.Printf("error sending packet: %#v", err)
+		}
 		return
 	}
 	if n != len(b) {
+		expMap.Add("socket PacketConn short writes", 1)
 		Logger.Printf("expected to send %d bytes but only sent %d", len(b), n)
 	}
 	return
@@ -48,11 +56,11 @@ func sendtoCallback(a *C.utp_callback_arguments) (ret C.uint64) {
 
 //export errorCallback
 func errorCallback(a *C.utp_callback_arguments) C.uint64 {
-	codeName := libErrorCodeNames(a.error_code())
+	err := errorForCode(a.error_code())
 	if logCallbacks {
-		log.Printf("error callback: socket %p: %s", a.socket, codeName)
+		log.Printf("error callback: socket %p: %s", a.socket, err)
 	}
-	libContextToSocket[a.context].conns[a.socket].onLibError(codeName)
+	libContextToSocket[a.context].conns[a.socket].onError(err)
 	return 0
 }
 
@@ -112,7 +120,10 @@ func acceptCallback(a *C.utp_callback_arguments) C.uint64 {
 		log.Printf("accept callback: %#v", *a)
 	}
 	s := getSocketForLibContext(a.context)
-	s.pushBacklog(s.newConn(a.socket))
+	c := s.newConn(a.socket)
+	c.setRemoteAddr()
+	c.inited = true
+	s.pushBacklog(c)
 	return 0
 }
 

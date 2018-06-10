@@ -2,6 +2,7 @@ package perf
 
 import (
 	"log"
+	"runtime"
 	"time"
 )
 
@@ -9,16 +10,25 @@ type Timer struct {
 	started time.Time
 	log     bool
 	name    string
+	marked  bool
 }
 
-func NewTimer(opts ...timerOpt) (t Timer) {
-	t.started = time.Now()
+func NewTimer(opts ...timerOpt) (t *Timer) {
+	t = &Timer{
+		started: time.Now(),
+	}
 	for _, o := range opts {
-		o(&t)
+		o(t)
 	}
 	if t.log && t.name != "" {
 		log.Printf("starting timer %q", t.name)
 	}
+	runtime.SetFinalizer(t, func(t *Timer) {
+		if t.marked {
+			return
+		}
+		log.Printf("timer %#v was never marked", t)
+	})
 	return
 }
 
@@ -36,16 +46,40 @@ func Name(name string) func(*Timer) {
 
 func (t *Timer) Mark(events ...string) time.Duration {
 	d := time.Since(t.started)
-	for _, e := range events {
-		if t.name != "" {
-			e = t.name + "/" + e
+	if len(events) == 0 {
+		if t.name == "" {
+			panic("no name or events specified")
 		}
-		t.addDuration(e, d)
+		t.addDuration(t.name, d)
+	} else {
+		for _, e := range events {
+			if t.name != "" {
+				e = t.name + "/" + e
+			}
+			t.addDuration(e, d)
+		}
 	}
 	return d
 }
 
+func (t *Timer) MarkOk(ok bool) {
+	if ok {
+		t.Mark("ok")
+	} else {
+		t.Mark("not ok")
+	}
+}
+
+func (t *Timer) MarkErr(err error) {
+	if err == nil {
+		t.Mark("success")
+	} else {
+		t.Mark("error")
+	}
+}
+
 func (t *Timer) addDuration(desc string, d time.Duration) {
+	t.marked = true
 	mu.RLock()
 	e := events[desc]
 	mu.RUnlock()

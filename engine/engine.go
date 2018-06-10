@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"sync"
 	"time"
 
@@ -41,13 +40,11 @@ func (e *Engine) Configure(c Config) error {
 		return fmt.Errorf("Invalid incoming port (%d)", c.IncomingPort)
 	}
 	tc := torrent.Config{
-		DHTConfig: dht.ServerConfig{
-			StartingNodes: dht.GlobalBootstrapAddrs,
-		},
-		DataDir:    c.DownloadDirectory,
-		ListenAddr: "0.0.0.0:" + strconv.Itoa(c.IncomingPort),
-		NoUpload:   !c.EnableUpload,
-		Seed:       c.EnableSeeding,
+		DhtStartingNodes: dht.GlobalBootstrapAddrs,
+		DataDir:          c.DownloadDirectory,
+		ListenPort:       c.IncomingPort,
+		NoUpload:         !c.EnableUpload,
+		Seed:             c.EnableSeeding,
 	}
 	tc.DisableEncryption = c.DisableEncryption
 
@@ -218,7 +215,7 @@ func (e *Engine) StartFile(infohash, filepath string) error {
 	}
 	t.Started = true
 	f.Started = true
-	f.f.PrioritizeRegion(0, f.Size)
+	f.f.Download()
 	return nil
 }
 

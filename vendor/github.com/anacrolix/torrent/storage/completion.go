@@ -6,10 +6,14 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
+type PieceCompletionGetSetter interface {
+	Get(metainfo.PieceKey) (Completion, error)
+	Set(_ metainfo.PieceKey, complete bool) error
+}
+
 // Implementations track the completion of pieces. It must be concurrent-safe.
 type PieceCompletion interface {
-	Get(metainfo.PieceKey) (bool, error)
-	Set(metainfo.PieceKey, bool) error
+	PieceCompletionGetSetter
 	Close() error
 }
 
