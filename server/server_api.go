@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/anacrolix/torrent"
@@ -29,11 +30,17 @@ func (s *Server) api(r *http.Request) error {
 
 	//convert url into torrent bytes
 	if action == "url" {
-		url := string(data)
-		remote, err := http.Get(url)
+		tUrl, err := url.ParseRequestURI(string(data))
 		if err != nil {
-			return fmt.Errorf("Invalid remote torrent URL: %s (%s)", err, url)
+			return fmt.Errorf("Invalid url given: %s (%s)", err, tUrl)
 		}
+
+		fmt.Printf("Encoded URL is %q\n", tUrl.String())
+		remote, err := http.Get(tUrl.String())
+		if err != nil {
+			return fmt.Errorf("Invalid remote torrent URL: %s (%s)", err, tUrl.String())
+		}
+
 		//TODO enforce max body size (32k?)
 		data, err = ioutil.ReadAll(remote.Body)
 		if err != nil {
