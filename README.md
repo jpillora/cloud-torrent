@@ -78,6 +78,8 @@ $ go get -v github.com/jpillora/cloud-torrent
 
 [AWS](https://aws.amazon.com)
 
+[Google Cloud](https://www.hashhackers.com/posts/install-cloud-torrent-docker-application-google-cloud-solved/)
+
 **Heroku**
 
 Heroku is no longer supported
