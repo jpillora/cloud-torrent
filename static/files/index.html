@@ -29,7 +29,7 @@
 		<!-- TITLE ===================== -->
 		<div class="title">
 			<h2>
-				<a href="https://github.com/jpillora/cloud-torrent" target="_blank" ng-init="logoHover = false"
+				<a href="/" target="_blank" ng-init="logoHover = false"
 				 ng-mouseover="logoHover = true" ng-mouseleave="logoHover = false">
 					<i class="blue icon" ng-class="{cloud:!logoHover, github: logoHover}"></i> {{ state.Stats.Title }}
 				</a>
@@ -57,9 +57,7 @@
 
 		<footer>
 			<div>
-				<span>github.com/
-					<a href="https://github.com/jpillora" target="_blank">jpillora</a>/
-					<a href="https://github.com/jpillora/cloud-torrent" target="_blank">cloud-torrent</a> version {{ state.Stats.Version }} - </span>
+				<span>Beta Project - version {{ state.Stats.Version }} - </span>
 				<span ng-if="numKeys(state.Users) > 1">{{ numKeys(state.Users) }} users connected - </span>
 				<span>
 					<a href="https://golang.org" target="_blank">Go</a> {{ state.Stats.Runtime }}
