@@ -1,0 +1,43 @@
+name: cloud-torrent
+base: core18
+
+summary: "Cloud Torrent: a self-hosted remote torrent client"
+description: |
+  Cloud torrent is a a self-hosted remote torrent client, written in Go
+  (golang). You start torrents remotely, which are downloaded as sets of files
+  on the local disk of the server, which are then retrievable or streamable via
+  HTTP.
+
+  Features
+
+  * Single binary
+  * Cross platform
+  * Embedded torrent search
+  * Real-time updates
+  * Mobile-friendly
+  * Fast content server
+
+adopt-info: cloud-torrent
+confinement: strict
+
+apps:
+  cloud-torrent:
+    command: bin/cloud-torrent
+
+parts:
+  cloud-torrent:
+    plugin: go
+    source: ./
+    go-importpath: github.com/jpillora/cloud-torrent
+    go-channel: 1.11/stable
+    parse-info: []
+    override-pull: |
+      snapcraftctl pull
+        version="$(git describe --tags --always --dirty)"
+        [ -n "$(echo $version | grep '-')" ] && grade=devel || grade=stable
+        snapcraftctl set-version "$version"
+        snapcraftctl set-grade "$grade"
+    build-packages:
+      - git
+      - build-essential
+
