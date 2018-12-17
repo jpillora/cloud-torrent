@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/jpillora/cloud-torrent/engine"
-	"github.com/jpillora/cloud-torrent/static"
+	ctstatic "github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/cookieauth"
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/scraper/scraper"
@@ -37,6 +38,7 @@ type Server struct {
 	CertPath   string `help:"TLS Certicate file path" short:"r"`
 	Log        bool   `help:"Enable request logging"`
 	Open       bool   `help:"Open now with your default browser"`
+	DoneCmd    string `help:"External cmd to run when task completed, environment variable CLD_PATH and CLD_SIZE are set."`
 	//http handlers
 	files, static http.Handler
 	scraper       *scraper.Handler
@@ -116,12 +118,43 @@ func (s *Server) Run(version string) error {
 	}
 	//poll torrents and files
 	go func() {
+		log.Printf("Pull routine started.\n")
+		doneMap := make(map[string]bool)
 		for {
 			s.state.Lock()
 			s.state.Torrents = s.engine.GetTorrents()
 			s.state.Downloads = s.listFiles()
 			s.state.Unlock()
 			s.state.Push()
+
+			// skip if DoneCmd not set
+			if s.DoneCmd != "" {
+				for k, tor := range s.state.Torrents {
+					if lastDone, ok := doneMap[k]; ok {
+						if !lastDone && tor.Done {
+							cmd := exec.Command(s.DoneCmd)
+							cmd.Env = append(os.Environ(),
+								fmt.Sprintf("CLD_DIR=%s", c.DownloadDirectory),
+								fmt.Sprintf("CLD_PATH=%s", tor.Name),
+								fmt.Sprintf("CLD_SIZE=%d", tor.Size),
+								fmt.Sprintf("CLD_FILECNT=%d", len(tor.Files)))
+
+							log.Printf("[Task Completed] DoneCmd called: [%s] environ:%v", s.DoneCmd, cmd.Env)
+							go func() {
+								if stdoutStderr, err := cmd.CombinedOutput(); err != nil {
+									log.Fatal(err)
+								} else {
+									log.Printf("DoneCmd Output: %s", stdoutStderr)
+								}
+							}()
+						}
+					}
+
+					// update doneMap
+					doneMap[k] = tor.Done
+				}
+			}
+
 			time.Sleep(1 * time.Second)
 		}
 	}()

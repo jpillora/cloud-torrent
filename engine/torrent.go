@@ -17,6 +17,7 @@ type Torrent struct {
 	//cloud torrent
 	Started      bool
 	Dropped      bool
+	Done         bool
 	Percent      float32
 	DownloadRate float32
 	t            *torrent.Torrent
@@ -84,6 +85,7 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 	now := time.Now()
 	bytes := t.BytesCompleted()
 	torrent.Percent = percent(bytes, torrent.Size)
+	torrent.Done = (bytes == torrent.Size)
 	if !torrent.updatedAt.IsZero() {
 		dt := float32(now.Sub(torrent.updatedAt))
 		db := float32(bytes - torrent.Downloaded)
