@@ -16,12 +16,12 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/jpillora/cloud-torrent/engine"
-	"github.com/jpillora/cloud-torrent/static"
+	ctstatic "github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/cookieauth"
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/scraper/scraper"
 	"github.com/jpillora/velox"
+	"github.com/jpillora/cloud-torrent/engine"
 	"github.com/skratchdot/open-golang/open"
 )
 
@@ -98,6 +98,7 @@ func (s *Server) Run(version string) error {
 		DownloadDirectory: "./downloads",
 		EnableUpload:      true,
 		AutoStart:         true,
+		DoneCmd:           "",
 	}
 	if _, err := os.Stat(s.ConfigPath); err == nil {
 		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {

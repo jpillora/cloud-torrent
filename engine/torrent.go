@@ -15,12 +15,14 @@ type Torrent struct {
 	Size       int64
 	Files      []*File
 	//cloud torrent
-	Started      bool
-	Dropped      bool
-	Percent      float32
-	DownloadRate float32
-	t            *torrent.Torrent
-	updatedAt    time.Time
+	Started       bool
+	Dropped       bool
+	Done          bool
+	DoneCmdCalled bool
+	Percent       float32
+	DownloadRate  float32
+	t             *torrent.Torrent
+	updatedAt     time.Time
 }
 
 type File struct {
@@ -80,10 +82,12 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 		totalCompleted += file.Completed
 	}
 
-	//cacluate rate
 	now := time.Now()
 	bytes := t.BytesCompleted()
 	torrent.Percent = percent(bytes, torrent.Size)
+	torrent.Done = (bytes == torrent.Size)
+
+	//cacluate rate
 	if !torrent.updatedAt.IsZero() {
 		dt := float32(now.Sub(torrent.updatedAt))
 		db := float32(bytes - torrent.Downloaded)
