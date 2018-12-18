@@ -38,7 +38,7 @@ type Server struct {
 	CertPath   string `help:"TLS Certicate file path" short:"r"`
 	Log        bool   `help:"Enable request logging"`
 	Open       bool   `help:"Open now with your default browser"`
-	DoneCmd    string `help:"External cmd to run when task completed, environment variable CLD_PATH and CLD_SIZE are set."`
+	DoneCmd    string `help:"External cmd to run when task completed, environment variables CLD_DIR / CLD_PATH / CLD_SIZE / CLD_FILECNT are set."`
 	//http handlers
 	files, static http.Handler
 	scraper       *scraper.Handler

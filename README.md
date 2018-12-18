@@ -10,6 +10,7 @@
 * Real-time updates
 * Mobile-friendly
 * Fast [content server](http://golang.org/pkg/net/http/#ServeContent)
+* External command run on task finished.
 
 See [Future Features here](#future-features)
 
@@ -43,6 +44,8 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-
 
 ``` sh
 $ go get -v github.com/jpillora/cloud-torrent
+$ CGO_ENABLED=0 go build -o cloud-torrent -ldflags "-s -w -X main.VERSION=0.X.Y"
+# or simple `make'
 ```
 
 **VPS**
@@ -87,6 +90,7 @@ Heroku is no longer supported
 ```
 $ cloud-torrent --help
 
+
   Usage: cloud-torrent [options]
 
   Options:
@@ -99,6 +103,8 @@ $ cloud-torrent --help
   --cert-path, -r    TLS Certicate file path
   --log, -l          Enable request logging
   --open, -o         Open now with your default browser
+  --done-cmd, -d     External cmd to run when task completed, environment variables CLD_DIR / CLD_PATH
+                     / CLD_SIZE / CLD_FILECNT are set.
   --help
   --version, -v
 
@@ -107,6 +113,7 @@ $ cloud-torrent --help
 
   Read more:
     https://github.com/jpillora/cloud-torrent
+
 
 ```
 
