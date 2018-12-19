@@ -7,4 +7,5 @@ type Config struct {
 	EnableUpload      bool
 	EnableSeeding     bool
 	IncomingPort      int
+	DoneCmd           string
 }

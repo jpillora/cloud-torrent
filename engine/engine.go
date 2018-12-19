@@ -3,7 +3,9 @@ package engine
 import (
 	"encoding/hex"
 	"fmt"
+	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"sync"
@@ -115,6 +117,13 @@ func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
 	}
 	//update torrent fields using underlying torrent
 	torrent.Update(tt)
+
+	if torrent.Done && !torrent.DoneCmdCalled {
+		torrent.DoneCmdCalled = true
+		if e.config.DoneCmd != "" {
+			go e.callDoneCmd(torrent)
+		}
+	}
 	return torrent
 }
 
@@ -236,4 +245,19 @@ func str2ih(str string) (metainfo.Hash, error) {
 		return ih, fmt.Errorf("Invalid length")
 	}
 	return ih, nil
+}
+
+func (e *Engine) callDoneCmd(torrent *Torrent) {
+	cmd := exec.Command(e.config.DoneCmd)
+	cmd.Env = append(os.Environ(),
+		fmt.Sprintf("CLD_DIR=%s", e.config.DownloadDirectory),
+		fmt.Sprintf("CLD_PATH=%s", torrent.Name),
+		fmt.Sprintf("CLD_SIZE=%d", torrent.Size),
+		fmt.Sprintf("CLD_FILECNT=%d", len(torrent.Files)))
+	log.Printf("[Task Completed] DoneCmd called: [%s] environ:%v", e.config.DoneCmd, cmd.Env)
+	if stdoutStderr, err := cmd.CombinedOutput(); err != nil {
+		log.Fatal(err)
+	} else {
+		log.Printf("DoneCmd Output: %s", stdoutStderr)
+	}
 }
