@@ -117,6 +117,19 @@ $ cloud-torrent --help
 
 ```
 
+#### About DoneCmd
+
+`DoneCmd` is an external command to be called when a task is finished, with infomation set as environment variables:
+
+```
+CLD_DIR=/path/to/download
+CLD_PATH=Torrent-Downloaded-File-OR-Dir
+CLD_SIZE=46578901
+CLD_FILECNT=1
+```
+Please noted that `CLD_PATH` will be a directory if the torrent contians more than one file, as `CLD_FILECNT` is stating the total number of files in the torrent.
+
+
 ### Future features
 
 The next set of [core features can be tracked here](https://github.com/jpillora/cloud-torrent/issues?q=is%3Aopen+is%3Aissue+label%3Acore-feature). This feature set requires large structural changes and therefore requires a complete rewrite for best results. This rewrite is in progress in the `0.9` branch though it will take quite some time.
