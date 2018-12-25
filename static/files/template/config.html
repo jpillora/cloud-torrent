@@ -9,7 +9,7 @@
     </div>
     <div ng-if="type != 'check'">
       <label>{{ k | addspaces }}</label>
-      <input type="{{type}}" ng-model="state.Config[k]"></input>
+      <input type="{{type}}" ng-model="state.Config[k]" ng-disabled="{{k=='DoneCmd'}}"></input>
     </div>
   </div>
   <div class="buttons">
