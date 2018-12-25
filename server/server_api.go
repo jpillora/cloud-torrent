@@ -66,6 +66,9 @@ func (s *Server) api(r *http.Request) error {
 		if err := json.Unmarshal(data, &c); err != nil {
 			return err
 		}
+		if c.DoneCmd != s.config.DoneCmd {
+			return fmt.Errorf("DoneCmd is NOT allowed being changed during running. Change it in config.json")
+		}
 		if err := s.reconfigure(c); err != nil {
 			return err
 		}
