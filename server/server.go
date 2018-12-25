@@ -16,12 +16,12 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	ctstatic "github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/cookieauth"
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/scraper/scraper"
 	"github.com/jpillora/velox"
 	"github.com/pentie/cloud-torrent/engine"
+	ctstatic "github.com/pentie/cloud-torrent/static"
 	"github.com/skratchdot/open-golang/open"
 )
 
