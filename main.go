@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/pentie/cloud-torrent/server"
+	"github.com/jpillora/cloud-torrent/server"
 	"github.com/jpillora/opts"
 )
 
@@ -19,7 +19,7 @@ func main() {
 	o := opts.New(&s)
 	o.Version(VERSION)
 	o.PkgRepo()
-	o.LineWidth = 96
+	//o.LineWidth = 96
 	o.Parse()
 
 	if err := s.Run(VERSION); err != nil {
