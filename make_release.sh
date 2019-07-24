@@ -1,6 +1,6 @@
 #!/bin/bash
 BIN=cloud-torrent
-GITVER=$(git rev-parse --short HEAD)
+GITVER=$(git describe --tags)
 
 rm -fv ${BIN}_*
 
@@ -21,4 +21,5 @@ if [[ $OS == "windows" ]]; then
 fi
 
 #go mod vendor
-CGO_ENABLED=0 GOARCH=$ARCH GOOS=$OS go build -o ${BIN}_${OS}_${ARCH}${SUFFIX} -ldflags "-s -w -X main.VERSION=$GITVER" -mod vendor
+# CGO_ENABLED=0 GOARCH=$ARCH GOOS=$OS go build -o ${BIN}_${OS}_${ARCH}${SUFFIX} -ldflags "-s -w -X main.VERSION=$GITVER"
+CGO_ENABLED=0 GOARCH=$ARCH GOOS=$OS go build -o ${BIN}_${OS}_${ARCH}${SUFFIX} -ldflags "-s -w -X main.VERSION=$GITVER"

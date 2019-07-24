@@ -99,6 +99,7 @@ func (s *Server) Run(version string) error {
 		EnableUpload:      true,
 		AutoStart:         true,
 		DoneCmd:           "",
+		SeedRatio: 		   0,
 	}
 	if _, err := os.Stat(s.ConfigPath); err == nil {
 		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {
@@ -115,6 +116,8 @@ func (s *Server) Run(version string) error {
 	if err := s.reconfigure(c); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)
 	}
+	log.Println("****************************************************************")
+	log.Printf("%#v\n", c)
 	//poll torrents and files
 	go func() {
 		for {

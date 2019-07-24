@@ -21,6 +21,7 @@ type Torrent struct {
 	DoneCmdCalled bool
 	Percent       float32
 	DownloadRate  float32
+	SeedRatio	  float32
 	Stats         torrent.TorrentStats
 	t             *torrent.Torrent
 	updatedAt     time.Time
@@ -40,10 +41,16 @@ type File struct {
 
 func (torrent *Torrent) Update(t *torrent.Torrent) {
 	torrent.Name = t.Name()
-	torrent.Stats = t.Stats()
 	torrent.Loaded = t.Info() != nil
 	if torrent.Loaded {
 		torrent.updateLoaded(t)
+		torrent.Stats = t.Stats()
+
+		bRead := torrent.Stats.BytesReadData.Int64()
+		bWrite := torrent.Stats.BytesWritten.Int64()
+		if bRead > 0 {
+			torrent.SeedRatio = float32(bWrite) / float32(bRead)
+		}
 	}
 	torrent.t = t
 }

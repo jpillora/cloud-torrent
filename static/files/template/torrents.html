@@ -33,7 +33,7 @@
           <div>Peers (Active / Pending / HalfOpen / Total):
             {{ t.Stats.ActivePeers }}/{{ t.Stats.PendingPeers }}/{{ t.Stats.HalfOpenPeers }}/{{ t.Stats.TotalPeers }}
           </div>
-          <div>Up / Down: {{ t.Stats.BytesWritten | bytes }} / {{ t.Stats.BytesRead | bytes }}</div>
+          <div>Up / Down: {{ t.Stats.BytesWritten | bytes }} / {{ t.Stats.BytesRead | bytes }} | Ratio: {{ t.SeedRatio | round }}</div>
         </div>
         <div class="ui blue progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
           <div class="bar" ng-style="{width: t.Percent + '%'}">

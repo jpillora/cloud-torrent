@@ -8,4 +8,5 @@ type Config struct {
 	EnableSeeding     bool
 	IncomingPort      int
 	DoneCmd           string
+	SeedRatio		  float32
 }
