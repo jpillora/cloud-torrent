@@ -47,6 +47,8 @@ func (e *Engine) Configure(c Config) error {
 	tc.EncryptionPolicy = torrent.EncryptionPolicy {
 		DisableEncryption: c.DisableEncryption,
 	}
+	tc.UploadRateLimiter = c.UploadLimiter()
+	tc.DownloadRateLimiter = c.DownloadLimiter()
 
 	client, err := torrent.NewClient(tc)
 	if err != nil {
