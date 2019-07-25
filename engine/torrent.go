@@ -12,6 +12,7 @@ type Torrent struct {
 	Name       string
 	Loaded     bool
 	Downloaded int64
+	Uploaded   int64
 	Size       int64
 	Files      []*File
 	//cloud torrent
@@ -20,6 +21,7 @@ type Torrent struct {
 	DoneCmdCalled bool
 	Percent       float32
 	DownloadRate  float32
+	UploadRate 	  float32
 	SeedRatio	  float32
 	Stats         torrent.TorrentStats
 	t             *torrent.Torrent
@@ -84,24 +86,28 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 		totalCompleted += file.Completed
 	}
 
+	torrent.Stats = t.Stats()
 	now := time.Now()
 	bytes := t.BytesCompleted()
+	ulbytes := torrent.Stats.BytesWrittenData.Int64()
 
 	// calculate rate
 	if !torrent.updatedAt.IsZero() {
-		dt := float32(now.Sub(torrent.updatedAt))
-		db := float32(bytes - torrent.Downloaded)
-		rate := db * (float32(time.Second) / dt)
-		if rate >= 0 {
-			torrent.DownloadRate = rate
-		}
+		dtinv := float32(time.Second) / float32(now.Sub(torrent.updatedAt))
+
+		dldb := float32(bytes - torrent.Downloaded)
+		torrent.DownloadRate = dldb * dtinv
+
+		uldb := float32(ulbytes - torrent.Uploaded)
+		torrent.UploadRate = uldb * dtinv
 	}
 
 	torrent.Downloaded = bytes
+	torrent.Uploaded = ulbytes
+
 	torrent.updatedAt = now
 	torrent.Percent = percent(bytes, torrent.Size)
 	torrent.Done = (bytes == torrent.Size)
-	torrent.Stats = t.Stats()
 
 	// calculate ratio
 	bRead := torrent.Stats.BytesReadData.Int64()
