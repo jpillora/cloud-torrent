@@ -16,7 +16,6 @@ type Torrent struct {
 	Files      []*File
 	//cloud torrent
 	Started       bool
-	Dropped       bool
 	Done          bool
 	DoneCmdCalled bool
 	Percent       float32
@@ -39,18 +38,12 @@ type File struct {
 	f       torrent.File
 }
 
+// Update retrive info from torrent.Torrent
 func (torrent *Torrent) Update(t *torrent.Torrent) {
 	torrent.Name = t.Name()
 	torrent.Loaded = t.Info() != nil
 	if torrent.Loaded {
 		torrent.updateLoaded(t)
-		torrent.Stats = t.Stats()
-
-		bRead := torrent.Stats.BytesReadData.Int64()
-		bWrite := torrent.Stats.BytesWritten.Int64()
-		if bRead > 0 {
-			torrent.SeedRatio = float32(bWrite) / float32(bRead)
-		}
 	}
 	torrent.t = t
 }
@@ -95,8 +88,9 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 	bytes := t.BytesCompleted()
 	torrent.Percent = percent(bytes, torrent.Size)
 	torrent.Done = (bytes == torrent.Size)
+	torrent.Downloaded = bytes
 
-	//cacluate rate
+	// calculate rate
 	if !torrent.updatedAt.IsZero() {
 		dt := float32(now.Sub(torrent.updatedAt))
 		db := float32(bytes - torrent.Downloaded)
@@ -105,8 +99,15 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 			torrent.DownloadRate = rate
 		}
 	}
-	torrent.Downloaded = bytes
 	torrent.updatedAt = now
+	torrent.Stats = t.Stats()
+
+	// calculate ratio
+	bRead := torrent.Stats.BytesReadData.Int64()
+	bWrite := torrent.Stats.BytesWritten.Int64()
+	if bRead > 0 {
+		torrent.SeedRatio = float32(bWrite) / float32(bRead)
+	}
 }
 
 func percent(n, total int64) float32 {

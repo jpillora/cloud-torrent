@@ -99,21 +99,31 @@ func (e *Engine) GetTorrents() map[string]*Torrent {
 		return nil
 	}
 	for _, tt := range e.client.Torrents() {
-		torrent := e.upsertTorrent(tt)
-
-		if e.config.SeedRatio > 0 && torrent.SeedRatio > e.config.SeedRatio && torrent.Started && torrent.Done {
-			log.Println("[Task Stoped] due to reach seeding ratio")
-			e.StopTorrent(torrent.InfoHash)
-		}
-
-		if torrent.Done && !torrent.DoneCmdCalled {
-			torrent.DoneCmdCalled = true
-			if e.config.DoneCmd != "" {
-				go e.callDoneCmd(torrent)
-			}
-		}
+		t := e.upsertTorrent(tt)
+		e.torrentRoutine(t)
 	}
 	return e.ts
+}
+
+
+func (e *Engine) torrentRoutine(t *Torrent) {
+
+	// stops task on reaching ratio
+	if e.config.SeedRatio > 0 &&
+			t.SeedRatio > e.config.SeedRatio &&
+			t.Started &&
+			t.Done {
+		log.Println("[Task Stoped] due to reaching SeedRatio")
+		e.StopTorrent(t.InfoHash)
+	}
+
+	// call DoneCmd on task completed
+	if t.Done && !t.DoneCmdCalled {
+		t.DoneCmdCalled = true
+		if e.config.DoneCmd != "" {
+			go e.callDoneCmd(t)
+		}
+	}
 }
 
 func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {

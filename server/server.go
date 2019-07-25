@@ -126,7 +126,7 @@ func (s *Server) Run(version string) error {
 			s.state.Downloads = s.listFiles()
 			s.state.Unlock()
 			s.state.Push()
-			time.Sleep(1 * time.Second)
+			time.Sleep(3 * time.Second)
 		}
 	}()
 	//start collecting stats
