@@ -7,8 +7,8 @@
 
 This fork adds new features to the original version by jpillora.
 
-* Call extrenal program called on download complete `DoneCmd`
-* Stops torrent when reaching the `SeedRatio`
+* Run extrenal program on task completed: `DoneCmd`
+* Stops task when seeding ratio reaching: `SeedRatio`
 * Download/Upload Rate limit
 * Display transfer stats in web
 
