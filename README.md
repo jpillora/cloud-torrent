@@ -16,7 +16,7 @@ And some development improvement
 * Use go modules with go 1.12
 * Upgrade torrnet engine API from github.com/anacrolix/torrent
 
-This fork using version number above 1.0.0
+This fork use version number above 1.0.0.
 
 ### Features
 
