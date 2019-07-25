@@ -114,7 +114,7 @@ func (e *Engine) torrentRoutine(t *Torrent) {
 			t.Started &&
 			t.Done {
 		log.Println("[Task Stoped] due to reaching SeedRatio")
-		e.StopTorrent(t.InfoHash)
+		go e.StopTorrent(t.InfoHash)
 	}
 
 	// call DoneCmd on task completed
