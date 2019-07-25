@@ -8,6 +8,7 @@ This fork adds new features to the original version by jpillora.
 
 * Call extrenal program called on download complete `DoneCmd`
 * Stops torrent when reaching the `SeedRatio`
+* Download/Upload Rate limit
 * Display transfer stats in web
 
 And some development improvement
@@ -77,6 +78,31 @@ $ cloud-torrent --help
 
 
 ```
+
+#### Example of config.json
+
+A sample json will be generated on first run of cloud-torrent.
+
+```json
+{
+  "AutoStart": true,
+  "DisableEncryption": false,
+  "DownloadDirectory": "/home/ubuntu/Download/cloud-torrent/downloads",
+  "EnableUpload": true,
+  "EnableSeeding": false,
+  "IncomingPort": 50007,
+  "SeedRatio": 1.0,
+  "UploadRate": "High",
+  "DownloadRate": "High",
+  "DoneCmd": ""
+}
+```
+
+Note: about `UploadRate`/`DownloadRate`, a fixed level amoung `Low`, `Medium` and `High` is accepted as value, all other values(or empty) will result in unlimited rate. The actual rate of each level:
+
+* Low: 50000 Bytes/s (50k/s)
+* Medium: 500000 Bytes/s (500k/s)
+* High: 1500000 Bytes/s (1500k/s)
 
 #### About DoneCmd
 
