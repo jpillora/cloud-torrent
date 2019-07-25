@@ -86,9 +86,6 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 
 	now := time.Now()
 	bytes := t.BytesCompleted()
-	torrent.Percent = percent(bytes, torrent.Size)
-	torrent.Done = (bytes == torrent.Size)
-	torrent.Downloaded = bytes
 
 	// calculate rate
 	if !torrent.updatedAt.IsZero() {
@@ -99,7 +96,11 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 			torrent.DownloadRate = rate
 		}
 	}
+
+	torrent.Downloaded = bytes
 	torrent.updatedAt = now
+	torrent.Percent = percent(bytes, torrent.Size)
+	torrent.Done = (bytes == torrent.Size)
 	torrent.Stats = t.Stats()
 
 	// calculate ratio
