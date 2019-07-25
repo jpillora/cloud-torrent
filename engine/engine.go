@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -137,10 +136,7 @@ func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
 }
 
 func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
-	ih, err := str2ih(infohash)
-	if err != nil {
-		return nil, err
-	}
+	ih := metainfo.NewHashFromHex(infohash)
 	t, ok := e.ts[ih.HexString()]
 	if !ok {
 		return t, fmt.Errorf("Missing torrent %x", ih)
@@ -209,7 +205,7 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	}
 	os.Remove(filepath.Join(e.cacheDir, infohash+".torrent"))
 	delete(e.ts, t.InfoHash)
-	ih, _ := str2ih(infohash)
+	ih := metainfo.NewHashFromHex(infohash)
 	if tt, ok := e.client.Torrent(ih); ok {
 		tt.Drop()
 	}
@@ -242,18 +238,6 @@ func (e *Engine) StartFile(infohash, filepath string) error {
 
 func (e *Engine) StopFile(infohash, filepath string) error {
 	return fmt.Errorf("Unsupported")
-}
-
-func str2ih(str string) (metainfo.Hash, error) {
-	var ih metainfo.Hash
-	e, err := hex.Decode(ih[:], []byte(str))
-	if err != nil {
-		return ih, fmt.Errorf("Invalid hex string")
-	}
-	if e != 20 {
-		return ih, fmt.Errorf("Invalid length")
-	}
-	return ih, nil
 }
 
 func (e *Engine) callDoneCmd(torrent *Torrent) {
