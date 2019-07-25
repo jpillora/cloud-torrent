@@ -1,4 +1,5 @@
-![screenshot](https://user-images.githubusercontent.com/1033514/61778882-327a8980-ae32-11e9-99d5-22ad8685d8ac.png)
+![screenshot](https://user-images.githubusercontent.com/1033514/61853773-489a4f80-aeef-11e9-9e41-025cffdabec7.png)
+
 
 **Cloud torrent** is a a self-hosted remote torrent client, written in Go (golang). You start torrents remotely, which are downloaded as sets of files on the local disk of the server, which are then retrievable or streamable via HTTP.
 
