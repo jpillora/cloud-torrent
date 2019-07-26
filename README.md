@@ -36,6 +36,16 @@ See [the latest release](https://github.com/boypt/cloud-torrent/releases/latest)
 
 *Tip*: [Auto-run `cloud-torrent` on boot](https://github.com/jpillora/cloud-torrent/wiki/Auto-Run-on-Reboot)
 
+**Docker**
+
+[![Docker Pulls](https://img.shields.io/docker/pulls/boypt/cloud-torrent.svg)][dockerhub] [![Image Size](https://images.microbadger.com/badges/image/boypt/cloud-torrent.svg)][dockerhub]
+
+[dockerhub]: https://hub.docker.com/r/boypt/cloud-torrent/
+
+``` sh
+$ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads boypt/cloud-torrent
+```
+
 **Source**
 
 *[Go](https://golang.org/dl/) is required to install from source*
