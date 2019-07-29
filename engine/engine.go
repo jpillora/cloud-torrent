@@ -83,9 +83,9 @@ func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 	t := e.upsertTorrent(tt)
 	go func() {
 		<-t.t.GotInfo()
-		// if e.config.AutoStart && !loaded && torrent.Loaded && !torrent.Started {
-		e.StartTorrent(t.InfoHash)
-		// }
+		if e.config.AutoStart {
+			e.StartTorrent(t.InfoHash)
+		}
 	}()
 	return nil
 }
