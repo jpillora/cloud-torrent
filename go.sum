@@ -144,6 +144,8 @@ github.com/hashicorp/go-multierror v1.0.0 h1:iVjPR7a6H0tWELX5NxNe7bYopibicUzc7uP
 github.com/hashicorp/go-multierror v1.0.0/go.mod h1:dHtQlpGsu+cZNNAkkCN/P3hoUDHhCYQXV3UM06sGGrk=
 github.com/hashicorp/golang-lru v0.5.1 h1:0hERBMJE1eitiLkihrMvRVBYAkpHzc/J3QdDN+dAcgU=
 github.com/hashicorp/golang-lru v0.5.1/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
+github.com/hashicorp/golang-lru v0.5.3 h1:YPkqC67at8FYaadspW/6uE0COsBxS2656RLEr8Bppgk=
+github.com/hashicorp/golang-lru v0.5.3/go.mod h1:iADmTwqILo4mZ8BN3D2Q6+9jd8WM5uGBxy+E8yxSoD4=
 github.com/hpcloud/tail v1.0.0 h1:nfCOvKYfkgYP8hkirhJocXT2+zOD8yUNjXaWfTlyFKI=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/huandu/xstrings v1.0.0 h1:pO2K/gKgKaat5LdpAhxhluX2GPQMaI3W5FUz/I/UnWk=
@@ -167,6 +169,7 @@ github.com/jpillora/cookieauth v0.0.0-20190219222732-2ae29b2a9c76/go.mod h1:gkgT
 github.com/jpillora/eventsource v0.0.0-20170920003432-7ed8c999e167 h1:e+b0kVgqckdJnfgmJM8vqG6PnyRbdhI26tVfCNf3kMw=
 github.com/jpillora/eventsource v0.0.0-20170920003432-7ed8c999e167/go.mod h1:qaSVvI/JUZarbxO3OwihjLyh9SO49T1cGjUeyIheDAs=
 github.com/jpillora/opts v1.0.0/go.mod h1:9CwarOXfgQBIdG1wc0EfXSbS14ky0BlFqeGmIsyZvvE=
+github.com/jpillora/opts v1.0.5 h1:anoRfW5GWTUh1gLtJZlPlNYsyitkewY2zedUsVLhwkA=
 github.com/jpillora/opts v1.0.5/go.mod h1:7p7X/vlpKZmtaDFYKs956EujFqA6aCrOkcCaS6UBcR4=
 github.com/jpillora/opts v1.1.0/go.mod h1:7p7X/vlpKZmtaDFYKs956EujFqA6aCrOkcCaS6UBcR4=
 github.com/jpillora/requestlog v0.0.0-20181015073026-df8817be5f82 h1:7ufdyC3aMxFcCv+ABZy/dmIVGKFoGNBCqOgLYPIckD8=

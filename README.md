@@ -111,21 +111,22 @@ A sample json will be generated on first run of cloud-torrent.
 
 Note: about `UploadRate`/`DownloadRate`, a fixed level amoung `Low`, `Medium` and `High` is accepted as value, all other values(or empty) will result in unlimited rate. The actual rate of each level:
 
-* Low: 50000 Bytes/s (50k/s)
-* Medium: 500000 Bytes/s (500k/s)
-* High: 1500000 Bytes/s (1500k/s)
+* Low: 50000 Bytes/s (~ 50k/s)
+* Medium: 500000 Bytes/s (~ 500k/s)
+* High: 1500000 Bytes/s (~ 1500k/s)
 
 #### About DoneCmd
 
-`DoneCmd` is an external command to be called when a task is finished, with infomation set as environment variables:
+`DoneCmd` is an external command to be called when a torrent task is finished or one of the files is completed, with following environment variables:
+
+`DoneCmd` maybe called multiple times if the torrent contains multiple files, each would be called when one of the files is completed(with `CLD_TYPE=file`), and when whole torrent is complited (with `CLD_TYPE=torrent`).
 
 ```
-CLD_DIR=/path/to/download
+CLD_DIR=/path/of/DownloadDirectory
 CLD_PATH=Torrent-Downloaded-File-OR-Dir
 CLD_SIZE=46578901
-CLD_FILECNT=1
+CLD_TYPE=torrent|file
 ```
-Please noted that `CLD_PATH` will be a directory if the torrent contians more than one file, as `CLD_FILECNT` is stating the total number of files in the torrent.
 
 #### Donate
 
