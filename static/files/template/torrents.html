@@ -30,10 +30,12 @@
         </div>
         <div class="hash">
           <div>#{{ t.InfoHash }}</div>
-          <div>Peers (Active / Pending / HalfOpen / Total):
-            {{ t.Stats.ActivePeers }}/{{ t.Stats.PendingPeers }}/{{ t.Stats.HalfOpenPeers }}/{{ t.Stats.TotalPeers }}
+          <div>Peers - 
+            Active:{{ t.Stats.ActivePeers }} / Pending:{{ t.Stats.PendingPeers }} / HalfOpen:{{ t.Stats.HalfOpenPeers }} / Total:{{ t.Stats.TotalPeers }}
           </div>
-          <div>Up: {{ t.Stats.BytesWritten | bytes }} / Down: {{ t.Stats.BytesRead | bytes }} / Ratio: {{ t.SeedRatio | round }}</div>
+          <div>
+            Up:{{ t.Stats.BytesWritten | bytes }} / Down:{{ t.Stats.BytesRead | bytes }} / Ratio:{{ t.SeedRatio | round }}
+          </div>
         </div>
         <div class="ui blue progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
           <div class="bar" ng-style="{width: t.Percent + '%'}">
