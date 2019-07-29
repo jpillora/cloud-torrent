@@ -44,7 +44,7 @@ func (e *Engine) Configure(c Config) error {
 	tc.DataDir = c.DownloadDirectory
 	tc.NoUpload = !c.EnableUpload
 	tc.Seed = c.EnableSeeding
-	tc.EncryptionPolicy = torrent.EncryptionPolicy {
+	tc.EncryptionPolicy = torrent.EncryptionPolicy{
 		DisableEncryption: c.DisableEncryption,
 	}
 	tc.UploadRateLimiter = c.UploadLimiter()
@@ -106,14 +106,13 @@ func (e *Engine) GetTorrents() map[string]*Torrent {
 	return e.ts
 }
 
-
 func (e *Engine) torrentRoutine(t *Torrent) {
 
 	// stops task on reaching ratio
 	if e.config.SeedRatio > 0 &&
-			t.SeedRatio > e.config.SeedRatio &&
-			t.Started &&
-			t.Done {
+		t.SeedRatio > e.config.SeedRatio &&
+		t.Started &&
+		t.Done {
 		log.Println("[Task Stoped] due to reaching SeedRatio")
 		go e.StopTorrent(t.InfoHash)
 	}
@@ -121,7 +120,27 @@ func (e *Engine) torrentRoutine(t *Torrent) {
 	// call DoneCmd on task completed
 	if t.Done && !t.DoneCmdCalled {
 		t.DoneCmdCalled = true
-		go e.callDoneCmd(t)
+		env := append(os.Environ(),
+			fmt.Sprintf("CLD_DIR=%s", e.config.DownloadDirectory),
+			fmt.Sprintf("CLD_PATH=%s", t.Name),
+			fmt.Sprintf("CLD_SIZE=%d", t.Size),
+			"CLD_TYPE=torrent",
+		)
+		go e.callDoneCmd(env)
+	}
+
+	// call DoneCmd on each file completed
+	for _, f := range t.Files {
+		if f.Done && !f.DoneCmdCalled {
+			f.DoneCmdCalled = true
+			env := append(os.Environ(),
+				fmt.Sprintf("CLD_DIR=%s", e.config.DownloadDirectory),
+				fmt.Sprintf("CLD_PATH=%s", f.Path),
+				fmt.Sprintf("CLD_SIZE=%d", f.Size),
+				"CLD_TYPE=file",
+			)
+			go e.callDoneCmd(env)
+		}
 	}
 }
 
@@ -242,17 +261,16 @@ func (e *Engine) StopFile(infohash, filepath string) error {
 	return fmt.Errorf("Unsupported")
 }
 
-func (e *Engine) callDoneCmd(torrent *Torrent) {
+func (e *Engine) callDoneCmd(env []string) {
 	if e.config.DoneCmd == "" {
 		return
 	}
 	cmd := exec.Command(e.config.DoneCmd)
-	cmd.Env = append(os.Environ(),
-		fmt.Sprintf("CLD_DIR=%s", e.config.DownloadDirectory),
-		fmt.Sprintf("CLD_PATH=%s", torrent.Name),
-		fmt.Sprintf("CLD_SIZE=%d", torrent.Size),
-		fmt.Sprintf("CLD_FILECNT=%d", len(torrent.Files)))
+	cmd.Env = env
 	log.Printf("[Task Completed] DoneCmd called: [%s] environ:%v", e.config.DoneCmd, cmd.Env)
 	out, err := cmd.CombinedOutput()
-	log.Printf("DoneCmd Output: `%s` err: `%s`", out, err)
+	if err != nil {
+		log.Println("DoneCmd Err:", err)
+	}
+	log.Println("DoneCmd Output:", string(out))
 }

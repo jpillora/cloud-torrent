@@ -34,6 +34,8 @@ type File struct {
 	Size      int64
 	Chunks    int
 	Completed int
+	Done 	  bool
+	DoneCmdCalled bool
 	//cloud torrent
 	Started bool
 	Percent float32
@@ -80,6 +82,7 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 		}
 		file.Completed = completed
 		file.Percent = percent(int64(file.Completed), int64(file.Chunks))
+		file.Done = (file.Completed == file.Chunks)
 		file.f = *f
 
 		totalChunks += file.Chunks
