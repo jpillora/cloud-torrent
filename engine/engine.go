@@ -267,10 +267,10 @@ func (e *Engine) callDoneCmd(env []string) {
 	}
 	cmd := exec.Command(e.config.DoneCmd)
 	cmd.Env = env
-	log.Printf("[Task Completed] DoneCmd called: [%s] environ:%v", e.config.DoneCmd, cmd.Env)
+	log.Printf("[DoneCmd] [%s] environ:%v", e.config.DoneCmd, cmd.Env)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Println("DoneCmd Err:", err)
+		log.Println("[DoneCmd] Err:", err)
 	}
-	log.Println("DoneCmd Output:", string(out))
+	log.Println("[DoneCmd] Output:", string(out))
 }
