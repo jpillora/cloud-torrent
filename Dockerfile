@@ -1,7 +1,7 @@
 ############################
 # STEP 1 build executable binary
 ############################
-FROM golang:alpine AS builder
+FROM golang:1.12-alpine AS builder
 RUN apk update && apk add --no-cache git
 WORKDIR /root/cloud-torrent
 RUN git clone https://github.com/boypt/cloud-torrent.git .
