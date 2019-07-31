@@ -62,6 +62,7 @@ github.com/anacrolix/torrent v1.1.4 h1:AD0mO9UNUUP5rZoGv8ZbQQY903Yb4Aq2Eg3i7+Gxw
 github.com/anacrolix/torrent v1.1.4/go.mod h1:XdYEuC3KuxFQZrQ6iUBXnwKr3IyxeyUlVH6RT8FhyaU=
 github.com/anacrolix/torrent v1.4.0 h1:YFKVeuwdq/eJ9x2PR8tKRS+rZgsX/HZVz6aEzJAKl7Q=
 github.com/anacrolix/torrent v1.4.0/go.mod h1:wnlU3zSVugqLOyjec9Gpf7Qg38jWjKT5v0Ds8vM9JZI=
+github.com/anacrolix/torrent v1.5.2 h1:4KG8izzNZwV6gNoTOr/Ghy6cFC6GIixvbRL4QJFGIck=
 github.com/anacrolix/utp v0.0.0-20180219060659-9e0e1d1d0572 h1:kpt6TQTVi6gognY+svubHfxxpq0DLU9AfTQyZVc3UOc=
 github.com/anacrolix/utp v0.0.0-20180219060659-9e0e1d1d0572/go.mod h1:MDwc+vsGEq7RMw6lr2GKOEqjWny5hO5OZXRVNaBJ2Dk=
 github.com/andrew-d/go-termutil v0.0.0-20150726205930-009166a695a2 h1:axBiC50cNZOs7ygH5BgQp4N+aYrZ2DNpWZ1KG3VOSOM=

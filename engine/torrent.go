@@ -10,6 +10,7 @@ type Torrent struct {
 	//anacrolix/torrent
 	InfoHash   string
 	Name       string
+	Magnet     string
 	Loaded     bool
 	Downloaded int64
 	Uploaded   int64
@@ -21,8 +22,8 @@ type Torrent struct {
 	DoneCmdCalled bool
 	Percent       float32
 	DownloadRate  float32
-	UploadRate 	  float32
-	SeedRatio	  float32
+	UploadRate    float32
+	SeedRatio     float32
 	Stats         torrent.TorrentStats
 	t             *torrent.Torrent
 	updatedAt     time.Time
@@ -30,11 +31,11 @@ type Torrent struct {
 
 type File struct {
 	//anacrolix/torrent
-	Path      string
-	Size      int64
-	Chunks    int
-	Completed int
-	Done 	  bool
+	Path          string
+	Size          int64
+	Chunks        int
+	Completed     int
+	Done          bool
 	DoneCmdCalled bool
 	//cloud torrent
 	Started bool
@@ -48,6 +49,11 @@ func (torrent *Torrent) Update(t *torrent.Torrent) {
 	torrent.Loaded = t.Info() != nil
 	if torrent.Loaded {
 		torrent.updateLoaded(t)
+	}
+	if torrent.Magnet == "" {
+		meta := t.Metainfo()
+		m := meta.Magnet(t.Name(), t.InfoHash())
+		torrent.Magnet = m.String()
 	}
 	torrent.t = t
 }

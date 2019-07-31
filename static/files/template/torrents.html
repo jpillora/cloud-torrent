@@ -79,6 +79,16 @@
      -->
     <div class="row" ng-show="t.$showFiles && t.Loaded">
       <div class="column">
+        <div class="ui mini fluid labeled input">
+          <div class="ui label">
+            Magnet
+          </div>
+          <input type="text" value="{{t.Magnet}}">
+            <button class="ui blue right labeled icon button" ng-click="copyMagnetLink($event)">
+              <i class="copy icon"></i>
+              Copy
+            </button>
+        </div>
         <table class="ui unstackable compact striped downloads tcld table">
           <thead>
             <tr>
