@@ -24,6 +24,7 @@ section.torrents {
 
 .torrent .info .hash {
 	font-size: 0.75rem;
+	margin-bottom: 0.75rem;
 }
 
 .torrent .info .progress {

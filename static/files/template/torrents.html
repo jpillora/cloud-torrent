@@ -20,7 +20,7 @@
   <div class="ui stackable grid">
     <div class="two column row">
       <div class="info column">
-        <div class="name">
+        <div class="name ui small header">
           <span ng-show="!ready(t.Name+'.zip')">
             {{ t.Name }}
           </span>
@@ -29,11 +29,10 @@
           </a>
         </div>
         <div class="hash">
-          <div>#{{ t.InfoHash }}</div>
           <div>Peers - 
             Active:{{ t.Stats.ActivePeers }} / Pending:{{ t.Stats.PendingPeers }} / HalfOpen:{{ t.Stats.HalfOpenPeers }} / Total:{{ t.Stats.TotalPeers }}
           </div>
-          <div>
+          <div>Traffics -
             Up:{{ t.Stats.BytesWritten | bytes }} / Down:{{ t.Stats.BytesRead | bytes }} / Ratio:{{ t.SeedRatio | round }}
           </div>
         </div>
