@@ -113,9 +113,7 @@ Note: About `UploadRate`/`DownloadRate`, a fixed level amoung `Low`, `Medium` an
 
 #### About DoneCmd
 
-`DoneCmd` is an external command to be called when a torrent task is finished or one of the files is completed, with following environment variables:
-
-`DoneCmd` maybe called multiple times if the torrent contains multiple files, each would be called when one of the files is completed(with `CLD_TYPE=file`), and when whole torrent is complited (with `CLD_TYPE=torrent`).
+`DoneCmd` is an external program to be called when a torrent task is finished.
 
 ```
 CLD_DIR=/path/of/DownloadDirectory
@@ -123,6 +121,8 @@ CLD_PATH=Torrent-Downloaded-File-OR-Dir
 CLD_SIZE=46578901
 CLD_TYPE=torrent|file
 ```
+
+`DoneCmd` will be called at least twice (multiple times if the torrent contains more than one file), one with `CLD_TYPE=file` when the file is completed, and one when the whole torrent complited, with `CLD_TYPE=torrent`.
 
 ### Notes
 
