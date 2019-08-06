@@ -67,7 +67,7 @@
           <span ng-class="{muted:t.Downloaded == 0}">{{t.Downloaded | bytes}}</span>
           <span> / {{t.Size | bytes}}</span>
           <span> - {{t.Percent }}% </span>
-          <span style="font-weight:bold" ng-class="{muted:t.DownloadRate == 0}"> - ↑{{t.UploadRate | bytes}}/s - ↓{{t.DownloadRate | bytes}}/s</span>
+          <div style="font-weight:bold" ng-class="{muted:t.DownloadRate == 0}">↑ {{t.UploadRate | bytes}}/s - ↓ {{t.DownloadRate | bytes}}/s</div>
         </div>
       </div>
     </div>
