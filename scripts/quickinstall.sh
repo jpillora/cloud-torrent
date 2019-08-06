@@ -4,21 +4,13 @@
 set -o errexit
 set -o pipefail
 set -o nounset
-# set -o xtrace
-
-# Set magic variables for current file & dir
-__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-__file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
-__base="$(basename ${__file} .sh)"
-__root="$(cd "$(dirname "${__dir}")" && pwd)" # <-- change this as it depends on your app
 
 if ! command -v systemctl >/dev/null 2>&1; then
-    echo "> Sorry but this scripts is only for Linux Dist with systemd, eg: Ubuntu 16.04+/Centos 7+ ..."
+    echo "> Sorry but this scripts is only for Linux with systemd, eg: Ubuntu 16.04+/Centos 7+ ..."
     exit 1
 fi
 
 CLDBIN=/usr/local/bin/cloud-torrent
-
 OSARCH=$(uname -m)
 case $OSARCH in 
     x86_64)
@@ -45,6 +37,6 @@ wget -qO- https://api.github.com/repos/boypt/simple-torrent/releases/latest \
 chmod 0755 ${CLDBIN}
 
 wget -O /etc/systemd/system/cloud-torrent.service https://raw.githubusercontent.com/boypt/simple-torrent/master/scripts/cloud-torrent.service
-systemctl daemon-realod
+systemctl daemon-reload
 systemctl start cloud-torrent
 systemctl enable cloud-torrent
