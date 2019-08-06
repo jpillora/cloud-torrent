@@ -1,0 +1,13 @@
+[Unit]
+Description=Cloud torrent download manager
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/cloud-torrent -a 'user:ctorrent' -c /etc/cloud-torrent.json --host 0.0.0.0 --port 3000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

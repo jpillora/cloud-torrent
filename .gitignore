@@ -1,6 +1,6 @@
 vendor
 downloads
-cloud-torrent.json
+cloud-torrent*
 tmp/
 dev.sh
 .vscode
