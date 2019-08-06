@@ -36,7 +36,7 @@ See [the latest release](https://github.com/boypt/cloud-torrent/releases/latest)
 bash <(wget -qO- https://raw.githubusercontent.com/boypt/simple-torrent/master/scripts/quickinstall.sh)
 ```
 
-NOTE: the script installs a systemd unit at `/etc/systemd/system/cloud-torrent.service`, and runs simple-torrent with authentication `user:ctorrent`, DO EDIT THIS FILE after confirming the program is running correctly.
+NOTE: [MUST read wiki page for detailed intructions: Auth And Security](https://github.com/boypt/simple-torrent/wiki/AuthSecurity)
 
 **Docker**
 
