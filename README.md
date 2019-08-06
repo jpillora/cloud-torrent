@@ -2,8 +2,6 @@
 
 **Simple Torrent** is a a self-hosted remote torrent client, written in Go (golang). You start torrents remotely, which are downloaded as sets of files on the local disk of the server, which are then retrievable or streamable via HTTP.
 
-This is a fork of [Cloud Torrent](https://github.com/jpillora/cloud-torrent).
-
 ### New Features
 
 This fork adds new features to the original version by `jpillora`.
@@ -19,7 +17,7 @@ And some development improvement
 
 This fork use version number above 1.0.0.
 
-Inherited features:
+Other features:
 
 * Single binary
 * Cross platform
@@ -32,9 +30,13 @@ Inherited features:
 
 **Binaries**
 
-See [the latest release](https://github.com/boypt/cloud-torrent/releases/latest) or download and install it now.
+See [the latest release](https://github.com/boypt/cloud-torrent/releases/latest) or use the script to do a quick install on modern Linux.
 
-*Tip*: [Auto-run `cloud-torrent` on boot](https://github.com/jpillora/cloud-torrent/wiki/Auto-Run-on-Reboot)
+```
+bash <(wget -qO- https://raw.githubusercontent.com/boypt/simple-torrent/master/scripts/quickinstall.sh)
+```
+
+NOTE: the script installs a systemd unit at `/etc/systemd/system/cloud-torrent.service`, and runs simple-torrent with authentication `user:ctorrent`, DO EDIT THIS FILE after confirming the program is running correctly.
 
 **Docker**
 
@@ -51,11 +53,9 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads boypt/cloud-tor
 *[Go](https://golang.org/dl/) is required to install from source*
 
 ``` sh
-$ git clone https://github.com/boypt/cloud-torrent.git
-$ cd cloud-torrent
-$ go get -v ./...
-$ CGO_ENABLED=0 go build -o cloud-torrent -ldflags "-s -w -X main.VERSION=1.X.Y"
-# or simplly run `make_release.sh'
+$ git clone https://github.com/boypt/simple-torrent.git
+$ cd simple-torrent
+$ ./scripts/make_release.sh
 ```
 
 ### Usage
@@ -63,7 +63,7 @@ $ CGO_ENABLED=0 go build -o cloud-torrent -ldflags "-s -w -X main.VERSION=1.X.Y"
 ```
 $ cloud-torrent --help
 
-  Usage: cloud-torrent_linux_amd64 [options]
+  Usage: cloud-torrent [options]
 
   Options:
   --title, -t        Title of this instance (default Simple Torrent)
@@ -79,7 +79,7 @@ $ cloud-torrent --help
   --help             display help
 
   Version:
-    1.0.4-1-g7143c86
+    1.X.Y
 
   Read more:
     https://github.com/boypt/simple-torrent
@@ -88,7 +88,7 @@ $ cloud-torrent --help
 
 #### Example of cloud-torrent.json
 
-A sample json will be generated on first run of cloud-torrent.
+A sample json will be generated on first run of simple-torrent.
 
 ```json
 {
@@ -122,7 +122,7 @@ CLD_SIZE=46578901
 CLD_TYPE=torrent|file
 ```
 
-`DoneCmd` will be called at least twice (multiple times if the torrent contains more than one file), one with `CLD_TYPE=file` when the file is completed, and one when the whole torrent complited, with `CLD_TYPE=torrent`.
+`DoneCmd` will be called at least twice (multiple times if the torrent contains more than one file), once with `CLD_TYPE=file` when the file is completed, and when the whole torrent complited, with `CLD_TYPE=torrent`.
 
 ### Notes
 
