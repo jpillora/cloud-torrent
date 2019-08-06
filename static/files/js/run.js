@@ -7,7 +7,13 @@ app.run(function($rootScope, search, api) {
   //velox
   $scope.state = {};
   $scope.hasConnected = false;
-  var v = velox("/sync", $scope.state);
+
+  var pn = window.location.pathname
+  if (pn[pn.length - 1] != "/") {
+    pn += "/"
+  }
+
+  var v = velox(pn + "sync", $scope.state);
   v.onupdate = function() {
     $scope.$applyAsync();
   };
