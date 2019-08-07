@@ -214,6 +214,7 @@ func (s *Server) reconfigure(c engine.Config) error {
 
 	// torrent watcher
 	if s.watcher != nil {
+		log.Print("Torrent Watcher: close")
 		s.watcher.Close()
 		s.watcher = nil
 	}
@@ -236,7 +237,7 @@ func (s *Server) reconfigure(c engine.Config) error {
 
 func (s *Server) TorrentWatcher(c engine.Config) error {
 
-	log.Printf("start watching torrent file in %s", c.WatchDirectory)
+	log.Printf("Torrent Watcher: watching torrent file in %s", c.WatchDirectory)
 	w := watcher.New()
 	w.SetMaxEvents(10)
 	w.FilterOps(watcher.Create)
@@ -269,8 +270,8 @@ func (s *Server) TorrentWatcher(c engine.Config) error {
 		return err
 	}
 
-	go w.Start(time.Second)
 	s.watcher = w
+	go w.Start(time.Second)
 	return nil
 }
 
