@@ -115,7 +115,7 @@ Note: About `UploadRate`/`DownloadRate`, a fixed level amoung `Low`, `Medium` an
 
 #### About DoneCmd
 
-`DoneCmd` is an external program to be called when a torrent task is finished.
+`DoneCmd` is an external program called when a task is finished with following environment variables.
 
 ```
 CLD_DIR=/path/of/DownloadDirectory
@@ -124,12 +124,14 @@ CLD_SIZE=46578901
 CLD_TYPE=torrent|file
 ```
 
-`DoneCmd` will be called at least twice (multiple times if the torrent contains more than one file), once with `CLD_TYPE=file` when the file is completed, and when the whole torrent complited, with `CLD_TYPE=torrent`.
+* `CLD_DIR` is same with `DownloadDirectory` in the config.
+* `CLD_PATH` is the downloaded file path, joining `CLD_DIR` and `CLD_PATH` will be the absolute path to the actual file.
+* `CLD_SIZE` is the file size in bytes.
+* `CLD_TYPE` is the current calling type, for each torrent task `DoneCmd` will be called at least twice (multiple times if task has more than one file), once with `CLD_TYPE=file` when a file is completed, and `CLD_TYPE=torrent` when the whole torrent complited.
 
 ### Notes
 
 This project is a fork to [Cloud Torrent](https://github.com/jpillora/cloud-torrent).
-
 Credits to @anacrolix for https://github.com/anacrolix/torrent
 
 Copyright (c) 2019 Ben
