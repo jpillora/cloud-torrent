@@ -16,12 +16,13 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/jpillora/cloud-torrent/engine"
+	ctstatic "github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/cookieauth"
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/scraper/scraper"
 	"github.com/jpillora/velox"
-	"github.com/jpillora/cloud-torrent/engine"
-	ctstatic "github.com/jpillora/cloud-torrent/static"
+	"github.com/radovskyb/watcher"
 	"github.com/skratchdot/open-golang/open"
 )
 
@@ -41,6 +42,10 @@ type Server struct {
 	files, static http.Handler
 	scraper       *scraper.Handler
 	scraperh      http.Handler
+
+	//file watcher
+	watcher *watcher.Watcher
+
 	//torrent engine
 	engine *engine.Engine
 	state  struct {
@@ -96,10 +101,11 @@ func (s *Server) Run(version string) error {
 	//configure engine
 	c := engine.Config{
 		DownloadDirectory: "./downloads",
+		WatchDirectory:    "./torrents",
 		EnableUpload:      true,
 		AutoStart:         true,
 		DoneCmd:           "",
-		SeedRatio: 		   0,
+		SeedRatio:         0,
 	}
 	if _, err := os.Stat(s.ConfigPath); err == nil {
 		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {
@@ -116,8 +122,7 @@ func (s *Server) Run(version string) error {
 	if err := s.reconfigure(c); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)
 	}
-	log.Println("****************************************************************")
-	log.Printf("%#v\n", c)
+	log.Printf("Read Config: %#v\n", c)
 	//poll torrents and files
 	go func() {
 		for {
@@ -200,6 +205,24 @@ func (s *Server) reconfigure(c engine.Config) error {
 		return fmt.Errorf("Invalid path")
 	}
 	c.DownloadDirectory = dldir
+
+	wdir, err := filepath.Abs(c.WatchDirectory)
+	if err != nil {
+		return fmt.Errorf("Invalid path")
+	}
+	c.WatchDirectory = wdir
+
+	// torrent watcher loop
+	if w, err := os.Stat(c.WatchDirectory); err == nil {
+		if w.IsDir() {
+			if s.watcher != nil {
+				s.watcher.Close()
+			}
+
+			s.TorrentWatcher(c)
+		}
+	}
+
 	if err := s.engine.Configure(c); err != nil {
 		return err
 	}
@@ -207,6 +230,46 @@ func (s *Server) reconfigure(c engine.Config) error {
 	ioutil.WriteFile(s.ConfigPath, b, 0755)
 	s.state.Config = c
 	s.state.Push()
+	return nil
+}
+
+func (s *Server) TorrentWatcher(c engine.Config) error {
+
+	log.Printf("start watching torrent file in %s", c.WatchDirectory)
+	w := watcher.New()
+	w.SetMaxEvents(10)
+	w.FilterOps(watcher.Create)
+
+	go func() {
+		for {
+			select {
+			case event := <-w.Event:
+				if event.IsDir() {
+					continue
+				}
+				if strings.HasSuffix(event.Name(), ".torrent") {
+					if err := s.engine.NewFileTorrent(event.Path); err == nil {
+						log.Printf("Torrent Watcher: added %s, file removed\n", event.Name())
+						os.Remove(event.Path)
+					} else {
+						log.Printf("Torrent Watcher: fail to add %s, ERR:%#v\n", event.Name(), err)
+					}
+				}
+			case err := <-w.Error:
+				log.Print(err)
+			case <-w.Closed:
+				return
+			}
+		}
+	}()
+
+	// Watch this folder for changes.
+	if err := w.Add(c.WatchDirectory); err != nil {
+		return err
+	}
+
+	go w.Start(time.Second)
+	s.watcher = w
 	return nil
 }
 

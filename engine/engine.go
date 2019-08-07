@@ -79,6 +79,15 @@ func (e *Engine) NewTorrent(spec *torrent.TorrentSpec) error {
 	return e.newTorrent(tt)
 }
 
+func (e *Engine) NewFileTorrent(path string) error {
+	info, err := metainfo.LoadFromFile(path)
+	if err != nil {
+		return err
+	}
+	spec := torrent.TorrentSpecFromMetaInfo(info)
+	return e.NewTorrent(spec)
+}
+
 func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 	t := e.upsertTorrent(tt)
 	go func() {

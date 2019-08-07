@@ -23,6 +23,7 @@ func main() {
 	//o.LineWidth = 96
 	o.Parse()
 
+	log.Printf("############# Simple Torrent ver[%s] #############\n", VERSION)
 	if err := s.Run(VERSION); err != nil {
 		log.Fatal(err)
 	}

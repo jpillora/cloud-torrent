@@ -1,25 +1,26 @@
 package engine
 
-import 	"golang.org/x/time/rate"
+import "golang.org/x/time/rate"
 
 type Config struct {
 	AutoStart         bool
 	DisableEncryption bool
 	DownloadDirectory string
+	WatchDirectory    string
 	EnableUpload      bool
 	EnableSeeding     bool
 	IncomingPort      int
 	DoneCmd           string
-	SeedRatio		  float32
-	UploadRate 		  string 
-	DownloadRate 	  string
+	SeedRatio         float32
+	UploadRate        string
+	DownloadRate      string
 }
 
-func (c *Config)UploadLimiter() *rate.Limiter  {
+func (c *Config) UploadLimiter() *rate.Limiter {
 	return rateLimiter(c.UploadRate)
 }
 
-func (c *Config)DownloadLimiter() *rate.Limiter  {
+func (c *Config) DownloadLimiter() *rate.Limiter {
 	return rateLimiter(c.DownloadRate)
 }
 
