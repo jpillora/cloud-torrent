@@ -212,13 +212,14 @@ func (s *Server) reconfigure(c engine.Config) error {
 	}
 	c.WatchDirectory = wdir
 
-	// torrent watcher loop
+	// torrent watcher
+	if s.watcher != nil {
+		s.watcher.Close()
+		s.watcher = nil
+	}
+
 	if w, err := os.Stat(c.WatchDirectory); err == nil {
 		if w.IsDir() {
-			if s.watcher != nil {
-				s.watcher.Close()
-			}
-
 			s.TorrentWatcher(c)
 		}
 	}
