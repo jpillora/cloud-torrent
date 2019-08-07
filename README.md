@@ -103,7 +103,7 @@ A sample json will be generated on first run of simple-torrent.
   "DoneCmd": "",
   "SeedRatio": 1,
   "UploadRate": "High",
-  "DownloadRate": ""
+  "DownloadRate": "Unlimited"
 }
 ```
 
