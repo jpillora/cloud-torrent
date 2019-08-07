@@ -2,7 +2,7 @@
 
 **Simple Torrent** is a a self-hosted remote torrent client, written in Go (golang). You start torrents remotely, which are downloaded as sets of files on the local disk of the server, which are then retrievable or streamable via HTTP.
 
-### New Features
+### Features
 
 This fork adds new features to the original version by `jpillora`.
 
@@ -10,6 +10,7 @@ This fork adds new features to the original version by `jpillora`.
 * Stops task when seeding ratio reached: `SeedRatio`
 * Download/Upload Rate limit: `UploadRate`/`DownloadRate`
 * Detailed transfer stats in web UI.
+* Torrent file Watcher (Automaticly add task when `.torrent` files put in `WatchDirectory`)
 
 And some development improvement
 * Go modules introduced and compatiable with go 1.12
@@ -45,7 +46,7 @@ NOTE: [MUST read wiki page for detailed intructions: Auth And Security](https://
 [dockerhub]: https://hub.docker.com/r/boypt/cloud-torrent/
 
 ``` sh
-$ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads boypt/cloud-torrent
+$ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads -v /path/to/my/torrents:/torrents boypt/cloud-torrent
 ```
 
 **Source**
@@ -94,14 +95,15 @@ A sample json will be generated on first run of simple-torrent.
 {
   "AutoStart": true,
   "DisableEncryption": false,
-  "DownloadDirectory": "/home/ubuntu/Download/cloud-torrent/downloads",
+  "DownloadDirectory": "/home/ubuntu/cloud-torrent/downloads",
+  "WatchDirectory": "/home/ubuntu/cloud-torrent/torrents",
   "EnableUpload": true,
-  "EnableSeeding": false,
+  "EnableSeeding": true,
   "IncomingPort": 50007,
-  "SeedRatio": 1.0,
+  "DoneCmd": "",
+  "SeedRatio": 1,
   "UploadRate": "High",
-  "DownloadRate": "High",
-  "DoneCmd": ""
+  "DownloadRate": ""
 }
 ```
 
