@@ -21,10 +21,10 @@
     <div class="two column row">
       <div class="info column">
         <div class="name ui small header">
-          <span ng-show="!ready(t.Name+'.zip')">
+          <span ng-show="!ready(t.Name+'.zip')" title="{{ t.Name }}">
             {{ t.Name }}
           </span>
-          <a ng-show="ready(t.Name+'.zip')" ng-href="{{ ready(t.Name+'.zip').url }}">
+          <a ng-show="ready(t.Name+'.zip')" ng-href="{{ ready(t.Name+'.zip').url }}" title="{{ t.Name }}">
             {{ t.Name }}
           </a>
         </div>
