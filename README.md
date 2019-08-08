@@ -1,7 +1,7 @@
-# Simple Torrent
+# SimpleTorrent
 ![screenshot](https://user-images.githubusercontent.com/1033514/62452213-4fa04800-b7a2-11e9-887b-e0e436c1c204.png)
 
-**Simple Torrent** is a a self-hosted remote torrent client, written in Go (golang). You start torrents remotely, which are downloaded as sets of files on the local disk of the server, which are then retrievable or streamable via HTTP.
+**SimpleTorrent** is a a self-hosted remote torrent client, written in Go (golang). You start torrents remotely, which are downloaded as sets of files on the local disk of the server, which are then retrievable or streamable via HTTP.
 
 # Features
 
@@ -67,7 +67,7 @@ $ cloud-torrent --help
   Usage: cloud-torrent_linux_amd64 [options]
 
   Options:
-  --title, -t             Title of this instance (default Simple Torrent)
+  --title, -t             Title of this instance (default SimpleTorrent)
   --port, -p              Listening port (default 3000)
   --host, -h              Listening interface (default all)
   --auth, -a              Optional basic auth in form 'user:password'

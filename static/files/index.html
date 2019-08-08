@@ -1,7 +1,7 @@
 <html ng-app="app">
 
 <head>
-	<title ng-bind="state.Stats.Title">Simple Torrent</title>
+	<title ng-bind="state.Stats.Title">SimpleTorrent</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 	<link rel="stylesheet" type="text/css" href="css/Lato/Lato.css">
 	<link rel="stylesheet" type="text/css" href="css/semantic.min.css">
@@ -58,7 +58,7 @@
 		<footer>
 			<div>
 				<span>
-					<a href="https://github.com/boypt/simple-torrent" target="_blank">Simple Torrent</a> version {{ state.Stats.Version }} - </span>
+					<a href="https://github.com/boypt/simple-torrent" target="_blank">SimpleTorrent</a> version {{ state.Stats.Version }} - </span>
 				<span ng-if="numKeys(state.Users) > 1">{{ numKeys(state.Users) }} users connected - </span>
 				<span>
 					<a href="https://golang.org" target="_blank">Go</a> {{ state.Stats.Runtime }}

@@ -5,3 +5,4 @@ cloud-torrent*
 tmp/
 dev.sh
 .vscode
+*.yml

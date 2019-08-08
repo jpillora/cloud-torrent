@@ -11,7 +11,7 @@ var VERSION = "0.0.0-src" //set with ldflags
 
 func main() {
 	s := server.Server{
-		Title:      "Simple Torrent",
+		Title:      "SimpleTorrent",
 		Port:       3000,
 		ConfigPath: "cloud-torrent.json",
 	}
@@ -27,7 +27,7 @@ func main() {
 		log.SetFlags(0)
 	}
 
-	log.Printf("############# Simple Torrent ver[%s] #############\n", VERSION)
+	log.Printf("############# SimpleTorrent ver[%s] #############\n", VERSION)
 	if err := s.Run(VERSION); err != nil {
 		log.Fatal(err)
 	}
