@@ -116,10 +116,7 @@ A sample json will be created on the first run of simple-torrent.
 * `IncomingPort` The port SimpleTorrent listens to.
 * `DoneCmd` An external program to call on task finished. See [DoneCmd Usage](https://github.com/boypt/simple-torrent/wiki/DoneCmdUsage).
 * `SeedRatio` The ratio of task Upload/Download data when reached, the task will be stop.
-* `UploadRate`/`DownloadRate` The global speed limiter, a fixed level amoung `Low`, `Medium` and `High` is accepted as value, all other values(or empty) will result in unlimited rate. The actual rate of each level:
-    Low: 50000 Bytes/s (~50k/s)
-    Medium: 500000 Bytes/s (~500k/s)
-    High: 1500000 Bytes/s (~1500k/s)
+* `UploadRate`/`DownloadRate` The global speed limiter, a fixed level amoung `Low`(~50k/s), `Medium`(~500k/s) and `High`(~1500k/s) is accepted as value, all other values (or empty) will result in unlimited rate.
 
 
 # Credits 
