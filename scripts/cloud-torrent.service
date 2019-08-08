@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=~
-ExecStart=/usr/local/bin/cloud-torrent -a 'user:ctorrent' -c ./cloud-torrent.json --host 0.0.0.0 --port 3000
+ExecStart=/usr/local/bin/cloud-torrent -a 'user:ctorrent' -c ./cloud-torrent.json --host 0.0.0.0 --port 3000 --disable-log-time
 Restart=always
 RestartSec=3
 

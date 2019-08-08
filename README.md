@@ -64,20 +64,21 @@ $ ./scripts/make_release.sh
 ```
 $ cloud-torrent --help
 
-  Usage: cloud-torrent [options]
+  Usage: cloud-torrent_linux_amd64 [options]
 
   Options:
-  --title, -t        Title of this instance (default Simple Torrent)
-  --port, -p         Listening port (default 3000)
-  --host, -h         Listening interface (default all)
-  --auth, -a         Optional basic auth in form 'user:password'
-  --config-path, -c  Configuration file path (default cloud-torrent.json)
-  --key-path, -k     TLS Key file path
-  --cert-path        TLS Certicate file path
-  --log, -l          Enable request logging
-  --open, -o         Open now with your default browser
-  --version, -v      display version
-  --help             display help
+  --title, -t             Title of this instance (default Simple Torrent)
+  --port, -p              Listening port (default 3000)
+  --host, -h              Listening interface (default all)
+  --auth, -a              Optional basic auth in form 'user:password'
+  --config-path, -c       Configuration file path (default cloud-torrent.json)
+  --key-path, -k          TLS Key file path
+  --cert-path             TLS Certicate file path
+  --log, -l               Enable request logging
+  --open, -o              Open now with your default browser
+  --disable-log-time, -d  Don't print timestamp in log
+  --version, -v           display version
+  --help                  display help
 
   Version:
     1.X.Y
