@@ -23,6 +23,10 @@ func main() {
 	//o.LineWidth = 96
 	o.Parse()
 
+	if s.DisableLogTime {
+		log.SetFlags(0)
+	}
+
 	log.Printf("############# Simple Torrent ver[%s] #############\n", VERSION)
 	if err := s.Run(VERSION); err != nil {
 		log.Fatal(err)
