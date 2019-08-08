@@ -11,7 +11,7 @@ This fork adds new features to the original version by `jpillora`.
 * Stops task when seeding ratio reached: `SeedRatio`
 * Download/Upload speed limiter: `UploadRate`/`DownloadRate`
 * Detailed transfer stats in web UI.
-* Torrent Watcher.
+* [Torrent Watcher](https://github.com/boypt/simple-torrent/wiki/Torrent-Watcher)
 
 And some development improvement:
 * Go modules introduced and compatiable with go 1.12+
@@ -110,8 +110,8 @@ A sample json will be created on the first run of simple-torrent.
 
 * `AutoStart` Whether start torrent task on added Magnet/Torrent.
 * `DisableEncryption` A switch disables [BitTorrent protocol encryption](https://en.wikipedia.org/wiki/BitTorrent_protocol_encryption)
-* `DownloadDirectory` The Directory where downloaded file saves.
-* `WatchDirectory` The Directory simple-torrent will watch, automaticly adds task when `.torrent` files put in.
+* `DownloadDirectory` The directory where downloaded file saves.
+* `WatchDirectory` The directory SimpleTorrent will watch and load new added `.torrent`, See [Torrent Watcher](https://github.com/boypt/simple-torrent/wiki/Torrent-Watcher)
 * `EnableUpload` Whether send chunks to peers
 * `EnableSeeding` Whether upload even after there's nothing further for us. By default uploading is not altruistic, we'll only upload to encourage the peer to reciprocate.
 * `IncomingPort` The port SimpleTorrent listens to.
