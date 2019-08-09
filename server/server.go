@@ -177,9 +177,7 @@ func (s *Server) Run(version string) error {
 	//define handler chain, from last to first
 	h := http.Handler(http.HandlerFunc(s.handle))
 	//gzip
-	compression := gzip.DefaultCompression
-	minSize := 0 //IMPORTANT
-	gzipWrap, _ := gziphandler.NewGzipLevelAndMinSize(compression, minSize)
+	gzipWrap, _ := gziphandler.NewGzipLevelAndMinSize(gzip.DefaultCompression, 0)
 	h = gzipWrap(h)
 	//auth
 	if s.Auth != "" {
@@ -192,6 +190,7 @@ func (s *Server) Run(version string) error {
 		h = cookieauth.New().SetUserPass(user, pass).Wrap(h)
 		log.Printf("Enabled HTTP authentication")
 	}
+	h = livenessWrap(h)
 	if s.Log {
 		h = requestlog.Wrap(h)
 	}
@@ -289,12 +288,12 @@ func (s *Server) TorrentWatcher(c engine.Config) error {
 
 func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	//handle realtime client library
-	if r.URL.Path == "/js/velox.js" {
+	if strings.Compare(r.URL.Path, "/js/velox.js") == 0 {
 		velox.JS.ServeHTTP(w, r)
 		return
 	}
 	//handle realtime client connections
-	if r.URL.Path == "/sync" {
+	if strings.Compare(r.URL.Path, "/sync") == 0 {
 		conn, err := velox.Sync(&s.state, w, r)
 		if err != nil {
 			log.Printf("sync failed: %s", err)
@@ -326,4 +325,16 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	//no match, assume static file
 	s.files.ServeHTTP(w, r)
+}
+
+func livenessWrap(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// liveness response
+		if strings.Compare(r.URL.Path, "/healthz") == 0 {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+			return
+		}
+		h.ServeHTTP(w, r)
+	})
 }
