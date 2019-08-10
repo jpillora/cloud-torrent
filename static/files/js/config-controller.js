@@ -13,7 +13,8 @@ app.controller("ConfigController", function($scope, $rootScope, storage, api) {
     "UploadRate",
     "DownloadRate",
     "DownloadDirectory",
-    "WatchDirectory"
+    "WatchDirectory",
+    "TrackerListURL"
   ];
 
   $scope.toggle = function(b) {

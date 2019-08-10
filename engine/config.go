@@ -4,6 +4,7 @@ import "golang.org/x/time/rate"
 
 type Config struct {
 	AutoStart         bool
+	Debug             bool
 	DisableEncryption bool
 	DownloadDirectory string
 	WatchDirectory    string
@@ -14,6 +15,7 @@ type Config struct {
 	SeedRatio         float32
 	UploadRate        string
 	DownloadRate      string
+	TrackerListURL    string
 }
 
 func (c *Config) UploadLimiter() *rate.Limiter {

@@ -3,11 +3,11 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"errors"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
@@ -71,6 +71,9 @@ func (s *Server) api(r *http.Request) error {
 			return errors.New("DoneCmd is NOT allowed being changed during running. Change it in config.json")
 		}
 		if err := s.reconfigure(c); err != nil {
+			return err
+		}
+		if err := s.engine.UpdateTrackers(); err != nil {
 			return err
 		}
 	case "magnet":

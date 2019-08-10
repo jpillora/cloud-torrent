@@ -1,11 +1,14 @@
 package engine
 
 import (
+	"bufio"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,11 +18,12 @@ import (
 
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
 type Engine struct {
-	mut      sync.Mutex
-	cacheDir string
-	client   *torrent.Client
-	config   Config
-	ts       map[string]*Torrent
+	mut       sync.Mutex
+	cacheDir  string
+	client    *torrent.Client
+	config    Config
+	ts        map[string]*Torrent
+	bttracker []string
 }
 
 func New() *Engine {
@@ -42,6 +46,7 @@ func (e *Engine) Configure(c Config) error {
 	tc := torrent.NewDefaultClientConfig()
 	tc.ListenPort = c.IncomingPort
 	tc.DataDir = c.DownloadDirectory
+	tc.Debug = c.Debug
 	tc.NoUpload = !c.EnableUpload
 	tc.Seed = c.EnableSeeding
 	tc.EncryptionPolicy = torrent.EncryptionPolicy{
@@ -89,6 +94,9 @@ func (e *Engine) NewFileTorrent(path string) error {
 }
 
 func (e *Engine) newTorrent(tt *torrent.Torrent) error {
+	if len(e.bttracker) > 0 {
+		tt.AddTrackers([][]string{e.bttracker})
+	}
 	t := e.upsertTorrent(tt)
 	go func() {
 		<-t.t.GotInfo()
@@ -282,4 +290,36 @@ func (e *Engine) callDoneCmd(env []string) {
 		log.Println("[DoneCmd] Err:", err)
 	}
 	log.Println("[DoneCmd] Output:", string(out))
+}
+
+func (e *Engine) UpdateTrackers() error {
+	url := e.config.TrackerListURL
+	if !strings.HasPrefix(url, "https://") {
+		err := fmt.Errorf("UpdateTrackers: trackers url invalid: %s (only https:// supported)", url)
+		log.Print(err.Error())
+		return err
+	}
+
+	log.Printf("UpdateTrackers: loading trackers from %s\n", url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	scanner := bufio.NewScanner(resp.Body)
+	scanner.Split(bufio.ScanLines)
+
+	var txtlines []string
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		txtlines = append(txtlines, line)
+	}
+
+	e.bttracker = txtlines
+	log.Printf("UpdateTrackers: loaded %d trackers \n", len(txtlines))
+	return nil
 }

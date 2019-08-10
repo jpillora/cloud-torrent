@@ -39,6 +39,7 @@ type Server struct {
 	Log            bool   `help:"Enable request logging"`
 	Open           bool   `help:"Open now with your default browser"`
 	DisableLogTime bool   `help:"Don't print timestamp in log"`
+	DebugTorrent   bool   `help:"Debug torrent engine"`
 	//http handlers
 	files, static http.Handler
 	scraper       *scraper.Handler
@@ -96,9 +97,11 @@ func (s *Server) Run(version string) error {
 	//scraper
 	s.state.SearchProviders = s.scraper.Config //share scraper config
 	go s.fetchSearchConfigLoop()
+
 	s.scraperh = http.StripPrefix("/search", s.scraper)
 	//torrent engine
 	s.engine = engine.New()
+
 	//configure engine
 	c := engine.Config{
 		DownloadDirectory: "./downloads",
@@ -143,6 +146,8 @@ func (s *Server) Run(version string) error {
 			time.Sleep(5 * time.Second)
 		}
 	}()
+
+	go s.engine.UpdateTrackers()
 
 	// if torrent file exists in WatchDirectory, add them as task
 	tors, _ := filepath.Glob(filepath.Join(c.WatchDirectory, "*.torrent"))
