@@ -290,10 +290,13 @@ func (e *Engine) callDoneCmd(env []string) {
 }
 
 func (e *Engine) UpdateTrackers() error {
+	var txtlines []string
 	url := e.config.TrackerListURL
+
 	if !strings.HasPrefix(url, "https://") {
-		err := fmt.Errorf("UpdateTrackers: trackers url invalid: %s (only https:// supported)", url)
+		err := fmt.Errorf("UpdateTrackers: trackers url invalid: %s (only https:// supported), extra trackers list now empty.", url)
 		log.Print(err.Error())
+		e.bttracker = txtlines
 		return err
 	}
 
@@ -305,8 +308,6 @@ func (e *Engine) UpdateTrackers() error {
 	defer resp.Body.Close()
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(bufio.ScanLines)
-
-	var txtlines []string
 
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
