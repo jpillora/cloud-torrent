@@ -5,7 +5,6 @@ import "golang.org/x/time/rate"
 type Config struct {
 	AutoStart         bool
 	Debug             bool
-	DisableEncryption bool
 	DownloadDirectory string
 	WatchDirectory    string
 	EnableUpload      bool

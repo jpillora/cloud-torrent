@@ -49,9 +49,6 @@ func (e *Engine) Configure(c Config) error {
 	tc.Debug = c.Debug
 	tc.NoUpload = !c.EnableUpload
 	tc.Seed = c.EnableSeeding
-	tc.EncryptionPolicy = torrent.EncryptionPolicy{
-		DisableEncryption: c.DisableEncryption,
-	}
 	tc.UploadRateLimiter = c.UploadLimiter()
 	tc.DownloadRateLimiter = c.DownloadLimiter()
 

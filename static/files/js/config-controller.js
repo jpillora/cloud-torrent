@@ -5,7 +5,6 @@ app.controller("ConfigController", function($scope, $rootScope, storage, api) {
   $scope.edit = false;
   $scope.configOrderdKey = [
     "AutoStart",
-    "DisableEncryption",
     "EnableSeeding",
     "EnableUpload",
     "IncomingPort",
