@@ -12,6 +12,8 @@ This fork adds new features to the original version by `jpillora`.
 * Download/Upload speed limiter: `UploadRate`/`DownloadRate`
 * Detailed transfer stats in web UI.
 * [Torrent Watcher](https://github.com/boypt/simple-torrent/wiki/Torrent-Watcher)
+* K8s/docker health-check endpoint `/healthz`
+* Add extra trackers
 
 And some development improvement:
 * Go modules introduced and compatiable with go 1.12+
@@ -95,20 +97,30 @@ A sample json will be created on the first run of simple-torrent.
 ```json
 {
   "AutoStart": true,
-  "DisableEncryption": false,
-  "DownloadDirectory": "/home/ubuntu/cloud-torrent/downloads",
-  "WatchDirectory": "/home/ubuntu/cloud-torrent/torrents",
+  "Debug": true,
+  "ObfsPreferred": true,
+  "ObfsRequirePreferred": false,
+  "DisableTrackers": false,
+  "DisableIPv6": false,
+  "DownloadDirectory": "/home/ubuntu/Workdir/cloud-torrent/downloads",
+  "WatchDirectory": "/home/ubuntu/Workdir/cloud-torrent/torrents",
   "EnableUpload": true,
   "EnableSeeding": true,
   "IncomingPort": 50007,
   "DoneCmd": "",
   "SeedRatio": 1.5,
   "UploadRate": "High",
-  "DownloadRate": "Unlimited"
+  "DownloadRate": "Unlimited",
+  "TrackerListURL": "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
 }
 ```
 
-* `AutoStart` Whether start torrent task on added Magnet/Torrent.
+* `AutoStart`: Whether start torrent task on added Magnet/Torrent.
+* `Debug` Print debug log from torrent engine (lots of them)
+* `ObfsPreferred`: Whether torrent header obfuscation is preferred.
+* `ObfsRequirePreferred`: Whether the value of `ObfsPreferred` is a strict requirement. This hides torrent traffic from being censored.
+* `DisableTrackers`: Don't announce to trackers. This only leaves DHT to discover peers.
+* `DisableIPv6`: Don't connect to IPv6 peers.
 * `DisableEncryption` A switch disables [BitTorrent protocol encryption](https://en.wikipedia.org/wiki/BitTorrent_protocol_encryption)
 * `DownloadDirectory` The directory where downloaded file saves.
 * `WatchDirectory` The directory SimpleTorrent will watch and load new added `.torrent`, See [Torrent Watcher](https://github.com/boypt/simple-torrent/wiki/Torrent-Watcher)
@@ -118,6 +130,7 @@ A sample json will be created on the first run of simple-torrent.
 * `DoneCmd` An external program to call on task finished. See [DoneCmd Usage](https://github.com/boypt/simple-torrent/wiki/DoneCmdUsage).
 * `SeedRatio` The ratio of task Upload/Download data when reached, the task will be stop.
 * `UploadRate`/`DownloadRate` The global speed limiter, a fixed level amoung `Low`(~50k/s), `Medium`(~500k/s) and `High`(~1500k/s) is accepted as value, all other values (or empty) will result in unlimited rate.
+* `TrackerListURL`: A https URL to a trackers list, this option is design to retrive public trackers from [ngosang/trackerslist](https://github.com/ngosang/trackerslist). If configred, all trackers will be added to each torrent task.
 
 
 # Credits 
