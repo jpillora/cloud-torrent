@@ -3,18 +3,22 @@ package engine
 import "golang.org/x/time/rate"
 
 type Config struct {
-	AutoStart         bool
-	Debug             bool
-	DownloadDirectory string
-	WatchDirectory    string
-	EnableUpload      bool
-	EnableSeeding     bool
-	IncomingPort      int
-	DoneCmd           string
-	SeedRatio         float32
-	UploadRate        string
-	DownloadRate      string
-	TrackerListURL    string
+	AutoStart            bool
+	Debug                bool
+	ObfsPreferred        bool
+	ObfsRequirePreferred bool
+	DisableTrackers      bool
+	DisableIPv6          bool
+	DownloadDirectory    string
+	WatchDirectory       string
+	EnableUpload         bool
+	EnableSeeding        bool
+	IncomingPort         int
+	DoneCmd              string
+	SeedRatio            float32
+	UploadRate           string
+	DownloadRate         string
+	TrackerListURL       string
 }
 
 func (c *Config) UploadLimiter() *rate.Limiter {

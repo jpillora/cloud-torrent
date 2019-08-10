@@ -51,6 +51,12 @@ func (e *Engine) Configure(c Config) error {
 	tc.Seed = c.EnableSeeding
 	tc.UploadRateLimiter = c.UploadLimiter()
 	tc.DownloadRateLimiter = c.DownloadLimiter()
+	tc.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{
+		Preferred:        c.ObfsPreferred,
+		RequirePreferred: c.ObfsRequirePreferred,
+	}
+	tc.DisableTrackers = c.DisableTrackers
+	tc.DisableIPv6 = c.DisableIPv6
 
 	client, err := torrent.NewClient(tc)
 	if err != nil {

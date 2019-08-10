@@ -104,12 +104,14 @@ func (s *Server) Run(version string) error {
 
 	//configure engine
 	c := engine.Config{
-		DownloadDirectory: "./downloads",
-		WatchDirectory:    "./torrents",
-		EnableUpload:      true,
-		AutoStart:         true,
-		DoneCmd:           "",
-		SeedRatio:         0,
+		DownloadDirectory:    "./downloads",
+		WatchDirectory:       "./torrents",
+		EnableUpload:         true,
+		AutoStart:            true,
+		DoneCmd:              "",
+		SeedRatio:            0,
+		ObfsPreferred:        true,
+		ObfsRequirePreferred: false,
 	}
 	if _, err := os.Stat(s.ConfigPath); err == nil {
 		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {
