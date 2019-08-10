@@ -228,6 +228,11 @@ func (s *Server) reconfigure(c engine.Config) error {
 	}
 	c.WatchDirectory = wdir
 
+	b, _ := json.MarshalIndent(&c, "", "  ")
+	if err := ioutil.WriteFile(s.ConfigPath, b, 0644); err != nil {
+		return err
+	}
+
 	// torrent watcher
 	if s.watcher != nil {
 		log.Print("Torrent Watcher: close")
@@ -244,8 +249,6 @@ func (s *Server) reconfigure(c engine.Config) error {
 	if err := s.engine.Configure(c); err != nil {
 		return err
 	}
-	b, _ := json.MarshalIndent(&c, "", "  ")
-	ioutil.WriteFile(s.ConfigPath, b, 0755)
 	s.state.Config = c
 	s.state.Push()
 	return nil
