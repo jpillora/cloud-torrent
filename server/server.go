@@ -20,7 +20,7 @@ import (
 	ctstatic "github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/cookieauth"
 	"github.com/jpillora/requestlog"
-	"github.com/jpillora/scraper/scraper"
+	"github.com/boypt/scraper/scraper"
 	"github.com/jpillora/velox"
 	"github.com/radovskyb/watcher"
 	"github.com/skratchdot/open-golang/open"
