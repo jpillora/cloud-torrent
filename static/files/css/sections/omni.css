@@ -43,6 +43,12 @@
   height: 32px;
   cursor: pointer;
 }
+
+.omni .search div.button {
+  height: 32px;
+  padding-top: 10px;
+}
+
 .omni .form {
   margin-top: 5px;
 }
