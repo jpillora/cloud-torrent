@@ -33,6 +33,7 @@ require (
 )
 
 replace (
+	github.com/boltdb/bolt => github.com/boypt/bolt v1.3.2
 	github.com/jpillora/cloud-torrent => ./
 	github.com/jpillora/cloud-torrent/engine => ./engine/
 	github.com/jpillora/cloud-torrent/server => ./server/
