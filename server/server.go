@@ -16,11 +16,11 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/boypt/scraper/scraper"
 	"github.com/jpillora/cloud-torrent/engine"
 	ctstatic "github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/cookieauth"
 	"github.com/jpillora/requestlog"
-	"github.com/boypt/scraper/scraper"
 	"github.com/jpillora/velox"
 	"github.com/radovskyb/watcher"
 	"github.com/skratchdot/open-golang/open"
@@ -328,8 +328,13 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
+			switch err {
+			case errRedirect:
+				http.Redirect(w, r, "/", http.StatusFound)
+			default:
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(err.Error()))
+			}
 		}
 		return
 	}

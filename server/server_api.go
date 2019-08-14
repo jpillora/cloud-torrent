@@ -15,13 +15,33 @@ import (
 	"github.com/jpillora/cloud-torrent/engine"
 )
 
+var errRedirect = errors.New("REDIRECT TORRENT HOME")
+
 func (s *Server) api(r *http.Request) error {
 	defer r.Body.Close()
+
+	action := strings.TrimPrefix(r.URL.Path, "/api/")
+
+	if r.Method == "GET" {
+		// adds magnet by GET: /api/magnet?m=...
+		if action == "magnet" {
+			m := r.URL.Query().Get("m")
+			if strings.HasPrefix(m, "magnet:?") {
+				if err := s.engine.NewMagnet(m); err != nil {
+					return fmt.Errorf("Magnet error: %s", err)
+				}
+			} else {
+				return fmt.Errorf("Invalid Magnet link: %s", m)
+			}
+			return errRedirect
+		}
+
+		return errors.New("Invalid path")
+	}
+
 	if r.Method != "POST" {
 		return fmt.Errorf("Invalid request method (expecting POST)")
 	}
-
-	action := strings.TrimPrefix(r.URL.Path, "/api/")
 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {

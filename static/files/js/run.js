@@ -122,3 +122,11 @@ app.run(function($rootScope, search, api) {
     }
   });
 });
+
+if ('registerProtocolHandler' in navigator && document.location.protocol == "https:") {
+  navigator.registerProtocolHandler(
+    'magnet',
+    document.location.origin + '/api/magnet?m=%s',
+    'SimpleTorrent'
+  );
+}
