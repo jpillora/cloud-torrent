@@ -14,6 +14,7 @@ This fork adds new features to the original version by `jpillora`.
 * [Torrent Watcher](https://github.com/boypt/simple-torrent/wiki/Torrent-Watcher)
 * K8s/docker health-check endpoint `/healthz`
 * Add extra trackers
+* Protocol Handler to `magnet:`
 
 And some development improvement:
 * Go modules introduced and compatiable with go 1.12+
@@ -97,7 +98,7 @@ A sample json will be created on the first run of simple-torrent.
 ```json
 {
   "AutoStart": true,
-  "Debug": true,
+  "Debug": false,
   "ObfsPreferred": true,
   "ObfsRequirePreferred": false,
   "DisableTrackers": false,
