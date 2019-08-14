@@ -16,6 +16,7 @@ makebuild () {
   local SUFFIX=${4:-}
   BINFILE=${BIN}_${OS}_${ARCH}${SUFFIX} 
   CGO_ENABLED=0 GOARCH=$ARCH GOOS=$OS go build -v -o ${BUILDDIR}/${BINFILE} -ldflags "-s -w -X main.VERSION=$GITVER"
+  git checkout -- .
   pushd ${BUILDDIR}
   gzip -v -9 ${BINFILE}
   popd
@@ -23,8 +24,6 @@ makebuild () {
 
 makebuild $BIN linux amd64
 makebuild $BIN linux 386
-makebuild $BIN linux mips
-makebuild $BIN linux mipsle
 makebuild $BIN linux arm
 makebuild $BIN linux arm64
 makebuild $BIN windows amd64 .exe
