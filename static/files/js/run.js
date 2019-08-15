@@ -123,7 +123,8 @@ app.run(function($rootScope, search, api) {
   });
 });
 
-if ('registerProtocolHandler' in navigator && document.location.protocol == "https:") {
+// register as "magnet:" protocol handler
+if ('registerProtocolHandler' in navigator) {
   navigator.registerProtocolHandler(
     'magnet',
     document.location.origin + '/api/magnet?m=%s',
