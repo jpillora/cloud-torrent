@@ -39,6 +39,7 @@ case $OSARCH in
         ;;
 esac
 
+systemctl stop cloud-torrent || true
 wget -qO- https://api.github.com/repos/boypt/simple-torrent/releases/latest \
 | grep browser_download_url | grep "$BINTAG" | cut -d '"' -f 4 \
 | wget --no-verbose -i- -O- | gzip -d -c > ${CLDBIN}
@@ -48,7 +49,6 @@ wget -O /etc/systemd/system/cloud-torrent.service https://raw.githubusercontent.
 systemctl daemon-reload
 systemctl start cloud-torrent
 systemctl enable cloud-torrent
-
 
 cat <<EOF
 #################################################################
