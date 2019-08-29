@@ -168,7 +168,10 @@ func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
 	ih := tt.InfoHash().HexString()
 	torrent, ok := e.ts[ih]
 	if !ok {
-		torrent = &Torrent{InfoHash: ih}
+		torrent = &Torrent{
+			InfoHash: ih,
+			AddedAt:  time.Now(),
+		}
 		e.ts[ih] = torrent
 	}
 	//update torrent fields using underlying torrent

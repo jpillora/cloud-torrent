@@ -11,7 +11,7 @@
   <p>Add torrents above</p>
 </div>
 
-<div ng-repeat="(hash, t) in state.Torrents" ng-class="{open: t.open}" class="ui torrent segment">
+<div ng-repeat="t in state.Torrents | dictValuesArray | orderBy:'AddedAt'" ng-class="{open: t.open}" class="ui torrent segment">
 
   <div ng-if="!t.Loaded" class="ui active inverted dimmer">
     <div class="ui text loader">Loading</div>

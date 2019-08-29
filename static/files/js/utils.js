@@ -125,6 +125,18 @@ app.filter("round", function() {
   };
 });
 
+app.filter('dictValuesArray', function () {
+  return function (obj) {
+      if (!(obj instanceof Object)) return obj;
+
+      var arr = [];
+      for (var key in obj) {
+          arr.push(obj[key]);
+      }
+      return arr;
+  }
+})
+
 app.directive("ngEnter", function() {
   return function(scope, element, attrs) {
     element.bind("keydown keypress", function(event) {
