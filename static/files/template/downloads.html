@@ -13,7 +13,7 @@
 
 <div ng-if="numDownloads() > 0" class="ui segment">
   <div class="ui list">
-    <div class="item" ng-repeat="node in state.Downloads.Children" ng-controller="NodeController"
+    <div class="item" ng-repeat="node in state.Downloads.Children | orderBy:'Modified'" ng-controller="NodeController"
       ng-include src="'template/download-tree.html'"></div>
   </div>
 </div>

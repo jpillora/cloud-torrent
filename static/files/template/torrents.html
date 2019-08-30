@@ -20,7 +20,7 @@
   <div class="ui stackable grid">
     <div class="two column row">
       <div class="info column">
-        <div class="name ui small header">
+        <div class="name ui header">
           <span ng-show="!ready(t.Name+'.zip')" title="{{ t.Name }}">
             {{ t.Name }}
           </span>
@@ -28,13 +28,11 @@
             {{ t.Name }}
           </a>
         </div>
-        <div class="hash">
-          <div>Peers - 
-            Active:{{ t.Stats.ActivePeers }} / Pending:{{ t.Stats.PendingPeers }} / HalfOpen:{{ t.Stats.HalfOpenPeers }} / Total:{{ t.Stats.TotalPeers }}
-          </div>
-          <div>Traffics -
-            Up:{{ t.Stats.BytesWritten | bytes }} / Down:{{ t.Stats.BytesRead | bytes }} / Ratio:{{ t.SeedRatio | round }}
-          </div>
+        <div class="speed">
+          <span class="ui label" title="Uploaded Data"><i class="cloud upload icon"></i>{{ t.Stats.BytesWritten | bytes }}</span>
+          <span class="ui label" title="Downloaded Data"><i class="cloud download icon"></i>{{ t.Stats.BytesRead | bytes }}</span>
+          <span class="ui label" title="Data Exchanged Ratio"><i class="exchange alternate icon"></i>{{ t.SeedRatio | round }} </span>
+          <span class="ui label" title="Total Peers"><i class="sitemap icon"></i>{{ t.Stats.TotalPeers }}</span>
         </div>
         <div class="ui blue progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
           <div class="bar" ng-style="{width: t.Percent + '%'}">
@@ -45,11 +43,11 @@
       <div class="controls column">
         <div>
           <div class="ui mini buttons">
-            <a class="ui button" ng-class="{blue: t.$showFiles}" ng-click="t.$showFiles = !t.$showFiles">
+            <a class="ui button" ng-class="{green: t.$showFiles, blue: !t.$showFiles}" ng-click="t.$showFiles = !t.$showFiles">
               <i class="file icon"></i> Files
             </a>
             <a ng-disabled="t.Started" class="ui button" ng-class="{green: !t.Started}" ng-click="submitTorrent('start', t)">
-              <i class="cloud download icon"></i> Start
+              <i class="play icon"></i> Start
             </a>
             <a ng-if="t.Started" class="ui red button" ng-click="submitTorrent('stop', t)">
               <i class="stop icon"></i> Stop
@@ -64,10 +62,19 @@
         </div>
 
         <div ng-if="t.Started" class="status download">
-          <span ng-class="{muted:t.Downloaded == 0}">{{t.Downloaded | bytes}}</span>
-          <span> / {{t.Size | bytes}}</span>
-          <span> - {{t.Percent }}% </span>
-          <div style="font-weight:bold" ng-class="{muted:t.DownloadRate == 0}">↑ {{t.UploadRate | bytes}}/s - ↓ {{t.DownloadRate | bytes}}/s</div>
+          <span class="ui label" title="Download Progress">
+            <i class="save icon"></i>
+            {{t.Downloaded | bytes}} / {{t.Size | bytes}} - {{t.Percent }}% 
+          </span>
+        </div>
+        <div ng-if="t.Started" class="status speed">
+          <span class="ui label" title="Speeds" ng-class="{
+              yellow:t.DownloadRate+t.UploadRate > 0 && t.DownloadRate+t.UploadRate < 102400,
+              green:t.DownloadRate+t.UploadRate > 0 && t.DownloadRate+t.UploadRate >= 102400
+             }" >
+            <i class="tachometer alternate icon"></i>
+            ↑ {{t.UploadRate | bytes}}/s - ↓ {{t.DownloadRate | bytes}}/s
+          </span>
         </div>
       </div>
     </div>

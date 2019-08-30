@@ -20,23 +20,28 @@ section.torrents {
 
 .torrent .info .name {
 	font-size: 1.2rem;
+	margin-bottom: 1.5rem;
 }
 
-.torrent .info .hash {
+.torrent .info .starttime {
 	font-size: 0.75rem;
-	margin-bottom: 0.75rem;
+}
+
+.torrent .info .speed {
+	margin-top: 0.5rem;
+	font-size: 0.75rem;
 }
 
 .torrent .info .progress {
-	margin: 0;
+    margin-top: 1.2rem;
+    margin-bottom: 0;
 }
 .torrent .info .progress .bar {
 	height: 10px;
 }
 
 .torrent .status {
-	padding: 5px;
-	display: inline-block;
+	margin-top: 0.5rem;
 }
 
 .torrent .status .muted {

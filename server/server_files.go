@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -111,11 +110,6 @@ func list(path string, info os.FileInfo, node *fsNode, n *int) error {
 		node.Size += c.Size
 		node.Children = append(node.Children, c)
 	}
-
-	// sort by modified time
-	sort.Slice(node.Children, func(i, j int) bool {
-		return node.Children[i].Modified.Before(node.Children[j].Modified)
-	})
 
 	return nil
 }
