@@ -131,6 +131,9 @@ footer .extra {
   font-size: 0.75rem;
   color: grey;
 }
+.section-header > .label {
+  margin-top: 0;
+}
 
 table.tcld .name {
   text-align: right !important;

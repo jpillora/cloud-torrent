@@ -53,8 +53,8 @@
   <div ng-click="submitSearch()" class="ui blue button" ng-class="{loading: searching,
       disabled: noResults || hasMore && results && results.length > 0
     }">
-    <span ng-show="noResults">No results!</span>
-    <span ng-show="!noResults">Search</span>
+    <span ng-show="noResults"><i class="sticky note outline icon"></i>No results!</span>
+    <span ng-show="!noResults"><i class="search icon"></i>Search</span>
   </div>
 </div>
 
@@ -92,9 +92,13 @@
 <!-- MAGNET BUTTONS -->
 <div class="magnet buttons" ng-show="mode.magnet">
   <div ng-click="submitTorrent()" class="ui tiny blue button" ng-class="{loading: apiing}">
+    <i class="play icon"></i>
     Load Magnet
   </div>
-  <div ng-show="mode.magnet" ng-click="edit = !edit" ng-class="{green: edit}" class="ui tiny button">Edit</div>
+  <div ng-show="mode.magnet" ng-click="edit = !edit" ng-class="{green: edit}" class="ui tiny button">
+    <i class="edit icon"></i>
+    Edit
+  </div>
 </div>
 
 <!-- TORRENT BUTTON -->

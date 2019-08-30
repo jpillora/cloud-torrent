@@ -2,9 +2,10 @@
   <h3 class="ui header">
     Downloads
   </h3>
-  <h5 class="right" ng-show="state.Stats.System.set">
+  <div class="ui label right" ng-show="state.Stats.System.set">
+    <i class="hdd icon"></i>
     {{ (state.Stats.System.diskTotal-state.Stats.System.diskUsed) | bytes }} free
-  </h5>
+  </div>
 </div>
 
 <div ng-if="numDownloads() == 0" class="ui message nodownloads">

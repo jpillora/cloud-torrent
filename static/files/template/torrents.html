@@ -2,9 +2,10 @@
   <h3 class="ui header">
     Torrents
   </h3>
-  <h5 class="right">
-    {{ numKeys(state.Torrents) }} torrent{{ numKeys(state.Torrents) == 1 ? '' : 's' }}
-  </h5>
+  <div class="ui label right">
+    <i class="tasks icon"></i>
+    {{ numKeys(state.Torrents) }} torrent{{ numKeys(state.Torrents) <= 1 ? '' : 's' }}
+  </div>
 </div>
 
 <div ng-if="isEmpty(state.Torrents)" class="ui message nodownloads">
