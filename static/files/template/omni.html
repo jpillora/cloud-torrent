@@ -50,7 +50,7 @@
 <div class="search buttons" ng-show="mode.search && inputs.provider">
   <select class="ui green button" ng-model="inputs.provider" ng-options="id as s.name for (id, s) in providers">
   </select>
-  <div ng-click="submitSearch()" class="ui blue button" ng-class="{loading: searching,
+  <div ng-click="submitSearch()" class="ui tiny blue button" ng-class="{loading: searching,
       disabled: noResults || hasMore && results && results.length > 0
     }">
     <span ng-show="noResults"><i class="sticky note outline icon"></i>No results!</span>

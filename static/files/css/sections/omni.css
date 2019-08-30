@@ -3,7 +3,7 @@
 }
 
 .omni .buttons {
-  margin-top: 5px;
+  margin-top: 0.5rem;
   text-align: center;
 }
 
@@ -46,7 +46,7 @@
 
 .omni .search div.button {
   height: 32px;
-  padding-top: 10px;
+  padding-top: 11px;
 }
 
 .omni .form {
