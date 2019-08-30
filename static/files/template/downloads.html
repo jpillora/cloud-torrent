@@ -1,11 +1,13 @@
-<div class="section-header">
-  <h3 class="ui header">
-    Downloads
-  </h3>
-  <div class="ui label right" ng-show="state.Stats.System.set">
-    <i class="hdd icon"></i>
-    {{ (state.Stats.System.diskTotal-state.Stats.System.diskUsed) | bytes }} free
-  </div>
+<div class="ui grid section-header">
+    <div class="eight wide column">
+      <h3 class="ui header"> Downloads </h3>
+    </div>
+    <div class="eight wide column">
+      <div class="ui label right floated">
+        <i class="hdd icon"></i>
+        {{ (state.Stats.System.diskTotal-state.Stats.System.diskUsed) | bytes }} free
+      </div>
+    </div>
 </div>
 
 <div ng-if="numDownloads() == 0" class="ui message nodownloads">

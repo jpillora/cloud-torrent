@@ -20,7 +20,7 @@ section.torrents {
 
 .torrent .info .name {
 	font-size: 1.2rem;
-	margin-bottom: 1.5rem;
+	margin-bottom: 2rem;
 }
 
 .torrent .info .starttime {
@@ -33,7 +33,7 @@ section.torrents {
 }
 
 .torrent .info .progress {
-    margin-top: 1.2rem;
+    margin-top: 0.5rem;
     margin-bottom: 0;
 }
 .torrent .info .progress .bar {

@@ -119,20 +119,11 @@ footer .extra {
 }
 
 .section-header {
-  margin-top: 20px;
-  position: relative;
+  margin-top: 20px !important;
 }
 
-.section-header .right {
-  position: absolute;
-  right: 0px;
-  top: 1px;
-  margin: 9px;
-  font-size: 0.75rem;
-  color: grey;
-}
-.section-header > .label {
-  margin-top: 0;
+.section-header div[class*="right floated"] {
+  float: right !important;
 }
 
 table.tcld .name {

@@ -1,11 +1,13 @@
-<div class="section-header">
-  <h3 class="ui header">
-    Torrents
-  </h3>
-  <div class="ui label right">
-    <i class="tasks icon"></i>
-    {{ numKeys(state.Torrents) }} torrent{{ numKeys(state.Torrents) <= 1 ? '' : 's' }}
-  </div>
+<div class="ui grid section-header">
+    <div class="eight wide column">
+      <h3 class="ui header"> Torrents </h3>
+    </div>
+    <div class="eight wide column">
+      <div class="ui label right floated">
+        <i class="tasks icon"></i>
+        {{ numKeys(state.Torrents) }} torrent{{ numKeys(state.Torrents) <= 1 ? '' : 's' }}
+      </div>
+    </div>
 </div>
 
 <div ng-if="isEmpty(state.Torrents)" class="ui message nodownloads">
@@ -19,8 +21,7 @@
   </div>
 
   <div class="ui stackable grid">
-    <div class="two column row">
-      <div class="info column">
+      <div class="ten wide info column">
         <div class="name ui header">
           <span ng-show="!ready(t.Name+'.zip')" title="{{ t.Name }}">
             {{ t.Name }}
@@ -41,7 +42,7 @@
           </div>
         </div>
       </div>
-      <div class="controls column">
+      <div class="six wide controls column">
         <div>
           <div class="ui mini buttons">
             <a class="ui button" ng-class="{green: t.$showFiles, blue: !t.$showFiles}" ng-click="t.$showFiles = !t.$showFiles">
@@ -78,7 +79,6 @@
           </span>
         </div>
       </div>
-    </div>
     <!--
     <div ng-if="!t.open" class="row stopped"><div class="column">
       This torrent is inactive. Press the green power button to reactivate or the red trash can to remove it.
