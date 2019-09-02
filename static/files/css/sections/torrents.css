@@ -36,12 +36,9 @@ section.torrents {
     margin-top: 0.5rem;
     margin-bottom: 0;
 }
-.torrent .info .progress .bar {
-	height: 10px;
-}
 
 .torrent .status {
-	margin-top: 0.5rem;
+	margin-top: 1.3rem;
 }
 
 .torrent .status .muted {

@@ -5,7 +5,7 @@
     <div class="eight wide column">
       <div class="ui label right floated">
         <i class="tasks icon"></i>
-        {{ numKeys(state.Torrents) }} torrent{{ numKeys(state.Torrents) <= 1 ? '' : 's' }}
+        {{ numKeys(state.Torrents) }} task{{ numKeys(state.Torrents) <= 1 ? '' : 's' }}
       </div>
     </div>
 </div>
@@ -31,21 +31,46 @@
           </a>
         </div>
         <div class="speed">
-          <span class="ui label" title="Uploaded Data"><i class="cloud upload icon"></i>{{ t.Stats.BytesWritten | bytes }}</span>
-          <span class="ui label" title="Downloaded Data"><i class="cloud download icon"></i>{{ t.Stats.BytesRead | bytes }}</span>
-          <span class="ui label" title="Data Exchanged Ratio"><i class="exchange alternate icon"></i>{{ t.SeedRatio | round }} </span>
-          <span class="ui label" title="Total Peers"><i class="sitemap icon"></i>{{ t.Stats.TotalPeers }}</span>
+          <span class="ui label" title="Upload Speed: {{t.UploadRate | bytes}}/s" ng-class="{
+              yellow:t.UploadRate > 0 && t.UploadRate < 102400,
+              green:t.UploadRate > 0 && t.UploadRate >= 102400
+             }" >
+            <i class="cloud upload icon"></i>
+            {{t.UploadRate | bytes}}/s
+          </span>
+          <span class="ui label" title="Download Speed: {{t.DownloadRate | bytes}}/s" ng-class="{
+              yellow:t.DownloadRate > 0 && t.DownloadRate < 102400,
+              green:t.DownloadRate > 0 && t.DownloadRate >= 102400
+             }" >
+            <i class="cloud download icon"></i>
+            {{t.DownloadRate | bytes}}/s
+          </span>
+          <span class="ui label" 
+            title="Total Peers:{{ t.Stats.TotalPeers }} / Active Peers:{{t.Stats.ActivePeers}} /  HalfOpen Peers:{{t.Stats.HalfOpenPeers}} / Pending Peers:{{t.Stats.PendingPeers}}"
+            ng-class="{ 
+              green: t.Stats.ActivePeers > 0,
+              yellow: t.Stats.ActivePeers == 0 && t.Stats.TotalPeers > 0,
+             }">
+             <i class="sitemap icon"></i>
+            {{ t.Stats.TotalPeers }}
+          </span>
+          <span class="ui label"
+            ng-class="{ green: t.SeedRatio >= 1 }"
+            title="Data Exchanged Ratio:{{ t.SeedRatio | round }}, Uploaded {{ t.Stats.BytesWritten | bytes }}, Downloaded {{ t.Stats.BytesRead | bytes }}"><i class="exchange alternate icon"></i>
+            {{ t.SeedRatio | round }}
+          </span>
         </div>
-        <div class="ui blue progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
-          <div class="bar" ng-style="{width: t.Percent + '%'}">
-            <div class="progress"></div>
+        <div class="ui blue small progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
+          <div class="bar" ng-style="{
+            width: (t.Percent > 10 ? t.Percent:10) + '%'}">
+            <div class="progress">{{t.Percent}}%</div>
           </div>
         </div>
       </div>
       <div class="six wide controls column">
         <div>
           <div class="ui mini buttons">
-            <a class="ui button" ng-class="{green: t.$showFiles, blue: !t.$showFiles}" ng-click="t.$showFiles = !t.$showFiles">
+            <a class="ui button" ng-class="{teal: t.$showFiles, blue: !t.$showFiles}" ng-click="t.$showFiles = !t.$showFiles">
               <i class="file icon"></i> Files
             </a>
             <a ng-disabled="t.Started" class="ui button" ng-class="{green: !t.Started}" ng-click="submitTorrent('start', t)">
@@ -64,18 +89,9 @@
         </div>
 
         <div ng-if="t.Started" class="status download">
-          <span class="ui label" title="Download Progress">
+          <span class="ui label" title="Saved Size: {{t.Downloaded | bytes}}, Total Size: {{t.Size | bytes}} ">
             <i class="save icon"></i>
-            {{t.Downloaded | bytes}} / {{t.Size | bytes}} - {{t.Percent }}% 
-          </span>
-        </div>
-        <div ng-if="t.Started" class="status speed">
-          <span class="ui label" title="Speeds" ng-class="{
-              yellow:t.DownloadRate+t.UploadRate > 0 && t.DownloadRate+t.UploadRate < 102400,
-              green:t.DownloadRate+t.UploadRate > 0 && t.DownloadRate+t.UploadRate >= 102400
-             }" >
-            <i class="tachometer alternate icon"></i>
-            ↑ {{t.UploadRate | bytes}}/s - ↓ {{t.DownloadRate | bytes}}/s
+            {{t.Downloaded | bytes}} / {{t.Size | bytes}} 
           </span>
         </div>
       </div>
@@ -87,11 +103,11 @@
     <div class="row" ng-show="t.$showFiles && t.Loaded">
       <div class="column">
         <div class="ui mini fluid labeled input">
-          <div class="ui blue label">
+          <div class="ui label">
             Magnet
           </div>
           <input type="text" value="{{t.Magnet}}">
-            <button class="ui mini green right icon button" ng-click="copyMagnetLink($event)">
+            <button class="ui mini teal right icon button" ng-click="copyMagnetLink($event)">
               <i class="copy icon"></i>
               Copy
             </button>

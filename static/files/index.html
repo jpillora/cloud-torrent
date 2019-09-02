@@ -58,7 +58,9 @@
 		<footer>
 			<div>
 				<span>
-					<a href="https://github.com/boypt/simple-torrent" target="_blank">SimpleTorrent</a> version {{ state.Stats.Version }} - </span>
+					<a href="https://github.com/boypt/simple-torrent" target="_blank">SimpleTorrent</a> 
+					<span>(A fork of <a href="https://github.com/jpillora/cloud-torrent" target="_blank">cloud-torrent</a>)</span>
+					version {{ state.Stats.Version }} - </span>
 				<span ng-if="numKeys(state.Users) > 1">{{ numKeys(state.Users) }} users connected - </span>
 				<span>
 					<a href="https://golang.org" target="_blank">Go</a> {{ state.Stats.Runtime }}
@@ -84,9 +86,6 @@
 				</span>
 				<span ng-if="state.Stats.Uptime">up {{ ago(state.Stats.Uptime) }}</span>
 			</div>
-			<div><span>A fork of <a href="https://github.com/jpillora/cloud-torrent" target="_blank">github.com/jpillora/cloud-torrent</a></span>
-			</div>
-
 		</footer>
 
 		<script src="js/vendor/query-string.js"></script>
