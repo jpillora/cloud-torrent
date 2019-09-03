@@ -1,6 +1,6 @@
-@import url("./sections/omni.css");
-@import url("./sections/torrents.css");
-@import url("./sections/downloads.css");
+@import url("./sections/omni.css?CLDVER");
+@import url("./sections/torrents.css?CLDVER");
+@import url("./sections/downloads.css?CLDVER");
 
 /* global styles  */
 

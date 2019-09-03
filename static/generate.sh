@@ -3,7 +3,11 @@
 __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd ${__dir}
 GITVER=$(git describe --tags)
-sed -i "s/CLDVER/${GITVER}/g" ${__dir}/files/index.html
-sed -i "s/CLDVER/${GITVER}/g" ${__dir}/files/template/downloads.html
+sed -i "s/CLDVER/${GITVER}/g" ${__dir}/files/index.html \
+    ${__dir}/files/template/downloads.html \
+    ${__dir}/files/css/app.css
+
 go generate
-git checkout -- ${__dir}/files/index.html ${__dir}/files/template/downloads.html
+git checkout -- ${__dir}/files/index.html \
+    ${__dir}/files/template/downloads.html \
+    ${__dir}/files/css/app.css
