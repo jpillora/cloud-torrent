@@ -1,26 +1,26 @@
-# SimpleTorrent
-![screenshot](https://user-images.githubusercontent.com/1033514/62452213-4fa04800-b7a2-11e9-887b-e0e436c1c204.png)
+# SimpleTorrent [![Build Status](https://travis-ci.org/boypt/simple-torrent.svg?branch=master)](https://travis-ci.org/boypt/simple-torrent) 
+![screenshot](https://user-images.githubusercontent.com/1033514/64141503-d6e0ea00-ce3a-11e9-9369-10fb7c56aa18.png)
 
-[![Build Status](https://travis-ci.org/boypt/simple-torrent.svg?branch=master)](https://travis-ci.org/boypt/simple-torrent) **SimpleTorrent** is a a self-hosted remote torrent client, written in Go (golang). You start torrents remotely, which are downloaded as sets of files on the local disk of the server, which are then retrievable or streamable via HTTP.
+**SimpleTorrent** is a a self-hosted remote torrent client, written in Go (golang). Started torrents remotely, download sets of files on the local disk of the server, which are then retrievable or streamable via HTTP.
 
 # Features
 
-This fork adds new features to the original version by `jpillora`.
+This fork adds new features to the original cloud-torrent by `jpillora`.
 
-* Run extrenal program on completed: `DoneCmd`
+* Run extrenal program on tasks completed: `DoneCmd`
 * Stops task when seeding ratio reached: `SeedRatio`
 * Download/Upload speed limiter: `UploadRate`/`DownloadRate`
 * Detailed transfer stats in web UI.
 * [Torrent Watcher](https://github.com/boypt/simple-torrent/wiki/Torrent-Watcher)
 * K8s/docker health-check endpoint `/healthz`
-* Add extra trackers
+* Extra trackers add from http source
 * Protocol Handler to `magnet:`
 
 And some development improvement:
 * Go modules introduced and compatiable with go 1.12+
-* Upgraded torrnet engine API from github.com/anacrolix/torrent
+* Updated and compatiable with torrnet engine API from [anacrolix/torrent](https://github.com/anacrolix/torrent)
 
-Other features:
+Also:
 * Single binary
 * Cross platform
 * Embedded torrent search
@@ -41,9 +41,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/boypt/simple-torrent/master/s
 
 NOTE: [MUST read wiki page for further intructions: Auth And Security](https://github.com/boypt/simple-torrent/wiki/AuthSecurity)
 
-## Docker
-
-[![Docker Pulls](https://img.shields.io/docker/pulls/boypt/cloud-torrent.svg)][dockerhub] [![Image Size](https://images.microbadger.com/badges/image/boypt/cloud-torrent.svg)][dockerhub]
+## Docker [![Docker Pulls](https://img.shields.io/docker/pulls/boypt/cloud-torrent.svg)][dockerhub] [![Image Size](https://images.microbadger.com/badges/image/boypt/cloud-torrent.svg)][dockerhub]
 
 [dockerhub]: https://hub.docker.com/r/boypt/cloud-torrent/
 
