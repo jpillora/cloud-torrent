@@ -234,6 +234,8 @@ func (e *Engine) StopTorrent(infohash string) error {
 	//there is no stop - kill underlying torrent
 	t.t.Drop()
 	t.Started = false
+	t.UploadRate = 0
+	t.DownloadRate = 0
 	for _, f := range t.Files {
 		if f != nil {
 			f.Started = false
