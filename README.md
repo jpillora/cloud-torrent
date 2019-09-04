@@ -1,5 +1,5 @@
 # SimpleTorrent [![Build Status](https://travis-ci.org/boypt/simple-torrent.svg?branch=master)](https://travis-ci.org/boypt/simple-torrent) 
-![screenshot](https://user-images.githubusercontent.com/1033514/64141503-d6e0ea00-ce3a-11e9-9369-10fb7c56aa18.png)
+![screenshot](https://user-images.githubusercontent.com/1033514/64239393-bdbb6480-cf32-11e9-9269-d8d10e7c0dc7.png)
 
 **SimpleTorrent** is a a self-hosted remote torrent client, written in Go (golang). Started torrents remotely, download sets of files on the local disk of the server, which are then retrievable or streamable via HTTP.
 
