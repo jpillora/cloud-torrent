@@ -75,21 +75,21 @@
       <div class="six wide controls column">
         <div>
           <div class="ui mini buttons">
-            <a class="ui button" ng-class="{teal: t.$showFiles, blue: !t.$showFiles}" ng-click="t.$showFiles = !t.$showFiles">
+            <button class="ui button" ng-class="{teal: t.$showFiles, blue: !t.$showFiles}" ng-click="t.$showFiles = !t.$showFiles">
               <i class="file icon"></i> Files
-            </a>
-            <a ng-disabled="t.Started" class="ui button" ng-class="{green: !t.Started}" ng-click="submitTorrent('start', t)">
+            </button>
+            <button ng-disabled="t.Started || $rootScope.apiing" class="ui button" ng-class="{green: !t.Started}" ng-click="submitTorrent('start', t)">
               <i class="play icon"></i> Start
-            </a>
-            <a ng-if="t.Started" class="ui red button" ng-click="submitTorrent('stop', t)">
+            </button>
+            <button ng-if="t.Started" ng-disabled="$rootScope.apiing" class="ui red button" ng-click="submitTorrent('stop', t)">
               <i class="stop icon"></i> Stop
-            </a>
-            <a ng-if="!t.Started" class="ui red button" style="z-index: 99999;" ng-click="submitTorrent('delete', t)">
+            </button>
+            <button ng-if="!t.Started" ng-disabled="$rootScope.apiing" class="ui red button" style="z-index: 99999;" ng-click="submitTorrent('delete', t)">
               <span ng-if="!t.Loaded">
                 <i class="ban icon"></i> Cancel</span>
               <span ng-if="t.Loaded">
                 <i class="trash icon"></i> Remove</span>
-            </a>
+            </button>
           </div>
         </div>
 
