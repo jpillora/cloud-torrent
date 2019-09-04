@@ -8,6 +8,11 @@ app.controller("DownloadsController", function($scope, $rootScope) {
       return $scope.state.Downloads.Children.length;
     return 0;
   };
+
+  $scope.$expanded = false;
+  $scope.section_expanded_toggle = function() {
+    $scope.$expanded = !$scope.$expanded;
+  };
 });
 
 app.controller("NodeController", function($scope, $rootScope, $http, $timeout) {

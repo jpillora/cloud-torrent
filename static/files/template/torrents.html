@@ -1,6 +1,8 @@
-<div class="ui grid section-header">
+<div class="ui grid section-header" ng-click="section_expanded_toggle()">
     <div class="eight wide column">
-      <h3 class="ui header"> Torrents </h3>
+      <h3 class="ui header"> 
+        <i class="angle icon" ng-class="{right: !$expanded, down: $expanded}"></i>
+        Torrents </h3>
     </div>
     <div class="eight wide column">
       <div class="ui label right floated">
@@ -14,7 +16,7 @@
   <p>Add torrents above</p>
 </div>
 
-<div ng-repeat="t in state.Torrents | dictValuesArray | orderBy:'AddedAt'" ng-class="{open: t.open}" class="ui torrent segment">
+<div ng-if="!isEmpty(state.Torrents) && $expanded" ng-repeat="t in state.Torrents | dictValuesArray | orderBy:'AddedAt'" ng-class="{open: t.open}" class="ui torrent segment">
 
   <div ng-if="!t.Loaded" class="ui active inverted dimmer">
     <div class="ui text loader">Loading</div>

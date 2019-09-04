@@ -19,4 +19,9 @@ app.controller("TorrentsController", function($scope, $rootScope, api) {
     $event.currentTarget.previousElementSibling.select();
     return document.execCommand('copy');
   };
+
+  $scope.$expanded = true;
+  $scope.section_expanded_toggle = function() {
+    $scope.$expanded = !$scope.$expanded;
+  };
 });
