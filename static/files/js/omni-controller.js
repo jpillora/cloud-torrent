@@ -142,6 +142,7 @@ app.controller("OmniController", function(
     } else {
       window.alert("UI Bug");
     }
+    $rootScope.set_torrent_expanded(true);
   };
 
   $scope.submitSearch = function() {
@@ -215,6 +216,7 @@ app.controller("OmniController", function(
         $scope.omnierr = err;
       }
     );
+    $rootScope.set_torrent_expanded(true);
   };
 
   // $var uploadFile = function(files) {

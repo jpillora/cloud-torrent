@@ -24,4 +24,7 @@ app.controller("TorrentsController", function($scope, $rootScope, api) {
   $scope.section_expanded_toggle = function() {
     $scope.$expanded = !$scope.$expanded;
   };
+  $rootScope.set_torrent_expanded = function(isExpand) {
+    $scope.$expanded = isExpand;
+  }
 });

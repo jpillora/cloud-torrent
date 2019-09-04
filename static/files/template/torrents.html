@@ -1,14 +1,12 @@
 <div class="ui grid section-header" ng-click="section_expanded_toggle()">
-    <div class="eight wide column">
-      <h3 class="ui header"> 
-        <i class="angle icon" ng-class="{right: !$expanded, down: $expanded}"></i>
-        Torrents </h3>
-    </div>
-    <div class="eight wide column">
-      <div class="ui label right floated">
-        <i class="tasks icon"></i>
-        {{ numKeys(state.Torrents) }} task{{ numKeys(state.Torrents) <= 1 ? '' : 's' }}
-      </div>
+    <div class="column">
+      <i class="square outline icon" ng-class="{minus: !$expanded, plus: $expanded}"></i>
+      <span class="ui header"> 
+        Torrents 
+        <span class="ui label">
+          {{ numKeys(state.Torrents) }} task{{ numKeys(state.Torrents) <= 1 ? '' : 's' }}
+        </span>
+      </span>
     </div>
 </div>
 

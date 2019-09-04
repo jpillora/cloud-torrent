@@ -1,14 +1,12 @@
 <div class="ui grid section-header" ng-click="section_expanded_toggle()">
-    <div class="eight wide column">
-      <h3 class="ui header">
-        <i class="angle icon" ng-class="{right: !$expanded, down: $expanded}"></i>
-         Downloads </h3>
-    </div>
-    <div class="eight wide column">
-      <div class="ui label right floated">
-        <i class="hdd icon"></i>
+    <div class="column">
+      <i class="square outline icon" ng-class="{minus: !$expanded, plus: $expanded}"></i>
+      <span class="ui header"> 
+        Downloads 
+        <span class="ui label">
         {{ (state.Stats.System.diskTotal-state.Stats.System.diskUsed) | bytes }} free
-      </div>
+        </span>
+      </span>
     </div>
 </div>
 
