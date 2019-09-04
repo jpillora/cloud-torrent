@@ -36,6 +36,7 @@ html body .muted {
 }
 
 footer {
+  margin-top: 2rem;
   text-align: right;
   color: grey;
   font-style: italic;
