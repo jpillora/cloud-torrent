@@ -4,7 +4,12 @@
       <span class="ui header"> 
         Torrents 
         <span class="ui label">
+          <i class="list icon"></i>
           {{ numKeys(state.Torrents) }} task{{ numKeys(state.Torrents) <= 1 ? '' : 's' }}
+        </span>
+        <span ng-if="!$expanded" class="ui label expand_msg">
+          <i class="info circle icon"></i>
+          Click To Expand
         </span>
       </span>
     </div>

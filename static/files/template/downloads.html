@@ -4,7 +4,12 @@
       <span class="ui header"> 
         Downloads 
         <span class="ui label">
+          <i class="hdd icon"></i>
         {{ (state.Stats.System.diskTotal-state.Stats.System.diskUsed) | bytes }} free
+        </span>
+        <span ng-if="!$expanded" class="ui label expand_msg">
+          <i class="info circle icon"></i>
+          Click To Expand
         </span>
       </span>
     </div>

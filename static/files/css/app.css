@@ -177,3 +177,11 @@ table.tcld .name {
   top: 30px;
   width: 100%;
 }
+
+.section-header .expand_msg {
+  display: none;
+}
+
+.section-header:hover .expand_msg {
+  display: inline-block;
+}
