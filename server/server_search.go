@@ -34,6 +34,7 @@ var fetches = 0
 var currentConfig, _ = normalize(defaultSearchConfig)
 
 func (s *Server) fetchSearchConfig() error {
+	log.Println("fetchSearchConfig: loading search config from", searchConfigURL)
 	resp, err := http.Get(searchConfigURL)
 	if err != nil {
 		return err

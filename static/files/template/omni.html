@@ -94,9 +94,9 @@
     </table>
 
     <div class="ui two column centered grid loadmore">
-      <div ng-click="submitSearch()" class="ui tiny blue button" ng-class="{loading: searching}">
-        Load more
-      </div>
+      <button ng-disabled="!hasMore" ng-click="submitSearch()" class="ui tiny blue button" ng-class="{loading: searching}">
+        {{hasMore?"Load":"No"}} more
+      </button>
     </div>
   </div>
 </div>
