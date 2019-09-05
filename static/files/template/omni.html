@@ -63,30 +63,42 @@
 </div>
 
 <!-- SEARCH RESULTS -->
-<div class="results" ng-show="mode.search && results && results.length > 0">
-  <table class="ui unstackable compact striped tcld table">
-    <tr ng-repeat="r in results">
-      <td class="name">
-        <a ng-href="{{ r.url }}" target="_blank">{{ r.name }}</a>
-      </td>
-      <td class="size" ng-if="r.size">{{ r.size }}</td>
-      <td class="users">
-        <span class="seeds">{{ r.seeds }}</span>
-        <br/>
-        <span class="peers"> {{ r.peers }}</span>
-      </td>
-      <td class="controls">
-        <i ng-click="submitSearchItem(r)" class="ui green download icon"></i>
-      </td>
-    </tr>
-    <tr ng-if="hasMore">
-      <td class="loadmore" colspan="10">
-        <div ng-click="submitSearch()" class="ui tiny blue button" ng-class="{loading: searching}">
-          Load more
-        </div>
-      </td>
-    </tr>
-  </table>
+<div class="ui raised segments result_secment" ng-show="mode.search && results && results.length > 0">
+  <div class="ui attached segment result_header">
+    <span class="ui secondary header">
+      Results
+    </span>
+    <div class="ui right floated grey tiny header">
+      <div class="close_icon" ng-click="clearSearch()">
+        <i class="close icon"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="ui attached segment results">
+    <table class="ui unstackable compact striped tcld very basic table">
+      <tr ng-repeat="r in results">
+        <td class="name">
+          <a ng-href="{{ r.url }}" target="_blank">{{ r.name }}</a>
+        </td>
+        <td class="size" ng-if="r.size">{{ r.size }}</td>
+        <td class="users">
+          <span class="seeds">{{ r.seeds }}</span>
+          <br/>
+          <span class="peers"> {{ r.peers }}</span>
+        </td>
+        <td class="controls">
+          <i ng-click="submitSearchItem(r)" class="ui green download icon"></i>
+        </td>
+      </tr>
+    </table>
+
+    <div class="ui two column centered grid loadmore">
+      <div ng-click="submitSearch()" class="ui tiny blue button" ng-class="{loading: searching}">
+        Load more
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- MAGNET BUTTONS -->

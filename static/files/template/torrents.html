@@ -33,32 +33,31 @@
         </a>
       </div>
       <div class="speed">
-        <span class="ui label" title="Upload Speed: {{t.UploadRate | bytes}}/s" ng-class="{
+        <span data-mode="Speed" class="ui label" title="Upload Speed" ng-class="{
             yellow:t.UploadRate > 0 && t.UploadRate < 102400,
             green:t.UploadRate > 0 && t.UploadRate >= 102400
-            }" >
+            }" ng-click="showMode($event, t)">
           <i class="cloud upload icon"></i>
           {{t.UploadRate | bytes}}/s
         </span>
-        <span class="ui label" title="Download Speed: {{t.DownloadRate | bytes}}/s" ng-class="{
+        <span data-mode="Speed" class="ui label" title="Download Speed" ng-class="{
             yellow:t.DownloadRate > 0 && t.DownloadRate < 102400,
             green:t.DownloadRate > 0 && t.DownloadRate >= 102400
-            }" >
+            }" ng-click="showMode($event, t)">
           <i class="cloud download icon"></i>
           {{t.DownloadRate | bytes}}/s
         </span>
-        <span class="ui label" 
-          title="Total Peers:{{ t.Stats.TotalPeers }} / Active Peers:{{t.Stats.ActivePeers}} /  HalfOpen Peers:{{t.Stats.HalfOpenPeers}} / Pending Peers:{{t.Stats.PendingPeers}}"
-          ng-class="{ 
+        <span data-mode="Peers" class="ui label" title="Peers" ng-class="{ 
             green: t.Stats.ActivePeers > 0,
             yellow: t.Stats.ActivePeers == 0 && t.Stats.TotalPeers > 0,
-            }">
-            <i class="sitemap icon"></i>
+            }" ng-click="showMode($event, t)">
+          <i class="sitemap icon"></i>
           {{ t.Stats.TotalPeers }}
         </span>
-        <span class="ui label"
-          ng-class="{ green: t.SeedRatio >= 1 }"
-          title="Data Exchanged Ratio:{{ t.SeedRatio | round }}, Uploaded {{ t.Stats.BytesWritten | bytes }}, Downloaded {{ t.Stats.BytesRead | bytes }}"><i class="exchange alternate icon"></i>
+        <span data-mode="Ratio" title="Ratio" class="ui label" ng-class="{
+            green: t.SeedRatio >= 1 }"
+          ng-click="showMode($event, t)">
+          <i class="exchange alternate icon"></i>
           {{ t.SeedRatio | round }}
         </span>
       </div>
@@ -91,12 +90,35 @@
       </div>
 
       <div ng-if="t.Started" class="status download">
-        <span class="ui label" title="Saved Size: {{t.Downloaded | bytes}}, Total Size: {{t.Size | bytes}} ">
+        <span title="Download Data" data-mode="Downloaded" class="ui label" title="Downloaded"
+         ng-click="showMode($event, t)">
           <i class="save icon"></i>
           {{t.Downloaded | bytes}} / {{t.Size | bytes}} 
         </span>
       </div>
     </div>
+
+    <div class="ui sixteen wide column" ng-if="t.$showMode">
+      <div class="ui info message">
+        <i class="close icon" ng-click="t.$showMode = null"></i>
+        <div class="header">
+          {{t.$detailTitle}}
+        </div>
+        <p ng-if="t.$showMode === 'Speed'">
+          Upload : {{t.UploadRate | bytes}}/s | Download : {{t.DownloadRate | bytes}}/s
+        </p>
+        <p ng-if="t.$showMode === 'Peers'">
+          Total: {{ t.Stats.TotalPeers }} / Active: {{t.Stats.ActivePeers}} /  HalfOpen: {{t.Stats.HalfOpenPeers}} / Pending: {{t.Stats.PendingPeers}}
+        </p>
+        <p ng-if="t.$showMode === 'Ratio'">
+          Exchanged Ratio:{{ t.SeedRatio | round }} / Uploaded Data: {{ t.Stats.BytesWritten | bytes }} / Downloaded Data: {{ t.Stats.BytesRead | bytes }}
+        </p>
+        <p ng-if="t.$showMode === 'Downloaded'">
+          Download Size: {{t.Downloaded | bytes}} / Total Size: {{t.Size | bytes}} - {{ t.Percent }}%
+        </p>
+      </div>
+    </div>
+
     <!--
     <div ng-if="!t.open" class="row stopped"><div class="column">
       This torrent is inactive. Press the green power button to reactivate or the red trash can to remove it.

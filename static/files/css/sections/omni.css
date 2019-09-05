@@ -10,9 +10,8 @@
 .omni .results {
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  margin-top: 5px;
-  border-radius: 4px;
+  overflow-x: hidden;
+  padding-bottom: 2rem;
 }
 
 .omni .results .name {
@@ -33,7 +32,16 @@
 }
 
 .omni .results .loadmore {
-  text-align: right;
+  margin-top: 1rem;
+}
+
+.omni .result_secment .result_header {
+  padding: 10px 14px;
+}
+
+.omni .result_secment .close_icon .icon {
+  margin-top: 3px;
+  margin-right: 0;
 }
 
 .omni .search select {

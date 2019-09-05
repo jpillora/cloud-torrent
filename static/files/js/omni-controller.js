@@ -65,9 +65,10 @@ app.controller("OmniController", function(
 
   var parseSearch = function() {
     $scope.mode.search = true;
-    while ($scope.results.length) $scope.results.pop();
+    $scope.results = [];
   };
 
+  $scope.clearSearch = parseSearch;
   $scope.parse = function() {
     storage.tcOmni = $scope.inputs.omni;
     $scope.omnierr = null;

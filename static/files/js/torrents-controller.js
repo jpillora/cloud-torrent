@@ -20,6 +20,13 @@ app.controller("TorrentsController", function($scope, $rootScope, api) {
     return document.execCommand('copy');
   };
 
+  $scope.showMode = function($event, item) {
+    var tg = $event.currentTarget;
+    item.$showMode = tg.dataset["mode"];
+    item.$detailTitle = tg.getAttribute("title");
+    return false;
+  };
+
   $scope.$expanded = true;
   $scope.section_expanded_toggle = function() {
     $scope.$expanded = !$scope.$expanded;
