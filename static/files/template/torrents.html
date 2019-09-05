@@ -7,10 +7,6 @@
           <i class="list icon"></i>
           {{ numKeys(state.Torrents) }} task{{ numKeys(state.Torrents) <= 1 ? '' : 's' }}
         </span>
-        <span ng-if="!$expanded" class="ui label expand_msg">
-          <i class="info circle icon"></i>
-          Click To Expand
-        </span>
       </span>
     </div>
 </div>
@@ -19,7 +15,8 @@
   <p>Add torrents above</p>
 </div>
 
-<div ng-if="!isEmpty(state.Torrents) && $expanded" ng-repeat="t in state.Torrents | dictValuesArray | orderBy:'AddedAt'" ng-class="{open: t.open}" class="ui torrent segment">
+<div ng-if="!isEmpty(state.Torrents) && $expanded" class="ui raised segments">
+<div ng-repeat="t in state.Torrents | dictValuesArray | orderBy:'AddedAt'" ng-class="{open: t.open}" class="ui torrent segment">
 
   <div ng-if="!t.Loaded" class="ui active inverted dimmer">
     <div class="ui text loader">Loading</div>
@@ -171,3 +168,9 @@
     </div>
   </div>
 </div>
+</div>
+
+<h5 ng-if="!$expanded" class="ui horizontal divider header" ng-click="section_expanded_toggle()">
+  <i class="angle double down icon"></i>
+  Click To Expand
+</h5>

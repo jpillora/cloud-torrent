@@ -7,10 +7,6 @@
           <i class="hdd icon"></i>
         {{ (state.Stats.System.diskTotal-state.Stats.System.diskUsed) | bytes }} free
         </span>
-        <span ng-if="!$expanded" class="ui label expand_msg">
-          <i class="info circle icon"></i>
-          Click To Expand
-        </span>
       </span>
     </div>
 </div>
@@ -19,9 +15,14 @@
   <p>Download files above</p>
 </div>
 
-<div ng-if="numDownloads() > 0 && $expanded" class="ui segment">
+<div ng-if="numDownloads() > 0 && $expanded" class="ui raised segment">
   <div class="ui list">
     <div class="item" ng-repeat="node in state.Downloads.Children | orderBy:'Modified'" ng-controller="NodeController"
       ng-include src="'template/download-tree.html?CLDVER'"></div>
   </div>
 </div>
+
+<h5 ng-if="!$expanded" class="ui horizontal divider header" ng-click="section_expanded_toggle()">
+  <i class="angle double down icon"></i>
+  Click To Expand
+</h5>
