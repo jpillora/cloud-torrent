@@ -44,10 +44,10 @@
 			</div>
 		</div>
 		<!-- GLOBAL ERROR MESSAGE ===================== -->
-		<div ng-if="err" class="ui error message">
+		<div ng-if="$root.err" class="ui error message">
 			<i class="close icon" ng-click="$root.err = null"></i>
 			<div class="header">Error</div>
-			<p>{{err}}</p>
+			<p>{{$root.err}}</p>
 		</div>
 
 		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html?CLDVER'"></section>

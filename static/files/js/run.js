@@ -72,14 +72,14 @@ app.run(function($rootScope, search, api) {
   $scope.uploadTorrent = function(event) {
     var fileContainer = event.dataTransfer || event.target;
     if (!fileContainer || !fileContainer.files) {
-      return alert("Invalid file event");
+      return $rootScope.alertErr("Invalid file event");
     }
     var filter = Array.prototype.filter;
     var files = filter.call(fileContainer.files, function(file) {
       return file.name.endsWith(".torrent");
     });
     if (files.length === 0) {
-      return alert("No torrent files to upload");
+      return $rootScope.alertErr("No torrent files to upload");
     }
     files.forEach(function(file) {
       var reader = new FileReader();
@@ -90,6 +90,12 @@ app.run(function($rootScope, search, api) {
       };
     });
   };
+
+  $scope.alertErr = function (errMsg) {
+    $scope.err = errMsg;
+    $scope.$apply();
+    return false;
+  }
 
   //page-wide keybinding, listen for space,
   //toggle pause/play the video on-screen

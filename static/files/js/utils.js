@@ -61,9 +61,10 @@ app.factory("storage", function() {
   return window.localStorage || {};
 });
 
-app.factory("reqerr", function() {
+app.factory("reqerr", function($rootScope) {
   return function(err, status) {
-    alert(err.error || err);
+    $rootScope.err = `${err.error} (${status})`
+    $rootScope.$apply();
     console.error("request error '%s' (%s)", err, status);
   };
 });
