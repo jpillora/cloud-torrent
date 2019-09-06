@@ -16,6 +16,10 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
+const (
+	cacheSavedPrefix = "_CLDAUTOSAVED_"
+)
+
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
 type Engine struct {
 	mut       sync.Mutex
@@ -63,6 +67,7 @@ func (e *Engine) Configure(c Config) error {
 		return err
 	}
 	e.mut.Lock()
+	e.cacheDir = c.WatchDirectory
 	e.config = c
 	e.client = client
 	e.mut.Unlock()
@@ -107,6 +112,26 @@ func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 			e.StartTorrent(t.InfoHash)
 		}
 	}()
+
+	if w, err := os.Stat(e.cacheDir); err == nil {
+		if w.IsDir() {
+			cacheFilePath := filepath.Join(e.cacheDir, fmt.Sprintf("%s%s.torrent",
+				cacheSavedPrefix,
+				tt.InfoHash().HexString()))
+			// only create the cache file if not exists
+			// avoid recreating a cache file during booting import
+			if _, err := os.Stat(cacheFilePath); os.IsNotExist(err) {
+				cf, err := os.Create(cacheFilePath)
+				if err == nil {
+					meta := tt.Metainfo()
+					meta.Write(cf)
+					cf.Close()
+				} else {
+					log.Println("[CacheTorrent] failed to create torrent file ", err)
+				}
+			}
+		}
+	}
 	return nil
 }
 
@@ -193,13 +218,6 @@ func (e *Engine) getOpenTorrent(infohash string) (*Torrent, error) {
 	if err != nil {
 		return nil, err
 	}
-	// if t.t == nil {
-	// 	newt, err := e.client.AddTorrentFromFile(filepath.Join(e.cacheDir, infohash+".torrent"))
-	// 	if err != nil {
-	// 		return t, fmt.Errorf("Failed to open torrent %s", err)
-	// 	}
-	// 	t.t = &newt
-	// }
 	return t, nil
 }
 
@@ -249,7 +267,10 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	if err != nil {
 		return err
 	}
-	os.Remove(filepath.Join(e.cacheDir, infohash+".torrent"))
+
+	cacheFilePath := filepath.Join(e.cacheDir,
+		fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
+	os.Remove(cacheFilePath)
 	delete(e.ts, t.InfoHash)
 	ih := metainfo.NewHashFromHex(infohash)
 	if tt, ok := e.client.Torrent(ih); ok {

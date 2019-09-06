@@ -26,6 +26,11 @@ import (
 	"github.com/skratchdot/open-golang/open"
 )
 
+const (
+	cacheSavedPrefix = "_CLDAUTOSAVED_"
+	scraperUA        = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
+)
+
 //Server is the "State" portion of the diagram
 type Server struct {
 	//config
@@ -88,7 +93,7 @@ func (s *Server) Run(version string) error {
 		Log: false, Debug: false,
 		Headers: map[string]string{
 			//we're a trusty browser :)
-			"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36",
+			"User-Agent": scraperUA,
 		},
 	}
 	if err := s.scraper.LoadConfig(defaultSearchConfig); err != nil {
@@ -270,6 +275,10 @@ func (s *Server) TorrentWatcher(c engine.Config) error {
 				if event.IsDir() {
 					continue
 				}
+				// skip auto saved torrent
+				if strings.HasPrefix(event.Name(), cacheSavedPrefix) {
+					continue
+				}
 				if strings.HasSuffix(event.Name(), ".torrent") {
 					if err := s.engine.NewFileTorrent(event.Path); err == nil {
 						log.Printf("Torrent Watcher: added %s, file removed\n", event.Name())
@@ -292,7 +301,7 @@ func (s *Server) TorrentWatcher(c engine.Config) error {
 	}
 
 	s.watcher = w
-	go w.Start(time.Second)
+	go w.Start(time.Second * 5)
 	return nil
 }
 
