@@ -110,28 +110,25 @@ func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 		<-t.t.GotInfo()
 		if e.config.AutoStart {
 			e.StartTorrent(t.InfoHash)
-		}
-	}()
-
-	if w, err := os.Stat(e.cacheDir); err == nil {
-		if w.IsDir() {
-			cacheFilePath := filepath.Join(e.cacheDir, fmt.Sprintf("%s%s.torrent",
-				cacheSavedPrefix,
-				tt.InfoHash().HexString()))
-			// only create the cache file if not exists
-			// avoid recreating a cache file during booting import
-			if _, err := os.Stat(cacheFilePath); os.IsNotExist(err) {
-				cf, err := os.Create(cacheFilePath)
-				if err == nil {
-					meta := tt.Metainfo()
-					meta.Write(cf)
-					cf.Close()
-				} else {
-					log.Println("[CacheTorrent] failed to create torrent file ", err)
+			if w, err := os.Stat(e.cacheDir); err == nil && w.IsDir() {
+				cacheFilePath := filepath.Join(e.cacheDir,
+					fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, t.InfoHash))
+				// only create the cache file if not exists
+				// avoid recreating a cache file during booting import
+				if _, err := os.Stat(cacheFilePath); os.IsNotExist(err) {
+					cf, err := os.Create(cacheFilePath)
+					if err == nil {
+						meta := t.t.Metainfo()
+						meta.Write(cf)
+						cf.Close()
+					} else {
+						log.Println("[CacheTorrent] failed to create torrent file ", err)
+					}
 				}
 			}
 		}
-	}
+	}()
+
 	return nil
 }
 

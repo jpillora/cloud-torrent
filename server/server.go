@@ -160,8 +160,12 @@ func (s *Server) Run(version string) error {
 	tors, _ := filepath.Glob(filepath.Join(c.WatchDirectory, "*.torrent"))
 	for _, t := range tors {
 		if err := s.engine.NewFileTorrent(t); err == nil {
-			log.Printf("Inital Task: added %s, file removed\n", t)
-			os.Remove(t)
+			if strings.HasPrefix(filepath.Base(t), cacheSavedPrefix) {
+				log.Printf("Inital Task Restored: %s \n", t)
+			} else {
+				log.Printf("Inital Task: added %s, file removed\n", t)
+				os.Remove(t)
+			}
 		} else {
 			log.Printf("Inital Task: fail to add %s, ERR:%#v\n", t, err)
 		}
