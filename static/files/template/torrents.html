@@ -64,7 +64,7 @@
       <div class="ui blue small progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
         <div class="bar" ng-style="{
           width: (t.Percent > 10 ? t.Percent:10) + '%'}">
-          <div class="progress">{{t.Percent}}%</div>
+          <div class="progress">{{t.Percent | round}}%</div>
         </div>
       </div>
     </div>
