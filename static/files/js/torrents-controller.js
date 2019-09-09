@@ -20,10 +20,17 @@ app.controller("TorrentsController", function($scope, $rootScope, api) {
     return document.execCommand('copy');
   };
 
-  $scope.showMode = function($event, item) {
+  $scope.toggleTagDetail = function($event, item) {
     var tg = $event.currentTarget;
-    item.$showMode = tg.dataset["mode"];
-    item.$detailTitle = tg.getAttribute("title");
+    var tagTitle = tg.getAttribute("title");
+    var showMode = tg.dataset["mode"];
+    if (tagTitle === item.$detailTitle) {
+      item.$showMode = "";
+      item.$detailTitle = "";
+    } else {
+      item.$showMode = showMode;
+      item.$detailTitle = tagTitle;
+    }
     return false;
   };
 

@@ -36,27 +36,27 @@
         <span data-mode="Speed" class="ui label" title="Upload Speed" ng-class="{
             yellow:t.UploadRate > 0 && t.UploadRate < 102400,
             green:t.UploadRate > 0 && t.UploadRate >= 102400
-            }" ng-click="showMode($event, t)">
+            }" ng-click="toggleTagDetail($event, t)">
           <i class="cloud upload icon"></i>
           {{t.UploadRate | bytes}}/s
         </span>
         <span data-mode="Speed" class="ui label" title="Download Speed" ng-class="{
             yellow:t.DownloadRate > 0 && t.DownloadRate < 102400,
             green:t.DownloadRate > 0 && t.DownloadRate >= 102400
-            }" ng-click="showMode($event, t)">
+            }" ng-click="toggleTagDetail($event, t)">
           <i class="cloud download icon"></i>
           {{t.DownloadRate | bytes}}/s
         </span>
         <span data-mode="Peers" class="ui label" title="Peers" ng-class="{ 
             green: t.Stats.ActivePeers > 0,
             yellow: t.Stats.ActivePeers == 0 && t.Stats.TotalPeers > 0,
-            }" ng-click="showMode($event, t)">
+            }" ng-click="toggleTagDetail($event, t)">
           <i class="sitemap icon"></i>
           {{ t.Stats.TotalPeers }}
         </span>
         <span data-mode="Ratio" title="Ratio" class="ui label" ng-class="{
             green: t.SeedRatio >= 1 }"
-          ng-click="showMode($event, t)">
+          ng-click="toggleTagDetail($event, t)">
           <i class="exchange alternate icon"></i>
           {{ t.SeedRatio | round }}
         </span>
@@ -91,7 +91,7 @@
 
       <div ng-if="t.Started" class="status download">
         <span title="Download Data" data-mode="Downloaded" class="ui label" title="Downloaded"
-         ng-click="showMode($event, t)">
+         ng-click="toggleTagDetail($event, t)">
           <i class="save icon"></i>
           {{t.Downloaded | bytes}} / {{t.Size | bytes}} 
         </span>
