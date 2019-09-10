@@ -63,11 +63,9 @@
 </div>
 
 <!-- SEARCH RESULTS -->
-<div class="ui raised segments result_secment" ng-show="mode.search && results && results.length > 0">
+<div id="omni_search_results" class="ui raised segments" ng-show="mode.search && results && results.length > 0">
   <div class="ui attached segment result_header">
-    <span class="ui secondary header">
-      Results
-    </span>
+    <span class="ui secondary header">Search Results</span>
     <div class="ui right floated grey tiny header">
       <div class="close_icon" ng-click="clearSearch()">
         <i class="close icon"></i>

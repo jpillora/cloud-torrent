@@ -64,6 +64,10 @@ app.controller("OmniController", function(
   };
 
   var parseSearch = function() {
+    var r = document.querySelector("#omni_search_results div.results");
+    if (r !== null) {
+      r.scrollTop = 0;
+    }
     $scope.mode.search = true;
     $scope.results.length = 0;
   };

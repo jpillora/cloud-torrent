@@ -35,11 +35,11 @@
   margin-top: 1rem;
 }
 
-.omni .result_secment .result_header {
+#omni_search_results .result_header {
   padding: 10px 14px;
 }
 
-.omni .result_secment .close_icon .icon {
+#omni_search_results .result_header .close_icon .icon {
   margin-top: 3px;
   margin-right: 0;
 }
