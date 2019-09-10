@@ -63,9 +63,13 @@ app.factory("storage", function() {
 
 app.factory("reqerr", function($rootScope) {
   return function(err, status) {
-    $rootScope.err = `${err.error} (${status})`
+    var msg = err;
+    if (typeof err === "object" && "error" in err) {
+      msg = err.error;
+    }
+    $rootScope.err = `${msg} (${status})`
     $rootScope.$apply();
-    console.error("request error '%s' (%s)", err, status);
+    console.log(msg, status);
   };
 });
 
