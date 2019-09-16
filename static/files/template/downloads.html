@@ -5,7 +5,7 @@
         Downloads 
         <span class="ui label">
           <i class="hdd icon"></i>
-        {{ (state.Stats.System.diskTotal-state.Stats.System.diskUsed) | bytes }} free
+        {{ state.Stats.System.diskFree | bytes }} free
         </span>
       </span>
     </div>

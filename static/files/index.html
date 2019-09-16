@@ -78,10 +78,10 @@
 						cpu {{ state.Stats.System.cpu | round }}%,
 					</span>
 					<span>
-						mem {{ (100*state.Stats.System.memoryUsed/state.Stats.System.memoryTotal) | round }}%,
+						mem {{ state.Stats.System.memUsedPercent | round }}%,
 					</span>
 					<span>
-						disk {{ (100*state.Stats.System.diskUsed/state.Stats.System.diskTotal) | round }}%,
+						disk {{ state.Stats.System.diskUsedPercent | round }}%,
 					</span>
 				</span>
 				<span ng-if="state.Stats.Uptime">up {{ ago(state.Stats.Uptime) }}</span>
