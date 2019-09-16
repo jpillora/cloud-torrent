@@ -7,6 +7,7 @@ require (
 	github.com/anacrolix/log v0.3.0
 	github.com/anacrolix/torrent v1.7.1
 	github.com/boypt/scraper v0.0.0-20190812010241-70ab02dcd31b
+	github.com/c2h5oh/datasize v0.0.0-20171227191756-4eba002a5eae
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/jpillora/archive v0.0.0-20160301031048-e0b3681851f1
 	github.com/jpillora/backoff v0.0.0-20180909062703-3050d21c67d7

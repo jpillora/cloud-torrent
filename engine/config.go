@@ -1,6 +1,12 @@
 package engine
 
-import "golang.org/x/time/rate"
+import (
+	"log"
+	"strings"
+
+	"github.com/c2h5oh/datasize"
+	"golang.org/x/time/rate"
+)
 
 type Config struct {
 	AutoStart            bool
@@ -33,15 +39,33 @@ func (c *Config) DownloadLimiter() *rate.Limiter {
 
 func rateLimiter(rstr string) *rate.Limiter {
 	var rateSize int
+	rstr = strings.TrimSpace(rstr)
 	switch rstr {
-	case "Low":
+	case "Low", "low":
+		// ~50k/s
 		rateSize = 50000
-	case "Medium":
+	case "Medium", "medium":
+		// ~500k/s
 		rateSize = 500000
-	case "High":
+	case "High", "high":
+		// ~1500k/s
 		rateSize = 1500000
-	default:
+	case "Unlimited", "unlimited", "0", "":
+		// unlimited
 		return rate.NewLimiter(rate.Inf, 0)
+	default:
+		var v datasize.ByteSize
+		err := v.UnmarshalText([]byte(rstr))
+		if err != nil {
+			log.Printf("RateLimit [%s] unreconized, set as unlimited", rstr)
+			return rate.NewLimiter(rate.Inf, 0)
+		}
+		if v > 2147483647 {
+			// max of int, unlimited
+			return rate.NewLimiter(rate.Inf, 0)
+		}
+
+		rateSize = int(v)
 	}
 	return rate.NewLimiter(rate.Limit(rateSize), rateSize)
 }
