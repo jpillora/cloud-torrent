@@ -29,4 +29,5 @@ replace (
 	github.com/jpillora/cloud-torrent/engine => ./engine/
 	github.com/jpillora/cloud-torrent/server => ./server/
 	github.com/jpillora/cloud-torrent/static => ./static/
+	github.com/shirou/gopsutil => github.com/boypt/gopsutil v2.18.12+incompatible
 )
