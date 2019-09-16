@@ -19,6 +19,7 @@ type Config struct {
 	UploadRate           string
 	DownloadRate         string
 	TrackerListURL       string
+	AlwaysAddTrackers    bool
 }
 
 func (c *Config) UploadLimiter() *rate.Limiter {

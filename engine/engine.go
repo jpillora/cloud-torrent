@@ -102,7 +102,9 @@ func (e *Engine) NewFileTorrent(path string) error {
 }
 
 func (e *Engine) newTorrent(tt *torrent.Torrent) error {
-	if len(e.bttracker) > 0 {
+	meta := tt.Metainfo()
+	if len(e.bttracker) > 0 && (e.config.AlwaysAddTrackers || len(meta.AnnounceList) == 0) {
+		log.Printf("[newTorrent] added %d public trackers\n", len(e.bttracker))
 		tt.AddTrackers([][]string{e.bttracker})
 	}
 	t := e.upsertTorrent(tt)
@@ -118,12 +120,12 @@ func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 				if _, err := os.Stat(cacheFilePath); os.IsNotExist(err) {
 					cf, err := os.Create(cacheFilePath)
 					if err == nil {
-						meta := t.t.Metainfo()
-						meta.Write(cf)
-						cf.Close()
+						umeta := t.t.Metainfo()
+						umeta.Write(cf)
 					} else {
-						log.Println("[CacheTorrent] failed to create torrent file ", err)
+						log.Println("[newTorrent] failed to create torrent file ", err)
 					}
+					cf.Close()
 				}
 			}
 		}
