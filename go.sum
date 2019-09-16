@@ -100,6 +100,8 @@ github.com/boypt/scraper v0.0.0-20190811073247-f5504ca10536 h1:qnC6OIhKgywpReD6U
 github.com/boypt/scraper v0.0.0-20190811073247-f5504ca10536/go.mod h1:jV6dbYzUczfZY04m6kepiM5N9OYlxRsZcDoBvugWmXw=
 github.com/boypt/scraper v0.0.0-20190812010241-70ab02dcd31b h1:d8jzRu7wr+2JLL81MZI4UiGp8z+TTF8B3PZGqqmJzW0=
 github.com/boypt/scraper v0.0.0-20190812010241-70ab02dcd31b/go.mod h1:jV6dbYzUczfZY04m6kepiM5N9OYlxRsZcDoBvugWmXw=
+github.com/boypt/scraper v0.0.0-20190916075425-61876a2e592e h1:TAvGOvRSUKducuvg8qjOtay6cyE2+lZwnihzKYcs9mk=
+github.com/boypt/scraper v0.0.0-20190916075425-61876a2e592e/go.mod h1:DcjNDME9H/p3F/dAFREaSQgBeG2RjJhAVZSYAar6O18=
 github.com/bradfitz/iter v0.0.0-20140124041915-454541ec3da2 h1:1B/+1BcRhOMG1KH/YhNIU8OppSWk5d/NGyfRla88CuY=
 github.com/bradfitz/iter v0.0.0-20140124041915-454541ec3da2/go.mod h1:PyRFw1Lt2wKX4ZVSQ2mk+PeDa1rxyObEDlApuIsUKuo=
 github.com/bradfitz/iter v0.0.0-20190303215204-33e6a9893b0c h1:FUUopH4brHNO2kJoNN3pV+OBEYmgraLT/KHZrMM69r0=
@@ -203,6 +205,7 @@ github.com/jpillora/eventsource v0.0.0-20170920003432-7ed8c999e167/go.mod h1:qaS
 github.com/jpillora/opts v1.0.0/go.mod h1:9CwarOXfgQBIdG1wc0EfXSbS14ky0BlFqeGmIsyZvvE=
 github.com/jpillora/opts v1.0.5 h1:anoRfW5GWTUh1gLtJZlPlNYsyitkewY2zedUsVLhwkA=
 github.com/jpillora/opts v1.0.5/go.mod h1:7p7X/vlpKZmtaDFYKs956EujFqA6aCrOkcCaS6UBcR4=
+github.com/jpillora/opts v1.1.0 h1:eP4c8yn68iN4OgQ/6nTAWd+obufJOwUvAqW7dYzvCwA=
 github.com/jpillora/opts v1.1.0/go.mod h1:7p7X/vlpKZmtaDFYKs956EujFqA6aCrOkcCaS6UBcR4=
 github.com/jpillora/requestlog v0.0.0-20181015073026-df8817be5f82 h1:7ufdyC3aMxFcCv+ABZy/dmIVGKFoGNBCqOgLYPIckD8=
 github.com/jpillora/requestlog v0.0.0-20181015073026-df8817be5f82/go.mod h1:w8buj+yNfmLEP0ENlbG/FRnK6bVmuhqXnukYCs9sDvY=
