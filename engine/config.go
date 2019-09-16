@@ -4,7 +4,8 @@ import "golang.org/x/time/rate"
 
 type Config struct {
 	AutoStart            bool
-	Debug                bool
+	EngineDebug          bool
+	MuteEngineLog        bool
 	ObfsPreferred        bool
 	ObfsRequirePreferred bool
 	DisableTrackers      bool

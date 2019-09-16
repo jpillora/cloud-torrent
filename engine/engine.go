@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	eglog "github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
@@ -50,7 +51,10 @@ func (e *Engine) Configure(c Config) error {
 	tc := torrent.NewDefaultClientConfig()
 	tc.ListenPort = c.IncomingPort
 	tc.DataDir = c.DownloadDirectory
-	tc.Debug = c.Debug
+	tc.Debug = c.EngineDebug
+	if e.config.MuteEngineLog {
+		tc.Logger = eglog.Discard
+	}
 	tc.NoUpload = !c.EnableUpload
 	tc.Seed = c.EnableSeeding
 	tc.UploadRateLimiter = c.UploadLimiter()

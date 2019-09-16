@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
+	github.com/anacrolix/log v0.3.0
 	github.com/anacrolix/torrent v1.7.1
 	github.com/boypt/scraper v0.0.0-20190812010241-70ab02dcd31b
 	github.com/elazarl/go-bindata-assetfs v1.0.0
