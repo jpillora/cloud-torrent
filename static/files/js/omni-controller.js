@@ -80,6 +80,8 @@ app.controller("OmniController", function(
   $scope.parse = function() {
     storage.tcOmni = $scope.inputs.omni;
     $scope.omnierr = null;
+    $rootScope.err = null;
+
     //set all 3 to false,
     //one will set to be true
     $scope.mode = {
