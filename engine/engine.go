@@ -65,6 +65,7 @@ func (e *Engine) Configure(c Config) error {
 	}
 	tc.DisableTrackers = c.DisableTrackers
 	tc.DisableIPv6 = c.DisableIPv6
+	tc.ProxyURL = c.ProxyURL
 
 	client, err := torrent.NewClient(tc)
 	if err != nil {
