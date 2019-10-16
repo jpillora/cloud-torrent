@@ -345,7 +345,7 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 			switch err {
 			case errTaskAdded:
 				// internal rewrite to show status page
-				r.URL.Path = "/magadded.html"
+				r.URL.Path = "/sub/magadded.html"
 			default:
 				w.WriteHeader(http.StatusBadRequest)
 				w.Write([]byte(err.Error()))
