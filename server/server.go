@@ -27,8 +27,9 @@ import (
 )
 
 const (
-	cacheSavedPrefix = "_CLDAUTOSAVED_"
-	scraperUA        = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
+	cacheSavedPrefix    = "_CLDAUTOSAVED_"
+	cacheSavedPrefixLen = 14
+	scraperUA           = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
 )
 
 //Server is the "State" portion of the diagram
@@ -168,6 +169,20 @@ func (s *Server) Run(version string) error {
 			}
 		} else {
 			log.Printf("Inital Task: fail to add %s, ERR:%#v\n", t, err)
+		}
+	}
+
+	// restore saved magnet tasks
+	infos, _ := filepath.Glob(filepath.Join(c.WatchDirectory, "*.info"))
+	for _, i := range infos {
+		fn := filepath.Base(i)
+		if strings.HasPrefix(fn, cacheSavedPrefix) && len(fn) == 59 {
+			mag := "magnet:?xt=urn:btih:" + fn[cacheSavedPrefixLen:cacheSavedPrefixLen+40] // hash len == 40
+			if err := s.engine.NewMagnet(mag); err == nil {
+				log.Printf("Inital Task Restored: %s \n", fn)
+			} else {
+				log.Printf("Inital Task: fail to add %s, ERR:%#v\n", fn, err)
+			}
 		}
 	}
 
