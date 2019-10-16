@@ -27,4 +27,9 @@ pushd $__dir/..
 BINFILE=${BIN}_${OS}_${ARCH}${SUFFIX} 
 rm -fv ${BIN}_*
 CGO_ENABLED=0 GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE} -ldflags "-s -w -X main.VERSION=$GITVER"
+if [[ ! -f ${BINFILE} ]]; then
+  echo "Build failed. Check with error message above."
+  exit 1
+fi
+
 gzip -v -9 -k ${BINFILE}

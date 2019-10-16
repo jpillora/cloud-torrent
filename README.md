@@ -49,7 +49,8 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads -v /path/to/my/
 
 ## Source
 
-*[Golang](https://golang.org/dl/) is required to compile from source*
+**Requirement**
+- Latest [Golang](https://golang.org/dl/) (at least 1.11+)
 
 ``` sh
 $ git clone https://github.com/boypt/simple-torrent.git
