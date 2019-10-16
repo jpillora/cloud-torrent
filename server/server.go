@@ -340,16 +340,18 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		if err := s.api(r); err == nil {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
+			return
 		} else {
 			switch err {
-			case errRedirect:
-				http.Redirect(w, r, "/", http.StatusFound)
+			case errTaskAdded:
+				// internal rewrite to show status page
+				r.URL.Path = "/magadded.html"
 			default:
 				w.WriteHeader(http.StatusBadRequest)
 				w.Write([]byte(err.Error()))
+				return
 			}
 		}
-		return
 	}
 	//no match, assume static file
 	s.files.ServeHTTP(w, r)

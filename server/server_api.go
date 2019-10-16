@@ -15,7 +15,7 @@ import (
 	"github.com/jpillora/cloud-torrent/engine"
 )
 
-var errRedirect = errors.New("REDIRECT TORRENT HOME")
+var errTaskAdded = errors.New("REDIRECT TORRENT HOME")
 
 func (s *Server) api(r *http.Request) error {
 	defer r.Body.Close()
@@ -33,7 +33,7 @@ func (s *Server) api(r *http.Request) error {
 			} else {
 				return fmt.Errorf("Invalid Magnet link: %s", m)
 			}
-			return errRedirect
+			return errTaskAdded
 		}
 
 		return errors.New("Invalid path")
