@@ -27,9 +27,8 @@ import (
 )
 
 const (
-	cacheSavedPrefix    = "_CLDAUTOSAVED_"
-	cacheSavedPrefixLen = 14
-	scraperUA           = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
+	cacheSavedPrefix = "_CLDAUTOSAVED_"
+	scraperUA        = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
 )
 
 //Server is the "State" portion of the diagram
@@ -155,36 +154,41 @@ func (s *Server) Run(version string) error {
 		}
 	}()
 
-	go s.engine.UpdateTrackers()
+	go func() {
+		s.engine.UpdateTrackers()
 
-	// if torrent file exists in WatchDirectory, add them as task
-	tors, _ := filepath.Glob(filepath.Join(c.WatchDirectory, "*.torrent"))
-	for _, t := range tors {
-		if err := s.engine.NewFileTorrent(t); err == nil {
-			if strings.HasPrefix(filepath.Base(t), cacheSavedPrefix) {
-				log.Printf("Inital Task Restored: %s \n", t)
+		// restore saved torrent tasks
+		tors, _ := filepath.Glob(filepath.Join(c.WatchDirectory, "*.torrent"))
+		for _, t := range tors {
+			if err := s.engine.NewFileTorrent(t); err == nil {
+				if strings.HasPrefix(filepath.Base(t), cacheSavedPrefix) {
+					log.Printf("Inital Task Restored: %s \n", t)
+				} else {
+					log.Printf("Inital Task: added %s, file removed\n", t)
+					os.Remove(t)
+				}
 			} else {
-				log.Printf("Inital Task: added %s, file removed\n", t)
-				os.Remove(t)
-			}
-		} else {
-			log.Printf("Inital Task: fail to add %s, ERR:%#v\n", t, err)
-		}
-	}
-
-	// restore saved magnet tasks
-	infos, _ := filepath.Glob(filepath.Join(c.WatchDirectory, "*.info"))
-	for _, i := range infos {
-		fn := filepath.Base(i)
-		if strings.HasPrefix(fn, cacheSavedPrefix) && len(fn) == 59 {
-			mag := "magnet:?xt=urn:btih:" + fn[cacheSavedPrefixLen:cacheSavedPrefixLen+40] // hash len == 40
-			if err := s.engine.NewMagnet(mag); err == nil {
-				log.Printf("Inital Task Restored: %s \n", fn)
-			} else {
-				log.Printf("Inital Task: fail to add %s, ERR:%#v\n", fn, err)
+				log.Printf("Inital Task: fail to add %s, ERR:%#v\n", t, err)
 			}
 		}
-	}
+
+		// restore saved magnet tasks
+		infos, _ := filepath.Glob(filepath.Join(c.WatchDirectory, "*.info"))
+		for _, i := range infos {
+			fn := filepath.Base(i)
+			if strings.HasPrefix(fn, cacheSavedPrefix) && len(fn) == 59 {
+				mag, err := ioutil.ReadFile(i)
+				if err != nil {
+					continue
+				}
+				if err := s.engine.NewMagnet(string(mag)); err == nil {
+					log.Printf("Inital Task Restored: %s \n", fn)
+				} else {
+					log.Printf("Inital Task: fail to add %s, ERR:%#v\n", fn, err)
+				}
+			}
+		}
+	}()
 
 	host := s.Host
 	if host == "" {

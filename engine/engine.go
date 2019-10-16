@@ -94,8 +94,9 @@ func (e *Engine) NewMagnet(magnetURI string) error {
 		if _, err := os.Stat(cacheInfoPath); os.IsNotExist(err) {
 			cf, err := os.Create(cacheInfoPath)
 			if err == nil {
-				cf.Close()
+				cf.WriteString(magnetURI)
 			}
+			cf.Close()
 		}
 	}
 
@@ -132,7 +133,9 @@ func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 		// remote .info hash file
 		cacheInfoPath := filepath.Join(e.cacheDir,
 			fmt.Sprintf("%s%s.info", cacheSavedPrefix, t.InfoHash))
-		os.Remove(cacheInfoPath)
+		if err := os.Remove(cacheInfoPath); err == nil {
+			log.Printf("[newTorrent] removed hash info file %s\n", t.InfoHash)
+		}
 
 		// create .torrent file
 		if w, err := os.Stat(e.cacheDir); err == nil && w.IsDir() {
@@ -145,6 +148,7 @@ func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 				if err == nil {
 					umeta := t.t.Metainfo()
 					umeta.Write(cf)
+					log.Println("[newTorrent] created cache torrent file", t.InfoHash)
 				} else {
 					log.Println("[newTorrent] failed to create torrent file ", err)
 				}
