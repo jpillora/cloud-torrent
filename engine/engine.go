@@ -297,9 +297,20 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 		return err
 	}
 
+	// remote .info hash file
+	cacheInfoPath := filepath.Join(e.cacheDir,
+		fmt.Sprintf("%s%s.info", cacheSavedPrefix, infohash))
+	if err := os.Remove(cacheInfoPath); err == nil {
+		log.Printf("[deleteTorrent] removed hash info file %s\n", t.InfoHash)
+	}
+
+	// remote .torrent file
 	cacheFilePath := filepath.Join(e.cacheDir,
 		fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
-	os.Remove(cacheFilePath)
+	if err := os.Remove(cacheFilePath); err == nil {
+		log.Printf("[deleteTorrent] removed torrent file %s\n", t.InfoHash)
+	}
+
 	delete(e.ts, t.InfoHash)
 	ih := metainfo.NewHashFromHex(infohash)
 	if tt, ok := e.client.Torrent(ih); ok {
