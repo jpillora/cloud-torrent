@@ -8,34 +8,21 @@ import (
 	"net/http"
 )
 
-const searchConfigURL = "https://gistcdn.githack.com/boypt/9bf0e3e876502ae8e521d9ba0487e0e1/raw/scraper-config.json"
-
-func (s *Server) fetchSearchConfigLoop() {
-	s.fetchSearchConfig()
-	return
-
-	// search scraper is not updated frequently
-	/********
-	b := backoff.Backoff{Max: 30 * time.Minute}
-	for {
-		if err := s.fetchSearchConfig(); err != nil {
-			//ignore error
-			time.Sleep(b.Duration())
-		} else {
-			//no errror - check again in half hour
-			time.Sleep(30 * time.Minute)
-			b.Reset()
-		}
-	}
-	********/
-}
+const (
+	searchConfigURL      = "https://gistcdn.githack.com/boypt/9bf0e3e876502ae8e521d9ba0487e0e1/raw/scraper-config.json"
+	searchConfigURLDebug = "https://gist.githubusercontent.com/boypt/9bf0e3e876502ae8e521d9ba0487e0e1/raw/scraper-config.json"
+)
 
 var fetches = 0
 var currentConfig, _ = normalize(defaultSearchConfig)
 
-func (s *Server) fetchSearchConfig() error {
-	log.Println("fetchSearchConfig: loading search config from", searchConfigURL)
-	resp, err := http.Get(searchConfigURL)
+func (s *Server) fetchSearchConfig(debug bool) error {
+	confurl := searchConfigURL
+	if debug {
+		confurl = searchConfigURLDebug
+	}
+	log.Println("fetchSearchConfig: loading search config from", confurl)
+	resp, err := http.Get(confurl)
 	if err != nil {
 		return err
 	}

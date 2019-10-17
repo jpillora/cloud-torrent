@@ -44,6 +44,7 @@ type Server struct {
 	Log            bool   `help:"Enable request logging"`
 	Open           bool   `help:"Open now with your default browser"`
 	DisableLogTime bool   `help:"Don't print timestamp in log"`
+	Debug          bool   `help:"Debug app"`
 	DebugTorrent   bool   `help:"Debug torrent engine"`
 	//http handlers
 	files, static http.Handler
@@ -101,7 +102,7 @@ func (s *Server) Run(version string) error {
 	}
 	//scraper
 	s.state.SearchProviders = s.scraper.Config //share scraper config
-	go s.fetchSearchConfigLoop()
+	go s.fetchSearchConfig(s.Debug)
 
 	s.scraperh = http.StripPrefix("/search", s.scraper)
 	//torrent engine
