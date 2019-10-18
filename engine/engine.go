@@ -167,6 +167,7 @@ func (e *Engine) torrentRoutine(t *Torrent) {
 	}
 
 	// call DoneCmd on each file completed
+	// some file might finished before the whole task does
 	for _, f := range t.Files {
 		if f.Done && !f.DoneCmdCalled {
 			f.DoneCmdCalled = true
