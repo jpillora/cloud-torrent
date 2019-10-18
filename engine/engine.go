@@ -117,7 +117,7 @@ func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 	t := e.upsertTorrent(tt)
 	go func() {
 		<-t.t.GotInfo()
-		e.removeCacheFiles(t.InfoHash)
+		e.removeMagnetCache(t.InfoHash)
 		if e.config.AutoStart {
 			e.StartTorrent(t.InfoHash)
 		}
@@ -266,7 +266,8 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 		tt.Drop()
 	}
 
-	e.removeCacheFiles(infohash)
+	e.removeMagnetCache(infohash)
+	e.removeTorrentCache(infohash)
 	return nil
 }
 
@@ -381,14 +382,16 @@ func (e *Engine) newTorrentCacheFile(infohash string, meta metainfo.MetaInfo) {
 	}
 }
 
-func (e *Engine) removeCacheFiles(infohash string) {
+func (e *Engine) removeMagnetCache(infohash string) {
 	// remove both magnet and torrent cache if exists.
 	cacheInfoPath := filepath.Join(e.cacheDir,
 		fmt.Sprintf("%s%s.info", cacheSavedPrefix, infohash))
 	if err := os.Remove(cacheInfoPath); err == nil {
 		log.Printf("removed magnet info file %s", infohash)
 	}
+}
 
+func (e *Engine) removeTorrentCache(infohash string) {
 	cacheFilePath := filepath.Join(e.cacheDir,
 		fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
 	if err := os.Remove(cacheFilePath); err == nil {
