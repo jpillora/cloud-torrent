@@ -118,10 +118,10 @@ func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 	go func() {
 		<-t.t.GotInfo()
 		e.removeCacheFiles(t.InfoHash)
-		e.newTorrentCacheFile(t.InfoHash, t.t.Metainfo())
 		if e.config.AutoStart {
 			e.StartTorrent(t.InfoHash)
 		}
+		e.newTorrentCacheFile(t.InfoHash, t.t.Metainfo())
 	}()
 
 	return nil
@@ -346,7 +346,6 @@ func (e *Engine) UpdateTrackers() error {
 }
 
 func (e *Engine) newMagnetCacheFile(magnetURI, infohash string) {
-
 	// create .info file with hash as filename
 	if w, err := os.Stat(e.cacheDir); err == nil && w.IsDir() {
 		cacheInfoPath := filepath.Join(e.cacheDir,
@@ -367,7 +366,7 @@ func (e *Engine) newTorrentCacheFile(infohash string, meta metainfo.MetaInfo) {
 		cacheFilePath := filepath.Join(e.cacheDir,
 			fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
 		// only create the cache file if not exists
-		// avoid recreating a cache file during booting import
+		// avoid recreating cache files during boot import
 		if _, err := os.Stat(cacheFilePath); os.IsNotExist(err) {
 			cf, err := os.Create(cacheFilePath)
 			defer cf.Close()
@@ -382,6 +381,7 @@ func (e *Engine) newTorrentCacheFile(infohash string, meta metainfo.MetaInfo) {
 }
 
 func (e *Engine) removeCacheFiles(infohash string) {
+	// remove both magnet and torrent cache if exists.
 	cacheInfoPath := filepath.Join(e.cacheDir,
 		fmt.Sprintf("%s%s.info", cacheSavedPrefix, infohash))
 	if err := os.Remove(cacheInfoPath); err == nil {

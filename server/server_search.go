@@ -16,9 +16,9 @@ const (
 var fetches = 0
 var currentConfig, _ = normalize(defaultSearchConfig)
 
-func (s *Server) fetchSearchConfig(debug bool) error {
+func (s *Server) fetchSearchConfig() error {
 	confurl := searchConfigURL
-	if debug {
+	if s.Debug {
 		confurl = searchConfigURLDebug
 	}
 	log.Println("fetchSearchConfig: loading search config from", confurl)

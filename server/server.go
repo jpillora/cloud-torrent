@@ -102,7 +102,7 @@ func (s *Server) Run(version string) error {
 	}
 	//scraper
 	s.state.SearchProviders = s.scraper.Config //share scraper config
-	go s.fetchSearchConfig(s.Debug)
+	go s.fetchSearchConfig()
 
 	s.scraperh = http.StripPrefix("/search", s.scraper)
 	//torrent engine

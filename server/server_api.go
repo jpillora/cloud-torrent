@@ -96,6 +96,9 @@ func (s *Server) api(r *http.Request) error {
 		if err := s.engine.UpdateTrackers(); err != nil {
 			return err
 		}
+		if err := s.fetchSearchConfig(); err != nil {
+			return err
+		}
 	case "magnet":
 		uri := string(data)
 		if err := s.engine.NewMagnet(uri); err != nil {
