@@ -87,19 +87,7 @@ func (e *Engine) NewMagnet(magnetURI string) error {
 		return err
 	}
 
-	// create .info file with hash as filename
-	if w, err := os.Stat(e.cacheDir); err == nil && w.IsDir() {
-		cacheInfoPath := filepath.Join(e.cacheDir,
-			fmt.Sprintf("%s%s.info", cacheSavedPrefix, tt.InfoHash().HexString()))
-		if _, err := os.Stat(cacheInfoPath); os.IsNotExist(err) {
-			cf, err := os.Create(cacheInfoPath)
-			if err == nil {
-				cf.WriteString(magnetURI)
-			}
-			cf.Close()
-		}
-	}
-
+	e.newMagnetCacheFile(magnetURI, tt.InfoHash().HexString())
 	return e.newTorrent(tt)
 }
 
@@ -129,33 +117,8 @@ func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 	t := e.upsertTorrent(tt)
 	go func() {
 		<-t.t.GotInfo()
-
-		// remote .info hash file
-		cacheInfoPath := filepath.Join(e.cacheDir,
-			fmt.Sprintf("%s%s.info", cacheSavedPrefix, t.InfoHash))
-		if err := os.Remove(cacheInfoPath); err == nil {
-			log.Printf("[newTorrent] removed hash info file %s\n", t.InfoHash)
-		}
-
-		// create .torrent file
-		if w, err := os.Stat(e.cacheDir); err == nil && w.IsDir() {
-			cacheFilePath := filepath.Join(e.cacheDir,
-				fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, t.InfoHash))
-			// only create the cache file if not exists
-			// avoid recreating a cache file during booting import
-			if _, err := os.Stat(cacheFilePath); os.IsNotExist(err) {
-				cf, err := os.Create(cacheFilePath)
-				if err == nil {
-					umeta := t.t.Metainfo()
-					umeta.Write(cf)
-					log.Println("[newTorrent] created cache torrent file", t.InfoHash)
-				} else {
-					log.Println("[newTorrent] failed to create torrent file ", err)
-				}
-				cf.Close()
-			}
-		}
-
+		e.removeCacheFiles(t.InfoHash)
+		e.newTorrentCacheFile(t.InfoHash, t.t.Metainfo())
 		if e.config.AutoStart {
 			e.StartTorrent(t.InfoHash)
 		}
@@ -296,26 +259,14 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	if err != nil {
 		return err
 	}
-
-	// remote .info hash file
-	cacheInfoPath := filepath.Join(e.cacheDir,
-		fmt.Sprintf("%s%s.info", cacheSavedPrefix, infohash))
-	if err := os.Remove(cacheInfoPath); err == nil {
-		log.Printf("[deleteTorrent] removed hash info file %s\n", t.InfoHash)
-	}
-
-	// remote .torrent file
-	cacheFilePath := filepath.Join(e.cacheDir,
-		fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
-	if err := os.Remove(cacheFilePath); err == nil {
-		log.Printf("[deleteTorrent] removed torrent file %s\n", t.InfoHash)
-	}
-
 	delete(e.ts, t.InfoHash)
+
 	ih := metainfo.NewHashFromHex(infohash)
 	if tt, ok := e.client.Torrent(ih); ok {
 		tt.Drop()
 	}
+
+	e.removeCacheFiles(infohash)
 	return nil
 }
 
@@ -392,4 +343,54 @@ func (e *Engine) UpdateTrackers() error {
 	e.bttracker = txtlines
 	log.Printf("UpdateTrackers: loaded %d trackers \n", len(txtlines))
 	return nil
+}
+
+func (e *Engine) newMagnetCacheFile(magnetURI, infohash string) {
+
+	// create .info file with hash as filename
+	if w, err := os.Stat(e.cacheDir); err == nil && w.IsDir() {
+		cacheInfoPath := filepath.Join(e.cacheDir,
+			fmt.Sprintf("%s%s.info", cacheSavedPrefix, infohash))
+		if _, err := os.Stat(cacheInfoPath); os.IsNotExist(err) {
+			cf, err := os.Create(cacheInfoPath)
+			defer cf.Close()
+			if err == nil {
+				cf.WriteString(magnetURI)
+			}
+		}
+	}
+}
+
+func (e *Engine) newTorrentCacheFile(infohash string, meta metainfo.MetaInfo) {
+	// create .torrent file
+	if w, err := os.Stat(e.cacheDir); err == nil && w.IsDir() {
+		cacheFilePath := filepath.Join(e.cacheDir,
+			fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
+		// only create the cache file if not exists
+		// avoid recreating a cache file during booting import
+		if _, err := os.Stat(cacheFilePath); os.IsNotExist(err) {
+			cf, err := os.Create(cacheFilePath)
+			defer cf.Close()
+			if err == nil {
+				meta.Write(cf)
+				log.Println("created cache torrent file", infohash)
+			} else {
+				log.Println("failed to create torrent file ", err)
+			}
+		}
+	}
+}
+
+func (e *Engine) removeCacheFiles(infohash string) {
+	cacheInfoPath := filepath.Join(e.cacheDir,
+		fmt.Sprintf("%s%s.info", cacheSavedPrefix, infohash))
+	if err := os.Remove(cacheInfoPath); err == nil {
+		log.Printf("removed hash info file %s", infohash)
+	}
+
+	cacheFilePath := filepath.Join(e.cacheDir,
+		fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
+	if err := os.Remove(cacheFilePath); err == nil {
+		log.Printf("removed torrent file %s", infohash)
+	}
 }
