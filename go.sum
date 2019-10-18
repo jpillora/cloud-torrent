@@ -71,8 +71,8 @@ github.com/andybalholm/cascadia v1.0.0 h1:hOCXnnZ5A+3eVDX8pvgl4kofXv2ELss0bKcqRy
 github.com/andybalholm/cascadia v1.0.0/go.mod h1:GsXiBklL0woXo1j/WYWtSYYC4ouU9PqHO0sqidkEA4Y=
 github.com/boypt/bolt v1.3.2 h1:OFQEb9HY5lc9ZDbWEWEX2CFlqQenptKhcc8cvWEsS1Y=
 github.com/boypt/bolt v1.3.2/go.mod h1:r14Dd2KjxVj/kWf2QiNLPnVunAfIH/LVh021UFsli5Q=
-github.com/boypt/scraper v1.0.1 h1:vr7rabc2TAwNB1GH7VMSZSYHW9xbYlxi0cY17geu6y0=
-github.com/boypt/scraper v1.0.1/go.mod h1:BjrhbQpRoYzjoeCFVL0kLoqswBK1KP1cFu0qOE2banE=
+github.com/boypt/scraper v1.0.2 h1:94i2FP4ZsDe5r+Jn6PWgt4vfv6vw+twPqWi+2Ba86WQ=
+github.com/boypt/scraper v1.0.2/go.mod h1:BjrhbQpRoYzjoeCFVL0kLoqswBK1KP1cFu0qOE2banE=
 github.com/bradfitz/iter v0.0.0-20140124041915-454541ec3da2 h1:1B/+1BcRhOMG1KH/YhNIU8OppSWk5d/NGyfRla88CuY=
 github.com/bradfitz/iter v0.0.0-20140124041915-454541ec3da2/go.mod h1:PyRFw1Lt2wKX4ZVSQ2mk+PeDa1rxyObEDlApuIsUKuo=
 github.com/bradfitz/iter v0.0.0-20190303215204-33e6a9893b0c h1:FUUopH4brHNO2kJoNN3pV+OBEYmgraLT/KHZrMM69r0=
