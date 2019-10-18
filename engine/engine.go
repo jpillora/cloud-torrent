@@ -355,6 +355,7 @@ func (e *Engine) newMagnetCacheFile(magnetURI, infohash string) {
 			defer cf.Close()
 			if err == nil {
 				cf.WriteString(magnetURI)
+				log.Println("created magnet cache info file", infohash)
 			}
 		}
 	}
@@ -372,7 +373,7 @@ func (e *Engine) newTorrentCacheFile(infohash string, meta metainfo.MetaInfo) {
 			defer cf.Close()
 			if err == nil {
 				meta.Write(cf)
-				log.Println("created cache torrent file", infohash)
+				log.Println("created torrent cache file", infohash)
 			} else {
 				log.Println("failed to create torrent file ", err)
 			}
@@ -385,7 +386,7 @@ func (e *Engine) removeCacheFiles(infohash string) {
 	cacheInfoPath := filepath.Join(e.cacheDir,
 		fmt.Sprintf("%s%s.info", cacheSavedPrefix, infohash))
 	if err := os.Remove(cacheInfoPath); err == nil {
-		log.Printf("removed hash info file %s", infohash)
+		log.Printf("removed magnet info file %s", infohash)
 	}
 
 	cacheFilePath := filepath.Join(e.cacheDir,
