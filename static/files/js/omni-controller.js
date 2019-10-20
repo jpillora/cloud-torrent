@@ -174,6 +174,9 @@ app.controller("OmniController", function(
           var r = results[i];
           //add origin to path to create urls
           if (r.url && /^\//.test(r.url)) {
+            if (!r.path) {
+              r.path = r.url;
+            }
             r.url = origin + r.url;
           } else if (r.path && /^\//.test(r.path)) {
             r.url = origin + r.path;
