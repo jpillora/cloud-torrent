@@ -48,6 +48,9 @@ func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
 		for _, e := range errs {
 			estr = append(estr, e.Error())
 		}
+		if len(estr) == 0 {
+			estr = append(estr, "RssURL is not configured")
+		}
 		http.Error(w, strings.Join(estr, "|\n"), http.StatusInternalServerError)
 		return
 	}
