@@ -3,6 +3,7 @@ package engine
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -398,4 +399,8 @@ func (e *Engine) removeTorrentCache(infohash string) {
 	if err := os.Remove(cacheFilePath); err == nil {
 		log.Printf("removed torrent file %s", infohash)
 	}
+}
+
+func (e *Engine) WriteStauts(_w io.Writer) {
+	e.client.WriteStatus(_w)
 }

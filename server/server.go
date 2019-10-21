@@ -1,6 +1,8 @@
 package server
 
 import (
+	"bufio"
+	"bytes"
 	"compress/gzip"
 	"crypto/tls"
 	"encoding/json"
@@ -64,6 +66,7 @@ type Server struct {
 		Downloads       *fsNode
 		Torrents        map[string]*engine.Torrent
 		Users           map[string]string
+		EngineStatus    string
 		Stats           struct {
 			Title   string
 			Version string
@@ -138,8 +141,13 @@ func (s *Server) Run(version string) error {
 	log.Printf("Read Config: %#v\n", c)
 	//poll torrents and files
 	go func() {
+		var sBuf bytes.Buffer
+		sWriter := bufio.NewWriter(&sBuf)
 		for {
 			s.state.Lock()
+			sBuf.Reset()
+			s.engine.WriteStauts(sWriter)
+			s.state.EngineStatus = sBuf.String()
 			s.state.Torrents = s.engine.GetTorrents()
 			s.state.Downloads = s.listFiles()
 			s.state.Unlock()
