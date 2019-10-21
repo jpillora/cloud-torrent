@@ -47,9 +47,9 @@ type Server struct {
 	Debug          bool   `help:"Debug app"`
 	DebugTorrent   bool   `help:"Debug torrent engine"`
 	//http handlers
-	files, static http.Handler
-	scraper       *scraper.Handler
-	scraperh      http.Handler
+	files, static, rssh http.Handler
+	scraper             *scraper.Handler
+	scraperh            http.Handler
 
 	//file watcher
 	watcher *watcher.Watcher
@@ -88,10 +88,11 @@ func (s *Server) Run(version string) error {
 	//init maps
 	s.state.Users = map[string]string{}
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
+	s.rssh = http.HandlerFunc(s.serveRSS)
 	s.files = http.HandlerFunc(s.serveFiles)
 	s.static = ctstatic.FileSystemHandler()
 	s.scraper = &scraper.Handler{
-		Log: false, Debug: false,
+		Log: s.Debug, Debug: s.Debug,
 		Headers: map[string]string{
 			//we're a trusty browser :)
 			"User-Agent": scraperUA,
@@ -355,6 +356,10 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//api call
+	if strings.HasPrefix(r.URL.Path, "/rss") {
+		s.rssh.ServeHTTP(w, r)
+		return
+	}
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		//only pass request in, expect error out
 		if err := s.api(r); err == nil {

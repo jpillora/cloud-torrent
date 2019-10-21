@@ -3,14 +3,18 @@
   <div class="field"
     ng-if="state.Config !== undefined"
     ng-repeat="k in configOrderdKey"
-    ng-init="type = inputType(state.Config[k])">
+    ng-init="type = inputType(k, state.Config[k])">
     <div ng-if="type == 'check'">
       <checkbox type="toggle"
         ng-model="state.Config[k]">{{ k | addspaces }}</checkbox>
     </div>
-    <div ng-if="type != 'check'">
-      <label>{{ k | addspaces }}</label>
+    <div ng-if="type == 'text'">
+      <label><h5>{{ k | addspaces }}</h5></label>
       <input type="{{type}}" ng-model="state.Config[k]"></input>
+    </div>
+    <div ng-if="type == 'multiline'">
+      <label><h5>{{ k | addspaces }}</h5></label>
+      <textarea ng-model="state.Config[k]"></textarea>
     </div>
   </div>
   <div class="buttons">

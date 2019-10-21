@@ -18,7 +18,8 @@ app.controller("ConfigController", function($scope, $rootScope, storage, api) {
     "DownloadDirectory",
     "WatchDirectory",
     "TrackerListURL",
-    "AlwaysAddTrackers"
+    "AlwaysAddTrackers",
+    "RssURL"
   ];
 
   $scope.toggle = function(b) {

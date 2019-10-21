@@ -57,6 +57,20 @@ app.factory("search", function($rootScope, $http, reqerr) {
   };
 });
 
+app.factory("rss", function($rootScope, $http, reqerr) {
+  return {
+    getrss: function() {
+      $rootScope.searching = true;
+      var req = $http.get("rss", {params: {_: Date.now()}, cache: false});
+      req.error(reqerr);
+      req.finally(function() {
+        $rootScope.searching = false;
+      });
+      return req;
+    }
+  };
+});
+
 app.factory("storage", function() {
   return window.localStorage || {};
 });

@@ -28,6 +28,7 @@ type Config struct {
 	TrackerListURL       string
 	AlwaysAddTrackers    bool
 	ProxyURL             string
+	RssURL               string
 }
 
 func (c *Config) UploadLimiter() *rate.Limiter {

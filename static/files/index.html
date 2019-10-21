@@ -36,6 +36,7 @@
 			</h2>
 			<div class="status">
 				<i ng-show="request.count > 0" class="ui circular loading repeat icon"></i>
+				<i ng-click="$root.omni.get_rss()" class="ui circular rss square icon"></i>
 				<i ng-click="$root.config.edit = !$root.config.edit;" ng-class="{green: $root.config.edit}"
 				 class="ui circular server icon" style="font-size: 14px;"></i>
 				<i ng-click="$root.omni.edit = !$root.omni.edit;" ng-class="{green: $root.omni.edit}" class="ui circular magnet icon"

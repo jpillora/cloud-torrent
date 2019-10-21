@@ -72,10 +72,6 @@ footer .extra {
   cursor: default !important;
 }
 
-.icon[ng-click] {
-  font-size: 1.2em;
-}
-
 .app .connect-warning {
   padding-top: 50px;
   position: fixed;

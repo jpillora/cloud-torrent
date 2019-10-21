@@ -29,10 +29,15 @@ app.run(function($rootScope, search, api) {
   $scope.search = search;
   $scope.api = api;
 
-  $scope.inputType = function(v) {
+  $scope.inputType = function(k, v) {
+    multiLines = ["RssURL"];
+    if (multiLines.includes(k)) {
+      return "multiline"
+    }
+
     switch (typeof v) {
       case "number":
-        return "number";
+        return "text";
       case "boolean":
         return "check";
     }

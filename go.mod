@@ -15,6 +15,7 @@ require (
 	github.com/jpillora/opts v1.1.0
 	github.com/jpillora/requestlog v0.0.0-20181015073026-df8817be5f82
 	github.com/jpillora/velox v0.0.0-20180825063758-42845d323220
+	github.com/mmcdole/gofeed v1.0.0-beta2
 	github.com/radovskyb/watcher v1.0.6
 	github.com/shirou/gopsutil v2.18.12+incompatible
 	github.com/skratchdot/open-golang v0.0.0-20190402232053-79abb63cd66e
