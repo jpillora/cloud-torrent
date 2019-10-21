@@ -30,3 +30,11 @@ app.controller("ConfigController", function($scope, $rootScope, storage, api) {
     api.configure(data);
   };
 });
+
+app.config([
+  '$compileProvider',
+  function( $compileProvider )
+  {   
+      $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|magnet):/);
+  }
+]);

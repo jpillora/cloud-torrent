@@ -243,8 +243,9 @@ app.controller("OmniController", function(
     if($rootScope.searching) {
       return
     }
-    $scope.mode.search = true;
     $scope.clearSearch();
+    $scope.parse();
+    $scope.mode.search = true;
     rss.getrss().success(function(results) {
         $scope.hasMore = false;
         $scope.searchTitle = `RSS Results`;
@@ -254,6 +255,7 @@ app.controller("OmniController", function(
         }
         for (var i = 0; i < results.length; i++) {
           var r = results[i];
+          r.url = r.magnet;
           r.seeds = $rootScope.ago(r.published);
           $scope.results.push(r);
         }
