@@ -30,7 +30,7 @@
 		<div class="title">
 			<h2>
 				<a href="https://github.com/boypt/simple-torrent" target="_blank" ng-init="logoHover = false"
-				 ng-mouseover="logoHover = true" ng-mouseleave="logoHover = false">
+					ng-mouseover="logoHover = true" ng-mouseleave="logoHover = false">
 					<i class="blue icon" ng-class="{cloud:!logoHover, github: logoHover}"></i> {{ state.Stats.Title }}
 				</a>
 			</h2>
@@ -38,9 +38,9 @@
 				<i ng-show="request.count > 0" class="ui circular loading repeat icon"></i>
 				<i ng-click="$root.omni.get_rss()" class="ui circular rss square orange icon"></i>
 				<i ng-click="$root.config.edit = !$root.config.edit;" ng-class="{green: $root.config.edit}"
-				 class="ui circular server icon" style="font-size: 14px;"></i>
-				<i ng-click="$root.omni.edit = !$root.omni.edit;" ng-class="{green: $root.omni.edit}" class="ui circular magnet icon"
-				 style="font-size: 14px;"></i>
+					class="ui circular server icon" style="font-size: 14px;"></i>
+				<i ng-click="$root.omni.edit = !$root.omni.edit;" ng-class="{green: $root.omni.edit}"
+					class="ui circular magnet icon" style="font-size: 14px;"></i>
 				<i class="ui circular lightning icon" ng-class="{ green: connected, red: !connected }"></i>
 			</div>
 		</div>
@@ -51,16 +51,20 @@
 			<p>{{$root.err}}</p>
 		</div>
 
-		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html?CLDVER'"></section>
+		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html?CLDVER'">
+		</section>
 		<section class="omni" ng-controller="OmniController" ng-include src="'template/omni.html?CLDVER'"></section>
-		<section class="torrents" ng-controller="TorrentsController" ng-include src="'template/torrents.html?CLDVER'"></section>
-		<section class="downloads" ng-controller="DownloadsController" ng-include src="'template/downloads.html?CLDVER'"></section>
+		<section class="torrents" ng-controller="TorrentsController" ng-include src="'template/torrents.html?CLDVER'">
+		</section>
+		<section class="downloads" ng-controller="DownloadsController" ng-include
+			src="'template/downloads.html?CLDVER'"></section>
 
 		<footer>
 			<div>
 				<span>
-					<a href="https://github.com/boypt/simple-torrent" target="_blank">SimpleTorrent</a> 
-					<span>(A fork of <a href="https://github.com/jpillora/cloud-torrent" target="_blank">cloud-torrent</a>)</span>
+					<a href="https://github.com/boypt/simple-torrent" target="_blank">SimpleTorrent</a>
+					<span>(A fork of <a href="https://github.com/jpillora/cloud-torrent"
+							target="_blank">cloud-torrent</a>)</span>
 					version {{ state.Stats.Version }} - </span>
 				<span ng-if="numKeys(state.Users) > 1">{{ numKeys(state.Users) }} users connected - </span>
 				<span>
@@ -69,6 +73,7 @@
 			</div>
 			<div>
 				<span ng-if="state.Stats.System.set">
+					<span ng-click="$root.showEnineStatus = !$root.showEnineStatus">ShowDebugInfo,</span>
 					<span class="extra">
 						goroutines {{ state.Stats.System.goRoutines }},
 					</span>
@@ -86,31 +91,32 @@
 					</span>
 				</span>
 				<span ng-if="state.Stats.Uptime">up {{ ago(state.Stats.Uptime) }},</span>
-				<span ng-click="$root.showEnineStatus = !$root.showEnineStatus">EngineStatus</span>
 			</div>
 		</footer>
-		<div ng-if="$root.showEnineStatus" class="ui form">
-			<div class="field">
-			  <label>Engine Status</label>
-			  <textarea ng-model="$root.state.EngineStatus" readonly></textarea>
+		<div ng-if="$root.showEnineStatus" class="ui mini message">
+			<i ng-click="$root.showEnineStatus = false" class="close icon"></i>
+			<div class="header">
+				Torrent Engine Info
 			</div>
+			<pre>{{ $root.state.EngineStatus }}</pre>
+			<span ng-if="$root.state.EngineStatus.length === 0">Torrent Enging Bootstraping ...</span>
 		</div>
-
-		<script src="js/vendor/query-string.js"></script>
-		<script src="js/vendor/angular.min.js"></script>
-		<script src="js/vendor/moment.min.js"></script>
-		<script src="js/velox.js"></script>
-		<script>
-			window.app = window.angular.module('app', []);
-		</script>
-		<script src="js/config-controller.js?CLDVER"></script>
-		<script src="js/omni-controller.js?CLDVER"></script>
-		<script src="js/torrents-controller.js?CLDVER"></script>
-		<script src="js/downloads-controller.js?CLDVER"></script>
-		<script src="js/utils.js?CLDVER"></script>
-		<script src="js/semantic-checkbox.js?CLDVER"></script>
-		<script src="js/run.js?CLDVER"></script>
 	</div>
+	<script src="js/vendor/query-string.js"></script>
+	<script src="js/vendor/angular.min.js"></script>
+	<script src="js/vendor/moment.min.js"></script>
+	<script src="js/velox.js"></script>
+	<script>
+		window.app = window.angular.module('app', []);
+	</script>
+	<script src="js/config-controller.js?CLDVER"></script>
+	<script src="js/omni-controller.js?CLDVER"></script>
+	<script src="js/torrents-controller.js?CLDVER"></script>
+	<script src="js/downloads-controller.js?CLDVER"></script>
+	<script src="js/utils.js?CLDVER"></script>
+	<script src="js/semantic-checkbox.js?CLDVER"></script>
+	<script src="js/run.js?CLDVER"></script>
+
 </body>
 
 </html>

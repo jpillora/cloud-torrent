@@ -141,18 +141,27 @@ func (s *Server) Run(version string) error {
 	log.Printf("Read Config: %#v\n", c)
 	//poll torrents and files
 	go func() {
-		var sBuf bytes.Buffer
-		sWriter := bufio.NewWriter(&sBuf)
 		for {
 			s.state.Lock()
-			sBuf.Reset()
-			s.engine.WriteStauts(sWriter)
-			s.state.EngineStatus = sBuf.String()
 			s.state.Torrents = s.engine.GetTorrents()
 			s.state.Downloads = s.listFiles()
 			s.state.Unlock()
 			s.state.Push()
 			time.Sleep(3 * time.Second)
+		}
+	}()
+	// slow update on debug info
+	go func() {
+		var sBuf bytes.Buffer
+		sWriter := bufio.NewWriter(&sBuf)
+		for {
+			time.Sleep(30 * time.Second)
+			sBuf.Reset()
+			s.engine.WriteStauts(sWriter)
+			s.state.Lock()
+			s.state.EngineStatus = sBuf.String()
+			s.state.Unlock()
+			s.state.Push()
 		}
 	}()
 	//start collecting stats
