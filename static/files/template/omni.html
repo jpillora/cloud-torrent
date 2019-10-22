@@ -93,7 +93,12 @@
 
     <div class="ui two column centered grid loadmore">
       <button ng-disabled="!hasMore" ng-click="submitSearch()" class="ui tiny blue button" ng-class="{loading: searching}">
+        <i class="angle down icon"></i>
         {{hasMore?"Load":"No"}} more
+      </button>
+      <button ng-if="mode.rss" ng-click="get_rss(true)" class="ui tiny blue button" ng-class="{loading: searching}">
+        <i class="redo icon"></i>
+        Update Rss
       </button>
     </div>
   </div>

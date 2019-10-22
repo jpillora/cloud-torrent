@@ -66,10 +66,6 @@ app.controller("OmniController", function(
   };
 
   var parseSearch = function() {
-    var r = document.querySelector("#omni_search_results div.results");
-    if (r !== null) {
-      r.scrollTop = 0;
-    }
     $scope.mode.search = true;
     $scope.results.length = 0;
   };
@@ -79,19 +75,25 @@ app.controller("OmniController", function(
     $rootScope.err = null;
     $scope.inputs.omni = "";
     $scope.results.length = 0;
+    $scope.mode.rss = false;
   };
 
   $scope.parse = function() {
     storage.tcOmni = $scope.inputs.omni;
     $scope.omnierr = null;
     $rootScope.err = null;
+    var r = document.querySelector("#omni_search_results div.results");
+    if (r !== null) {
+      r.scrollTop = 0;
+    }
 
     //set all 3 to false,
     //one will set to be true
     $scope.mode = {
       torrent: false,
       magnet: false,
-      search: false
+      search: false,
+      rss: false
     };
     $scope.page = 1;
     $scope.hasMore = true;
@@ -239,14 +241,17 @@ app.controller("OmniController", function(
     $rootScope.set_torrent_expanded(true);
   };
 
-  $scope.get_rss = function() {
+  $scope.get_rss = function(update) {
     if($rootScope.searching) {
       return
     }
+    var was_rss = $scope.mode.rss;
     $scope.clearSearch();
+    if(was_rss && !update) return;
     $scope.parse();
     $scope.mode.search = true;
-    rss.getrss().success(function(results) {
+    $scope.mode.rss = true;
+    rss.getrss(update).success(function(results) {
         $scope.hasMore = false;
         $scope.searchTitle = `RSS Results`;
         if (!results || results.length === 0) {

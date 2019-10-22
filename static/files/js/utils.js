@@ -59,9 +59,13 @@ app.factory("search", function($rootScope, $http, reqerr) {
 
 app.factory("rss", function($rootScope, $http, reqerr) {
   return {
-    getrss: function() {
+    getrss: function(update) {
       $rootScope.searching = true;
-      var req = $http.get("rss", {params: {_: Date.now()}, cache: false});
+      var config = {"params": {_: Date.now()}, cache: false};
+      if (update) {
+        config["params"]["update"] = 1;
+      }
+      var req = $http.get("rss", config);
       req.error(reqerr);
       req.finally(function() {
         $rootScope.searching = false;
