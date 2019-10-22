@@ -16,43 +16,65 @@ type rssItem struct {
 	Published string `json:"published,omitempty"`
 }
 
-func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
-
-	var results []rssItem
-	var errs []error
+func (s *Server) updateRSS() {
 	fp := gofeed.NewParser()
 	fp.Client = &http.Client{
 		Timeout: 10 * time.Second,
 	}
 	for _, rss := range strings.Split(s.state.Config.RssURL, "\n") {
-		if !strings.HasPrefix(rss, "http") {
+		if !strings.HasPrefix(rss, "http://") && !strings.HasPrefix(rss, "https://") {
+			log.Printf("parse feed addr Invalid %s", rss)
 			continue
 		}
-
 		rss = strings.TrimSpace(rss)
 
-		log.Printf("retrive feed %s", rss)
 		feed, err := fp.ParseURL(rss)
 		if err != nil {
 			log.Printf("parse feed err %s", err.Error())
-			errs = append(errs, err)
 			continue
 		}
-		for _, i := range feed.Items {
-			results = append(results, rssItem{Name: i.Title, Magnet: i.Link, Published: i.Published})
+		log.Printf("retrived feed %s from %s", feed.Title, rss)
+
+		if olditems, ok := s.rssCache[rss]; !ok {
+			log.Printf("retrive %d new items, first record", len(feed.Items))
+			s.rssCache[rss] = feed.Items
+		} else {
+			if olditems[0].GUID != feed.Items[0].GUID {
+				var newitems []*gofeed.Item
+				for _, i := range feed.Items {
+					if i.GUID != olditems[0].GUID {
+						newitems = append(newitems, i)
+					} else {
+						break
+					}
+				}
+				log.Printf("feed updated %d new items", len(newitems))
+				updatedItems := append(newitems, olditems...)
+				s.rssCache[rss] = updatedItems
+			} else {
+				log.Printf("feed unchanged")
+			}
 		}
 	}
+}
 
-	if len(results) == 0 {
-		var estr []string
-		for _, e := range errs {
-			estr = append(estr, e.Error())
+func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
+
+	if _, ok := r.URL.Query()["update"]; ok {
+		s.updateRSS()
+	}
+
+	var results []rssItem
+	for _, rss := range strings.Split(s.state.Config.RssURL, "\n") {
+		if !strings.HasPrefix(rss, "http") {
+			continue
 		}
-		if len(estr) == 0 {
-			estr = append(estr, "RssURL is not configured")
+		rss = strings.TrimSpace(rss)
+		if items, ok := s.rssCache[rss]; ok {
+			for _, i := range items {
+				results = append(results, rssItem{Name: i.Title, Magnet: i.Link, Published: i.Published})
+			}
 		}
-		http.Error(w, strings.Join(estr, "|\n"), http.StatusInternalServerError)
-		return
 	}
 
 	b, err := json.Marshal(results)

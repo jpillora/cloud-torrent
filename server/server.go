@@ -24,6 +24,7 @@ import (
 	"github.com/jpillora/cookieauth"
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/velox"
+	"github.com/mmcdole/gofeed"
 	"github.com/radovskyb/watcher"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -55,6 +56,8 @@ type Server struct {
 
 	//file watcher
 	watcher *watcher.Watcher
+
+	rssCache map[string][]*gofeed.Item
 
 	//torrent engine
 	engine *engine.Engine
@@ -89,11 +92,13 @@ func (s *Server) Run(version string) error {
 	s.state.Stats.Uptime = time.Now()
 	s.state.Stats.System.pusher = velox.Pusher(&s.state)
 	//init maps
-	s.state.Users = map[string]string{}
+	s.state.Users = make(map[string]string)
+	s.rssCache = make(map[string][]*gofeed.Item)
+
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
-	s.rssh = http.HandlerFunc(s.serveRSS)
 	s.files = http.HandlerFunc(s.serveFiles)
 	s.static = ctstatic.FileSystemHandler()
+	s.rssh = http.HandlerFunc(s.serveRSS)
 	s.scraper = &scraper.Handler{
 		Log: s.Debug, Debug: s.Debug,
 		Headers: map[string]string{
@@ -170,6 +175,12 @@ func (s *Server) Run(version string) error {
 			c := s.engine.Config()
 			s.state.Stats.System.loadStats(c.DownloadDirectory)
 			time.Sleep(5 * time.Second)
+		}
+	}()
+	go func() {
+		for {
+			s.updateRSS()
+			time.Sleep(10 * time.Minute)
 		}
 	}()
 
