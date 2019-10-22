@@ -49,14 +49,6 @@ footer:hover {
   opacity: 1;
 }
 
-footer:hover .extra {
-  display: inline;
-}
-
-footer .extra {
-  display: none;
-}
-
 .ellipsis {
   display: inline-block;
   overflow: hidden;
