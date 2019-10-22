@@ -46,11 +46,10 @@ func (s *Server) updateRSS() {
 			if olditems[0].GUID != feed.Items[0].GUID {
 				var newitems []*gofeed.Item
 				for _, i := range feed.Items {
-					if i.GUID != olditems[0].GUID {
-						newitems = append(newitems, i)
-					} else {
+					if i.GUID == olditems[0].GUID {
 						break
 					}
+					newitems = append(newitems, i)
 				}
 				log.Printf("feed updated %d new items", len(newitems))
 				updatedItems := append(newitems, olditems...)
