@@ -33,10 +33,14 @@ func (s *Server) updateRSS() {
 			log.Printf("parse feed err %s", err.Error())
 			continue
 		}
-		log.Printf("retrived feed %s from %s", feed.Title, rss)
+		if s.Debug {
+			log.Printf("retrived feed %s from %s", feed.Title, rss)
+		}
 
 		if olditems, ok := s.rssCache[rss]; !ok {
-			log.Printf("retrive %d new items, first record", len(feed.Items))
+			if s.Debug {
+				log.Printf("retrive %d new items, first record", len(feed.Items))
+			}
 			s.rssCache[rss] = feed.Items
 		} else {
 			if olditems[0].GUID != feed.Items[0].GUID {
@@ -51,8 +55,6 @@ func (s *Server) updateRSS() {
 				log.Printf("feed updated %d new items", len(newitems))
 				updatedItems := append(newitems, olditems...)
 				s.rssCache[rss] = updatedItems
-			} else {
-				log.Printf("feed unchanged")
 			}
 		}
 	}
