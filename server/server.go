@@ -58,6 +58,7 @@ type Server struct {
 	watcher *watcher.Watcher
 
 	rssCache map[string][]*gofeed.Item
+	rssLock  sync.Mutex
 
 	//torrent engine
 	engine *engine.Engine
