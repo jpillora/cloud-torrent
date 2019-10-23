@@ -5,16 +5,14 @@ app.factory("api", function($rootScope, $http, reqerr) {
   var request = function(action, data) {
     var url = "api/" + action;
     $rootScope.apiing = true;
-    return $http({
-      method: "POST",
-      url: url,
-      data: data,
+    var req = $http.post(url, data, {
       transformRequest: []
     })
-      .error(reqerr)
-      .finally(function() {
+    req.error(reqerr);
+    req.finally(function() {
         $rootScope.apiing = false;
       });
+    return req;
   };
   var api = {};
   var actions = [

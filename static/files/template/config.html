@@ -8,7 +8,7 @@
       <checkbox type="toggle"
         ng-model="state.Config[k]">{{ k | addspaces }}</checkbox>
     </div>
-    <div ng-if="type == 'text'">
+    <div ng-if="type == 'text' || type == 'number'">
       <label><h5>{{ k | addspaces }}</h5></label>
       <input type="{{type}}" ng-model="state.Config[k]"></input>
     </div>

@@ -141,9 +141,19 @@ func (s *Server) Run(version string) error {
 	if c.IncomingPort <= 0 || c.IncomingPort >= 65535 {
 		c.IncomingPort = 50007
 	}
-	if err := s.initConfigure(c); err != nil {
+
+	// normalriz config file
+	if err := s.normlizeConfig(c); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)
 	}
+
+	// engine configure
+	if err := s.engine.Configure(s.state.Config); err != nil {
+		return err
+	}
+
+	s.TorrentWatcher()
+
 	log.Printf("Read Config: %#v\n", c)
 	//poll torrents and files
 	go func() {
@@ -276,16 +286,16 @@ func (s *Server) Run(version string) error {
 	return server.ListenAndServe()
 }
 
-func (s *Server) initConfigure(c engine.Config) error {
+func (s *Server) normlizeConfig(c engine.Config) error {
 	dldir, err := filepath.Abs(c.DownloadDirectory)
 	if err != nil {
-		return fmt.Errorf("Invalid path")
+		return fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
 	}
 	c.DownloadDirectory = dldir
 
 	wdir, err := filepath.Abs(c.WatchDirectory)
 	if err != nil {
-		return fmt.Errorf("Invalid path")
+		return fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
 	}
 	c.WatchDirectory = wdir
 
@@ -294,30 +304,24 @@ func (s *Server) initConfigure(c engine.Config) error {
 		return err
 	}
 
-	// torrent watcher
+	s.state.Config = c
+	s.state.Push()
+	return nil
+}
+
+func (s *Server) TorrentWatcher() error {
+
 	if s.watcher != nil {
 		log.Print("Torrent Watcher: close")
 		s.watcher.Close()
 		s.watcher = nil
 	}
 
-	if w, err := os.Stat(c.WatchDirectory); err == nil {
-		if w.IsDir() {
-			s.TorrentWatcher(c)
-		}
+	if w, err := os.Stat(s.state.Config.WatchDirectory); err == nil && !w.IsDir() {
+		return fmt.Errorf("[Watcher] %s is not dir", s.state.Config.WatchDirectory)
 	}
 
-	if err := s.engine.Configure(c); err != nil {
-		return err
-	}
-	s.state.Config = c
-	s.state.Push()
-	return nil
-}
-
-func (s *Server) TorrentWatcher(c engine.Config) error {
-
-	log.Printf("Torrent Watcher: watching torrent file in %s", c.WatchDirectory)
+	log.Printf("Torrent Watcher: watching torrent file in %s", s.state.Config.WatchDirectory)
 	w := watcher.New()
 	w.SetMaxEvents(10)
 	w.FilterOps(watcher.Create)
@@ -350,7 +354,7 @@ func (s *Server) TorrentWatcher(c engine.Config) error {
 	}()
 
 	// Watch this folder for changes.
-	if err := w.Add(c.WatchDirectory); err != nil {
+	if err := w.Add(s.state.Config.WatchDirectory); err != nil {
 		return err
 	}
 

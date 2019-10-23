@@ -37,7 +37,7 @@ app.run(function($rootScope, search, api) {
 
     switch (typeof v) {
       case "number":
-        return "text";
+        return "number";
       case "boolean":
         return "check";
     }
@@ -133,6 +133,13 @@ app.run(function($rootScope, search, api) {
     }
   });
 });
+
+app.config([
+  '$compileProvider',
+  function( $compileProvider ) {   
+      $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|magnet):/);
+  }
+]);
 
 // register as "magnet:" protocol handler
 if ('registerProtocolHandler' in navigator) {

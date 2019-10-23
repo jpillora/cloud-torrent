@@ -2,10 +2,18 @@ package engine
 
 import (
 	"log"
+	"reflect"
 	"strings"
 
 	"github.com/c2h5oh/datasize"
 	"golang.org/x/time/rate"
+)
+
+const (
+	ForbidRuntimeChange uint8 = 1 << iota
+	NeedEngineReConfig
+	NeedRestartWatch
+	NeedUpdateTracker
 )
 
 type Config struct {
@@ -37,6 +45,40 @@ func (c *Config) UploadLimiter() *rate.Limiter {
 
 func (c *Config) DownloadLimiter() *rate.Limiter {
 	return rateLimiter(c.DownloadRate)
+}
+
+func (c *Config) Validate(nc *Config) uint8 {
+
+	var status uint8
+
+	if c.DoneCmd != nc.DoneCmd {
+		status |= ForbidRuntimeChange
+	}
+	if c.WatchDirectory != nc.WatchDirectory {
+		status |= NeedRestartWatch
+	}
+	if c.TrackerListURL != nc.TrackerListURL {
+		status |= NeedUpdateTracker
+	}
+
+	rfc := reflect.ValueOf(c)
+	rfnc := reflect.ValueOf(nc)
+
+	for _, field := range []string{"IncomingPort", "DownloadDirectory",
+		"EngineDebug", "EnableUpload", "EnableSeeding", "UploadRate",
+		"DownloadRate", "ObfsPreferred", "ObfsRequirePreferred",
+		"DisableTrackers", "DisableIPv6", "ProxyURL"} {
+
+		cval := reflect.Indirect(rfc).FieldByName(field)
+		ncval := reflect.Indirect(rfnc).FieldByName(field)
+
+		if cval.Interface() != ncval.Interface() {
+			status |= NeedEngineReConfig
+			break
+		}
+	}
+
+	return status
 }
 
 func rateLimiter(rstr string) *rate.Limiter {

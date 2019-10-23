@@ -27,14 +27,8 @@ app.controller("ConfigController", function($scope, $rootScope, storage, api) {
   };
   $scope.submitConfig = function() {
     var data = JSON.stringify($rootScope.state.Config);
-    api.configure(data);
+    api.configure(data).success(function(data, status, headers, config){
+      $scope.edit = false;
+    });
   };
 });
-
-app.config([
-  '$compileProvider',
-  function( $compileProvider )
-  {   
-      $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|magnet):/);
-  }
-]);

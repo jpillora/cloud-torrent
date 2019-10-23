@@ -87,18 +87,30 @@ func (s *Server) api(r *http.Request) error {
 		if err := json.Unmarshal(data, &c); err != nil {
 			return err
 		}
-		if strings.Compare(c.DoneCmd, s.state.Config.DoneCmd) != 0 {
-			return errors.New("DoneCmd is NOT allowed being changed during running. Change it in config.json")
+		status := s.state.Config.Validate(&c)
+
+		if status&engine.ForbidRuntimeChange > 0 {
+			return errors.New("DoneCmd is NOT allowed being changed on runtime. Change it in config.json")
 		}
-		if err := s.reconfigure(c); err != nil {
+
+		if err := s.normlizeConfig(c); err != nil {
 			return err
 		}
-		if err := s.engine.UpdateTrackers(); err != nil {
-			return err
+
+		if status&engine.NeedEngineReConfig > 0 {
+			if err := s.engine.Configure(s.state.Config); err != nil {
+				return err
+			}
 		}
-		if err := s.fetchSearchConfig(); err != nil {
-			return err
+		if status&engine.NeedRestartWatch > 0 {
+			s.TorrentWatcher()
 		}
+		if status&engine.NeedUpdateTracker > 0 {
+			if err := s.engine.UpdateTrackers(); err != nil {
+				return err
+			}
+		}
+		go s.fetchSearchConfig()
 	case "magnet":
 		uri := string(data)
 		if err := s.engine.NewMagnet(uri); err != nil {
