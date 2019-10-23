@@ -48,13 +48,16 @@
 
 <!-- SEARCH BUTTONS -->
 <div class="search buttons" ng-show="mode.search && inputs.provider">
-  <select class="ui green button" ng-model="inputs.provider" ng-options="id as s.name for (id, s) in providers">
+  <select ng-hide="mode.rss" class="ui tiny button" ng-model="inputs.provider" ng-options="id as s.name for (id, s) in providers">
   </select>
-  <div ng-click="submitSearch()" class="ui tiny blue button" ng-class="{loading: searching,
+  <div ng-hide="mode.rss" ng-click="submitSearch()" class="ui tiny blue button" ng-class="{loading: searching,
       disabled: noResults || hasMore && results && results.length > 0
     }">
     <span ng-show="noResults"><i class="sticky note outline icon"></i>No results!</span>
     <span ng-show="!noResults"><i class="search icon"></i>Search</span>
+  </div>
+  <div ng-hide="!mode.rss" ng-click="get_rss(true)" class="ui tiny teal button" ng-class="{loading: searching}">
+    <i class="redo icon"></i>Update Rss
   </div>
 </div>
 
@@ -95,10 +98,6 @@
       <button ng-disabled="!hasMore" ng-click="submitSearch()" class="ui tiny blue button" ng-class="{loading: searching}">
         <i class="angle down icon"></i>
         {{hasMore?"Load":"No"}} more
-      </button>
-      <button ng-if="mode.rss" ng-click="get_rss(true)" class="ui tiny blue button" ng-class="{loading: searching}">
-        <i class="redo icon"></i>
-        Update Rss
       </button>
     </div>
   </div>
