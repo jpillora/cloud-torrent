@@ -105,7 +105,16 @@ func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
 						ritem.InfoHash = e[0].Value
 					}
 				} else {
-					ritem.Magnet = i.Link
+					// some sites put it under enclosures
+					for _, e := range i.Enclosures {
+						if strings.HasPrefix(e.URL, "magnet:") {
+							ritem.Magnet = e.URL
+						}
+					}
+
+					if ritem.Magnet == "" {
+						ritem.Magnet = i.Link
+					}
 				}
 				results = append(results, ritem)
 			}
