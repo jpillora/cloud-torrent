@@ -126,6 +126,19 @@ app.controller("OmniController", function(
     );
   };
 
+  //get urls from the comma separated list
+  var parseTrackers =  function (result) {
+    var trackers = (result.tracker || "")
+      .split(",")
+      .filter(function(s) {
+        return /^(http|udp):\/\//.test(s);
+      })
+      .map(function(v) {
+        return { v: v };
+      });
+    return trackers
+  }
+
   $scope.parseMagnetString = function() {
     $scope.omnierr = null;
     if (!/^[A-Za-z0-9]+$/.test($scope.magnet.infohash)) {
@@ -202,6 +215,9 @@ app.controller("OmniController", function(
     if (result.magnet) {
       api.magnet(result.magnet);
       return;
+    } else if (result.infohash) {
+        api.magnet(magnetURI(result.name, result.infohash, parseTrackers(result)));
+        return;
     } else if (result.torrent) {
       api.url(result.torrent);
       return;
@@ -218,16 +234,7 @@ app.controller("OmniController", function(
         if (data.magnet) {
           magnet = data.magnet;
         } else if (data.infohash) {
-          //get urls from the comma separated list
-          var trackers = (data.tracker || "")
-            .split(",")
-            .filter(function(s) {
-              return /^(http|udp):\/\//.test(s);
-            })
-            .map(function(v) {
-              return { v: v };
-            });
-          magnet = magnetURI(result.name, data.infohash, trackers);
+          magnet = magnetURI(result.name, data.infohash, parseTrackers(result));
         } else {
           $scope.omnierr = "No magnet or infohash found";
           return;
