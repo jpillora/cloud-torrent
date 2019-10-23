@@ -50,6 +50,11 @@
 			<div class="header">Error</div>
 			<p>{{$root.err}}</p>
 		</div>
+		<div ng-if="$root.info" class="ui info message">
+			<i class="close icon" ng-click="$root.info = null"></i>
+			<div class="header">Info</div>
+			<p>{{$root.info}}</p>
+		</div>
 
 		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html?CLDVER'">
 		</section>

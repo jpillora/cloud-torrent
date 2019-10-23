@@ -143,7 +143,7 @@ func (s *Server) Run(version string) error {
 	}
 
 	// normalriz config file
-	if err := s.normlizeConfig(c); err != nil {
+	if _, err := s.normlizeConfig(c); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)
 	}
 
@@ -152,6 +152,7 @@ func (s *Server) Run(version string) error {
 		return err
 	}
 
+	s.state.Config.SaveConfigFile(s.ConfigPath)
 	s.TorrentWatcher()
 
 	log.Printf("Read Config: %#v\n", c)
@@ -286,27 +287,21 @@ func (s *Server) Run(version string) error {
 	return server.ListenAndServe()
 }
 
-func (s *Server) normlizeConfig(c engine.Config) error {
+func (s *Server) normlizeConfig(c engine.Config) (*engine.Config, error) {
 	dldir, err := filepath.Abs(c.DownloadDirectory)
 	if err != nil {
-		return fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
+		return nil, fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
 	}
 	c.DownloadDirectory = dldir
 
 	wdir, err := filepath.Abs(c.WatchDirectory)
 	if err != nil {
-		return fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
+		return nil, fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
 	}
 	c.WatchDirectory = wdir
-
-	b, _ := json.MarshalIndent(&c, "", "  ")
-	if err := ioutil.WriteFile(s.ConfigPath, b, 0644); err != nil {
-		return err
-	}
-
+	old := s.state.Config
 	s.state.Config = c
-	s.state.Push()
-	return nil
+	return &old, nil
 }
 
 func (s *Server) TorrentWatcher() error {

@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/anacrolix/torrent"
@@ -87,28 +89,49 @@ func (s *Server) api(r *http.Request) error {
 		if err := json.Unmarshal(data, &c); err != nil {
 			return err
 		}
-		status := s.state.Config.Validate(&c)
 
-		if status&engine.ForbidRuntimeChange > 0 {
-			return errors.New("DoneCmd is NOT allowed being changed on runtime. Change it in config.json")
-		}
+		if !reflect.DeepEqual(s.state.Config, c) {
+			log.Printf("[api] web config updated")
+			status := s.state.Config.Validate(&c)
 
-		if err := s.normlizeConfig(c); err != nil {
-			return err
-		}
+			if status&engine.ForbidRuntimeChange > 0 {
+				return errors.New("DoneCmd is NOT allowed being changed on runtime. Change it in config.json")
+			}
 
-		if status&engine.NeedEngineReConfig > 0 {
-			if err := s.engine.Configure(s.state.Config); err != nil {
+			oldconf, err := s.normlizeConfig(c)
+			if err != nil {
 				return err
 			}
-		}
-		if status&engine.NeedRestartWatch > 0 {
-			s.TorrentWatcher()
-		}
-		if status&engine.NeedUpdateTracker > 0 {
-			if err := s.engine.UpdateTrackers(); err != nil {
+
+			if status&engine.NeedEngineReConfig > 0 {
+				ts := s.engine.GetTorrents()
+				for _, tt := range ts {
+					if tt.Started {
+						s.normlizeConfig(*oldconf)
+						return errors.New("All Torrent must be STOPPED to reconfigure")
+					}
+				}
+				if err := s.engine.Configure(s.state.Config); err != nil {
+					s.normlizeConfig(*oldconf)
+					return err
+				}
+				log.Printf("[api] torrent engine reconfigred")
+			}
+			if status&engine.NeedRestartWatch > 0 {
+				s.TorrentWatcher()
+				log.Printf("[api] file watcher restartd")
+			}
+			if status&engine.NeedUpdateTracker > 0 {
+				if err := s.engine.UpdateTrackers(); err != nil {
+					return err
+				}
+				log.Printf("[api] tracker list updated")
+			}
+			if err := s.state.Config.SaveConfigFile(s.ConfigPath); err != nil {
 				return err
 			}
+			log.Printf("[api] config saved")
+			s.state.Push()
 		}
 		go s.fetchSearchConfig()
 	case "magnet":

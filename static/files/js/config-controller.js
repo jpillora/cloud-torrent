@@ -26,9 +26,12 @@ app.controller("ConfigController", function($scope, $rootScope, storage, api) {
     $scope.edit = b === undefined ? !$scope.edit : b;
   };
   $scope.submitConfig = function() {
+    $rootScope.info = null;
+    $rootScope.err = null;
     var data = JSON.stringify($rootScope.state.Config);
     api.configure(data).success(function(data, status, headers, config){
       $scope.edit = false;
+      $rootScope.info = `${data}: Config Saved`;
     });
   };
 });

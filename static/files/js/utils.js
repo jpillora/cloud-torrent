@@ -83,7 +83,7 @@ app.factory("reqerr", function($rootScope) {
     if (typeof err === "object" && "error" in err) {
       msg = err.error;
     }
-    $rootScope.err = `${msg} (${status})`
+    $rootScope.err = `${msg} - (${status})`
     $rootScope.$apply();
     console.log(msg, status);
   };

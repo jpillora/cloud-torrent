@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"reflect"
 	"strings"
@@ -79,6 +81,14 @@ func (c *Config) Validate(nc *Config) uint8 {
 	}
 
 	return status
+}
+
+func (c *Config) SaveConfigFile(configPath string) error {
+	b, err := json.MarshalIndent(&c, "", "  ")
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(configPath, b, 0644)
 }
 
 func rateLimiter(rstr string) *rate.Limiter {
