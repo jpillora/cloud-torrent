@@ -141,7 +141,7 @@ func (s *Server) Run(version string) error {
 	if c.IncomingPort <= 0 || c.IncomingPort >= 65535 {
 		c.IncomingPort = 50007
 	}
-	if err := s.reconfigure(c); err != nil {
+	if err := s.initConfigure(c); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)
 	}
 	log.Printf("Read Config: %#v\n", c)
@@ -276,7 +276,7 @@ func (s *Server) Run(version string) error {
 	return server.ListenAndServe()
 }
 
-func (s *Server) reconfigure(c engine.Config) error {
+func (s *Server) initConfigure(c engine.Config) error {
 	dldir, err := filepath.Abs(c.DownloadDirectory)
 	if err != nil {
 		return fmt.Errorf("Invalid path")
@@ -361,12 +361,16 @@ func (s *Server) TorrentWatcher(c engine.Config) error {
 
 func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	//handle realtime client library
-	if strings.Compare(r.URL.Path, "/js/velox.js") == 0 {
+	if r.URL.Path == "/js/velox.js" {
 		velox.JS.ServeHTTP(w, r)
 		return
 	}
+	if r.URL.Path == "/rss" {
+		s.rssh.ServeHTTP(w, r)
+		return
+	}
 	//handle realtime client connections
-	if strings.Compare(r.URL.Path, "/sync") == 0 {
+	if r.URL.Path == "/sync" {
 		conn, err := velox.Sync(&s.state, w, r)
 		if err != nil {
 			log.Printf("sync failed: %s", err)
@@ -385,10 +389,6 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//api call
-	if strings.HasPrefix(r.URL.Path, "/rss") {
-		s.rssh.ServeHTTP(w, r)
-		return
-	}
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		//only pass request in, expect error out
 		if err := s.api(r); err == nil {
@@ -414,7 +414,7 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 func livenessWrap(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// liveness response
-		if strings.Compare(r.URL.Path, "/healthz") == 0 {
+		if r.URL.Path == "/healthz" {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
 			return

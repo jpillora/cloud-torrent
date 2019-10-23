@@ -23,7 +23,7 @@ type rssJSONItem struct {
 func (s *Server) updateRSS() {
 	fp := gofeed.NewParser()
 	fp.Client = &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 60 * time.Second,
 	}
 	for _, rss := range strings.Split(s.state.Config.RssURL, "\n") {
 		if !strings.HasPrefix(rss, "http://") && !strings.HasPrefix(rss, "https://") {
