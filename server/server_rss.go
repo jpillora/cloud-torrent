@@ -12,11 +12,12 @@ import (
 )
 
 type rssJSONItem struct {
-	Name      string `json:"name,omitempty"`
-	Magnet    string `json:"magnet,omitempty"`
-	InfoHash  string `json:"hashinfo,omitempty"`
-	Published string `json:"published,omitempty"`
-	URL       string `json:"url,omitempty"`
+	Name            string `json:"name,omitempty"`
+	Magnet          string `json:"magnet,omitempty"`
+	InfoHash        string `json:"hashinfo,omitempty"`
+	Published       string `json:"published,omitempty"`
+	URL             string `json:"url,omitempty"`
+	publishedParsed *time.Time
 }
 
 func (s *Server) updateRSS() {
@@ -66,6 +67,9 @@ func (s *Server) updateRSS() {
 			}
 			s.rssCache[rss] = feed.Items
 		}
+		if len(s.rssCache[rss]) > 500 {
+			s.rssCache[rss] = s.rssCache[rss][:500]
+		}
 		s.rssLock.Unlock()
 	}
 }
@@ -84,18 +88,21 @@ func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
 		rss = strings.TrimSpace(rss)
 		if items, ok := s.rssCache[rss]; ok {
 			for _, i := range items {
-				ritem := rssJSONItem{Name: i.Title, Published: i.Published, URL: i.Link}
+				ritem := rssJSONItem{
+					Name:            i.Title,
+					Published:       i.Published,
+					URL:             i.Link,
+					publishedParsed: i.PublishedParsed,
+				}
 
-				// not sure how the torrent feed standard is
-				// here is get magnet from struct of https://eztv.io/ezrss.xml
-				if len(i.Extensions) > 0 {
-					if etor, ok := i.Extensions["torrent"]; ok {
-						if lnk, ok := etor["magnetURI"]; ok {
-							ritem.Magnet = lnk[0].Value
-						}
-						if ih, ok := etor["infoHash"]; ok {
-							ritem.InfoHash = ih[0].Value
-						}
+				// not sure which is the the torrent feed standard
+				// here is how to get magnet from struct of https://eztv.io/ezrss.xml
+				if etor, ok := i.Extensions["torrent"]; ok {
+					if e, ok := etor["magnetURI"]; ok && len(e) > 0 {
+						ritem.Magnet = e[0].Value
+					}
+					if e, ok := etor["infoHash"]; ok && len(e) > 0 {
+						ritem.InfoHash = e[0].Value
 					}
 				} else {
 					ritem.Magnet = i.Link
@@ -105,6 +112,9 @@ func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].publishedParsed.After(*(results[j].publishedParsed))
+	})
 	b, err := json.Marshal(results)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
