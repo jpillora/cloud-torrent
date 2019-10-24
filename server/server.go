@@ -57,9 +57,6 @@ type Server struct {
 	//file watcher
 	watcher *watcher.Watcher
 
-	rssCache map[string][]*gofeed.Item
-	rssLock  sync.Mutex
-
 	//torrent engine
 	engine *engine.Engine
 	state  struct {
@@ -68,6 +65,8 @@ type Server struct {
 		Config          engine.Config
 		SearchProviders scraper.Config
 		Downloads       *fsNode
+		rssCache        map[string][]*gofeed.Item
+		RSSNewCount     int
 		Torrents        map[string]*engine.Torrent
 		Users           map[string]string
 		EngineStatus    string
@@ -94,7 +93,7 @@ func (s *Server) Run(version string) error {
 	s.state.Stats.System.pusher = velox.Pusher(&s.state)
 	//init maps
 	s.state.Users = make(map[string]string)
-	s.rssCache = make(map[string][]*gofeed.Item)
+	s.state.rssCache = make(map[string][]*gofeed.Item)
 
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
 	s.files = http.HandlerFunc(s.serveFiles)

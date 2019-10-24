@@ -48,8 +48,8 @@ func (s *Server) updateRSS() {
 			return feed.Items[i].PublishedParsed.After(*(feed.Items[j].PublishedParsed))
 		})
 
-		s.rssLock.Lock()
-		if olditems, ok := s.rssCache[rss]; ok && len(olditems) > 0 {
+		s.state.Lock()
+		if olditems, ok := s.state.rssCache[rss]; ok && len(olditems) > 0 {
 			var lastIdx int
 			for i, item := range feed.Items {
 				if item.GUID == olditems[0].GUID {
@@ -59,18 +59,20 @@ func (s *Server) updateRSS() {
 			}
 			if lastIdx > 0 {
 				log.Printf("feed updated with %d new items", lastIdx)
-				s.rssCache[rss] = append(feed.Items[:lastIdx], olditems...)
+				s.state.RSSNewCount += lastIdx
+				s.state.rssCache[rss] = append(feed.Items[:lastIdx], olditems...)
 			}
 		} else {
 			if s.Debug {
 				log.Printf("retrive %d new items, first record", len(feed.Items))
 			}
-			s.rssCache[rss] = feed.Items
+			s.state.rssCache[rss] = feed.Items
+			s.state.RSSNewCount += len(feed.Items)
 		}
-		if len(s.rssCache[rss]) > 500 {
-			s.rssCache[rss] = s.rssCache[rss][:500]
+		if len(s.state.rssCache[rss]) > 500 {
+			s.state.rssCache[rss] = s.state.rssCache[rss][:500]
 		}
-		s.rssLock.Unlock()
+		s.state.Unlock()
 	}
 }
 
@@ -80,13 +82,17 @@ func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
 		s.updateRSS()
 	}
 
+	s.state.Lock()
+	s.state.RSSNewCount = 0
+	s.state.Unlock()
+
 	var results []rssJSONItem
 	for _, rss := range strings.Split(s.state.Config.RssURL, "\n") {
 		if !strings.HasPrefix(rss, "http") {
 			continue
 		}
 		rss = strings.TrimSpace(rss)
-		if items, ok := s.rssCache[rss]; ok {
+		if items, ok := s.state.rssCache[rss]; ok {
 			for _, i := range items {
 				ritem := rssJSONItem{
 					Name:            i.Title,
