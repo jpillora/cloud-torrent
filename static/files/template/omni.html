@@ -68,7 +68,9 @@
 <!-- SEARCH RESULTS -->
 <div id="omni_search_results" class="ui raised segments" ng-show="mode.search && results && results.length > 0">
   <div class="ui attached segment result_header">
-    <span class="ui secondary header">{{ searchTitle }} ({{ results.length }}) </span>
+    <span class="ui secondary header">
+      {{ mode.rss == true ? "RSS":"Search Results" }} ({{ results.length }})
+    </span>
     <div class="ui right floated grey tiny header">
       <div class="close_icon" ng-click="clearSearch()">
         <i class="close icon"></i>

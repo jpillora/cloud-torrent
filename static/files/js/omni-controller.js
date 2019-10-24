@@ -22,7 +22,6 @@ app.controller("OmniController", function(
     if (p) storage.tcProvider = p;
     $scope.parse();
   });
-  $scope.searchTitle = "";
   //if unset, set to first provider
   $rootScope.$watch("state.SearchProviders", function(searchProviders) {
     //remove last set
@@ -184,7 +183,6 @@ app.controller("OmniController", function(
     search
       .all($scope.inputs.provider, $scope.inputs.omni, $scope.page)
       .success(function(results) {
-        $scope.searchTitle = "Search Results";
         if (!results || results.length === 0) {
           $scope.noResults = true;
           $scope.hasMore = false;
@@ -260,7 +258,6 @@ app.controller("OmniController", function(
     $scope.mode.rss = true;
     rss.getrss(update).success(function(results) {
         $scope.hasMore = false;
-        $scope.searchTitle = `RSS Results`;
         if (!results || results.length === 0) {
           $scope.noResults = true;
           return;
