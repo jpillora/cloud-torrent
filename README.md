@@ -1,9 +1,10 @@
 ![screenshot](https://user-images.githubusercontent.com/1033514/64239393-bdbb6480-cf32-11e9-9269-d8d10e7c0dc7.png)
 
 [![Build Status](https://travis-ci.org/boypt/simple-torrent.svg?branch=master)](https://travis-ci.org/boypt/simple-torrent) 
+
 **SimpleTorrent** is a a self-hosted remote torrent client, written in Go (golang). Started torrents remotely, download sets of files on the local disk of the server, which are then retrievable or streamable via HTTP.
 
-This project is a re-branded fork of cloud-torrent by `jpillora`.
+This project is a re-branded fork of [cloud-torrent](https://github.com/jpillora/cloud-torrent) by `jpillora`.
 
 # Features
 
@@ -15,6 +16,7 @@ This project is a re-branded fork of cloud-torrent by `jpillora`.
 * K8s/docker health-check endpoint `/healthz`
 * Extra trackers add from http source
 * Protocol Handler to `magnet:`
+* Magnet RSS subscribing supported
 
 Also:
 * Single binary
@@ -50,7 +52,7 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads -v /path/to/my/
 ## Source
 
 **Requirement**
-- Latest [Golang](https://golang.org/dl/) (at least 1.11+)
+- Latest [Golang](https://golang.org/dl/) (Go 1.13+)
 
 ``` sh
 $ git clone https://github.com/boypt/simple-torrent.git
