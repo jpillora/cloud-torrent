@@ -7,9 +7,29 @@ __root="$(cd "$(dirname "${__dir}")" && pwd)" # <-- change this as it depends on
 BIN=cloud-torrent
 GITVER=$(git describe --tags)
 
-OS=$1
-ARCH=$2
-SUFFIX=""
+OS=""
+ARCH=""
+EXESUFFIX=""
+PKGCMD="gzip"
+
+for arg in "$@"; do
+case $arg in
+	386)
+		GOARCH=386
+		;;
+	windows)
+		OS=windows
+		EXESUFFIX=.exe
+		;;
+	xz)
+		PKGCMD=xz
+    ;;
+	nozip)
+		PKGCMD=
+		;;
+esac
+done
+
 
 if [[ -z $OS ]]; then
   OS=$(go env GOOS)
@@ -19,17 +39,15 @@ if [[ -z $ARCH ]]; then
   ARCH=$(go env GOARCH)
 fi
 
-if [[ $OS == "windows" ]]; then
-  SUFFIX=".exe"
-fi
-
 pushd $__dir/..
 BINFILE=${BIN}_${OS}_${ARCH}${SUFFIX} 
 rm -fv ${BIN}_*
-CGO_ENABLED=0 GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE} -ldflags "-s -w -X main.VERSION=$GITVER"
-if [[ ! -f ${BINFILE} ]]; then
+CGO_ENABLED=0 GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE}${EXESUFFIX} -ldflags "-s -w -X main.VERSION=$GITVER"
+if [[ ! -f ${BINFILE}${EXESUFFIX} ]]; then
   echo "Build failed. Check with error message above."
   exit 1
 fi
 
-gzip -v -9 -k ${BINFILE}
+if [[ ! -z $PKGCMD ]]; then
+  ${PKGCMD} -v -9 -k ${BINFILE}${EXESUFFIX}
+fi
