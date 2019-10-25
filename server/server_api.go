@@ -85,55 +85,7 @@ func (s *Server) api(r *http.Request) error {
 	//interface with engine
 	switch action {
 	case "configure":
-		c := engine.Config{}
-		if err := json.Unmarshal(data, &c); err != nil {
-			return err
-		}
-
-		if !reflect.DeepEqual(s.state.Config, c) {
-			log.Printf("[api] web config updated")
-			status := s.state.Config.Validate(&c)
-
-			if status&engine.ForbidRuntimeChange > 0 {
-				return errors.New("DoneCmd is NOT allowed being changed on runtime. Change it in config.json")
-			}
-
-			oldconf, err := s.normlizeConfig(c)
-			if err != nil {
-				return err
-			}
-
-			if status&engine.NeedEngineReConfig > 0 {
-				ts := s.engine.GetTorrents()
-				for _, tt := range ts {
-					if tt.Started {
-						s.normlizeConfig(*oldconf)
-						return errors.New("All Torrent must be STOPPED to reconfigure")
-					}
-				}
-				if err := s.engine.Configure(s.state.Config); err != nil {
-					s.normlizeConfig(*oldconf)
-					return err
-				}
-				log.Printf("[api] torrent engine reconfigred")
-			}
-			if status&engine.NeedRestartWatch > 0 {
-				s.TorrentWatcher()
-				log.Printf("[api] file watcher restartd")
-			}
-			if status&engine.NeedUpdateTracker > 0 {
-				if err := s.engine.UpdateTrackers(); err != nil {
-					return err
-				}
-				log.Printf("[api] tracker list updated")
-			}
-			if err := s.state.Config.SaveConfigFile(s.ConfigPath); err != nil {
-				return err
-			}
-			log.Printf("[api] config saved")
-			s.state.Push()
-		}
-		go s.fetchSearchConfig()
+		s.apiConfigure(data)
 	case "magnet":
 		uri := string(data)
 		if err := s.engine.NewMagnet(uri); err != nil {
@@ -182,6 +134,66 @@ func (s *Server) api(r *http.Request) error {
 		}
 	default:
 		return fmt.Errorf("Invalid action: %s", action)
+	}
+	return nil
+}
+
+func (s *Server) apiConfigure(data []byte) error {
+
+	// update search config anyway
+	go s.fetchSearchConfig()
+
+	c := engine.Config{}
+	if err := json.Unmarshal(data, &c); err != nil {
+		return err
+	}
+	if err := s.normlizeConfigDir(&c); err != nil {
+		return err
+	}
+
+	if !reflect.DeepEqual(s.state.Config, c) {
+		status := s.state.Config.Validate(&c)
+
+		if status&engine.ForbidRuntimeChange > 0 {
+			log.Printf("[api] warnning! someone tried to change DoneCmd config")
+			return errors.New("Nice Try! But this is NOT allowed being changed on runtime")
+		}
+		if status&engine.NeedRestartWatch > 0 {
+			s.TorrentWatcher()
+			log.Printf("[api] file watcher restartd")
+		}
+		if status&engine.NeedUpdateTracker > 0 {
+			go s.engine.UpdateTrackers()
+		}
+
+		// all Torrent must be STOPPED to reconfigure engine
+		if status&engine.NeedEngineReConfig > 0 {
+			ts := s.engine.GetTorrents()
+			for _, tt := range ts {
+				if tt.Started {
+					return errors.New("All Torrent must be STOPPED to reconfigure")
+				}
+			}
+		}
+
+		// now it's safe to save the configure
+		log.Printf("[api] config saved")
+		s.state.Config = c
+		if err := s.state.Config.SaveConfigFile(s.ConfigPath); err != nil {
+			return err
+		}
+
+		// finally to reconfigure the engine
+		if status&engine.NeedEngineReConfig > 0 {
+			if err := s.engine.Configure(s.state.Config); err != nil {
+				return err
+			}
+			log.Printf("[api] torrent engine reconfigred")
+		}
+
+		s.state.Push()
+	} else {
+		log.Printf("[api] configure unchanged")
 	}
 	return nil
 }

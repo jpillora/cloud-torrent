@@ -142,9 +142,11 @@ func (s *Server) Run(version string) error {
 	}
 
 	// normalriz config file
-	if _, err := s.normlizeConfig(c); err != nil {
+	if err := s.normlizeConfigDir(&c); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)
 	}
+
+	s.state.Config = c
 
 	// engine configure
 	if err := s.engine.Configure(s.state.Config); err != nil {
@@ -191,7 +193,7 @@ func (s *Server) Run(version string) error {
 	go func() {
 		for {
 			s.updateRSS()
-			time.Sleep(10 * time.Minute)
+			time.Sleep(30 * time.Minute)
 		}
 	}()
 
@@ -286,21 +288,19 @@ func (s *Server) Run(version string) error {
 	return server.ListenAndServe()
 }
 
-func (s *Server) normlizeConfig(c engine.Config) (*engine.Config, error) {
+func (s *Server) normlizeConfigDir(c *engine.Config) error {
 	dldir, err := filepath.Abs(c.DownloadDirectory)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
+		return fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
 	}
 	c.DownloadDirectory = dldir
 
 	wdir, err := filepath.Abs(c.WatchDirectory)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
+		return fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
 	}
 	c.WatchDirectory = wdir
-	old := s.state.Config
-	s.state.Config = c
-	return &old, nil
+	return nil
 }
 
 func (s *Server) TorrentWatcher() error {
