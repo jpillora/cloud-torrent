@@ -250,9 +250,12 @@ app.controller("OmniController", function(
     if($rootScope.searching) {
       return
     }
-    var was_rss = $scope.mode.rss;
-    $scope.clearSearch();
-    if(was_rss && !update) return;
+    $scope.omnierr = $rootScope.err = null;
+    $scope.results.length = 0;
+    if($scope.mode.rss && !update) {
+      $scope.mode.rss = false;
+      return
+    }
     $scope.parse();
     $scope.mode.search = true;
     $scope.mode.rss = true;
