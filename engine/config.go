@@ -2,6 +2,7 @@ package engine
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"reflect"
@@ -42,11 +43,23 @@ type Config struct {
 }
 
 func (c *Config) UploadLimiter() *rate.Limiter {
-	return rateLimiter(c.UploadRate)
+	l, err := rateLimiter(c.UploadRate)
+	if err != nil {
+		c.UploadRate = ""
+		log.Printf("RateLimit [%s] unreconized, set as unlimited", c.UploadRate)
+		return rate.NewLimiter(rate.Inf, 0)
+	}
+	return l
 }
 
 func (c *Config) DownloadLimiter() *rate.Limiter {
-	return rateLimiter(c.DownloadRate)
+	l, err := rateLimiter(c.DownloadRate)
+	if err != nil {
+		c.DownloadRate = ""
+		log.Printf("RateLimit [%s] unreconized, set as unlimited", c.DownloadRate)
+		return rate.NewLimiter(rate.Inf, 0)
+	}
+	return l
 }
 
 func (c *Config) Validate(nc *Config) uint8 {
@@ -91,35 +104,34 @@ func (c *Config) SaveConfigFile(configPath string) error {
 	return ioutil.WriteFile(configPath, b, 0644)
 }
 
-func rateLimiter(rstr string) *rate.Limiter {
+func rateLimiter(rstr string) (*rate.Limiter, error) {
 	var rateSize int
-	rstr = strings.TrimSpace(rstr)
+	rstr = strings.ToLower(strings.TrimSpace(rstr))
 	switch rstr {
-	case "Low", "low":
+	case "low":
 		// ~50k/s
 		rateSize = 50000
-	case "Medium", "medium":
+	case "medium":
 		// ~500k/s
 		rateSize = 500000
-	case "High", "high":
+	case "high":
 		// ~1500k/s
 		rateSize = 1500000
-	case "Unlimited", "unlimited", "0", "":
+	case "unlimited", "0", "":
 		// unlimited
-		return rate.NewLimiter(rate.Inf, 0)
+		return rate.NewLimiter(rate.Inf, 0), nil
 	default:
 		var v datasize.ByteSize
 		err := v.UnmarshalText([]byte(rstr))
 		if err != nil {
-			log.Printf("RateLimit [%s] unreconized, set as unlimited", rstr)
-			return rate.NewLimiter(rate.Inf, 0)
+			return nil, err
 		}
 		if v > 2147483647 {
 			// max of int, unlimited
-			return rate.NewLimiter(rate.Inf, 0)
+			return nil, errors.New("excceed int val")
 		}
 
 		rateSize = int(v)
 	}
-	return rate.NewLimiter(rate.Limit(rateSize), rateSize)
+	return rate.NewLimiter(rate.Limit(rateSize), rateSize), nil
 }
