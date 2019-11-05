@@ -9,6 +9,12 @@ if ! command -v systemctl >/dev/null 2>&1; then
     echo "> Sorry but this scripts is only for Linux with systemd, eg: Ubuntu 16.04+/Centos 7+ ..."
     exit 1
 fi
+
+if [[ $(id -u) -ne 0 ]]; then
+    echo "This script must be run as root" 
+    exit 1
+fi
+
 HOSTIP=$(ip -o route get to 8.8.8.8 | sed -n 's/.*src \([0-9.]\+\).*/\1/p')
 CLDBIN=/usr/local/bin/cloud-torrent
 OSARCH=$(uname -m)
@@ -34,7 +40,7 @@ esac
 read -p "Need authentication? (Y/N)" NEEDAUTH
 USERNAME="(none)"
 PASSWORD="(none)"
-if [[ ${NEEDAUTH^^} == "Y" ]]; then
+if [[ x${NEEDAUTH^^} == x"Y" ]]; then
     read -p "Input Username:" USERNAME
     read -p "Input Password:" PASSWORD
 fi
@@ -47,10 +53,10 @@ chmod 0755 ${CLDBIN}
 
 wget -O /etc/systemd/system/cloud-torrent.service https://raw.githubusercontent.com/boypt/simple-torrent/master/scripts/cloud-torrent.service
 
-if [[ ${NEEDAUTH^^} == "N" ]]; then
-    sed -i "s/ -a 'user:ctorrent'//" /etc/systemd/system/cloud-torrent.service 
-else
+if [[ x${NEEDAUTH^^} == x"Y" ]]; then
     sed -i "s/user:ctorrent/${USERNAME}:${PASSWORD}/" /etc/systemd/system/cloud-torrent.service 
+else
+    sed -i "s/ -a 'user:ctorrent'//" /etc/systemd/system/cloud-torrent.service 
 fi
 
 systemctl daemon-reload
