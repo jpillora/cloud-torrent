@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"log"
+	"os"
 
 	"github.com/jpillora/cloud-torrent/server"
 	"github.com/jpillora/opts"
@@ -29,6 +31,10 @@ func main() {
 
 	log.Printf("############# SimpleTorrent ver[%s] #############\n", VERSION)
 	if err := s.Run(VERSION); err != nil {
+		if errors.Is(err, server.ErrDiskSpace) {
+			log.Println(err)
+			os.Exit(42)
+		}
 		log.Fatal(err)
 	}
 }

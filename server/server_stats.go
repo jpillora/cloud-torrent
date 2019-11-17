@@ -45,3 +45,17 @@ func (s *stats) loadStats(diskDir string) {
 	s.Set = true
 	s.pusher.Push()
 }
+
+func detectDiskStat(dir string) error {
+
+	stat, err := disk.Usage(dir)
+	if err != nil {
+		return err
+	}
+
+	if stat.Free < 10*1024*1024 {
+		return ErrDiskSpace
+	}
+
+	return nil
+}

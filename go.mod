@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/anacrolix/log v0.3.1-0.20191001111012-13cede988bcd
-	github.com/anacrolix/torrent v1.8.2
+	github.com/anacrolix/torrent v1.9.0
 	github.com/andrew-d/go-termutil v0.0.0-20150726205930-009166a695a2 // indirect
 	github.com/boypt/scraper v1.0.2
 	github.com/c2h5oh/datasize v0.0.0-20171227191756-4eba002a5eae
@@ -25,11 +25,12 @@ require (
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/mmcdole/gofeed v1.0.0-beta2
 	github.com/mmcdole/goxpp v0.0.0-20181012175147-0068e33feabf // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/radovskyb/watcher v1.0.6
 	github.com/shirou/gopsutil v2.18.12+incompatible
 	github.com/skratchdot/open-golang v0.0.0-20190402232053-79abb63cd66e
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce // indirect
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
+	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 )
 
 replace (

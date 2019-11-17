@@ -25,6 +25,7 @@ import (
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/velox"
 	"github.com/mmcdole/gofeed"
+	"github.com/pkg/errors"
 	"github.com/radovskyb/watcher"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -32,6 +33,10 @@ import (
 const (
 	cacheSavedPrefix = "_CLDAUTOSAVED_"
 	scraperUA        = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
+)
+
+var (
+	ErrDiskSpace = errors.New("not enough disk space")
 )
 
 //Server is the "State" portion of the diagram
@@ -144,6 +149,10 @@ func (s *Server) Run(version string) error {
 	// normalriz config file
 	if err := s.normlizeConfigDir(&c); err != nil {
 		return fmt.Errorf("initial configure failed: %s", err)
+	}
+
+	if err := detectDiskStat(c.DownloadDirectory); err != nil {
+		return err
 	}
 
 	s.state.Config = c
