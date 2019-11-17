@@ -117,23 +117,13 @@ app.filter("bytes", function(bytes) {
 
 //scale a number  and add a metric prefix
 app.factory("bytes", function() {
-  return function(n, d) {
-    // set defaults
-    if (typeof n !== "number" || isNaN(n) || n == 0) return "0 B";
-    if (!d || typeof d !== "number") d = 1;
-    // set scale index 1000,100000,... becomes 1,2,...
-    var i = Math.floor(Math.floor(Math.log(n) * Math.LOG10E) / 3);
-    // set rounding factor
-    var f = Math.pow(10, d);
-    // scale n down and round
-    var s = Math.round(n / Math.pow(10, i * 3) * f) / f;
-    // concat (no trailing 0s) and choose scale letter
-    return (
-      s.toString().replace(/\.0+$/, "") +
-      " " +
-      ["", "K", "M", "G", "T", "P", "Z"][i] +
-      "B"
-    );
+  return function(bytes) {
+   if(bytes == 0) return '0 B';
+   var k = 1024,
+       dm = 0,
+       sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+       i = Math.floor(Math.log(bytes) / Math.log(k));
+   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   };
 });
 
