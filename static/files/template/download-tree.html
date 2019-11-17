@@ -16,7 +16,7 @@
       <i ng-show="imagePreview || videoPreview || audioPreview" ng-click="togglePreview()" class="blue {{ showPreview ? 'circle outline' : 'video play outline' }} icon"></i>
     </span>
   </div>
-  <div class="description">{{ node.Size | bytes }} updated {{ ago(node.Modified) }}</div>
+  <div class="description">{{ node.Size | bytes }} - {{ ago(node.Modified) }}</div>
   <div class="preview" ng-if="showPreview">
     <audio ng-if="audioPreview" controls>
       <source ng-src="{{ showPreview ? ('download/'+node.$path) : '' }}">
