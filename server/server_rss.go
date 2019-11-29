@@ -27,11 +27,9 @@ func (s *Server) updateRSS() {
 	}
 	for _, rss := range strings.Split(s.state.Config.RssURL, "\n") {
 		if !strings.HasPrefix(rss, "http://") && !strings.HasPrefix(rss, "https://") {
-			log.Printf("parse feed addr Invalid %s", rss)
 			continue
 		}
 		rss = strings.TrimSpace(rss)
-
 		feed, err := fp.ParseURL(rss)
 		if err != nil {
 			log.Printf("parse feed err %s", err.Error())
