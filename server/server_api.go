@@ -59,6 +59,7 @@ func (s *Server) api(r *http.Request) error {
 		}
 		//TODO enforce max body size (32k?)
 		data, err = ioutil.ReadAll(remote.Body)
+		defer remote.Body.Close()
 		if err != nil {
 			return fmt.Errorf("Failed to download remote torrent: %s", err)
 		}
@@ -98,19 +99,20 @@ func (s *Server) api(r *http.Request) error {
 		}
 		state := cmd[0]
 		infohash := cmd[1]
-		if state == "start" {
+		switch state {
+		case "start":
 			if err := s.engine.StartTorrent(infohash); err != nil {
 				return err
 			}
-		} else if state == "stop" {
+		case "stop":
 			if err := s.engine.StopTorrent(infohash); err != nil {
 				return err
 			}
-		} else if state == "delete" {
+		case "delete":
 			if err := s.engine.DeleteTorrent(infohash); err != nil {
 				return err
 			}
-		} else {
+		default:
 			return fmt.Errorf("Invalid state: %s", state)
 		}
 	case "file":
@@ -121,15 +123,16 @@ func (s *Server) api(r *http.Request) error {
 		state := cmd[0]
 		infohash := cmd[1]
 		filepath := cmd[2]
-		if state == "start" {
+		switch state {
+		case "start":
 			if err := s.engine.StartFile(infohash, filepath); err != nil {
 				return err
 			}
-		} else if state == "stop" {
+		case "stop":
 			if err := s.engine.StopFile(infohash, filepath); err != nil {
 				return err
 			}
-		} else {
+		default:
 			return fmt.Errorf("Invalid state: %s", state)
 		}
 	default:

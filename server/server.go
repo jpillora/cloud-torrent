@@ -49,6 +49,7 @@ type Server struct {
 	ConfigPath     string `help:"Configuration file path"`
 	KeyPath        string `help:"TLS Key file path"`
 	CertPath       string `help:"TLS Certicate file path" short:"r"`
+	RestAPI        string `help:"Listen on a trusted port accepts only /api/ requests (example localhost:3001)"`
 	Log            bool   `help:"Enable request logging"`
 	Open           bool   `help:"Open now with your default browser"`
 	DisableLogTime bool   `help:"Don't print timestamp in log"`
@@ -261,6 +262,20 @@ func (s *Server) Run(version string) error {
 			open.Run(fmt.Sprintf("%s://%s:%d", proto, openhost, s.Port))
 		}()
 	}
+
+	// restful API server
+	if s.RestAPI != "" {
+		go func() {
+			restServer := http.Server{
+				Addr:    s.RestAPI,
+				Handler: requestlog.Wrap(http.Handler(http.HandlerFunc(s.handleRestAPI))),
+			}
+			if err := restServer.ListenAndServe(); err != nil {
+				log.Println("[RestAPI] err ", err)
+			}
+		}()
+	}
+
 	//define handler chain, from last to first
 	h := http.Handler(http.HandlerFunc(s.handle))
 	//gzip
@@ -416,6 +431,26 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	//no match, assume static file
 	s.files.ServeHTTP(w, r)
+}
+
+func (s *Server) handleRestAPI(w http.ResponseWriter, r *http.Request) {
+	ret := "Bad Request"
+	if strings.HasPrefix(r.URL.Path, "/api/") {
+		if err := s.api(r); err == nil {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+			return
+		} else {
+			if err == errTaskAdded {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("OK"))
+				return
+			}
+			ret = err.Error()
+		}
+	}
+	w.WriteHeader(http.StatusBadRequest)
+	w.Write([]byte(ret))
 }
 
 func livenessWrap(h http.Handler) http.Handler {

@@ -158,29 +158,28 @@ func (e *Engine) torrentRoutine(t *Torrent) {
 	// call DoneCmd on task completed
 	if t.Done && !t.DoneCmdCalled {
 		t.DoneCmdCalled = true
-		env := append(os.Environ(),
-			fmt.Sprintf("CLD_DIR=%s", e.config.DownloadDirectory),
-			fmt.Sprintf("CLD_PATH=%s", t.Name),
-			fmt.Sprintf("CLD_SIZE=%d", t.Size),
-			"CLD_TYPE=torrent",
-		)
-		go e.callDoneCmd(env)
+		go e.callDoneCmd(genEnv(e.config.DownloadDirectory, t.Name, t.InfoHash, "torrent", t.Size))
 	}
 
 	// call DoneCmd on each file completed
-	// some file might finished before the whole task does
+	// some files might finish before the whole task does
 	for _, f := range t.Files {
 		if f.Done && !f.DoneCmdCalled {
 			f.DoneCmdCalled = true
-			env := append(os.Environ(),
-				fmt.Sprintf("CLD_DIR=%s", e.config.DownloadDirectory),
-				fmt.Sprintf("CLD_PATH=%s", f.Path),
-				fmt.Sprintf("CLD_SIZE=%d", f.Size),
-				"CLD_TYPE=file",
-			)
-			go e.callDoneCmd(env)
+			go e.callDoneCmd(genEnv(e.config.DownloadDirectory, f.Path, "", "file", f.Size))
 		}
 	}
+}
+
+func genEnv(dir, path, hash, ttype string, size int64) []string {
+	env := append(os.Environ(),
+		fmt.Sprintf("CLD_DIR=%s", dir),
+		fmt.Sprintf("CLD_PATH=%s", path),
+		fmt.Sprintf("CLD_HASH=%s", hash),
+		fmt.Sprintf("CLD_TYPE=%s", ttype),
+		fmt.Sprintf("CLD_SIZE=%d", size),
+	)
+	return env
 }
 
 func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
