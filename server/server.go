@@ -42,19 +42,19 @@ var (
 //Server is the "State" portion of the diagram
 type Server struct {
 	//config
-	Title          string `help:"Title of this instance" env:"TITLE"`
-	Port           int    `help:"Listening port" env:"PORT"`
-	Host           string `help:"Listening interface (default all)"`
-	Auth           string `help:"Optional basic auth in form 'user:password'" env:"AUTH"`
-	ConfigPath     string `help:"Configuration file path"`
-	KeyPath        string `help:"TLS Key file path"`
-	CertPath       string `help:"TLS Certicate file path" short:"r"`
-	RestAPI        string `help:"Listen on a trusted port accepts only /api/ requests (example localhost:3001)"`
-	Log            bool   `help:"Enable request logging"`
-	Open           bool   `help:"Open now with your default browser"`
-	DisableLogTime bool   `help:"Don't print timestamp in log"`
-	Debug          bool   `help:"Debug app"`
-	DebugTorrent   bool   `help:"Debug torrent engine"`
+	Title          string `opts:"help=Title of this instance,env=TITLE"`
+	Port           int    `opts:"help=Listening port,env=PORT"`
+	Host           string `opts:"help=Listening interface (default all)"`
+	Auth           string `opts:"help=Optional basic auth in form 'user:password',env=AUTH"`
+	ConfigPath     string `opts:"help=Configuration file path"`
+	KeyPath        string `opts:"help=TLS Key file path"`
+	CertPath       string `opts:"help=TLS Certicate file path" short:"r"`
+	RestAPI        string `opts:"help=Listen on a trusted port accepts /api/ requests (example localhost:3001)"`
+	Log            bool   `opts:"help=Enable request logging"`
+	Open           bool   `opts:"help=Open now with your default browser"`
+	DisableLogTime bool   `opts:"help=Don't print timestamp in log"`
+	Debug          bool   `opts:"help=Debug app"`
+	DebugTorrent   bool   `opts:"help=Debug torrent engine"`
 	//http handlers
 	files, static, rssh http.Handler
 	scraper             *scraper.Handler

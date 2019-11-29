@@ -56,7 +56,7 @@ wget -O /etc/systemd/system/cloud-torrent.service https://raw.githubusercontent.
 if [[ x${NEEDAUTH^^} == x"Y" ]]; then
     sed -i "s/user:ctorrent/${USERNAME}:${PASSWORD}/" /etc/systemd/system/cloud-torrent.service 
 else
-    sed -i "s/ -a 'user:ctorrent'//" /etc/systemd/system/cloud-torrent.service 
+    sed -i "/AUTH/s/^/#/" /etc/systemd/system/cloud-torrent.service 
 fi
 
 systemctl daemon-reload

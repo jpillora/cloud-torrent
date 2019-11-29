@@ -6,7 +6,10 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=~
-ExecStart=/usr/local/bin/cloud-torrent -a 'user:ctorrent' -c ./cloud-torrent.json --host 0.0.0.0 --port 3000 --disable-log-time
+Environment=AUTH=user:ctorrent
+Environment=HOST=0.0.0.0
+Environment=PORT=3000
+ExecStart=/usr/local/bin/cloud-torrent -c ./cloud-torrent.json --disable-log-time
 Restart=always
 RestartPreventExitStatus=42
 RestartSec=3
