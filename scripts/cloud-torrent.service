@@ -7,9 +7,8 @@ Type=simple
 User=root
 WorkingDirectory=~
 Environment=AUTH=user:ctorrent
-Environment=HOST=0.0.0.0
 Environment=PORT=3000
-ExecStart=/usr/local/bin/cloud-torrent -c ./cloud-torrent.json --disable-log-time
+ExecStart=/usr/local/bin/cloud-torrent -c ./cloud-torrent.json --host 0.0.0.0 --disable-log-time
 Restart=always
 RestartPreventExitStatus=42
 RestartSec=3

@@ -36,7 +36,7 @@ const (
 )
 
 var (
-	ErrDiskSpace = errors.New("not enough disk space")
+	errDiskSpace = errors.New("not enough disk space")
 )
 
 //Server is the "State" portion of the diagram
@@ -48,13 +48,15 @@ type Server struct {
 	Auth           string `opts:"help=Optional basic auth in form 'user:password',env=AUTH"`
 	ConfigPath     string `opts:"help=Configuration file path"`
 	KeyPath        string `opts:"help=TLS Key file path"`
-	CertPath       string `opts:"help=TLS Certicate file path" short:"r"`
-	RestAPI        string `opts:"help=Listen on a trusted port accepts /api/ requests (example localhost:3001)"`
+	CertPath       string `opts:"help=TLS Certicate file path,short=r"`
+	RestAPI        string `opts:"help=Listen on a trusted port accepts /api/ requests (eg. localhost:3001)"`
 	Log            bool   `opts:"help=Enable request logging"`
 	Open           bool   `opts:"help=Open now with your default browser"`
 	DisableLogTime bool   `opts:"help=Don't print timestamp in log"`
 	Debug          bool   `opts:"help=Debug app"`
 	DebugTorrent   bool   `opts:"help=Debug torrent engine"`
+	mainAddr       string
+
 	//http handlers
 	files, static, rssh http.Handler
 	scraper             *scraper.Handler
@@ -84,6 +86,13 @@ type Server struct {
 			System  stats
 		}
 	}
+}
+
+func (s Server) GetRestAPI() string {
+	if s.RestAPI == "" {
+		return s.mainAddr
+	}
+	return s.RestAPI
 }
 
 // Run the server
@@ -121,7 +130,7 @@ func (s *Server) Run(version string) error {
 
 	s.scraperh = http.StripPrefix("/search", s.scraper)
 	//torrent engine
-	s.engine = engine.New()
+	s.engine = engine.New(s)
 
 	//configure engine
 	c := engine.Config{
@@ -164,7 +173,7 @@ func (s *Server) Run(version string) error {
 	}
 
 	s.state.Config.SaveConfigFile(s.ConfigPath)
-	s.TorrentWatcher()
+	s.torrentWatcher()
 
 	log.Printf("Read Config: %#v\n", c)
 	//poll torrents and files
@@ -247,7 +256,7 @@ func (s *Server) Run(version string) error {
 	if host == "" {
 		host = "0.0.0.0"
 	}
-	addr := fmt.Sprintf("%s:%d", host, s.Port)
+	s.mainAddr = fmt.Sprintf("%s:%d", host, s.Port)
 	proto := "http"
 	if isTLS {
 		proto += "s"
@@ -296,13 +305,13 @@ func (s *Server) Run(version string) error {
 	if s.Log {
 		h = requestlog.Wrap(h)
 	}
-	log.Printf("Listening at %s://%s", proto, addr)
+	log.Printf("Listening at %s://%s", proto, s.mainAddr)
 	//serve!
 	server := http.Server{
 		//disable http2 due to velox bug
 		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){},
 		//address
-		Addr: addr,
+		Addr: s.mainAddr,
 		//handler stack
 		Handler: h,
 	}
@@ -327,7 +336,7 @@ func (s *Server) normlizeConfigDir(c *engine.Config) error {
 	return nil
 }
 
-func (s *Server) TorrentWatcher() error {
+func (s *Server) torrentWatcher() error {
 
 	if s.watcher != nil {
 		log.Print("Torrent Watcher: close")
@@ -436,18 +445,18 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleRestAPI(w http.ResponseWriter, r *http.Request) {
 	ret := "Bad Request"
 	if strings.HasPrefix(r.URL.Path, "/api/") {
-		if err := s.api(r); err == nil {
+		err := s.api(r)
+		if err == nil {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
 			return
-		} else {
-			if err == errTaskAdded {
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("OK"))
-				return
-			}
-			ret = err.Error()
 		}
+		if err == errTaskAdded {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+			return
+		}
+		ret = err.Error()
 	}
 	w.WriteHeader(http.StatusBadRequest)
 	w.Write([]byte(ret))

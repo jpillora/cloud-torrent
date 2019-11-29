@@ -22,8 +22,13 @@ const (
 	cacheSavedPrefix = "_CLDAUTOSAVED_"
 )
 
+type Server interface {
+	GetRestAPI() string
+}
+
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
 type Engine struct {
+	cldServer Server
 	mut       sync.Mutex
 	cacheDir  string
 	client    *torrent.Client
@@ -32,8 +37,8 @@ type Engine struct {
 	bttracker []string
 }
 
-func New() *Engine {
-	return &Engine{ts: map[string]*Torrent{}}
+func New(s Server) *Engine {
+	return &Engine{ts: map[string]*Torrent{}, cldServer: s}
 }
 
 func (e *Engine) Config() Config {
@@ -158,7 +163,9 @@ func (e *Engine) torrentRoutine(t *Torrent) {
 	// call DoneCmd on task completed
 	if t.Done && !t.DoneCmdCalled {
 		t.DoneCmdCalled = true
-		go e.callDoneCmd(genEnv(e.config.DownloadDirectory, t.Name, t.InfoHash, "torrent", t.Size))
+		go e.callDoneCmd(genEnv(e.config.DownloadDirectory,
+			t.Name, t.InfoHash, "torrent",
+			e.cldServer.GetRestAPI(), t.Size))
 	}
 
 	// call DoneCmd on each file completed
@@ -166,17 +173,20 @@ func (e *Engine) torrentRoutine(t *Torrent) {
 	for _, f := range t.Files {
 		if f.Done && !f.DoneCmdCalled {
 			f.DoneCmdCalled = true
-			go e.callDoneCmd(genEnv(e.config.DownloadDirectory, f.Path, "", "file", f.Size))
+			go e.callDoneCmd(genEnv(e.config.DownloadDirectory,
+				f.Path, "", "file",
+				e.cldServer.GetRestAPI(), f.Size))
 		}
 	}
 }
 
-func genEnv(dir, path, hash, ttype string, size int64) []string {
+func genEnv(dir, path, hash, ttype, api string, size int64) []string {
 	env := append(os.Environ(),
 		fmt.Sprintf("CLD_DIR=%s", dir),
 		fmt.Sprintf("CLD_PATH=%s", path),
 		fmt.Sprintf("CLD_HASH=%s", hash),
 		fmt.Sprintf("CLD_TYPE=%s", ttype),
+		fmt.Sprintf("CLD_RESTAPI=%s", api),
 		fmt.Sprintf("CLD_SIZE=%d", size),
 	)
 	return env

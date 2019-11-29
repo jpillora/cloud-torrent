@@ -54,7 +54,7 @@ func detectDiskStat(dir string) error {
 	}
 
 	if stat.Free < 10*1024*1024 {
-		return ErrDiskSpace
+		return errDiskSpace
 	}
 
 	return nil
