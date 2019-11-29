@@ -36,7 +36,8 @@ const (
 )
 
 var (
-	errDiskSpace = errors.New("not enough disk space")
+	//ErrDiskSpace raised if disk space not enough
+	ErrDiskSpace = errors.New("not enough disk space")
 )
 
 //Server is the "State" portion of the diagram
@@ -88,7 +89,8 @@ type Server struct {
 	}
 }
 
-func (s Server) GetRestAPI() string {
+// GetRestAPI used by engine doneCmd
+func (s *Server) GetRestAPI() string {
 	if s.RestAPI == "" {
 		return s.mainAddr
 	}
@@ -422,20 +424,20 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	//api call
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		//only pass request in, expect error out
-		if err := s.api(r); err == nil {
+		err := s.api(r)
+		if err == nil {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
 			return
-		} else {
-			switch err {
-			case errTaskAdded:
-				// internal rewrite to show status page
-				r.URL.Path = "/sub/magadded.html"
-			default:
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(err.Error()))
-				return
-			}
+		}
+		switch err {
+		case errTaskAdded:
+			// internal rewrite to show status page
+			r.URL.Path = "/sub/magadded.html"
+		default:
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
 		}
 	}
 	//no match, assume static file
