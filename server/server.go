@@ -91,9 +91,6 @@ type Server struct {
 
 // GetRestAPI used by engine doneCmd
 func (s *Server) GetRestAPI() string {
-	if s.RestAPI == "" {
-		return s.mainAddr
-	}
 	return s.RestAPI
 }
 

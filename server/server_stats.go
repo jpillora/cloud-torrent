@@ -48,6 +48,8 @@ func (s *stats) loadStats(diskDir string) {
 
 func detectDiskStat(dir string) error {
 
+	_ = os.Mkdir(dir, os.ModePerm)
+
 	stat, err := disk.Usage(dir)
 	if err != nil {
 		return err
