@@ -1,6 +1,7 @@
 package server
 
 import (
+	"os"
 	"runtime"
 
 	velox "github.com/jpillora/velox/go"
