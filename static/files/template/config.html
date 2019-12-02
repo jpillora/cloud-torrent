@@ -1,26 +1,27 @@
 <form ng-show="edit" class="ui segment edit form">
   <h4 class="ui dividing header">Configuration</h4>
-  <div class="field"
-    ng-if="state.Config !== undefined"
-    ng-repeat="k in configOrderdKey"
+  <div class="field" ng-if="state.Config !== undefined" ng-repeat="k in configOrderdKey"
     ng-init="type = inputType(k, state.Config[k])">
     <div ng-if="type == 'check'">
-      <checkbox type="toggle"
-        ng-model="state.Config[k]">{{ k | addspaces }}</checkbox>
+      <checkbox type="toggle" ng-model="state.Config[k]">{{ k | addspaces }}</checkbox>
+      <span title="{{ configTip[k] }}"><i class="question circle icon"></i></span>
     </div>
     <div ng-if="type == 'text' || type == 'number'">
-      <label><h5>{{ k | addspaces }}</h5></label>
+      <label>
+        <h5>{{ k | addspaces }} <span title="{{ configTip[k] }}"><i class="question circle icon"></i></span>
+        </h5>
+      </label>
       <input type="{{type}}" ng-model="state.Config[k]"></input>
     </div>
     <div ng-if="type == 'multiline'">
-      <label><h5>{{ k | addspaces }}</h5></label>
+      <label>
+        <h5>{{ k | addspaces }}<span title="{{ configTip[k] }}"><i class="question circle icon"></i></span></h5>
+      </label>
       <textarea ng-model="state.Config[k]"></textarea>
     </div>
   </div>
   <div class="buttons">
-    <div class="ui blue button"
-      ng-class="{loading: apiing}"
-      ng-click="submitConfig()">
+    <div class="ui blue button" ng-class="{loading: apiing}" ng-click="submitConfig()">
       Save
     </div>
     <div class="ui grey button" ng-click="toggle()">
