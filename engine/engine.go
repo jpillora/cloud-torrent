@@ -352,8 +352,8 @@ func (e *Engine) callDoneCmd(env []string) {
 		return
 	}
 
-	if time.Since(e.cldServer.GetUptime()) < time.Minute {
-		log.Println("[DoneCmd] DoneCmd called within a minute since started, skiping")
+	if time.Since(e.cldServer.GetUptime()) < time.Second*30 {
+		log.Println("[DoneCmd] DoneCmd called within 30s since started, skiping")
 		return
 	}
 
