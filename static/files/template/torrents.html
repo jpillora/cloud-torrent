@@ -179,12 +179,12 @@
                   <i ng-if="f.Percent == 100" class="green check icon"></i>
                 </td>
                 <td>
-                  <button ng-if="f.Started" ng-disabled="$rootScope.apiing" class="ui compact mini red button"
-                    ng-click="submitFile('stop', t, f)">
+                  <button ng-if="f.Started" ng-disabled="$rootScope.apiing || f.Percent == 100"
+                    class="ui compact mini red button" ng-click="submitFile('stop', t, f)">
                     <i class="stop icon"></i> Stop
                   </button>
-                  <button ng-if="!f.Started" ng-disabled="$rootScope.apiing" class="ui compact mini green button"
-                    ng-click="submitFile('start', t, f)">
+                  <button ng-if="!f.Started" ng-disabled="$rootScope.apiing || f.Percent == 100"
+                    class="ui compact mini green button" ng-click="submitFile('start', t, f)">
                     <i class="play icon"></i> Start
                   </button>
                 </td>
