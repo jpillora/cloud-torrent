@@ -41,14 +41,14 @@ type File struct {
 	//cloud torrent
 	Started bool
 	Percent float32
-	f       torrent.File
+	f       *torrent.File
 }
 
 // Update retrive info from torrent.Torrent
 func (torrent *Torrent) Update(t *torrent.Torrent) {
 	torrent.Name = t.Name()
-	torrent.Loaded = t.Info() != nil
-	if torrent.Loaded {
+	if t.Info() != nil {
+		torrent.Loaded = true
 		torrent.updateLoaded(t)
 	}
 	if torrent.Magnet == "" {
@@ -90,7 +90,7 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 		file.Completed = completed
 		file.Percent = percent(int64(file.Completed), int64(file.Chunks))
 		file.Done = (file.Completed == file.Chunks)
-		file.f = *f
+		file.f = f
 
 		totalChunks += file.Chunks
 		totalCompleted += file.Completed

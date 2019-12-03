@@ -45,6 +45,10 @@ func (e *Engine) Config() Config {
 	return e.config
 }
 
+func (e *Engine) SetConfig(c Config) {
+	e.config = c
+}
+
 func (e *Engine) Configure(c Config) error {
 	//recieve config
 	if e.client != nil {
@@ -298,16 +302,48 @@ func (e *Engine) StartFile(infohash, filepath string) error {
 		return fmt.Errorf("Missing file %s", filepath)
 	}
 	if f.Started {
-		return fmt.Errorf("Already started")
+		return fmt.Errorf("already started")
 	}
 	t.Started = true
 	f.Started = true
-	f.f.Download()
+	f.f.SetPriority(torrent.PiecePriorityNormal)
 	return nil
 }
 
 func (e *Engine) StopFile(infohash, filepath string) error {
-	return fmt.Errorf("Unsupported")
+	t, err := e.getOpenTorrent(infohash)
+	if err != nil {
+		return err
+	}
+	var f *File
+	for _, file := range t.Files {
+		if file.Path == filepath {
+			f = file
+			break
+		}
+	}
+	if f == nil {
+		return fmt.Errorf("Missing file %s", filepath)
+	}
+	if !f.Started {
+		return fmt.Errorf("already stopped")
+	}
+	f.Started = false
+	f.f.SetPriority(torrent.PiecePriorityNone)
+
+	allStopped := true
+	for _, file := range t.Files {
+		if file.Started {
+			allStopped = false
+			break
+		}
+	}
+
+	if allStopped {
+		e.StopTorrent(infohash)
+	}
+
+	return nil
 }
 
 func (e *Engine) callDoneCmd(env []string) {

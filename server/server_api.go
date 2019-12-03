@@ -192,8 +192,9 @@ func (s *Server) apiConfigure(data []byte) error {
 				return err
 			}
 			log.Printf("[api] torrent engine reconfigred")
+		} else {
+			s.engine.SetConfig(s.state.Config)
 		}
-
 		s.state.Push()
 	} else {
 		log.Printf("[api] configure unchanged")
