@@ -17,7 +17,10 @@ import (
 	"github.com/jpillora/cloud-torrent/engine"
 )
 
-var errTaskAdded = errors.New("REDIRECT TORRENT HOME")
+var (
+	errTaskAdded  = errors.New("REDIRECT TORRENT HOME")
+	errInvalidReq = errors.New("INVALID REQUEST")
+)
 
 func (s *Server) api(r *http.Request) error {
 	defer r.Body.Close()
@@ -30,7 +33,7 @@ func (s *Server) api(r *http.Request) error {
 			m := r.URL.Query().Get("m")
 			if strings.HasPrefix(m, "magnet:?") {
 				if err := s.engine.NewMagnet(m); err != nil {
-					return fmt.Errorf("Magnet error: %s", err)
+					return fmt.Errorf("Magnet error: %w", err)
 				}
 			} else {
 				return fmt.Errorf("Invalid Magnet link: %s", m)
@@ -47,7 +50,7 @@ func (s *Server) api(r *http.Request) error {
 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return fmt.Errorf("Failed to download request body")
+		return fmt.Errorf("Failed to download request body: %w", err)
 	}
 
 	//convert url into torrent bytes
@@ -55,13 +58,13 @@ func (s *Server) api(r *http.Request) error {
 		url := string(data)
 		remote, err := http.Get(url)
 		if err != nil {
-			return fmt.Errorf("Invalid remote torrent URL: %s (%s)", err, url)
+			return fmt.Errorf("Invalid remote torrent URL: %s %w", url, err)
 		}
 		//TODO enforce max body size (32k?)
 		data, err = ioutil.ReadAll(remote.Body)
 		defer remote.Body.Close()
 		if err != nil {
-			return fmt.Errorf("Failed to download remote torrent: %s", err)
+			return fmt.Errorf("Failed to download remote torrent: %w", err)
 		}
 		action = "torrentfile"
 	}
@@ -75,7 +78,7 @@ func (s *Server) api(r *http.Request) error {
 		}
 		spec := torrent.TorrentSpecFromMetaInfo(info)
 		if err := s.engine.NewTorrent(spec); err != nil {
-			return fmt.Errorf("Torrent error: %s", err)
+			return fmt.Errorf("Torrent error: %w", err)
 		}
 		return nil
 	}
@@ -90,12 +93,12 @@ func (s *Server) api(r *http.Request) error {
 	case "magnet":
 		uri := string(data)
 		if err := s.engine.NewMagnet(uri); err != nil {
-			return fmt.Errorf("Magnet error: %s", err)
+			return fmt.Errorf("Magnet error: %w", err)
 		}
 	case "torrent":
 		cmd := strings.SplitN(string(data), ":", 2)
 		if len(cmd) != 2 {
-			return fmt.Errorf("Invalid request")
+			return errInvalidReq
 		}
 		state := cmd[0]
 		infohash := cmd[1]
@@ -118,7 +121,7 @@ func (s *Server) api(r *http.Request) error {
 	case "file":
 		cmd := strings.SplitN(string(data), ":", 3)
 		if len(cmd) != 3 {
-			return fmt.Errorf("Invalid request")
+			return errInvalidReq
 		}
 		state := cmd[0]
 		infohash := cmd[1]

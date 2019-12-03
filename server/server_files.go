@@ -98,7 +98,7 @@ func list(path string, info os.FileInfo, node *fsNode, n *int) error {
 	}
 	children, err := ioutil.ReadDir(path)
 	if err != nil {
-		return fmt.Errorf("Failed to list files")
+		return fmt.Errorf("Failed to list files: %w", err)
 	}
 	node.Size = 0
 	for _, i := range children {

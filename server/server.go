@@ -144,11 +144,11 @@ func (s *Server) Run(version string) error {
 	}
 	if _, err := os.Stat(s.ConfigPath); err == nil {
 		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {
-			return fmt.Errorf("Read configuration error: %s", err)
+			return fmt.Errorf("Read configuration error: %w", err)
 		} else if len(b) == 0 {
 			//ignore empty file
 		} else if err := json.Unmarshal(b, &c); err != nil {
-			return fmt.Errorf("Malformed configuration: %s", err)
+			return fmt.Errorf("Malformed configuration: %w", err)
 		}
 	}
 	if c.IncomingPort <= 0 || c.IncomingPort >= 65535 {
@@ -157,7 +157,7 @@ func (s *Server) Run(version string) error {
 
 	// normalriz config file
 	if err := s.normlizeConfigDir(&c); err != nil {
-		return fmt.Errorf("initial configure failed: %s", err)
+		return fmt.Errorf("initial configure failed: %w", err)
 	}
 
 	if err := detectDiskStat(c.DownloadDirectory); err != nil {
