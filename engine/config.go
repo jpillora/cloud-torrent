@@ -133,5 +133,5 @@ func rateLimiter(rstr string) (*rate.Limiter, error) {
 
 		rateSize = int(v)
 	}
-	return rate.NewLimiter(rate.Limit(rateSize), rateSize), nil
+	return rate.NewLimiter(rate.Limit(rateSize), rateSize*3), nil
 }
