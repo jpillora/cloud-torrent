@@ -94,6 +94,11 @@ func (s *Server) GetRestAPI() string {
 	return s.RestAPI
 }
 
+// GetUptime used by engine doneCmd
+func (s *Server) GetUptime() time.Time {
+	return s.state.Stats.Uptime
+}
+
 // Run the server
 func (s *Server) Run(version string) error {
 	isTLS := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
@@ -276,7 +281,7 @@ func (s *Server) Run(version string) error {
 		go func() {
 			restServer := http.Server{
 				Addr:    s.RestAPI,
-				Handler: requestlog.Wrap(http.Handler(http.HandlerFunc(s.handleRestAPI))),
+				Handler: requestlog.Wrap(http.Handler(http.HandlerFunc(s.resstAPIhandle))),
 			}
 			log.Println("[RestAPI] listening at ", s.RestAPI)
 			if err := restServer.ListenAndServe(); err != nil {
@@ -286,7 +291,7 @@ func (s *Server) Run(version string) error {
 	}
 
 	//define handler chain, from last to first
-	h := http.Handler(http.HandlerFunc(s.handle))
+	h := http.Handler(http.HandlerFunc(s.webHandle))
 	//gzip
 	gzipWrap, _ := gziphandler.NewGzipLevelAndMinSize(gzip.DefaultCompression, 0)
 	h = gzipWrap(h)
@@ -388,88 +393,4 @@ func (s *Server) torrentWatcher() error {
 	s.watcher = w
 	go w.Start(time.Second * 5)
 	return nil
-}
-
-func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
-	//handle realtime client library
-	if r.URL.Path == "/js/velox.js" {
-		velox.JS.ServeHTTP(w, r)
-		return
-	}
-	if r.URL.Path == "/rss" {
-		s.rssh.ServeHTTP(w, r)
-		return
-	}
-	//handle realtime client connections
-	if r.URL.Path == "/sync" {
-		conn, err := velox.Sync(&s.state, w, r)
-		if err != nil {
-			log.Printf("sync failed: %s", err)
-			return
-		}
-		s.state.Users[conn.ID()] = r.RemoteAddr
-		s.state.Push()
-		conn.Wait()
-		delete(s.state.Users, conn.ID())
-		s.state.Push()
-		return
-	}
-	//search
-	if strings.HasPrefix(r.URL.Path, "/search") {
-		s.scraperh.ServeHTTP(w, r)
-		return
-	}
-	//api call
-	if strings.HasPrefix(r.URL.Path, "/api/") {
-		//only pass request in, expect error out
-		err := s.api(r)
-		if err == nil {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
-			return
-		}
-		switch err {
-		case errTaskAdded:
-			// internal rewrite to show status page
-			r.URL.Path = "/sub/magadded.html"
-		default:
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
-			return
-		}
-	}
-	//no match, assume static file
-	s.files.ServeHTTP(w, r)
-}
-
-func (s *Server) handleRestAPI(w http.ResponseWriter, r *http.Request) {
-	ret := "Bad Request"
-	if strings.HasPrefix(r.URL.Path, "/api/") {
-		err := s.api(r)
-		if err == nil {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
-			return
-		}
-		if err == errTaskAdded {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
-			return
-		}
-		ret = err.Error()
-	}
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte(ret))
-}
-
-func livenessWrap(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// liveness response
-		if r.URL.Path == "/healthz" {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
-			return
-		}
-		h.ServeHTTP(w, r)
-	})
 }

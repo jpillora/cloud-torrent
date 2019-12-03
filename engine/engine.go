@@ -24,6 +24,7 @@ const (
 
 type Server interface {
 	GetRestAPI() string
+	GetUptime() time.Time
 }
 
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
@@ -350,6 +351,12 @@ func (e *Engine) callDoneCmd(env []string) {
 	if e.config.DoneCmd == "" {
 		return
 	}
+
+	if time.Since(e.cldServer.GetUptime()) < time.Minute {
+		log.Println("[DoneCmd] DoneCmd called within a minute since started, skiping")
+		return
+	}
+
 	cmd := exec.Command(e.config.DoneCmd)
 	cmd.Env = env
 	log.Printf("[DoneCmd] [%s] environ:%v", e.config.DoneCmd, cmd.Env)
