@@ -1,5 +1,16 @@
 <form ng-show="edit" class="ui segment edit form">
   <h4 class="ui dividing header">Configuration</h4>
+  <div class="buttons">
+    <div class="ui blue button" ng-class="{loading: apiing}" ng-click="submitConfig()">
+      Save
+    </div>
+    <div class="ui grey button" ng-click="toggle()">
+      Cancel
+    </div>
+  </div>
+  <div class="ui horizontal divider">
+    Configuration
+  </div>
   <div class="field" ng-if="state.Config !== undefined" ng-repeat="k in configOrderdKey"
     ng-init="type = inputType(k, state.Config[k])">
     <div ng-if="type == 'check'">
@@ -19,6 +30,9 @@
       </label>
       <textarea ng-model="state.Config[k]"></textarea>
     </div>
+  </div>
+  <div class="ui horizontal divider">
+    Configuration
   </div>
   <div class="buttons">
     <div class="ui blue button" ng-class="{loading: apiing}" ng-click="submitConfig()">
