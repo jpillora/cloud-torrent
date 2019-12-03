@@ -1,5 +1,4 @@
 #!/bin/bash
-
 __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd ${__dir}
 GITVER=$(git describe --tags)

@@ -3,7 +3,5 @@ downloads
 torrents
 cloud-torrent*
 tmp/
-dev.sh
 .vscode
-*.yml
 .torrent.bolt.db
