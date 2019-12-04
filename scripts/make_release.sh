@@ -39,6 +39,14 @@ if [[ -z $ARCH ]]; then
   ARCH=$(go env GOARCH)
 fi
 
+pushd $__dir/../static
+if ! git diff-index --quiet HEAD . ; then
+  echo "Warning: static change and not commited"
+  exit 1
+fi
+sh generate.sh
+popd
+
 pushd $__dir/..
 BINFILE=${BIN}_${OS}_${ARCH}${SUFFIX} 
 rm -fv ${BIN}_*
