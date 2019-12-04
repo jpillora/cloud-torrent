@@ -1,8 +1,6 @@
 package server
 
 import (
-	"bufio"
-	"bytes"
 	"compress/gzip"
 	"crypto/tls"
 	"encoding/json"
@@ -118,6 +116,8 @@ func (s *Server) Run(version string) error {
 	s.files = http.HandlerFunc(s.serveFiles)
 	s.static = ctstatic.FileSystemHandler()
 	s.rssh = http.HandlerFunc(s.serveRSS)
+
+	//scraper
 	s.scraper = &scraper.Handler{
 		Log: s.Debug, Debug: s.Debug,
 		Headers: map[string]string{
@@ -128,11 +128,9 @@ func (s *Server) Run(version string) error {
 	if err := s.scraper.LoadConfig(defaultSearchConfig); err != nil {
 		log.Fatal(err)
 	}
-	//scraper
 	s.state.SearchProviders = s.scraper.Config //share scraper config
-	go s.fetchSearchConfig()
-
 	s.scraperh = http.StripPrefix("/search", s.scraper)
+
 	//torrent engine
 	s.engine = engine.New(s)
 
@@ -169,110 +167,26 @@ func (s *Server) Run(version string) error {
 		return err
 	}
 
-	s.state.Config = c
-
 	// engine configure
+	s.state.Config = c
 	if err := s.engine.Configure(s.state.Config); err != nil {
 		return err
 	}
-
 	s.state.Config.SaveConfigFile(s.ConfigPath)
+	log.Printf("Read Config: %#v\n", c)
+
+	s.backgroundRoutines()
 	s.torrentWatcher()
 
-	log.Printf("Read Config: %#v\n", c)
-	//poll torrents and files
-	go func() {
-		for {
-			s.state.Lock()
-			s.state.Torrents = s.engine.GetTorrents()
-			s.state.Downloads = s.listFiles()
-			s.state.Unlock()
-			s.state.Push()
-			time.Sleep(3 * time.Second)
-		}
-	}()
-	// slow update on debug info
-	go func() {
-		var sBuf bytes.Buffer
-		sWriter := bufio.NewWriter(&sBuf)
-		for {
-			time.Sleep(30 * time.Second)
-			sBuf.Reset()
-			s.engine.WriteStauts(sWriter)
-			s.state.Lock()
-			s.state.EngineStatus = sBuf.String()
-			s.state.Unlock()
-			s.state.Push()
-		}
-	}()
-	//start collecting stats
-	go func() {
-		for {
-			c := s.engine.Config()
-			s.state.Stats.System.loadStats(c.DownloadDirectory)
-			time.Sleep(5 * time.Second)
-		}
-	}()
-	go func() {
-		for {
-			s.updateRSS()
-			time.Sleep(30 * time.Minute)
-		}
-	}()
-
-	go func() {
-		s.engine.UpdateTrackers()
-
-		// restore saved torrent tasks
-		tors, _ := filepath.Glob(filepath.Join(c.WatchDirectory, "*.torrent"))
-		for _, t := range tors {
-			if err := s.engine.NewFileTorrent(t); err == nil {
-				if strings.HasPrefix(filepath.Base(t), cacheSavedPrefix) {
-					log.Printf("Inital Task Restored: %s \n", t)
-				} else {
-					log.Printf("Inital Task: added %s, file removed\n", t)
-					os.Remove(t)
-				}
-			} else {
-				log.Printf("Inital Task: fail to add %s, ERR:%#v\n", t, err)
-			}
-		}
-
-		// restore saved magnet tasks
-		infos, _ := filepath.Glob(filepath.Join(c.WatchDirectory, "*.info"))
-		for _, i := range infos {
-			fn := filepath.Base(i)
-			if strings.HasPrefix(fn, cacheSavedPrefix) && len(fn) == 59 {
-				mag, err := ioutil.ReadFile(i)
-				if err != nil {
-					continue
-				}
-				if err := s.engine.NewMagnet(string(mag)); err == nil {
-					log.Printf("Inital Task Restored: %s \n", fn)
-				} else {
-					log.Printf("Inital Task: fail to add %s, ERR:%#v\n", fn, err)
-				}
-			}
-		}
-	}()
-
-	host := s.Host
-	if host == "" {
-		host = "0.0.0.0"
-	}
-	s.mainAddr = fmt.Sprintf("%s:%d", host, s.Port)
+	s.mainAddr = fmt.Sprintf("%s:%d", s.Host, s.Port)
 	proto := "http"
 	if isTLS {
 		proto += "s"
 	}
 	if s.Open {
-		openhost := host
-		if openhost == "0.0.0.0" {
-			openhost = "localhost"
-		}
 		go func() {
 			time.Sleep(1 * time.Second)
-			open.Run(fmt.Sprintf("%s://%s:%d", proto, openhost, s.Port))
+			open.Run(fmt.Sprintf("%s://localhost:%d", proto, s.Port))
 		}()
 	}
 
@@ -310,7 +224,6 @@ func (s *Server) Run(version string) error {
 	if s.Log {
 		h = requestlog.Wrap(h)
 	}
-	log.Printf("Listening at %s://%s", proto, s.mainAddr)
 	//serve!
 	server := http.Server{
 		//disable http2 due to velox bug
@@ -320,6 +233,11 @@ func (s *Server) Run(version string) error {
 		//handler stack
 		Handler: h,
 	}
+	listenLog := "0.0.0.0" + s.mainAddr
+	if !strings.HasPrefix(s.mainAddr, ":") {
+		listenLog = s.mainAddr
+	}
+	log.Printf("Listening at %s://%s", proto, listenLog)
 	if isTLS {
 		return server.ListenAndServeTLS(s.CertPath, s.KeyPath)
 	}
@@ -338,59 +256,5 @@ func (s *Server) normlizeConfigDir(c *engine.Config) error {
 		return fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
 	}
 	c.WatchDirectory = wdir
-	return nil
-}
-
-func (s *Server) torrentWatcher() error {
-
-	if s.watcher != nil {
-		log.Print("Torrent Watcher: close")
-		s.watcher.Close()
-		s.watcher = nil
-	}
-
-	if w, err := os.Stat(s.state.Config.WatchDirectory); err == nil && !w.IsDir() {
-		return fmt.Errorf("[Watcher] %s is not dir", s.state.Config.WatchDirectory)
-	}
-
-	log.Printf("Torrent Watcher: watching torrent file in %s", s.state.Config.WatchDirectory)
-	w := watcher.New()
-	w.SetMaxEvents(10)
-	w.FilterOps(watcher.Create)
-
-	go func() {
-		for {
-			select {
-			case event := <-w.Event:
-				if event.IsDir() {
-					continue
-				}
-				// skip auto saved torrent
-				if strings.HasPrefix(event.Name(), cacheSavedPrefix) {
-					continue
-				}
-				if strings.HasSuffix(event.Name(), ".torrent") {
-					if err := s.engine.NewFileTorrent(event.Path); err == nil {
-						log.Printf("Torrent Watcher: added %s, file removed\n", event.Name())
-						os.Remove(event.Path)
-					} else {
-						log.Printf("Torrent Watcher: fail to add %s, ERR:%#v\n", event.Name(), err)
-					}
-				}
-			case err := <-w.Error:
-				log.Print(err)
-			case <-w.Closed:
-				return
-			}
-		}
-	}()
-
-	// Watch this folder for changes.
-	if err := w.Add(s.state.Config.WatchDirectory); err != nil {
-		return err
-	}
-
-	s.watcher = w
-	go w.Start(time.Second * 5)
 	return nil
 }
