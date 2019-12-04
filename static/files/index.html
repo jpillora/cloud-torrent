@@ -37,7 +37,8 @@
 			<div class="status">
 				<i ng-show="request.count > 0" class="ui circular loading repeat icon"></i>
 				<i ng-click="$root.omni.get_rss(false)" class="ui circular rss square icon"
-					ng-class="{orange: state.LatestRSSGuid != storage.tcRSSGUID }" title="New RSS Item"></i>
+					ng-class="{orange: state.LatestRSSGuid != storage.tcRSSGUID, green: $root.omni.mode.rss }"
+					title="New RSS Item"></i>
 				<i ng-click="$root.config.edit = !$root.config.edit;" ng-class="{green: $root.config.edit}"
 					title="Edit Config" class="ui circular server icon"></i>
 				<i ng-click="$root.omni.edit = !$root.omni.edit;" ng-class="{green: $root.omni.edit}"
