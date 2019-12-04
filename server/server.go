@@ -281,7 +281,7 @@ func (s *Server) Run(version string) error {
 		go func() {
 			restServer := http.Server{
 				Addr:    s.RestAPI,
-				Handler: requestlog.Wrap(http.Handler(http.HandlerFunc(s.resstAPIhandle))),
+				Handler: requestlog.Wrap(http.Handler(http.HandlerFunc(s.restAPIhandle))),
 			}
 			log.Println("[RestAPI] listening at ", s.RestAPI)
 			if err := restServer.ListenAndServe(); err != nil {

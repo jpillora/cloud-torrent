@@ -57,7 +57,7 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	s.files.ServeHTTP(w, r)
 }
 
-func (s *Server) resstAPIhandle(w http.ResponseWriter, r *http.Request) {
+func (s *Server) restAPIhandle(w http.ResponseWriter, r *http.Request) {
 	ret := "Bad Request"
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		err := s.apiPOST(r)
