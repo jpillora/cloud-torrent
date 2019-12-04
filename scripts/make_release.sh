@@ -56,6 +56,8 @@ if [[ ! -f ${BINFILE}${EXESUFFIX} ]]; then
   exit 1
 fi
 
+git co HEAD -- static/files.go
+
 if [[ ! -z $PKGCMD ]]; then
   ${PKGCMD} -v -9 -k ${BINFILE}${EXESUFFIX}
 fi
