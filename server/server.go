@@ -72,6 +72,7 @@ type Server struct {
 		Config          engine.Config
 		SearchProviders scraper.Config
 		Downloads       *fsNode
+		rssMark         map[string]string
 		rssCache        []*gofeed.Item
 		LatestRSSGuid   string
 		Torrents        map[string]*engine.Torrent
@@ -110,6 +111,7 @@ func (s *Server) Run(version string) error {
 	s.state.Stats.System.pusher = velox.Pusher(&s.state)
 	//init maps
 	s.state.Users = make(map[string]string)
+	s.state.rssMark = make(map[string]string)
 
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
 	s.files = http.HandlerFunc(s.serveFiles)
