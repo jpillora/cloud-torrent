@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -15,35 +16,49 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 
 	"github.com/jpillora/cloud-torrent/engine"
+	ctstatic "github.com/jpillora/cloud-torrent/static"
 )
 
 var (
-	errTaskAdded  = errors.New("REDIRECT TORRENT HOME")
 	errInvalidReq = errors.New("INVALID REQUEST")
 )
 
-func (s *Server) api(r *http.Request) error {
+func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) {
+
+	defer r.Body.Close()
+	action := strings.TrimPrefix(r.URL.Path, "/api/")
+
+	// adds magnet by GET: /api/magnet?m=...
+	if action == "magnet" {
+		c, err := ctstatic.ReadAll("template/magadded.html")
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		tmpl := template.Must(template.New("tpl").Parse(string(c)))
+		tdata := struct {
+			HasError bool
+			Error    string
+			Magnet   string
+		}{}
+
+		m := r.URL.Query().Get("m")
+		if err := s.engine.NewMagnet(m); err != nil {
+			tdata.HasError = true
+			tdata.Error = err.Error()
+		}
+
+		tdata.Magnet = m
+		tmpl.Execute(w, tdata)
+	}
+
+	return
+}
+
+func (s *Server) apiPOST(r *http.Request) error {
 	defer r.Body.Close()
 
 	action := strings.TrimPrefix(r.URL.Path, "/api/")
-
-	if r.Method == "GET" {
-		// adds magnet by GET: /api/magnet?m=...
-		if action == "magnet" {
-			m := r.URL.Query().Get("m")
-			if strings.HasPrefix(m, "magnet:?") {
-				if err := s.engine.NewMagnet(m); err != nil {
-					return fmt.Errorf("Magnet error: %w", err)
-				}
-			} else {
-				return fmt.Errorf("Invalid Magnet link: %s", m)
-			}
-			return errTaskAdded
-		}
-
-		return errors.New("Invalid path")
-	}
-
 	if r.Method != "POST" {
 		return fmt.Errorf("Invalid request method (expecting POST)")
 	}

@@ -39,22 +39,19 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	}
 	//api call
 	if strings.HasPrefix(r.URL.Path, "/api/") {
-		//only pass request in, expect error out
-		err := s.api(r)
-		if err == nil {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
-			return
-		}
-		switch err {
-		case errTaskAdded:
-			// internal rewrite to show status page
-			r.URL.Path = "/sub/magadded.html"
-		default:
+		if r.Method == "POST" {
+			err := s.apiPOST(r)
+			if err == nil {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("OK"))
+				return
+			}
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
 			return
 		}
+		s.apiGET(w, r)
+		return
 	}
 	//no match, assume static file
 	s.files.ServeHTTP(w, r)
@@ -63,13 +60,8 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 func (s *Server) resstAPIhandle(w http.ResponseWriter, r *http.Request) {
 	ret := "Bad Request"
 	if strings.HasPrefix(r.URL.Path, "/api/") {
-		err := s.api(r)
+		err := s.apiPOST(r)
 		if err == nil {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
-			return
-		}
-		if err == errTaskAdded {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
 			return
