@@ -1,5 +1,5 @@
 /* globals app,window */
-app.controller("OmniController", function(
+app.controller("OmniController", function (
   $scope,
   $rootScope,
   storage,
@@ -18,12 +18,12 @@ app.controller("OmniController", function(
     trackers: [{ v: "" }]
   };
   $scope.providers = {};
-  $scope.$watch("inputs.provider", function(p) {
+  $scope.$watch("inputs.provider", function (p) {
     if (p) storage.tcProvider = p;
     $scope.parse();
   });
   //if unset, set to first provider
-  $rootScope.$watch("state.SearchProviders", function(searchProviders) {
+  $rootScope.$watch("state.SearchProviders", function (searchProviders) {
     //remove last set
     if (!searchProviders) return;
     //filter
@@ -34,11 +34,11 @@ app.controller("OmniController", function(
     $scope.parse();
   });
 
-  var parseTorrent = function() {
+  var parseTorrent = function () {
     $scope.mode.torrent = true;
   };
 
-  var parseMagnet = function(params) {
+  var parseMagnet = function (params) {
     $scope.mode.magnet = true;
     var m = window.queryString.parse(params);
 
@@ -64,12 +64,12 @@ app.controller("OmniController", function(
     $scope.magnet.trackers.push({ v: "" });
   };
 
-  var parseSearch = function() {
+  var parseSearch = function () {
     $scope.mode.search = true;
     $scope.results.length = 0;
   };
 
-  $scope.clearSearch = function(){
+  $scope.clearSearch = function () {
     $scope.omnierr = null;
     $rootScope.err = null;
     $scope.inputs.omni = "";
@@ -77,7 +77,7 @@ app.controller("OmniController", function(
     $scope.mode.rss = false;
   };
 
-  $scope.parse = function() {
+  $scope.parse = function () {
     storage.tcOmni = $scope.inputs.omni;
     $scope.omnierr = null;
     $rootScope.err = null;
@@ -106,7 +106,7 @@ app.controller("OmniController", function(
   };
   $scope.parse();
 
-  var magnetURI = function(name, infohash, trackers) {
+  var magnetURI = function (name, infohash, trackers) {
     return (
       "magnet:?" +
       "xt=urn:btih:" +
@@ -115,10 +115,10 @@ app.controller("OmniController", function(
       "dn=" +
       (name || "").replace(/\W/g, "").replace(/\s+/g, "+") +
       (trackers || [])
-        .filter(function(t) {
+        .filter(function (t) {
           return !!t.v;
         })
-        .map(function(t) {
+        .map(function (t) {
           return "&tr=" + encodeURIComponent(t.v);
         })
         .join("")
@@ -126,25 +126,25 @@ app.controller("OmniController", function(
   };
 
   //get urls from the comma separated list
-  var parseTrackers =  function (result) {
+  var parseTrackers = function (result) {
     var trackers = (result.tracker || "")
       .split(",")
-      .filter(function(s) {
+      .filter(function (s) {
         return /^(http|udp):\/\//.test(s);
       })
-      .map(function(v) {
+      .map(function (v) {
         return { v: v };
       });
     return trackers
   }
 
-  $scope.parseMagnetString = function() {
+  $scope.parseMagnetString = function () {
     $scope.omnierr = null;
     if (!/^[A-Za-z0-9]+$/.test($scope.magnet.infohash)) {
       $scope.omnierr = "Invalid Info Hash";
       return;
     }
-    for (var i = 0; i < $scope.magnet.trackers.length; )
+    for (var i = 0; i < $scope.magnet.trackers.length;)
       if (!$scope.magnet.trackers[i].v) $scope.magnet.trackers.splice(i, 1);
       else i++;
     $scope.inputs.omni = magnetURI(
@@ -155,7 +155,7 @@ app.controller("OmniController", function(
     $scope.magnet.trackers.push({ v: "" });
   };
 
-  $scope.submitOmni = function() {
+  $scope.submitOmni = function () {
     if ($scope.mode.search) {
       $scope.submitSearch();
     } else {
@@ -163,7 +163,7 @@ app.controller("OmniController", function(
     }
   };
 
-  $scope.submitTorrent = function() {
+  $scope.submitTorrent = function () {
     if ($scope.mode.torrent) {
       api.url($scope.inputs.omni);
     } else if ($scope.mode.magnet) {
@@ -174,7 +174,7 @@ app.controller("OmniController", function(
     $rootScope.set_torrent_expanded(true);
   };
 
-  $scope.submitSearch = function() {
+  $scope.submitSearch = function () {
     //lookup provider's origin
     var provider = $scope.state.SearchProviders[$scope.inputs.provider];
     if (!provider) return;
@@ -182,7 +182,7 @@ app.controller("OmniController", function(
 
     search
       .all($scope.inputs.provider, $scope.inputs.omni, $scope.page)
-      .success(function(results) {
+      .success(function (results) {
         if (!results || results.length === 0) {
           $scope.noResults = true;
           $scope.hasMore = false;
@@ -208,14 +208,14 @@ app.controller("OmniController", function(
       });
   };
 
-  $scope.submitSearchItem = function(result) {
+  $scope.submitSearchItem = function (result) {
     //if search item has magnet/torrent, download now!
     if (result.magnet) {
       api.magnet(result.magnet);
       return;
     } else if (result.infohash) {
-        api.magnet(magnetURI(result.name, result.infohash, parseTrackers(result)));
-        return;
+      api.magnet(magnetURI(result.name, result.infohash, parseTrackers(result)));
+      return;
     } else if (result.torrent) {
       api.url(result.torrent);
       return;
@@ -224,7 +224,7 @@ app.controller("OmniController", function(
     if (!result.path) return ($scope.omnierr = "No item URL found");
 
     search.one($scope.inputs.provider, result.path).then(
-      function(resp) {
+      function (resp) {
         var data = resp.data;
         if (!data) return ($scope.omnierr = "No response");
         if (data.torrent) return api.url(data.torrent);
@@ -239,38 +239,39 @@ app.controller("OmniController", function(
         }
         api.magnet(magnet);
       },
-      function(err) {
+      function (err) {
         $scope.omnierr = err;
       }
     );
     $rootScope.set_torrent_expanded(true);
   };
 
-  $scope.get_rss = function(update) {
-    if($rootScope.searching) {
+  $scope.get_rss = function (update) {
+    if ($rootScope.searching) {
       return
     }
+    storage.tcRSSGUID = $rootScope.state.LatestRSSGuid || "";
     $scope.omnierr = $rootScope.err = null;
     $scope.results.length = 0;
-    if($scope.mode.rss && !update) {
+    if ($scope.mode.rss && !update) {
       $scope.mode.rss = false;
       return
     }
     $scope.parse();
     $scope.mode.search = true;
     $scope.mode.rss = true;
-    rss.getrss(update).success(function(results) {
-        $scope.hasMore = false;
-        if (!results || results.length === 0) {
-          $scope.noResults = true;
-          return;
-        }
-        for (var i = 0; i < results.length; i++) {
-          var r = results[i];
-          r.seeds = $rootScope.ago(r.published);
-          $scope.results.push(r);
-        }
-      });
+    rss.getrss(update).success(function (results) {
+      $scope.hasMore = false;
+      if (!results || results.length === 0) {
+        $scope.noResults = true;
+        return;
+      }
+      for (var i = 0; i < results.length; i++) {
+        var r = results[i];
+        r.seeds = $rootScope.ago(r.published);
+        $scope.results.push(r);
+      }
+    });
   };
 
   // $var uploadFile = function(files) {

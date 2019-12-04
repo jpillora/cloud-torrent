@@ -29,23 +29,20 @@
 		<!-- TITLE ===================== -->
 		<div class="title">
 			<h2>
-				<a rel="noreferrer" href="https://github.com/boypt/simple-torrent" target="_blank" ng-init="logoHover = false"
-					ng-mouseover="logoHover = true" ng-mouseleave="logoHover = false">
+				<a rel="noreferrer" href="https://github.com/boypt/simple-torrent" target="_blank"
+					ng-init="logoHover = false" ng-mouseover="logoHover = true" ng-mouseleave="logoHover = false">
 					<i class="blue icon" ng-class="{cloud:!logoHover, github: logoHover}"></i> {{ state.Stats.Title }}
 				</a>
 			</h2>
 			<div class="status">
 				<i ng-show="request.count > 0" class="ui circular loading repeat icon"></i>
 				<i ng-click="$root.omni.get_rss(false)" class="ui circular rss square icon"
-				 	ng-class="{orange: state.RSSNewCount > 0 && !omni.mode.rss}" title="New RSS Item: {{state.RSSNewCount}}"></i>
+					ng-class="{orange: state.LatestRSSGuid != storage.tcRSSGUID }" title="New RSS Item"></i>
 				<i ng-click="$root.config.edit = !$root.config.edit;" ng-class="{green: $root.config.edit}"
-					title="Edit Config"
-					class="ui circular server icon"></i>
+					title="Edit Config" class="ui circular server icon"></i>
 				<i ng-click="$root.omni.edit = !$root.omni.edit;" ng-class="{green: $root.omni.edit}"
-					title="Edit Magnet/Torrent"
-					class="ui circular magnet icon"></i>
-				<i class="ui circular lightning icon"
-					title="Connecting Status"
+					title="Edit Magnet/Torrent" class="ui circular magnet icon"></i>
+				<i class="ui circular lightning icon" title="Connecting Status"
 					ng-class="{ green: connected, red: !connected }"></i>
 			</div>
 		</div>
@@ -139,4 +136,5 @@
 	<script src="js/semantic-checkbox.js?CLDVER"></script>
 	<script src="js/run.js?CLDVER"></script>
 </body>
+
 </html>

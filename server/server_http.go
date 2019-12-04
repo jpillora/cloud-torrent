@@ -46,8 +46,7 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte("OK"))
 				return
 			}
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		s.apiGET(w, r)
@@ -68,8 +67,7 @@ func (s *Server) restAPIhandle(w http.ResponseWriter, r *http.Request) {
 		}
 		ret = err.Error()
 	}
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte(ret))
+	http.Error(w, ret, http.StatusBadRequest)
 }
 
 func livenessWrap(h http.Handler) http.Handler {
