@@ -51,6 +51,9 @@ func (s *Server) updateRSS() {
 
 		s.state.Lock()
 		s.state.rssCache = append(feed.Items, s.state.rssCache...)
+		if len(s.state.rssCache) > 200 {
+			s.state.rssCache = s.state.rssCache[:200]
+		}
 		s.state.LatestRSSGuid = s.state.rssCache[0].GUID
 		s.state.Unlock()
 	}
