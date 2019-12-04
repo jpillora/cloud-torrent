@@ -50,11 +50,23 @@ func (s *Server) updateRSS() {
 		})
 
 		s.state.Lock()
-		s.state.rssCache = append(feed.Items, s.state.rssCache...)
+		var lastIdx int
+		for i, item := range feed.Items {
+			if item.GUID == s.state.LatestRSSGuid {
+				lastIdx = i
+				break
+			}
+		}
+
+		if lastIdx > 0 {
+			log.Printf("feed updated with %d new items", lastIdx)
+			s.state.rssCache = append(feed.Items[:lastIdx], s.state.rssCache...)
+			s.state.LatestRSSGuid = s.state.rssCache[0].GUID
+		}
+
 		if len(s.state.rssCache) > 200 {
 			s.state.rssCache = s.state.rssCache[:200]
 		}
-		s.state.LatestRSSGuid = s.state.rssCache[0].GUID
 		s.state.Unlock()
 	}
 }
