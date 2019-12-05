@@ -93,7 +93,7 @@ func (e *Engine) Configure(c Config) error {
 			max--
 			e.client, err = torrent.NewClient(tc)
 			if err == nil {
-				return nil
+				break
 			}
 			log.Printf("[Configure] error %s\n", err)
 			time.Sleep(time.Second * 3)
@@ -255,6 +255,9 @@ func (e *Engine) getOpenTorrent(infohash string) (*Torrent, error) {
 }
 
 func (e *Engine) StartTorrent(infohash string) error {
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	log.Println("StartTorrent ", infohash)
 	t, err := e.getOpenTorrent(infohash)
 	if err != nil {
 		return err
@@ -275,6 +278,9 @@ func (e *Engine) StartTorrent(infohash string) error {
 }
 
 func (e *Engine) StopTorrent(infohash string) error {
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	log.Println("StopTorrent ", infohash)
 	t, err := e.getTorrent(infohash)
 	if err != nil {
 		return err
@@ -298,7 +304,7 @@ func (e *Engine) StopTorrent(infohash string) error {
 func (e *Engine) DeleteTorrent(infohash string) error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
-
+	log.Println("DeleteTorrent ", infohash)
 	t, err := e.getTorrent(infohash)
 	if err != nil {
 		return err
