@@ -39,7 +39,7 @@ type Engine struct {
 }
 
 func New(s Server) *Engine {
-	return &Engine{cldServer: s}
+	return &Engine{ts: make(map[string]*Torrent), cldServer: s}
 }
 
 func (e *Engine) Config() Config {
@@ -59,6 +59,7 @@ func (e *Engine) Configure(c Config) error {
 		e.client.Close()
 		log.Println("Configure: old client closed")
 		e.client = nil
+		e.ts = make(map[string]*Torrent)
 		time.Sleep(3 * time.Second)
 	}
 	if c.IncomingPort <= 0 {
@@ -104,7 +105,6 @@ func (e *Engine) Configure(c Config) error {
 
 	e.cacheDir = c.WatchDirectory
 	e.config = c
-	e.ts = make(map[string]*Torrent)
 	return nil
 }
 
