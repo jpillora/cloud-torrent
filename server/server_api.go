@@ -104,10 +104,9 @@ func (s *Server) apiPOST(r *http.Request) error {
 	//interface with engine
 	switch action {
 	case "configure":
-		s.apiConfigure(data)
+		return s.apiConfigure(data)
 	case "magnet":
-		uri := string(data)
-		if err := s.engine.NewMagnet(uri); err != nil {
+		if err := s.engine.NewMagnet(string(data)); err != nil {
 			return fmt.Errorf("Magnet error: %w", err)
 		}
 	case "torrent":
@@ -207,6 +206,9 @@ func (s *Server) apiConfigure(data []byte) error {
 		// finally to reconfigure the engine
 		if status&engine.NeedEngineReConfig > 0 {
 			if err := s.engine.Configure(s.state.Config); err != nil {
+				return err
+			}
+			if err := s.RestoreTorrent(); err != nil {
 				return err
 			}
 			log.Printf("[api] torrent engine reconfigred")

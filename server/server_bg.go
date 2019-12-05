@@ -21,12 +21,12 @@ func (s *Server) backgroundRoutines() {
 	//poll torrents and files
 	go func() {
 		for {
+			time.Sleep(3 * time.Second)
 			s.state.Lock()
 			s.state.Torrents = s.engine.GetTorrents()
 			s.state.Downloads = s.listFiles()
 			s.state.Unlock()
 			s.state.Push()
-			time.Sleep(3 * time.Second)
 		}
 	}()
 	// slow update on debug info
@@ -58,48 +58,49 @@ func (s *Server) backgroundRoutines() {
 		}
 	}()
 
-	go func() {
-		s.engine.UpdateTrackers()
+	go s.engine.UpdateTrackers()
+	go s.RestoreTorrent()
+}
 
-		if w, err := os.Stat(s.state.Config.WatchDirectory); os.IsNotExist(err) || (err == nil && !w.IsDir()) {
-			log.Printf("[Watcher] %s is not dir", s.state.Config.WatchDirectory)
-			return
-		}
+func (s *Server) RestoreTorrent() error {
+	if w, err := os.Stat(s.state.Config.WatchDirectory); os.IsNotExist(err) || (err == nil && !w.IsDir()) {
+		log.Printf("[Watcher] %s is not dir", s.state.Config.WatchDirectory)
+		return err
+	}
 
-		time.Sleep(time.Second * 10)
 
-		// restore saved torrent tasks
-		tors, _ := filepath.Glob(filepath.Join(s.state.Config.WatchDirectory, "*.torrent"))
-		for _, t := range tors {
-			if err := s.engine.NewFileTorrent(t); err == nil {
-				if strings.HasPrefix(filepath.Base(t), cacheSavedPrefix) {
-					log.Printf("Inital Task Restored: %s \n", t)
-				} else {
-					log.Printf("Inital Task: added %s, file removed\n", t)
-					os.Remove(t)
-				}
+	// restore saved torrent tasks
+	tors, _ := filepath.Glob(filepath.Join(s.state.Config.WatchDirectory, "*.torrent"))
+	for _, t := range tors {
+		if err := s.engine.NewFileTorrent(t); err == nil {
+			if strings.HasPrefix(filepath.Base(t), cacheSavedPrefix) {
+				log.Printf("Inital Task Restored: %s \n", t)
 			} else {
-				log.Printf("Inital Task: fail to add %s, ERR:%#v\n", t, err)
+				log.Printf("Inital Task: added %s, file removed\n", t)
+				os.Remove(t)
 			}
+		} else {
+			log.Printf("Inital Task: fail to add %s, ERR:%#v\n", t, err)
 		}
+	}
 
-		// restore saved magnet tasks
-		infos, _ := filepath.Glob(filepath.Join(s.state.Config.WatchDirectory, "*.info"))
-		for _, i := range infos {
-			fn := filepath.Base(i)
-			if strings.HasPrefix(fn, cacheSavedPrefix) && len(fn) == 59 {
-				mag, err := ioutil.ReadFile(i)
-				if err != nil {
-					continue
-				}
-				if err := s.engine.NewMagnet(string(mag)); err == nil {
-					log.Printf("Inital Task Restored: %s \n", fn)
-				} else {
-					log.Printf("Inital Task: fail to add %s, ERR:%#v\n", fn, err)
-				}
+	// restore saved magnet tasks
+	infos, _ := filepath.Glob(filepath.Join(s.state.Config.WatchDirectory, "*.info"))
+	for _, i := range infos {
+		fn := filepath.Base(i)
+		if strings.HasPrefix(fn, cacheSavedPrefix) && len(fn) == 59 {
+			mag, err := ioutil.ReadFile(i)
+			if err != nil {
+				continue
+			}
+			if err := s.engine.NewMagnet(string(mag)); err == nil {
+				log.Printf("Inital Task Restored: %s \n", fn)
+			} else {
+				log.Printf("Inital Task: fail to add %s, ERR:%#v\n", fn, err)
 			}
 		}
-	}()
+	}
+	return nil
 }
 
 func (s *Server) torrentWatcher() error {

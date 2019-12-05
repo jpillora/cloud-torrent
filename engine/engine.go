@@ -39,7 +39,7 @@ type Engine struct {
 }
 
 func New(s Server) *Engine {
-	return &Engine{ts: map[string]*Torrent{}, cldServer: s}
+	return &Engine{cldServer: s}
 }
 
 func (e *Engine) Config() Config {
@@ -52,9 +52,14 @@ func (e *Engine) SetConfig(c Config) {
 
 func (e *Engine) Configure(c Config) error {
 	//recieve config
+	e.mut.Lock()
+	defer e.mut.Unlock()
+
 	if e.client != nil {
 		e.client.Close()
-		time.Sleep(1 * time.Second)
+		log.Println("Configure: old client closed")
+		e.client = nil
+		time.Sleep(3 * time.Second)
 	}
 	if c.IncomingPort <= 0 {
 		return fmt.Errorf("Invalid incoming port (%d)", c.IncomingPort)
@@ -78,21 +83,36 @@ func (e *Engine) Configure(c Config) error {
 	tc.DisableIPv6 = c.DisableIPv6
 	tc.ProxyURL = c.ProxyURL
 
-	client, err := torrent.NewClient(tc)
-	if err != nil {
-		return err
+	log.Println("Configure: new config generated")
+
+	{
+		// need to retry while creating client,
+		// wait max for 3 * 10 seconds
+		var err error
+		max := 10
+		for max > 0 {
+			max--
+			e.client, err = torrent.NewClient(tc)
+			if err == nil {
+				return nil
+			}
+			log.Printf("[Configure] error %s\n", err)
+			time.Sleep(time.Second * 3)
+		}
+		if err != nil {
+			return err
+		}
 	}
-	e.mut.Lock()
+
 	e.cacheDir = c.WatchDirectory
 	e.config = c
-	e.client = client
-	e.mut.Unlock()
-	//reset
-	e.GetTorrents()
+	e.ts = make(map[string]*Torrent)
 	return nil
 }
 
 func (e *Engine) NewMagnet(magnetURI string) error {
+	e.mut.Lock()
+	defer e.mut.Unlock()
 	tt, err := e.client.AddMagnet(magnetURI)
 	if err != nil {
 		return err
@@ -103,6 +123,8 @@ func (e *Engine) NewMagnet(magnetURI string) error {
 }
 
 func (e *Engine) NewTorrent(spec *torrent.TorrentSpec) error {
+	e.mut.Lock()
+	defer e.mut.Unlock()
 	tt, _, err := e.client.AddTorrentSpec(spec)
 	if err != nil {
 		return err
@@ -138,8 +160,7 @@ func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 	return nil
 }
 
-//GetTorrents moves torrents out of the anacrolix/torrent
-//and into the local cache
+//GetTorrents moves torrents out of the anacrolix/torrent and into the local cache
 func (e *Engine) GetTorrents() map[string]*Torrent {
 	e.mut.Lock()
 	defer e.mut.Unlock()
@@ -271,6 +292,9 @@ func (e *Engine) StopTorrent(infohash string) error {
 }
 
 func (e *Engine) DeleteTorrent(infohash string) error {
+	e.mut.Lock()
+	defer e.mut.Unlock()
+
 	t, err := e.getTorrent(infohash)
 	if err != nil {
 		return err
@@ -454,5 +478,9 @@ func (e *Engine) removeTorrentCache(infohash string) {
 }
 
 func (e *Engine) WriteStauts(_w io.Writer) {
-	e.client.WriteStatus(_w)
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	if e.client != nil {
+		e.client.WriteStatus(_w)
+	}
 }
