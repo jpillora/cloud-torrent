@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
@@ -191,7 +192,7 @@ func (s *Server) apiConfigure(data []byte) error {
 			ts := s.engine.GetTorrents()
 			for _, tt := range ts {
 				if tt.Started {
-					return errors.New("All Torrent must be STOPPED to reconfigure")
+					return errors.New("All Torrents must be STOPPED to reconfigure")
 				}
 			}
 		}
@@ -206,6 +207,13 @@ func (s *Server) apiConfigure(data []byte) error {
 		// finally to reconfigure the engine
 		if status&engine.NeedEngineReConfig > 0 {
 			if err := s.engine.Configure(s.state.Config); err != nil {
+				if !s.engine.IsConfigred() {
+					go func() {
+						log.Println("[apiConfigure] serious error occured while reconfigured, will exit in 10s")
+						time.Sleep(time.Second * 10)
+						log.Fatalln(err)
+					}()
+				}
 				return err
 			}
 			if err := s.RestoreTorrent(); err != nil {

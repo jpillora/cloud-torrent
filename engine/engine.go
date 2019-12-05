@@ -83,8 +83,6 @@ func (e *Engine) Configure(c Config) error {
 	tc.DisableIPv6 = c.DisableIPv6
 	tc.ProxyURL = c.ProxyURL
 
-	log.Println("Configure: new config generated")
-
 	{
 		// need to retry while creating client,
 		// wait max for 3 * 10 seconds
@@ -108,6 +106,12 @@ func (e *Engine) Configure(c Config) error {
 	e.config = c
 	e.ts = make(map[string]*Torrent)
 	return nil
+}
+
+func (e *Engine) IsConfigred() bool {
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	return e.client != nil
 }
 
 func (e *Engine) NewMagnet(magnetURI string) error {
