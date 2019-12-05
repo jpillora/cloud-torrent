@@ -484,6 +484,8 @@ func (e *Engine) removeTorrentCache(infohash string) {
 		fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
 	if err := os.Remove(cacheFilePath); err == nil {
 		log.Printf("removed torrent file %s", infohash)
+	} else {
+		log.Printf("fail to removed torrent file %s, %s", infohash, err)
 	}
 }
 
