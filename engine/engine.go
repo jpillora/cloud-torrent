@@ -114,6 +114,7 @@ func (e *Engine) IsConfigred() bool {
 	return e.client != nil
 }
 
+// NewMagnet -> *Torrent -> newTorrentTask
 func (e *Engine) NewMagnet(magnetURI string) error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
@@ -123,29 +124,31 @@ func (e *Engine) NewMagnet(magnetURI string) error {
 	}
 
 	e.newMagnetCacheFile(magnetURI, tt.InfoHash().HexString())
-	return e.newTorrent(tt)
+	return e.newTorrentTask(tt)
 }
 
-func (e *Engine) NewTorrent(spec *torrent.TorrentSpec) error {
+// NewTorrentBySpec -> *Torrent -> newTorrentTask
+func (e *Engine) NewTorrentBySpec(spec *torrent.TorrentSpec) error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
 	tt, _, err := e.client.AddTorrentSpec(spec)
 	if err != nil {
 		return err
 	}
-	return e.newTorrent(tt)
+	return e.newTorrentTask(tt)
 }
 
-func (e *Engine) NewFileTorrent(path string) error {
+// NewTorrentByFilePath -> NewTorrentBySpec -> *Torrent -> newTorrentTask
+func (e *Engine) NewTorrentByFilePath(path string) error {
 	info, err := metainfo.LoadFromFile(path)
 	if err != nil {
 		return err
 	}
 	spec := torrent.TorrentSpecFromMetaInfo(info)
-	return e.NewTorrent(spec)
+	return e.NewTorrentBySpec(spec)
 }
 
-func (e *Engine) newTorrent(tt *torrent.Torrent) error {
+func (e *Engine) newTorrentTask(tt *torrent.Torrent) error {
 	meta := tt.Metainfo()
 	if len(e.bttracker) > 0 && (e.config.AlwaysAddTrackers || len(meta.AnnounceList) == 0) {
 		log.Printf("[newTorrent] added %d public trackers\n", len(e.bttracker))

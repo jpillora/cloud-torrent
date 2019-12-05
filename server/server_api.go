@@ -93,7 +93,7 @@ func (s *Server) apiPOST(r *http.Request) error {
 			return err
 		}
 		spec := torrent.TorrentSpecFromMetaInfo(info)
-		if err := s.engine.NewTorrent(spec); err != nil {
+		if err := s.engine.NewTorrentBySpec(spec); err != nil {
 			return fmt.Errorf("Torrent error: %w", err)
 		}
 		return nil

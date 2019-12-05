@@ -68,11 +68,10 @@ func (s *Server) RestoreTorrent() error {
 		return err
 	}
 
-
 	// restore saved torrent tasks
 	tors, _ := filepath.Glob(filepath.Join(s.state.Config.WatchDirectory, "*.torrent"))
 	for _, t := range tors {
-		if err := s.engine.NewFileTorrent(t); err == nil {
+		if err := s.engine.NewTorrentByFilePath(t); err == nil {
 			if strings.HasPrefix(filepath.Base(t), cacheSavedPrefix) {
 				log.Printf("Inital Task Restored: %s \n", t)
 			} else {
@@ -132,7 +131,7 @@ func (s *Server) torrentWatcher() error {
 					continue
 				}
 				if strings.HasSuffix(event.Name(), ".torrent") {
-					if err := s.engine.NewFileTorrent(event.Path); err == nil {
+					if err := s.engine.NewTorrentByFilePath(event.Path); err == nil {
 						log.Printf("Torrent Watcher: added %s, file removed\n", event.Name())
 						os.Remove(event.Path)
 					} else {
