@@ -33,6 +33,7 @@ type Engine struct {
 	cldServer    Server
 	cacheDir     string
 	client       *torrent.Client
+	closeSync    chan struct{}
 	config       Config
 	ts           map[string]*Torrent
 	bttracker    []string
@@ -57,6 +58,7 @@ func (e *Engine) Configure(c Config) error {
 
 	if e.client != nil {
 		e.client.Close()
+		close(e.closeSync)
 		log.Println("Configure: old client closed")
 		e.client = nil
 		e.ts = make(map[string]*Torrent)
@@ -103,6 +105,7 @@ func (e *Engine) Configure(c Config) error {
 		}
 	}
 
+	e.closeSync = make(chan struct{})
 	e.cacheDir = c.WatchDirectory
 	e.config = c
 	return nil
@@ -114,31 +117,30 @@ func (e *Engine) IsConfigred() bool {
 	return e.client != nil
 }
 
-// NewMagnet -> *Torrent -> syncTask
+// NewMagnet -> *Torrent -> addTorrentTask
 func (e *Engine) NewMagnet(magnetURI string) error {
 	e.RLock()
-	defer e.RUnlock()
 	tt, err := e.client.AddMagnet(magnetURI)
 	if err != nil {
 		return err
 	}
-
+	e.RUnlock()
 	e.newMagnetCacheFile(magnetURI, tt.InfoHash().HexString())
-	return e.syncTask(tt)
+	return e.addTorrentTask(tt)
 }
 
-// NewTorrentBySpec -> *Torrent -> syncTask
+// NewTorrentBySpec -> *Torrent -> addTorrentTask
 func (e *Engine) NewTorrentBySpec(spec *torrent.TorrentSpec) error {
 	e.RLock()
-	defer e.RUnlock()
 	tt, _, err := e.client.AddTorrentSpec(spec)
 	if err != nil {
 		return err
 	}
-	return e.syncTask(tt)
+	e.RUnlock()
+	return e.addTorrentTask(tt)
 }
 
-// NewTorrentByFilePath -> NewTorrentBySpec -> *Torrent -> syncTask
+// NewTorrentByFilePath -> NewTorrentBySpec
 func (e *Engine) NewTorrentByFilePath(path string) error {
 	info, err := metainfo.LoadFromFile(path)
 	if err != nil {
@@ -148,7 +150,9 @@ func (e *Engine) NewTorrentByFilePath(path string) error {
 	return e.NewTorrentBySpec(spec)
 }
 
-func (e *Engine) syncTask(tt *torrent.Torrent) error {
+// addTorrentTask
+// add the task to local cache object and wait for GotInfo
+func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 	meta := tt.Metainfo()
 	if len(e.bttracker) > 0 && (e.config.AlwaysAddTrackers || len(meta.AnnounceList) == 0) {
 		log.Printf("[newTorrent] added %d public trackers\n", len(e.bttracker))
@@ -156,7 +160,12 @@ func (e *Engine) syncTask(tt *torrent.Torrent) error {
 	}
 	t := e.upsertTorrent(tt)
 	go func() {
-		<-t.t.GotInfo()
+		select {
+		case <-e.closeSync:
+			return
+		case <-t.t.GotInfo():
+		}
+
 		e.removeMagnetCache(t.InfoHash)
 		if e.config.AutoStart {
 			e.StartTorrent(t.InfoHash)
@@ -169,17 +178,30 @@ func (e *Engine) syncTask(tt *torrent.Torrent) error {
 
 //GetTorrents just get the local infohash->Torrent map
 func (e *Engine) GetTorrents() map[string]*Torrent {
+	return e.ts
+}
+
+func (e *Engine) IsTorrentsAllStopped() (stopped bool) {
 	e.RLock()
 	defer e.RUnlock()
-	return e.ts
+	stopped = true
+	for _, t := range e.ts {
+		if t.Started {
+			stopped = false
+			return
+		}
+	}
+	return
 }
 
 // TaskRoutine called by intevaled background goroutine
 // moves torrents out of the anacrolix/torrent and into the local cache
 // and do condition check and actions on them
 func (e *Engine) TaskRoutine() {
-	e.Lock()
-	defer e.Unlock()
+
+	if e.client == nil {
+		return
+	}
 
 	for _, tt := range e.client.Torrents() {
 
@@ -230,13 +252,17 @@ func genEnv(dir, path, hash, ttype, api string, size int64) []string {
 
 func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
 	ih := tt.InfoHash().HexString()
+	e.RLock()
 	torrent, ok := e.ts[ih]
+	e.RUnlock()
 	if !ok {
 		torrent = &Torrent{
 			InfoHash: ih,
 			AddedAt:  time.Now(),
 		}
+		e.Lock()
 		e.ts[ih] = torrent
+		e.Unlock()
 	}
 	//update torrent fields using underlying torrent
 	torrent.Update(tt)
@@ -244,6 +270,8 @@ func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
 }
 
 func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
+	e.RLock()
+	defer e.RUnlock()
 	ih := metainfo.NewHashFromHex(infohash)
 	t, ok := e.ts[ih.HexString()]
 	if !ok {
@@ -252,19 +280,9 @@ func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
 	return t, nil
 }
 
-func (e *Engine) getOpenTorrent(infohash string) (*Torrent, error) {
-	t, err := e.getTorrent(infohash)
-	if err != nil {
-		return nil, err
-	}
-	return t, nil
-}
-
 func (e *Engine) StartTorrent(infohash string) error {
-	e.RLock()
-	defer e.RUnlock()
 	log.Println("StartTorrent ", infohash)
-	t, err := e.getOpenTorrent(infohash)
+	t, err := e.getTorrent(infohash)
 	if err != nil {
 		return err
 	}
@@ -284,8 +302,6 @@ func (e *Engine) StartTorrent(infohash string) error {
 }
 
 func (e *Engine) StopTorrent(infohash string) error {
-	e.RLock()
-	defer e.RUnlock()
 	log.Println("StopTorrent ", infohash)
 	t, err := e.getTorrent(infohash)
 	if err != nil {
@@ -308,14 +324,15 @@ func (e *Engine) StopTorrent(infohash string) error {
 }
 
 func (e *Engine) DeleteTorrent(infohash string) error {
-	e.RLock()
-	defer e.RUnlock()
 	log.Println("DeleteTorrent ", infohash)
 	t, err := e.getTorrent(infohash)
 	if err != nil {
 		return err
 	}
+
+	e.Lock()
 	delete(e.ts, t.InfoHash)
+	e.Unlock()
 
 	ih := metainfo.NewHashFromHex(infohash)
 	if tt, ok := e.client.Torrent(ih); ok {
@@ -328,7 +345,7 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 }
 
 func (e *Engine) StartFile(infohash, filepath string) error {
-	t, err := e.getOpenTorrent(infohash)
+	t, err := e.getTorrent(infohash)
 	if err != nil {
 		return err
 	}
@@ -352,7 +369,7 @@ func (e *Engine) StartFile(infohash, filepath string) error {
 }
 
 func (e *Engine) StopFile(infohash, filepath string) error {
-	t, err := e.getOpenTorrent(infohash)
+	t, err := e.getTorrent(infohash)
 	if err != nil {
 		return err
 	}

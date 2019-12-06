@@ -188,13 +188,8 @@ func (s *Server) apiConfigure(data []byte) error {
 		}
 
 		// all Torrent must be STOPPED to reconfigure engine
-		if status&engine.NeedEngineReConfig > 0 {
-			ts := s.engine.GetTorrents()
-			for _, tt := range ts {
-				if tt.Started {
-					return errors.New("All Torrents must be STOPPED to reconfigure")
-				}
-			}
+		if status&engine.NeedEngineReConfig > 0 && !s.engine.IsTorrentsAllStopped() {
+			return errors.New("All Torrents must be STOPPED to reconfigure")
 		}
 
 		// now it's safe to save the configure
