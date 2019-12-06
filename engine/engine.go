@@ -29,13 +29,13 @@ type Server interface {
 
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
 type Engine struct {
-	cldServer Server
-	mut       sync.Mutex
-	cacheDir  string
-	client    *torrent.Client
-	config    Config
-	ts        map[string]*Torrent
-	bttracker []string
+	sync.RWMutex // race condition on ts,client
+	cldServer    Server
+	cacheDir     string
+	client       *torrent.Client
+	config       Config
+	ts           map[string]*Torrent
+	bttracker    []string
 }
 
 func New(s Server) *Engine {
@@ -52,8 +52,8 @@ func (e *Engine) SetConfig(c Config) {
 
 func (e *Engine) Configure(c Config) error {
 	//recieve config
-	e.mut.Lock()
-	defer e.mut.Unlock()
+	e.Lock()
+	defer e.Unlock()
 
 	if e.client != nil {
 		e.client.Close()
@@ -85,7 +85,7 @@ func (e *Engine) Configure(c Config) error {
 	tc.ProxyURL = c.ProxyURL
 
 	{
-		// need to retry while creating client,
+		// runtime reconfigure need to retry while creating client,
 		// wait max for 3 * 10 seconds
 		var err error
 		max := 10
@@ -109,36 +109,36 @@ func (e *Engine) Configure(c Config) error {
 }
 
 func (e *Engine) IsConfigred() bool {
-	e.mut.Lock()
-	defer e.mut.Unlock()
+	e.RLock()
+	defer e.RUnlock()
 	return e.client != nil
 }
 
-// NewMagnet -> *Torrent -> newTorrentTask
+// NewMagnet -> *Torrent -> syncTask
 func (e *Engine) NewMagnet(magnetURI string) error {
-	e.mut.Lock()
-	defer e.mut.Unlock()
+	e.RLock()
+	defer e.RUnlock()
 	tt, err := e.client.AddMagnet(magnetURI)
 	if err != nil {
 		return err
 	}
 
 	e.newMagnetCacheFile(magnetURI, tt.InfoHash().HexString())
-	return e.newTorrentTask(tt)
+	return e.syncTask(tt)
 }
 
-// NewTorrentBySpec -> *Torrent -> newTorrentTask
+// NewTorrentBySpec -> *Torrent -> syncTask
 func (e *Engine) NewTorrentBySpec(spec *torrent.TorrentSpec) error {
-	e.mut.Lock()
-	defer e.mut.Unlock()
+	e.RLock()
+	defer e.RUnlock()
 	tt, _, err := e.client.AddTorrentSpec(spec)
 	if err != nil {
 		return err
 	}
-	return e.newTorrentTask(tt)
+	return e.syncTask(tt)
 }
 
-// NewTorrentByFilePath -> NewTorrentBySpec -> *Torrent -> newTorrentTask
+// NewTorrentByFilePath -> NewTorrentBySpec -> *Torrent -> syncTask
 func (e *Engine) NewTorrentByFilePath(path string) error {
 	info, err := metainfo.LoadFromFile(path)
 	if err != nil {
@@ -148,7 +148,7 @@ func (e *Engine) NewTorrentByFilePath(path string) error {
 	return e.NewTorrentBySpec(spec)
 }
 
-func (e *Engine) newTorrentTask(tt *torrent.Torrent) error {
+func (e *Engine) syncTask(tt *torrent.Torrent) error {
 	meta := tt.Metainfo()
 	if len(e.bttracker) > 0 && (e.config.AlwaysAddTrackers || len(meta.AnnounceList) == 0) {
 		log.Printf("[newTorrent] added %d public trackers\n", len(e.bttracker))
@@ -167,48 +167,51 @@ func (e *Engine) newTorrentTask(tt *torrent.Torrent) error {
 	return nil
 }
 
-//GetTorrents moves torrents out of the anacrolix/torrent and into the local cache
+//GetTorrents just get the local infohash->Torrent map
 func (e *Engine) GetTorrents() map[string]*Torrent {
-	e.mut.Lock()
-	defer e.mut.Unlock()
-
-	if e.client == nil {
-		return nil
-	}
-	for _, tt := range e.client.Torrents() {
-		t := e.upsertTorrent(tt)
-		e.torrentRoutine(t)
-	}
+	e.RLock()
+	defer e.RUnlock()
 	return e.ts
 }
 
-func (e *Engine) torrentRoutine(t *Torrent) {
+// TaskRoutine called by intevaled background goroutine
+// moves torrents out of the anacrolix/torrent and into the local cache
+// and do condition check and actions on them
+func (e *Engine) TaskRoutine() {
+	e.Lock()
+	defer e.Unlock()
 
-	// stops task on reaching ratio
-	if e.config.SeedRatio > 0 &&
-		t.SeedRatio > e.config.SeedRatio &&
-		t.Started &&
-		t.Done {
-		log.Println("[Task Stoped] due to reaching SeedRatio")
-		go e.StopTorrent(t.InfoHash)
-	}
+	for _, tt := range e.client.Torrents() {
 
-	// call DoneCmd on task completed
-	if t.Done && !t.DoneCmdCalled {
-		t.DoneCmdCalled = true
-		go e.callDoneCmd(genEnv(e.config.DownloadDirectory,
-			t.Name, t.InfoHash, "torrent",
-			e.cldServer.GetRestAPI(), t.Size))
-	}
+		// sync engine.Torrent to our Torrent struct
+		t := e.upsertTorrent(tt)
 
-	// call DoneCmd on each file completed
-	// some files might finish before the whole task does
-	for _, f := range t.Files {
-		if f.Done && !f.DoneCmdCalled {
-			f.DoneCmdCalled = true
+		// stops task on reaching ratio
+		if e.config.SeedRatio > 0 &&
+			t.SeedRatio > e.config.SeedRatio &&
+			t.Started &&
+			t.Done {
+			log.Println("[Task Stoped] due to reaching SeedRatio")
+			go e.StopTorrent(t.InfoHash)
+		}
+
+		// call DoneCmd on task completed
+		if t.Done && !t.DoneCmdCalled {
+			t.DoneCmdCalled = true
 			go e.callDoneCmd(genEnv(e.config.DownloadDirectory,
-				f.Path, "", "file",
-				e.cldServer.GetRestAPI(), f.Size))
+				t.Name, t.InfoHash, "torrent",
+				e.cldServer.GetRestAPI(), t.Size))
+		}
+
+		// call DoneCmd on each file completed
+		// some files might finish before the whole task does
+		for _, f := range t.Files {
+			if f.Done && !f.DoneCmdCalled {
+				f.DoneCmdCalled = true
+				go e.callDoneCmd(genEnv(e.config.DownloadDirectory,
+					f.Path, "", "file",
+					e.cldServer.GetRestAPI(), f.Size))
+			}
 		}
 	}
 }
@@ -258,8 +261,8 @@ func (e *Engine) getOpenTorrent(infohash string) (*Torrent, error) {
 }
 
 func (e *Engine) StartTorrent(infohash string) error {
-	e.mut.Lock()
-	defer e.mut.Unlock()
+	e.RLock()
+	defer e.RUnlock()
 	log.Println("StartTorrent ", infohash)
 	t, err := e.getOpenTorrent(infohash)
 	if err != nil {
@@ -281,8 +284,8 @@ func (e *Engine) StartTorrent(infohash string) error {
 }
 
 func (e *Engine) StopTorrent(infohash string) error {
-	e.mut.Lock()
-	defer e.mut.Unlock()
+	e.RLock()
+	defer e.RUnlock()
 	log.Println("StopTorrent ", infohash)
 	t, err := e.getTorrent(infohash)
 	if err != nil {
@@ -305,8 +308,8 @@ func (e *Engine) StopTorrent(infohash string) error {
 }
 
 func (e *Engine) DeleteTorrent(infohash string) error {
-	e.mut.Lock()
-	defer e.mut.Unlock()
+	e.RLock()
+	defer e.RUnlock()
 	log.Println("DeleteTorrent ", infohash)
 	t, err := e.getTorrent(infohash)
 	if err != nil {
@@ -493,8 +496,8 @@ func (e *Engine) removeTorrentCache(infohash string) {
 }
 
 func (e *Engine) WriteStauts(_w io.Writer) {
-	e.mut.Lock()
-	defer e.mut.Unlock()
+	e.RLock()
+	defer e.RUnlock()
 	if e.client != nil {
 		e.client.WriteStatus(_w)
 	}

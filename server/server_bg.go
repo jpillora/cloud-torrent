@@ -22,6 +22,7 @@ func (s *Server) backgroundRoutines() {
 	go func() {
 		for {
 			time.Sleep(3 * time.Second)
+			s.engine.TaskRoutine()
 			s.state.Lock()
 			s.state.Torrents = s.engine.GetTorrents()
 			s.state.Downloads = s.listFiles()

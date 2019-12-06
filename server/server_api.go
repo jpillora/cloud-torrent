@@ -198,11 +198,11 @@ func (s *Server) apiConfigure(data []byte) error {
 		}
 
 		// now it's safe to save the configure
-		log.Printf("[api] config saved")
 		s.state.Config = c
 		if err := s.state.Config.SaveConfigFile(s.ConfigPath); err != nil {
 			return err
 		}
+		log.Printf("[api] config saved")
 
 		// finally to reconfigure the engine
 		if status&engine.NeedEngineReConfig > 0 {
