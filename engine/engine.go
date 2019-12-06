@@ -57,6 +57,9 @@ func (e *Engine) Configure(c Config) error {
 	defer e.Unlock()
 
 	if e.client != nil {
+		for _, t := range e.client.Torrents() {
+			t.Drop()
+		}
 		e.client.Close()
 		close(e.closeSync)
 		log.Println("Configure: old client closed")
@@ -181,19 +184,6 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 //GetTorrents just get the local infohash->Torrent map
 func (e *Engine) GetTorrents() map[string]*Torrent {
 	return e.ts
-}
-
-func (e *Engine) IsTorrentsAllStopped() (stopped bool) {
-	e.RLock()
-	defer e.RUnlock()
-	stopped = true
-	for _, t := range e.ts {
-		if t.Started {
-			stopped = false
-			return
-		}
-	}
-	return
 }
 
 // TaskRoutine called by intevaled background goroutine

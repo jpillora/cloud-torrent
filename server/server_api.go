@@ -187,11 +187,6 @@ func (s *Server) apiConfigure(data []byte) error {
 			go s.engine.UpdateTrackers()
 		}
 
-		// all Torrent must be STOPPED to reconfigure engine
-		if status&engine.NeedEngineReConfig > 0 && !s.engine.IsTorrentsAllStopped() {
-			return errors.New("All Torrents must be STOPPED to reconfigure")
-		}
-
 		// now it's safe to save the configure
 		s.state.Config = c
 		if err := s.state.Config.SaveConfigFile(s.ConfigPath); err != nil {
