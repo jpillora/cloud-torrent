@@ -103,6 +103,22 @@ app.run(function ($rootScope, search, api, storage) {
     return false;
   }
 
+  $scope.toggleSections = function (section) {
+    $scope.err = null;
+    $scope.info = null;
+    switch (section) {
+      case "rss":
+        $rootScope.omni.get_rss(false)
+        break;
+      case "config":
+        $rootScope.config.edit = !$rootScope.config.edit;
+        break
+      case "omni":
+        $rootScope.omni.edit = !$rootScope.omni.edit;
+        break
+    }
+  }
+
   //page-wide keybinding, listen for space,
   //toggle pause/play the video on-screen
   document.addEventListener("keydown", function (e) {
@@ -133,6 +149,15 @@ app.run(function ($rootScope, search, api, storage) {
       break;
     }
   });
+
+  // register as "magnet:" protocol handler
+  if ('registerProtocolHandler' in navigator) {
+    navigator.registerProtocolHandler(
+      'magnet',
+      document.location.origin + '/api/magnet?m=%s',
+      'SimpleTorrent'
+    );
+  }
 });
 
 app.config([
@@ -142,11 +167,3 @@ app.config([
   }
 ]);
 
-// register as "magnet:" protocol handler
-if ('registerProtocolHandler' in navigator) {
-  navigator.registerProtocolHandler(
-    'magnet',
-    document.location.origin + '/api/magnet?m=%s',
-    'SimpleTorrent'
-  );
-}
