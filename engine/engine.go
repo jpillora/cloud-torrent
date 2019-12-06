@@ -163,6 +163,8 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 		select {
 		case <-e.closeSync:
 			return
+		case <-t.dropWait:
+			return
 		case <-t.t.GotInfo():
 		}
 
@@ -259,6 +261,7 @@ func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
 		torrent = &Torrent{
 			InfoHash: ih,
 			AddedAt:  time.Now(),
+			dropWait: make(chan struct{}),
 		}
 		e.Lock()
 		e.ts[ih] = torrent
@@ -331,6 +334,7 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	}
 
 	e.Lock()
+	close(t.dropWait)
 	delete(e.ts, t.InfoHash)
 	e.Unlock()
 

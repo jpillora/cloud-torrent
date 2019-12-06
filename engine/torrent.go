@@ -27,6 +27,7 @@ type Torrent struct {
 	AddedAt       time.Time
 	Stats         torrent.TorrentStats
 	t             *torrent.Torrent
+	dropWait      chan struct{}
 	updatedAt     time.Time
 }
 
