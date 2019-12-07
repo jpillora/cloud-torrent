@@ -75,7 +75,7 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 		path := f.Path()
 		file := torrent.Files[i]
 		if file == nil {
-			file = &File{Path: path}
+			file = &File{Path: path, Started: torrent.Started}
 			torrent.Files[i] = file
 		}
 		chunks := f.State()
