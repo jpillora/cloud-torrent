@@ -31,6 +31,7 @@ import (
 const (
 	cacheSavedPrefix = "_CLDAUTOSAVED_"
 	scraperUA        = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
+	trackerList      = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
 )
 
 var (
@@ -145,6 +146,7 @@ func (s *Server) Run(version string) error {
 		SeedRatio:            0,
 		ObfsPreferred:        true,
 		ObfsRequirePreferred: false,
+		TrackerListURL:       trackerList,
 	}
 	if _, err := os.Stat(s.ConfigPath); err == nil {
 		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {
