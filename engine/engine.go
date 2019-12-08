@@ -55,18 +55,6 @@ func (e *Engine) Configure(c Config) error {
 	//recieve config
 	e.Lock()
 	defer e.Unlock()
-
-	if e.client != nil {
-		for _, t := range e.client.Torrents() {
-			t.Drop()
-		}
-		e.client.Close()
-		close(e.closeSync)
-		log.Println("Configure: old client closed")
-		e.client = nil
-		e.ts = make(map[string]*Torrent)
-		time.Sleep(3 * time.Second)
-	}
 	if c.IncomingPort <= 0 {
 		return fmt.Errorf("Invalid incoming port (%d)", c.IncomingPort)
 	}
@@ -74,7 +62,7 @@ func (e *Engine) Configure(c Config) error {
 	tc.ListenPort = c.IncomingPort
 	tc.DataDir = c.DownloadDirectory
 	tc.Debug = c.EngineDebug
-	if e.config.MuteEngineLog {
+	if c.MuteEngineLog {
 		tc.Logger = eglog.Discard
 	}
 	tc.NoUpload = !c.EnableUpload
@@ -90,6 +78,19 @@ func (e *Engine) Configure(c Config) error {
 	tc.ProxyURL = c.ProxyURL
 
 	{
+		if e.client != nil {
+			// stop all current torrents
+			for _, t := range e.client.Torrents() {
+				t.Drop()
+			}
+			e.client.Close()
+			close(e.closeSync)
+			log.Println("Configure: old client closed")
+			e.client = nil
+			e.ts = make(map[string]*Torrent)
+			time.Sleep(3 * time.Second)
+		}
+
 		// runtime reconfigure need to retry while creating client,
 		// wait max for 3 * 10 seconds
 		var err error
