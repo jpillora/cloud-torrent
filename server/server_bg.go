@@ -21,37 +21,36 @@ func (s *Server) backgroundRoutines() {
 	//poll torrents and files
 	go func() {
 		for {
-			time.Sleep(3 * time.Second)
+			if s.state.NumConnections() > 0 {
+				// only update the state object if user connected
+				s.state.Lock()
+				s.state.Torrents = s.engine.GetTorrents()
+				s.state.Downloads = s.listFiles()
+				s.state.Unlock()
+				s.state.Push()
+			}
 			s.engine.TaskRoutine()
-			s.state.Lock()
-			s.state.Torrents = s.engine.GetTorrents()
-			s.state.Downloads = s.listFiles()
-			s.state.Unlock()
-			s.state.Push()
+			time.Sleep(3 * time.Second)
 		}
 	}()
-	// slow update on debug info
+
+	//start collecting stats
 	go func() {
 		var sBuf bytes.Buffer
 		sWriter := bufio.NewWriter(&sBuf)
 		for {
-			time.Sleep(30 * time.Second)
-			sBuf.Reset()
-			s.engine.WriteStauts(sWriter)
-			s.state.Lock()
-			s.state.EngineStatus = sBuf.String()
-			s.state.Unlock()
-			s.state.Push()
-		}
-	}()
-	//start collecting stats
-	go func() {
-		for {
-			c := s.engine.Config()
-			s.state.Stats.System.loadStats(c.DownloadDirectory)
+			if s.state.NumConnections() > 0 {
+				c := s.engine.Config()
+				s.state.Stats.System.loadStats(c.DownloadDirectory)
+				sBuf.Reset()
+				s.engine.WriteStauts(sWriter)
+				s.state.EngineStatus = sBuf.String()
+			}
 			time.Sleep(5 * time.Second)
 		}
 	}()
+
+	// rss updater
 	go func() {
 		for {
 			s.updateRSS()
