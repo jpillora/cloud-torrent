@@ -17,12 +17,12 @@ func Test_rateLimiter(t *testing.T) {
 		want    *rate.Limiter
 		wantErr bool
 	}{
-		{"low", args{"LOW"}, rate.NewLimiter(rate.Limit(50000), 50000), false},
-		{"case", args{"LoW"}, rate.NewLimiter(rate.Limit(50000), 50000), false},
+		{"low", args{"LOW"}, rate.NewLimiter(rate.Limit(50000), 50000*3), false},
+		{"case", args{"LoW"}, rate.NewLimiter(rate.Limit(50000), 50000*3), false},
 		{"err", args{"fake"}, nil, true},
-		{"unit", args{"10kb"}, rate.NewLimiter(rate.Limit(10240), 10240), false},
-		{"unit", args{"100kb"}, rate.NewLimiter(rate.Limit(102400), 102400), false},
-		{"unit", args{"100 kb"}, rate.NewLimiter(rate.Limit(102400), 102400), false},
+		{"unit", args{"10kb"}, rate.NewLimiter(rate.Limit(10240), 10240*3), false},
+		{"unit", args{"100kb"}, rate.NewLimiter(rate.Limit(102400), 102400*3), false},
+		{"unit", args{"100 kb"}, rate.NewLimiter(rate.Limit(102400), 102400*3), false},
 		{"inf", args{"0"}, rate.NewLimiter(rate.Inf, 0), false},
 		{"inf", args{""}, rate.NewLimiter(rate.Inf, 0), false},
 
