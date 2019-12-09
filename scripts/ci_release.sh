@@ -18,11 +18,22 @@ makebuild () {
     SUFFIX=".exe"
   fi
   BINFILE=${BIN}_${OS}_${ARCH}${SUFFIX} 
-  CGO_ENABLED=0 GOARCH=$ARCH GOOS=$OS go build -o ${BUILDDIR}/${BINFILE} -ldflags "-s -w -X main.VERSION=$GITVER"
-  git checkout -- .
-  pushd ${BUILDDIR}
-  gzip -v -9 ${BINFILE}
-  popd
+
+  if [[ ${ARCH} == "arm" ]]; then
+    for GM in 5 6 7; do
+      SUFFIX="_armv${GM}"
+      BINFILE=${BIN}_${OS}_${ARCH}${SUFFIX} 
+      CGO_ENABLED=0 GOARCH=$ARCH GOARM=${GM} GOOS=$OS go build -o ${BUILDDIR}/${BINFILE} -ldflags "-s -w -X main.VERSION=$GITVER"
+      pushd ${BUILDDIR}
+      gzip -v -9 ${BINFILE}
+      popd
+    done
+  else
+    CGO_ENABLED=0 GOARCH=$ARCH GOOS=$OS go build -o ${BUILDDIR}/${BINFILE} -ldflags "-s -w -X main.VERSION=$GITVER"
+    pushd ${BUILDDIR}
+    gzip -v -9 ${BINFILE}
+    popd
+  fi
 }
 
 upstatic () {
