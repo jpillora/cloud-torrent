@@ -14,7 +14,7 @@ makebuild () {
   local OS=$2
   local ARCH=$3
   local SUFFIX=
-  if [[ OS == "windows" ]]; then
+  if [[ ${OS} == "windows" ]]; then
     SUFFIX=".exe"
   fi
   BINFILE=${BIN}_${OS}_${ARCH}${SUFFIX} 
