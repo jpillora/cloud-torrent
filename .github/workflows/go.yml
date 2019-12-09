@@ -45,7 +45,9 @@ jobs:
           scripts/build/cloud-torrent_linux_amd64.gz
           scripts/build/cloud-torrent_linux_386.gz
           scripts/build/cloud-torrent_linux_arm64.gz
-          scripts/build/cloud-torrent_linux_arm.gz
+          scripts/build/cloud-torrent_linux_arm_armv5.gz
+          scripts/build/cloud-torrent_linux_arm_armv6.gz
+          scripts/build/cloud-torrent_linux_arm_armv7.gz
           scripts/build/cloud-torrent_linux_mipsle.gz
           scripts/build/cloud-torrent_linux_mips.gz
         prerelease: true
