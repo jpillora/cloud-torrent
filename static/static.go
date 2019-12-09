@@ -31,5 +31,5 @@ func ReadAll(name string) ([]byte, error) {
 		defer f.Close()
 		return ioutil.ReadAll(f)
 	}
-	return Asset(name)
+	return Asset("files/" + name)
 }
