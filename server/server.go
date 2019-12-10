@@ -56,6 +56,7 @@ type Server struct {
 	Debug          bool   `opts:"help=Debug app"`
 	DebugTorrent   bool   `opts:"help=Debug torrent engine"`
 	mainAddr       string
+	isPendingBoot  bool
 
 	//http handlers
 	files, static, rssh http.Handler
@@ -94,9 +95,9 @@ func (s *Server) GetRestAPI() string {
 	return s.RestAPI
 }
 
-// GetUptime used by engine doneCmd
-func (s *Server) GetUptime() time.Time {
-	return s.state.Stats.Uptime
+// GetIsPendingBoot used by engine doneCmd
+func (s *Server) GetIsPendingBoot() bool {
+	return s.isPendingBoot
 }
 
 // Run the server
@@ -118,6 +119,13 @@ func (s *Server) Run(version string) error {
 	s.files = http.HandlerFunc(s.serveFiles)
 	s.static = ctstatic.FileSystemHandler()
 	s.rssh = http.HandlerFunc(s.serveRSS)
+
+	// isPendingBoot last for 30s
+	s.isPendingBoot = true
+	go func() {
+		<-time.After(time.Second * 30)
+		s.isPendingBoot = false
+	}()
 
 	//scraper
 	s.scraper = &scraper.Handler{

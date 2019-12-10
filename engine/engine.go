@@ -24,7 +24,7 @@ const (
 
 type Server interface {
 	GetRestAPI() string
-	GetUptime() time.Time
+	GetIsPendingBoot() bool
 }
 
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
@@ -404,8 +404,8 @@ func (e *Engine) callDoneCmd(env []string) {
 		return
 	}
 
-	if time.Since(e.cldServer.GetUptime()) < time.Second*30 {
-		log.Println("[DoneCmd] DoneCmd called within 30s since started, skiping")
+	if e.cldServer.GetIsPendingBoot() {
+		log.Println("[DoneCmd] program is pending boot, skiping")
 		return
 	}
 
