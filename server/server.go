@@ -46,6 +46,7 @@ type Server struct {
 	Port           int    `opts:"help=Listening port,env=PORT"`
 	Host           string `opts:"help=Listening interface (default all)"`
 	Auth           string `opts:"help=Optional basic auth in form 'user:password',env=AUTH"`
+	ProxyURL       string `opts:"help=Proxy url,env=PROXY_URL"`
 	ConfigPath     string `opts:"help=Configuration file path"`
 	KeyPath        string `opts:"help=TLS Key file path"`
 	CertPath       string `opts:"help=TLS Certicate file path,short=r"`
@@ -154,6 +155,7 @@ func (s *Server) Run(version string) error {
 		SeedRatio:            0,
 		ObfsPreferred:        true,
 		ObfsRequirePreferred: false,
+		ProxyURL:             s.ProxyURL,
 		TrackerListURL:       trackerList,
 	}
 	if _, err := os.Stat(s.ConfigPath); err == nil {
