@@ -183,8 +183,10 @@ func (s *Server) Run(version string) error {
 	if err := s.engine.Configure(s.state.Config); err != nil {
 		return err
 	}
-	s.state.Config.SaveConfigFile(s.ConfigPath)
 	log.Printf("Read Config: %#v\n", c)
+	if err := s.state.Config.SaveConfigFile(s.ConfigPath); err != nil {
+		return err
+	}
 
 	s.backgroundRoutines()
 	s.torrentWatcher()

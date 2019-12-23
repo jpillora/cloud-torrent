@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -101,6 +102,16 @@ func (c *Config) SaveConfigFile(configPath string) error {
 	if err != nil {
 		return err
 	}
+
+	ob, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return err
+	}
+
+	if bytes.Compare(b, ob) == 0 {
+		return nil
+	}
+
 	return ioutil.WriteFile(configPath, b, 0644)
 }
 
