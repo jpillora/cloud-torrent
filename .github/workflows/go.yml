@@ -52,6 +52,7 @@ jobs:
           scripts/build/cloud-torrent_linux_mips.gz
         prerelease: true
         draft: false
+        body_path: scripts/build/gittaglogs.txt
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

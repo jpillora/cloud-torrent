@@ -44,3 +44,4 @@ upstatic () {
 
 upstatic
 makebuild $BIN $1 $2
+git log --oneline ${GITVER}^..${GITVER} > $BUILDDIR/gittaglogs.txt
