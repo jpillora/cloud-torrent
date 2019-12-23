@@ -16,8 +16,18 @@ jobs:
       with:
         go-version: 1.13.x
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@master
+    - name: Check out code
+      uses: actions/checkout@v2
+      with:
+        ref: 'master'
+        fetch-depth: '0'
+
+    - name: Generate Git log
+      run: |
+        git fetch origin +refs/tags/*:refs/tags/*
+        GITVER=$(git describe --tags)
+        PREVVER=$(git describe --tags --abbrev=0 ${GITVER}~1)
+        git log --oneline ${PREVVER}..${GITVER} > gittaglogs.txt
 
     - name: Get dependencies
       run: |
@@ -50,9 +60,9 @@ jobs:
           scripts/build/cloud-torrent_linux_arm_armv7.gz
           scripts/build/cloud-torrent_linux_mipsle.gz
           scripts/build/cloud-torrent_linux_mips.gz
-        prerelease: true
+        prerelease: false
         draft: false
-        body_path: scripts/build/gittaglogs.txt
+        body_path: gittaglogs.txt
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

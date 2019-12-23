@@ -6,8 +6,8 @@ __root="$(cd "$(dirname "${__dir}")" && pwd)" # <-- change this as it depends on
 
 BUILDDIR=$__dir/build
 BIN=cloud-torrent
-GITVER=$(git describe --tags)
 mkdir -p $BUILDDIR
+GITVER=$(git describe --tags)
 
 makebuild () {
   local PREFIX=$1
@@ -44,4 +44,4 @@ upstatic () {
 
 upstatic
 makebuild $BIN $1 $2
-git log --oneline ${GITVER}^..${GITVER} > $BUILDDIR/gittaglogs.txt
+
