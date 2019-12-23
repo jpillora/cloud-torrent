@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
+	"os"
 	"reflect"
 	"strings"
 
@@ -105,11 +106,13 @@ func (c *Config) SaveConfigFile(configPath string) error {
 
 	ob, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		return err
-	}
-
-	if bytes.Compare(b, ob) == 0 {
-		return nil
+		if !os.IsNotExist(err) {
+			return err
+		}
+	} else {
+		if bytes.Compare(b, ob) == 0 {
+			return nil
+		}
 	}
 
 	return ioutil.WriteFile(configPath, b, 0644)
