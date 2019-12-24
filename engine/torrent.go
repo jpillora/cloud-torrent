@@ -35,8 +35,7 @@ type File struct {
 	//anacrolix/torrent
 	Path          string
 	Size          int64
-	Chunks        int
-	Completed     int
+	Completed     int64
 	Done          bool
 	DoneCmdCalled bool
 	//cloud torrent
@@ -63,9 +62,6 @@ func (torrent *Torrent) Update(t *torrent.Torrent) {
 func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 
 	torrent.Size = t.Length()
-	totalChunks := 0
-	totalCompleted := 0
-
 	tfiles := t.Files()
 	if len(tfiles) > 0 && torrent.Files == nil {
 		torrent.Files = make([]*File, len(tfiles))
@@ -78,23 +74,12 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 			file = &File{Path: path, Started: torrent.Started}
 			torrent.Files[i] = file
 		}
-		chunks := f.State()
 
 		file.Size = f.Length()
-		file.Chunks = len(chunks)
-		completed := 0
-		for _, p := range chunks {
-			if p.Complete {
-				completed++
-			}
-		}
-		file.Completed = completed
-		file.Percent = percent(int64(file.Completed), int64(file.Chunks))
-		file.Done = (file.Completed == file.Chunks)
+		file.Completed = f.BytesCompleted()
+		file.Percent = percent(file.Completed, file.Size)
+		file.Done = (file.Completed == file.Size)
 		file.f = f
-
-		totalChunks += file.Chunks
-		totalCompleted += file.Completed
 	}
 
 	torrent.Stats = t.Stats()
