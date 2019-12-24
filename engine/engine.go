@@ -290,7 +290,13 @@ func (e *Engine) StartTorrent(infohash string) error {
 		}
 	}
 	if t.t.Info() != nil {
-		t.t.DownloadAll()
+		// start file by setting the priority
+		for _, f := range t.t.Files() {
+			f.SetPriority(torrent.PiecePriorityNormal)
+		}
+
+		// call to DownloadAll cause StartFile/StopFile not working
+		// t.t.DownloadAll()
 	}
 	return nil
 }
