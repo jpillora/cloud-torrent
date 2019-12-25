@@ -4,15 +4,23 @@
 app.run(function ($rootScope, search, api, storage) {
   var $scope = (window.scope = $rootScope);
 
-  //velox
-  $scope.state = {};
-  $scope.hasConnected = false;
-
   var pn = window.location.pathname
   if (pn[pn.length - 1] != "/") {
     pn += "/"
   }
 
+  // register as "magnet:" protocol handler
+  if ('registerProtocolHandler' in navigator) {
+    navigator.registerProtocolHandler(
+      'magnet',
+      document.location.origin + pn + 'api/magnet?m=%s',
+      'SimpleTorrent'
+    );
+  }
+
+  // velox event stream framework
+  $scope.state = {};
+  $scope.hasConnected = false;
   var v = velox(pn + "sync", $scope.state);
   v.onupdate = function () {
     $scope.$applyAsync();
@@ -149,15 +157,6 @@ app.run(function ($rootScope, search, api, storage) {
       break;
     }
   });
-
-  // register as "magnet:" protocol handler
-  if ('registerProtocolHandler' in navigator) {
-    navigator.registerProtocolHandler(
-      'magnet',
-      document.location.origin + '/api/magnet?m=%s',
-      'SimpleTorrent'
-    );
-  }
 });
 
 app.config([
