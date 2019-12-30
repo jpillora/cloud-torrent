@@ -215,7 +215,7 @@ func (e *Engine) TaskRoutine() {
 			t.DoneCmdCalled = true
 			go e.callDoneCmd(genEnv(e.config.DownloadDirectory,
 				t.Name, t.InfoHash, "torrent",
-				e.cldServer.GetRestAPI(), t.Size))
+				e.cldServer.GetRestAPI(), t.Size, t.StartedAt.Unix()))
 		}
 
 		// call DoneCmd on each file completed
@@ -225,13 +225,13 @@ func (e *Engine) TaskRoutine() {
 				f.DoneCmdCalled = true
 				go e.callDoneCmd(genEnv(e.config.DownloadDirectory,
 					f.Path, "", "file",
-					e.cldServer.GetRestAPI(), f.Size))
+					e.cldServer.GetRestAPI(), f.Size, t.StartedAt.Unix()))
 			}
 		}
 	}
 }
 
-func genEnv(dir, path, hash, ttype, api string, size int64) []string {
+func genEnv(dir, path, hash, ttype, api string, size int64, ts int64) []string {
 	env := append(os.Environ(),
 		fmt.Sprintf("CLD_DIR=%s", dir),
 		fmt.Sprintf("CLD_PATH=%s", path),
@@ -239,6 +239,7 @@ func genEnv(dir, path, hash, ttype, api string, size int64) []string {
 		fmt.Sprintf("CLD_TYPE=%s", ttype),
 		fmt.Sprintf("CLD_RESTAPI=%s", api),
 		fmt.Sprintf("CLD_SIZE=%d", size),
+		fmt.Sprintf("CLD_STARTTS=%d", ts),
 	)
 	return env
 }
@@ -284,6 +285,7 @@ func (e *Engine) StartTorrent(infohash string) error {
 		return fmt.Errorf("Already started")
 	}
 	t.Started = true
+	t.StartedAt = time.Now()
 	for _, f := range t.Files {
 		if f != nil {
 			f.Started = true

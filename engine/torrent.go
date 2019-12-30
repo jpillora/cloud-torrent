@@ -25,6 +25,7 @@ type Torrent struct {
 	UploadRate    float32
 	SeedRatio     float32
 	AddedAt       time.Time
+	StartedAt     time.Time
 	Stats         torrent.TorrentStats
 	t             *torrent.Torrent
 	dropWait      chan struct{}
