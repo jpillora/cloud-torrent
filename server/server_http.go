@@ -40,16 +40,17 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	//api call
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		if r.Method == "POST" {
-			err := s.apiPOST(r)
-			if err == nil {
+			if err := s.apiPOST(r); err == nil {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte("OK"))
-				return
+			} else {
+				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+		} else if r.Method == "GET" {
+			if err := s.apiGET(w, r); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			}
 		}
-		s.apiGET(w, r)
 		return
 	}
 	//no match, assume static file
@@ -59,13 +60,19 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 func (s *Server) restAPIhandle(w http.ResponseWriter, r *http.Request) {
 	ret := "Bad Request"
 	if strings.HasPrefix(r.URL.Path, "/api/") {
-		err := s.apiPOST(r)
-		if err == nil {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
-			return
+		if r.Method == "POST" {
+			if err := s.apiPOST(r); err == nil {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("OK"))
+			} else {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			}
+		} else if r.Method == "GET" {
+			if err := s.apiGET(w, r); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			}
 		}
-		ret = err.Error()
+		return
 	}
 	http.Error(w, ret, http.StatusBadRequest)
 }

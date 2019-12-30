@@ -22,15 +22,21 @@ import (
 
 var (
 	errInvalidReq = errors.New("INVALID REQUEST")
+	errUnknowAct  = errors.New("Unkown Action")
+	errUnknowPath = errors.New("Unkown Path")
 )
 
-func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) {
+func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 
 	defer r.Body.Close()
-	action := strings.TrimPrefix(r.URL.Path, "/api/")
+	routeDirs := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/"), "/")
+	if len(routeDirs) == 0 {
+		return errUnknowAct
+	}
 
-	// adds magnet by GET: /api/magnet?m=...
-	if action == "magnet" {
+	action := routeDirs[0]
+	switch action {
+	case "magnet": // adds magnet by GET: /api/magnet?m=...
 		c, err := ctstatic.ReadAll("template/magadded.html")
 		if err != nil {
 			log.Fatalln(err)
@@ -51,9 +57,31 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) {
 
 		tdata.Magnet = m
 		tmpl.Execute(w, tdata)
+	case "torrents":
+		json.NewEncoder(w).Encode(s.engine.GetTorrents())
+	case "files":
+		s.state.Lock()
+		json.NewEncoder(w).Encode(s.state.Downloads)
+		s.state.Unlock()
+	case "torrent":
+		if len(routeDirs) != 2 {
+			return errUnknowAct
+		}
+		hash := routeDirs[1]
+		if len(hash) != 40 {
+			return errUnknowPath
+		}
+		m := s.engine.GetTorrents()
+		if t, ok := m[hash]; ok {
+			json.NewEncoder(w).Encode(t)
+		} else {
+			return errUnknowPath
+		}
+	default:
+		return errUnknowAct
 	}
 
-	return
+	return nil
 }
 
 func (s *Server) apiPOST(r *http.Request) error {
