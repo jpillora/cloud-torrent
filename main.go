@@ -22,7 +22,7 @@ func main() {
 	o.Version(VERSION)
 	o.Repo("https://github.com/boypt/simple-torrent")
 	o.PkgRepo()
-	//o.LineWidth = 96
+	o.SetLineWidth(96)
 	o.Parse()
 
 	if s.DisableLogTime {
