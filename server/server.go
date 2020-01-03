@@ -50,7 +50,7 @@ type Server struct {
 	ConfigPath     string `opts:"help=Configuration file path"`
 	KeyPath        string `opts:"help=TLS Key file path"`
 	CertPath       string `opts:"help=TLS Certicate file path,short=r"`
-	RestAPI        string `opts:"help=Listen on a trusted port accepts /api/ requests (eg. localhost:3001)"`
+	RestAPI        string `opts:"help=Listen on a trusted port accepts /api/ requests (eg. localhost:3001),env=RESTAPI"`
 	Log            bool   `opts:"help=Enable request logging"`
 	Open           bool   `opts:"help=Open now with your default browser"`
 	DisableLogTime bool   `opts:"help=Don't print timestamp in log"`

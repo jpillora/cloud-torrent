@@ -207,6 +207,8 @@ github.com/imkira/go-interpol v1.1.0/go.mod h1:z0h2/2T3XF8kyEPpRgJ3kmNv+C43p+I/C
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jpillora/ansi v0.0.0-20170202005112-f496b27cd669 h1:l5rH/CnVVu+HPxjtxjM90nHrm4nov3j3RF9/62UjgLs=
 github.com/jpillora/ansi v0.0.0-20170202005112-f496b27cd669/go.mod h1:kOeLNvjNBGSV3uYtFjvb72+fnZCMFJF1XDvRIjdom0g=
+github.com/jpillora/ansi v1.0.0 h1:agZNBxxIuqe/SM7U2fSaYmAO3X7f787xp3zZCZCYmYc=
+github.com/jpillora/ansi v1.0.0/go.mod h1:kOeLNvjNBGSV3uYtFjvb72+fnZCMFJF1XDvRIjdom0g=
 github.com/jpillora/archive v0.0.0-20160301031048-e0b3681851f1 h1:3ggQJKuQ4rwBDUa3N3adJRrI8XkOS/7oWhKWbeuBIN0=
 github.com/jpillora/archive v0.0.0-20160301031048-e0b3681851f1/go.mod h1:MvVqA/jM3UcSNdHn6lskwC+/6qzjd9fmyCh+8cxrCRU=
 github.com/jpillora/cookieauth v0.0.0-20190219222732-2ae29b2a9c76 h1:hbobq7RpymJc0jDg6lqo/sulXVGTCEmD67j6nwQ9BhQ=

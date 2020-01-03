@@ -77,6 +77,10 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 		} else {
 			return errUnknowPath
 		}
+	case "stat":
+		s.state.Lock()
+		json.NewEncoder(w).Encode(s.state.Stats)
+		s.state.Unlock()
 	default:
 		return errUnknowAct
 	}
