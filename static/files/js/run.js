@@ -1,7 +1,7 @@
 /* globals app,window */
 
 //RootController
-app.run(function ($rootScope, search, api, storage) {
+app.run(function ($rootScope, search, api, apiget, storage) {
   var $scope = (window.scope = $rootScope);
 
   var pn = window.location.pathname
@@ -123,6 +123,15 @@ app.run(function ($rootScope, search, api, storage) {
         break
       case "omni":
         $rootScope.omni.edit = !$rootScope.omni.edit;
+        break
+      case "enginedebug":
+        $rootScope.showEnineStatus = !$rootScope.showEnineStatus;
+        if ($rootScope.showEnineStatus) {
+          $rootScope.EngineStatus = "loading...";
+          apiget.enginedebug().success(function (data) {
+            $rootScope.EngineStatus = data;
+          })
+        }
         break
     }
   }

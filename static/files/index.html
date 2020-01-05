@@ -81,13 +81,7 @@
 			</div>
 			<div>
 				<span ng-if="state.Stats.System.set">
-					<span ng-click="$root.showEnineStatus = !$root.showEnineStatus">ShowDebugInfo,</span>
-					<span>
-						cpu {{ state.Stats.System.cpu | round }}%,
-					</span>
-					<span>
-						mem {{ state.Stats.System.memUsedPercent | round }}%,
-					</span>
+					<span ng-click="toggleSections('enginedebug')">ShowDebugInfo,</span>
 					<span>
 						disk {{ state.Stats.System.diskUsedPercent | round }}%,
 					</span>
@@ -95,12 +89,12 @@
 				<span ng-if="state.Stats.Uptime">up {{ ago(state.Stats.Uptime) }}</span>
 			</div>
 		</footer>
-		<div ng-if="$root.showEnineStatus" class="ui mini message">
+		<div ng-if="$root.showEnineStatus" class="ui attached mini message">
 			<i ng-click="$root.showEnineStatus = false" class="close icon"></i>
 			<div class="header">
-				Torrent Engine Info
+				System Info
 			</div>
-			<span ng-if="state.Stats.System.set">
+			<p ng-if="state.Stats.System.set">
 				<span>
 					goroutines {{ state.Stats.System.goRoutines }},
 				</span>
@@ -116,10 +110,14 @@
 				<span>
 					disk {{ state.Stats.System.diskUsedPercent | round }}%,
 				</span>
-			</span>
-			<span ng-if="state.Stats.Uptime">up {{ ago(state.Stats.Uptime) }}</span>
-			<pre>{{ $root.state.EngineStatus }}</pre>
-			<span ng-if="$root.state.EngineStatus.length === 0">Torrent Enging Bootstraping ...</span>
+				<span ng-if="state.Stats.Uptime">up {{ ago(state.Stats.Uptime) }}</span>
+			</p>
+			<div class="header">
+				Torrent Engine Status
+			</div>
+			<p>
+				<pre>{{ EngineStatus }}</pre>
+			</p>
 		</div>
 	</div>
 	<script src="js/vendor/query-string.js"></script>

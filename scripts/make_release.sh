@@ -11,6 +11,7 @@ OS=""
 ARCH=""
 EXESUFFIX=""
 PKGCMD="gzip"
+NOSTATIC=
 
 for arg in "$@"; do
 case $arg in
@@ -23,7 +24,10 @@ case $arg in
 		;;
 	xz)
 		PKGCMD=xz
-    ;;
+    		;;
+	nostat)
+		NOSTATIC=1
+    		;;
 	nozip)
 		PKGCMD=
 		;;
@@ -39,13 +43,15 @@ if [[ -z $ARCH ]]; then
   ARCH=$(go env GOARCH)
 fi
 
-pushd $__dir/../static
-if ! git diff-index --quiet HEAD . ; then
-  echo "Warning: static change and not commited"
-  exit 1
+if [[ -z $NOSTATIC ]]; then
+	pushd $__dir/../static
+	if ! git diff-index --quiet HEAD . ; then
+	echo "Warning: static change and not commited"
+	exit 1
+	fi
+	sh generate.sh
+	popd
 fi
-sh generate.sh
-popd
 
 pushd $__dir/..
 BINFILE=${BIN}_${OS}_${ARCH}${SUFFIX} 

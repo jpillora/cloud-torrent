@@ -80,7 +80,6 @@ type Server struct {
 		LatestRSSGuid   string
 		Torrents        map[string]*engine.Torrent
 		Users           map[string]string
-		EngineStatus    string
 		Stats           struct {
 			Title   string
 			Version string

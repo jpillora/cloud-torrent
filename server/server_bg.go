@@ -1,8 +1,6 @@
 package server
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -36,15 +34,10 @@ func (s *Server) backgroundRoutines() {
 
 	//start collecting stats
 	go func() {
-		var sBuf bytes.Buffer
-		sWriter := bufio.NewWriter(&sBuf)
 		for {
 			if s.state.NumConnections() > 0 {
 				c := s.engine.Config()
 				s.state.Stats.System.loadStats(c.DownloadDirectory)
-				sBuf.Reset()
-				s.engine.WriteStauts(sWriter)
-				s.state.EngineStatus = sBuf.String()
 			}
 			time.Sleep(5 * time.Second)
 		}

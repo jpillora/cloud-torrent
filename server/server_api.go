@@ -81,6 +81,9 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 		s.state.Lock()
 		json.NewEncoder(w).Encode(s.state.Stats)
 		s.state.Unlock()
+	case "enginedebug":
+		w.Header().Set("Content-Type", "text/plain")
+		s.engine.WriteStauts(w)
 	default:
 		return errUnknowAct
 	}
