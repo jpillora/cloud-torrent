@@ -223,10 +223,10 @@ func (s *Server) apiConfigure(data []byte) error {
 		}
 
 		// now it's safe to save the configure
-		s.state.Config = c
-		if err := s.state.Config.SaveConfigFile(s.ConfigPath); err != nil {
+		if err := s.state.Config.SyncViper(c); err != nil {
 			return err
 		}
+		s.state.Config = c
 		log.Printf("[api] config saved")
 
 		// finally to reconfigure the engine

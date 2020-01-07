@@ -1,16 +1,13 @@
 package engine
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"log"
-	"os"
 	"reflect"
 	"strings"
 
 	"github.com/c2h5oh/datasize"
+	"github.com/spf13/viper"
 	"golang.org/x/time/rate"
 )
 
@@ -97,25 +94,21 @@ func (c *Config) Validate(nc *Config) uint8 {
 
 	return status
 }
-
-func (c *Config) SaveConfigFile(configPath string) error {
-	b, err := json.MarshalIndent(&c, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	ob, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-	} else {
-		if bytes.Compare(b, ob) == 0 {
-			return nil
+func (c *Config) SyncViper(nc Config) error {
+	cv := reflect.ValueOf(*c)
+	nv := reflect.ValueOf(nc)
+	typeOfC := cv.Type()
+	for i := 0; i < typeOfC.NumField(); i++ {
+		if cv.Field(i).Interface() != nv.Field(i).Interface() {
+			name := typeOfC.Field(i).Name
+			oval := cv.Field(i).Interface()
+			val := nv.Field(i).Interface()
+			viper.Set(name, val)
+			log.Println("config updated ", name, ": ", oval, " -> ", val)
 		}
 	}
 
-	return ioutil.WriteFile(configPath, b, 0644)
+	return viper.WriteConfigAs(viper.ConfigFileUsed())
 }
 
 func rateLimiter(rstr string) (*rate.Limiter, error) {

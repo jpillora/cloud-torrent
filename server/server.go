@@ -3,9 +3,7 @@ package server
 import (
 	"compress/gzip"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"errors"
 	"github.com/NYTimes/gziphandler"
 	"github.com/boypt/scraper"
 	"github.com/jpillora/cloud-torrent/engine"
@@ -23,9 +22,9 @@ import (
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/velox"
 	"github.com/mmcdole/gofeed"
-	"github.com/pkg/errors"
 	"github.com/radovskyb/watcher"
 	"github.com/skratchdot/open-golang/open"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -56,6 +55,7 @@ type Server struct {
 	DisableLogTime bool   `opts:"help=Don't print timestamp in log"`
 	Debug          bool   `opts:"help=Debug app"`
 	DebugTorrent   bool   `opts:"help=Debug torrent engine"`
+	ConvYAML       bool   `opts:"help=Convert old json config to yaml format."`
 	mainAddr       string
 	isPendingBoot  bool
 
@@ -98,6 +98,45 @@ func (s *Server) GetRestAPI() string {
 // GetIsPendingBoot used by engine doneCmd
 func (s *Server) GetIsPendingBoot() bool {
 	return s.isPendingBoot
+}
+
+func (s *Server) viperConf() (*engine.Config, error) {
+
+	viper.SetConfigName("cloud-torrent")
+	viper.AddConfigPath("/etc/cloud-torrent/")
+	viper.AddConfigPath("$HOME/.cloud-torrent")
+
+	if stat, err := os.Stat(s.ConfigPath); stat != nil && err == nil {
+		viper.SetConfigFile(s.ConfigPath)
+	}
+
+	viper.SetDefault("DownloadDirectory", "./downloads")
+	viper.SetDefault("WatchDirectory", "./torrents")
+	viper.SetDefault("EnableUpload", true)
+	viper.SetDefault("AutoStart", true)
+	viper.SetDefault("DoneCmd", "")
+	viper.SetDefault("SeedRatio", 0)
+	viper.SetDefault("ObfsPreferred", true)
+	viper.SetDefault("ObfsRequirePreferred", false)
+	viper.SetDefault("IncomingPort", 50007)
+	viper.SetDefault("ProxyURL", s.ProxyURL)
+	viper.SetDefault("TrackerListURL", trackerList)
+
+	if err := viper.ReadInConfig(); err != nil {
+		if strings.Contains(err.Error(), "Not Found") {
+			if s.ConfigPath == "" {
+				viper.SetConfigFile("./cloud-torrent.yaml")
+			} else {
+				viper.SetConfigFile(s.ConfigPath)
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	c := &engine.Config{}
+	viper.Unmarshal(c)
+	return c, nil
 }
 
 // Run the server
@@ -143,35 +182,13 @@ func (s *Server) Run(version string) error {
 
 	//torrent engine
 	s.engine = engine.New(s)
-
-	//configure engine
-	c := engine.Config{
-		DownloadDirectory:    "./downloads",
-		WatchDirectory:       "./torrents",
-		EnableUpload:         true,
-		AutoStart:            true,
-		DoneCmd:              "",
-		SeedRatio:            0,
-		ObfsPreferred:        true,
-		ObfsRequirePreferred: false,
-		ProxyURL:             s.ProxyURL,
-		TrackerListURL:       trackerList,
-	}
-	if _, err := os.Stat(s.ConfigPath); err == nil {
-		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {
-			return fmt.Errorf("Read configuration error: %w", err)
-		} else if len(b) == 0 {
-			//ignore empty file
-		} else if err := json.Unmarshal(b, &c); err != nil {
-			return fmt.Errorf("Malformed configuration: %w", err)
-		}
-	}
-	if c.IncomingPort <= 0 || c.IncomingPort >= 65535 {
-		c.IncomingPort = 50007
+	c, err := s.viperConf()
+	if err != nil {
+		return err
 	}
 
 	// normalriz config file
-	if err := s.normlizeConfigDir(&c); err != nil {
+	if err := s.normlizeConfigDir(c); err != nil {
 		return fmt.Errorf("initial configure failed: %w", err)
 	}
 
@@ -180,12 +197,17 @@ func (s *Server) Run(version string) error {
 	}
 
 	// engine configure
-	s.state.Config = c
+	s.state.Config = *c
 	if err := s.engine.Configure(s.state.Config); err != nil {
 		return err
 	}
-	log.Printf("Read Config: %#v\n", c)
-	if err := s.state.Config.SaveConfigFile(s.ConfigPath); err != nil {
+	// log.Printf("Read Config: %#v\n", c)
+	if s.Debug {
+		viper.Debug()
+	}
+
+	log.Println("Current Configfile: ", viper.ConfigFileUsed())
+	if err := viper.WriteConfigAs(viper.ConfigFileUsed()); err != nil {
 		return err
 	}
 
@@ -264,11 +286,13 @@ func (s *Server) normlizeConfigDir(c *engine.Config) error {
 		return fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
 	}
 	c.DownloadDirectory = dldir
+	viper.Set("DownloadDirectory", dldir)
 
 	wdir, err := filepath.Abs(c.WatchDirectory)
 	if err != nil {
 		return fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
 	}
 	c.WatchDirectory = wdir
+	viper.Set("WatchDirectory", wdir)
 	return nil
 }
