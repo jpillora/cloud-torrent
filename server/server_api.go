@@ -203,7 +203,7 @@ func (s *Server) apiConfigure(data []byte) error {
 	if err := json.Unmarshal(data, &c); err != nil {
 		return err
 	}
-	if err := s.normlizeConfigDir(&c); err != nil {
+	if _, err := c.NormlizeConfigDir(); err != nil {
 		return err
 	}
 

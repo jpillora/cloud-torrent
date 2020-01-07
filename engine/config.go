@@ -2,7 +2,9 @@ package engine
 
 import (
 	"errors"
+	"fmt"
 	"log"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -39,6 +41,33 @@ type Config struct {
 	AlwaysAddTrackers    bool
 	ProxyURL             string
 	RssURL               string
+}
+
+func (c *Config) NormlizeConfigDir() (bool, error) {
+	var changed bool
+	if c.DownloadDirectory != "" {
+		dldir, err := filepath.Abs(c.DownloadDirectory)
+		if err != nil {
+			return false, fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
+		}
+		if c.DownloadDirectory != dldir {
+			changed = true
+			c.DownloadDirectory = dldir
+		}
+	}
+
+	if c.WatchDirectory != "" {
+		wdir, err := filepath.Abs(c.WatchDirectory)
+		if err != nil {
+			return false, fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
+		}
+		if c.WatchDirectory != wdir {
+			changed = true
+			c.WatchDirectory = wdir
+		}
+	}
+
+	return changed, nil
 }
 
 func (c *Config) UploadLimiter() *rate.Limiter {

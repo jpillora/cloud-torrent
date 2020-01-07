@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -108,7 +107,7 @@ func (s *Server) viperConf() (*engine.Config, error) {
 	viper.AddConfigPath("/etc/cloud-torrent/")
 	viper.AddConfigPath("$HOME/.cloud-torrent")
 
-	if stat, err := os.Stat(s.ConfigPath); stat != nil && err == nil {
+	if fileExists(s.ConfigPath) {
 		viper.SetConfigFile(s.ConfigPath)
 	}
 
@@ -189,8 +188,14 @@ func (s *Server) Run(version string) error {
 	}
 
 	// normalriz config file
-	if err := s.normlizeConfigDir(c); err != nil {
-		return fmt.Errorf("initial configure failed: %w", err)
+	dirChanged, err := c.NormlizeConfigDir()
+	if err != nil {
+		return err
+	}
+
+	if dirChanged {
+		viper.Set("DownloadDirectory", c.DownloadDirectory)
+		viper.Set("WatchDirectory", c.WatchDirectory)
 	}
 
 	if err := detectDiskStat(c.DownloadDirectory); err != nil {
@@ -207,8 +212,7 @@ func (s *Server) Run(version string) error {
 		viper.Debug()
 	}
 
-	log.Println("Current Configfile: ", viper.ConfigFileUsed())
-
+	log.Println("[config] current file path: ", viper.ConfigFileUsed())
 	if s.ConvYAML {
 		pyml := path.Join(path.Dir(s.ConfigPath), "cloud-torrent.yaml")
 		if err := viper.WriteConfigAs(pyml); err != nil {
@@ -217,8 +221,11 @@ func (s *Server) Run(version string) error {
 		return fmt.Errorf("Config file written to %s", pyml)
 	}
 
-	if err := viper.WriteConfigAs(viper.ConfigFileUsed()); err != nil {
-		return err
+	if cf := viper.ConfigFileUsed(); !fileExists(cf) || dirChanged {
+		log.Println("[config] config file writted: ", cf)
+		if err := viper.WriteConfigAs(cf); err != nil {
+			return err
+		}
 	}
 
 	s.backgroundRoutines()
@@ -290,19 +297,7 @@ func (s *Server) Run(version string) error {
 	return server.ListenAndServe()
 }
 
-func (s *Server) normlizeConfigDir(c *engine.Config) error {
-	dldir, err := filepath.Abs(c.DownloadDirectory)
-	if err != nil {
-		return fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
-	}
-	c.DownloadDirectory = dldir
-	viper.Set("DownloadDirectory", dldir)
-
-	wdir, err := filepath.Abs(c.WatchDirectory)
-	if err != nil {
-		return fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
-	}
-	c.WatchDirectory = wdir
-	viper.Set("WatchDirectory", wdir)
-	return nil
+func fileExists(fn string) bool {
+	stat, err := os.Stat(fn)
+	return stat != nil && err == nil
 }
