@@ -199,6 +199,15 @@ func (s *Server) Run(version string) error {
 		viper.Set("WatchDirectory", c.WatchDirectory)
 	}
 
+	if s.ConvYAML {
+		log.Println("[config] current file path: ", viper.ConfigFileUsed())
+		pyml := path.Join(path.Dir(s.ConfigPath), "cloud-torrent.yaml")
+		if err := viper.WriteConfigAs(pyml); err != nil {
+			return err
+		}
+		return fmt.Errorf("Config file written to %s", pyml)
+	}
+
 	if err := detectDiskStat(c.DownloadDirectory); err != nil {
 		return err
 	}
@@ -214,14 +223,6 @@ func (s *Server) Run(version string) error {
 	}
 
 	log.Println("[config] current file path: ", viper.ConfigFileUsed())
-	if s.ConvYAML {
-		pyml := path.Join(path.Dir(s.ConfigPath), "cloud-torrent.yaml")
-		if err := viper.WriteConfigAs(pyml); err != nil {
-			return err
-		}
-		return fmt.Errorf("Config file written to %s", pyml)
-	}
-
 	if cf := viper.ConfigFileUsed(); !fileExists(cf) || dirChanged {
 		log.Println("[config] config file writted: ", cf)
 		if err := viper.WriteConfigAs(cf); err != nil {
