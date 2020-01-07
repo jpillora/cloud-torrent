@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"errors"
+
 	"github.com/NYTimes/gziphandler"
 	"github.com/boypt/scraper"
 	"github.com/jpillora/cloud-torrent/engine"
@@ -125,10 +127,9 @@ func (s *Server) viperConf() (*engine.Config, error) {
 	if err := viper.ReadInConfig(); err != nil {
 		if strings.Contains(err.Error(), "Not Found") {
 			if s.ConfigPath == "" {
-				viper.SetConfigFile("./cloud-torrent.yaml")
-			} else {
-				viper.SetConfigFile(s.ConfigPath)
+				s.ConfigPath = "./cloud-torrent.yaml"
 			}
+			viper.SetConfigFile(s.ConfigPath)
 		} else {
 			return nil, err
 		}
@@ -207,6 +208,15 @@ func (s *Server) Run(version string) error {
 	}
 
 	log.Println("Current Configfile: ", viper.ConfigFileUsed())
+
+	if s.ConvYAML {
+		pyml := path.Join(path.Dir(s.ConfigPath), "cloud-torrent.yaml")
+		if err := viper.WriteConfigAs(pyml); err != nil {
+			return err
+		}
+		return fmt.Errorf("Config file written to %s", pyml)
+	}
+
 	if err := viper.WriteConfigAs(viper.ConfigFileUsed()); err != nil {
 		return err
 	}
