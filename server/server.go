@@ -105,6 +105,7 @@ func (s *Server) viperConf() (*engine.Config, error) {
 
 	viper.SetConfigName("cloud-torrent")
 	viper.AddConfigPath("/etc/cloud-torrent/")
+	viper.AddConfigPath("/etc/")
 	viper.AddConfigPath("$HOME/.cloud-torrent")
 
 	if fileExists(s.ConfigPath) {
