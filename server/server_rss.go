@@ -54,7 +54,7 @@ func (s *Server) updateRSS() {
 				s.state.rssMark[rss] = feed.Items[0].GUID
 				s.state.rssCache = append(feed.Items[:lastIdx], s.state.rssCache...)
 			}
-		} else {
+		} else if len(feed.Items) > 0 {
 			if s.Debug {
 				log.Printf("retrive %d new items, first record", len(feed.Items))
 			}
