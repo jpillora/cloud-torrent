@@ -18,6 +18,7 @@ This project is a re-branded fork of [cloud-torrent](https://github.com/jpillora
 * Extra trackers from extrenal source
 * Protocol Handler to `magnet:`
 * Magnet RSS subscribing supported
+* Flexible config file accepts multiple formats (.json/.yaml/.toml) ([by spf13/Viper](https://github.com/spf13/viper/)) (1.2.0+)
 
 Also:
 * Single binary
@@ -27,7 +28,6 @@ Also:
 * Mobile-friendly
 * Fast [content server](http://golang.org/pkg/net/http/#ServeContent)
 * IPv6 out of the box
-* Go modules introduced and compatiable with go 1.12+
 * Updated torrnet engine from [anacrolix/torrent](https://github.com/anacrolix/torrent)
 
 # Install
@@ -67,7 +67,7 @@ $ ./scripts/make_release.sh
 See Wiki [Command line Options](https://github.com/boypt/simple-torrent/wiki/Command-line-Options)
 
 ## Configuration file
-See Wiki [Detailed Explanation of `config.json`](https://github.com/boypt/simple-torrent/wiki/Detailed-Explanation-of-config.json)
+See Wiki [Config File](https://github.com/boypt/simple-torrent/wiki/Config-File)
 
 ## Use with WEB servers (nginx/caddy)
 See Wiki [Behind WebServer (reverse proxying)](https://github.com/boypt/simple-torrent/wiki/ReverseProxy)
