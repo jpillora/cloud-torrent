@@ -22,10 +22,15 @@ jobs:
         ref: 'master'
         fetch-depth: '0'
 
+    - name: Set env
+      run: |
+        echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
+        echo "Current Tag: ${RELEASE_VERSION}"
+
     - name: Generate Git log
       run: |
         git fetch origin +refs/tags/*:refs/tags/*
-        GITVER=$(git describe --tags)
+        GITVER=${RELEASE_VERSION}
         PREVVER=$(git describe --tags --abbrev=0 ${GITVER}~1)
         git log --oneline ${PREVVER}..${GITVER} > gittaglogs.txt
 
