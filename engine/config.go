@@ -99,7 +99,7 @@ func InitConf(specPath string) (*Config, error) {
 	cf := viper.ConfigFileUsed()
 	log.Println("[config] selected config file: ", cf)
 	if !configExists || dirChanged {
-		if err := viper.WriteConfigAs(cf); err != nil {
+		if err := viper.WriteConfig(); err != nil {
 			return nil, err
 		}
 		log.Println("[config] config file written: ", cf)
@@ -203,7 +203,7 @@ func (c *Config) SyncViper(nc Config) error {
 		}
 	}
 
-	return viper.WriteConfigAs(viper.ConfigFileUsed())
+	return viper.WriteConfig()
 }
 
 func rateLimiter(rstr string) (*rate.Limiter, error) {

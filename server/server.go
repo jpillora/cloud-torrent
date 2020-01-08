@@ -153,12 +153,14 @@ func (s *Server) Run(version string) error {
 
 	// write cloud-torrent.yaml at the same dir with -c conf and exit
 	if s.ConvYAML {
-		log.Println("[config] current file path: ", viper.ConfigFileUsed())
-		pyml := path.Join(path.Dir(s.ConfigPath), "cloud-torrent.yaml")
-		if err := viper.WriteConfigAs(pyml); err != nil {
+		cf := viper.ConfigFileUsed()
+		log.Println("[config] current file path: ", cf)
+		// replace orig config file ext with ".yaml"
+		ymlcf := cf[:len(cf)-len(path.Ext(cf))] + ".yaml"
+		if err := viper.WriteConfigAs(ymlcf); err != nil {
 			return err
 		}
-		return fmt.Errorf("Config file written to: %s", pyml)
+		return fmt.Errorf("Config file converted and written to: %s", ymlcf)
 	}
 
 	if err := detectDiskStat(c.DownloadDirectory); err != nil {
