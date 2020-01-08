@@ -31,7 +31,6 @@ import (
 const (
 	cacheSavedPrefix = "_CLDAUTOSAVED_"
 	scraperUA        = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
-	trackerList      = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
 )
 
 var (
@@ -47,7 +46,7 @@ type Server struct {
 	Host           string `opts:"help=Listening interface (default all)"`
 	Auth           string `opts:"help=Optional basic auth in form 'user:password',env=AUTH"`
 	ProxyURL       string `opts:"help=Proxy url,env=PROXY_URL"`
-	ConfigPath     string `opts:"help=Configuration file path"`
+	ConfigPath     string `opts:"help=Configuration file path (default /etc/cloud-torrent.yaml)"`
 	KeyPath        string `opts:"help=TLS Key file path"`
 	CertPath       string `opts:"help=TLS Certicate file path,short=r"`
 	RestAPI        string `opts:"help=Listen on a trusted port accepts /api/ requests (eg. localhost:3001),env=RESTAPI"`
@@ -101,45 +100,6 @@ func (s *Server) GetIsPendingBoot() bool {
 	return s.isPendingBoot
 }
 
-func (s *Server) viperConf() (*engine.Config, error) {
-
-	viper.SetConfigName("cloud-torrent")
-	viper.AddConfigPath("/etc/cloud-torrent/")
-	viper.AddConfigPath("/etc/")
-	viper.AddConfigPath("$HOME/.cloud-torrent")
-
-	if fileExists(s.ConfigPath) {
-		viper.SetConfigFile(s.ConfigPath)
-	}
-
-	viper.SetDefault("DownloadDirectory", "./downloads")
-	viper.SetDefault("WatchDirectory", "./torrents")
-	viper.SetDefault("EnableUpload", true)
-	viper.SetDefault("AutoStart", true)
-	viper.SetDefault("DoneCmd", "")
-	viper.SetDefault("SeedRatio", 0)
-	viper.SetDefault("ObfsPreferred", true)
-	viper.SetDefault("ObfsRequirePreferred", false)
-	viper.SetDefault("IncomingPort", 50007)
-	viper.SetDefault("ProxyURL", s.ProxyURL)
-	viper.SetDefault("TrackerListURL", trackerList)
-
-	if err := viper.ReadInConfig(); err != nil {
-		if strings.Contains(err.Error(), "Not Found") {
-			if s.ConfigPath == "" {
-				s.ConfigPath = "./cloud-torrent.yaml"
-			}
-			viper.SetConfigFile(s.ConfigPath)
-		} else {
-			return nil, err
-		}
-	}
-
-	c := &engine.Config{}
-	viper.Unmarshal(c)
-	return c, nil
-}
-
 // Run the server
 func (s *Server) Run(version string) error {
 	isTLS := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
@@ -160,7 +120,7 @@ func (s *Server) Run(version string) error {
 	s.static = ctstatic.FileSystemHandler()
 	s.rssh = http.HandlerFunc(s.serveRSS)
 
-	// isPendingBoot last for 30s
+	// isPendingBoot last for 30s, doneCMD won't be triggered
 	s.isPendingBoot = true
 	go func() {
 		<-time.After(time.Second * 30)
@@ -178,34 +138,27 @@ func (s *Server) Run(version string) error {
 	if err := s.scraper.LoadConfig(defaultSearchConfig); err != nil {
 		log.Fatal(err)
 	}
-	s.state.SearchProviders = s.scraper.Config //share scraper config
+	s.state.SearchProviders = s.scraper.Config //share scraper config with web frontend
 	s.scraperh = http.StripPrefix("/search", s.scraper)
+
+	// sync config from cmd arg to viper
+	viper.SetDefault("ProxyURL", s.ProxyURL)
 
 	//torrent engine
 	s.engine = engine.New(s)
-	c, err := s.viperConf()
+	c, err := engine.InitConf(s.ConfigPath)
 	if err != nil {
 		return err
 	}
 
-	// normalriz config file
-	dirChanged, err := c.NormlizeConfigDir()
-	if err != nil {
-		return err
-	}
-
-	if dirChanged {
-		viper.Set("DownloadDirectory", c.DownloadDirectory)
-		viper.Set("WatchDirectory", c.WatchDirectory)
-	}
-
+	// write cloud-torrent.yaml at the same dir with -c conf and exit
 	if s.ConvYAML {
 		log.Println("[config] current file path: ", viper.ConfigFileUsed())
 		pyml := path.Join(path.Dir(s.ConfigPath), "cloud-torrent.yaml")
 		if err := viper.WriteConfigAs(pyml); err != nil {
 			return err
 		}
-		return fmt.Errorf("Config file written to %s", pyml)
+		return fmt.Errorf("Config file written to: %s", pyml)
 	}
 
 	if err := detectDiskStat(c.DownloadDirectory); err != nil {
@@ -217,17 +170,9 @@ func (s *Server) Run(version string) error {
 	if err := s.engine.Configure(s.state.Config); err != nil {
 		return err
 	}
-	// log.Printf("Read Config: %#v\n", c)
+
 	if s.Debug {
 		viper.Debug()
-	}
-
-	log.Println("[config] current file path: ", viper.ConfigFileUsed())
-	if cf := viper.ConfigFileUsed(); !fileExists(cf) || dirChanged {
-		log.Println("[config] config file writted: ", cf)
-		if err := viper.WriteConfigAs(cf); err != nil {
-			return err
-		}
 	}
 
 	s.backgroundRoutines()

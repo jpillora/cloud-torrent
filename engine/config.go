@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -18,6 +19,10 @@ const (
 	NeedEngineReConfig
 	NeedRestartWatch
 	NeedUpdateTracker
+)
+
+const (
+	trackerListURL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
 )
 
 type Config struct {
@@ -41,6 +46,66 @@ type Config struct {
 	AlwaysAddTrackers    bool
 	ProxyURL             string
 	RssURL               string
+}
+
+func InitConf(specPath string) (*Config, error) {
+
+	viper.SetConfigName("cloud-torrent")
+	viper.AddConfigPath("/etc/cloud-torrent/")
+	viper.AddConfigPath("/etc/")
+	viper.AddConfigPath("$HOME/.cloud-torrent")
+
+	viper.SetDefault("DownloadDirectory", "./downloads")
+	viper.SetDefault("WatchDirectory", "./torrents")
+	viper.SetDefault("EnableUpload", true)
+	viper.SetDefault("AutoStart", true)
+	viper.SetDefault("DoneCmd", "")
+	viper.SetDefault("SeedRatio", 0)
+	viper.SetDefault("ObfsPreferred", true)
+	viper.SetDefault("ObfsRequirePreferred", false)
+	viper.SetDefault("IncomingPort", 50007)
+	viper.SetDefault("TrackerListURL", trackerListURL)
+
+	// user specific config path
+	if stat, err := os.Stat(specPath); stat != nil && err == nil {
+		viper.SetConfigFile(specPath)
+	}
+
+	configExists := true
+	if err := viper.ReadInConfig(); err != nil {
+		if strings.Contains(err.Error(), "Not Found") {
+			configExists = false
+			if specPath == "" {
+				specPath = "./cloud-torrent.yaml"
+			}
+			viper.SetConfigFile(specPath)
+		} else {
+			return nil, err
+		}
+	}
+
+	c := &Config{}
+	viper.Unmarshal(c)
+
+	dirChanged, err := c.NormlizeConfigDir()
+	if err != nil {
+		return nil, err
+	}
+	if dirChanged {
+		viper.Set("DownloadDirectory", c.DownloadDirectory)
+		viper.Set("WatchDirectory", c.WatchDirectory)
+	}
+
+	cf := viper.ConfigFileUsed()
+	log.Println("[config] selected config file: ", cf)
+	if !configExists || dirChanged {
+		if err := viper.WriteConfigAs(cf); err != nil {
+			return nil, err
+		}
+		log.Println("[config] config file written: ", cf)
+	}
+
+	return c, nil
 }
 
 func (c *Config) NormlizeConfigDir() (bool, error) {
@@ -123,6 +188,7 @@ func (c *Config) Validate(nc *Config) uint8 {
 
 	return status
 }
+
 func (c *Config) SyncViper(nc Config) error {
 	cv := reflect.ValueOf(*c)
 	nv := reflect.ValueOf(nc)
