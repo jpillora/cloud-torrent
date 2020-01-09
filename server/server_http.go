@@ -39,38 +39,33 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	}
 	//api call
 	if strings.HasPrefix(r.URL.Path, "/api/") {
-		if r.Method == "POST" {
-			if err := s.apiPOST(r); err == nil {
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("OK"))
-			} else {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-			}
-		} else if r.Method == "GET" {
-			if err := s.apiGET(w, r); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-			}
-		}
+		w.Header().Set("Access-Control-Allow-Headers", "authorization")
+		s.restAPIhandle(w, r)
 		return
 	}
 	//no match, assume static file
 	s.files.ServeHTTP(w, r)
 }
 
+// restAPIhandle is used both by main webserver and restapi server
 func (s *Server) restAPIhandle(w http.ResponseWriter, r *http.Request) {
 	ret := "Bad Request"
 	if strings.HasPrefix(r.URL.Path, "/api/") {
-		if r.Method == "POST" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		switch r.Method {
+		case "POST":
 			if err := s.apiPOST(r); err == nil {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte("OK"))
 			} else {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
-		} else if r.Method == "GET" {
+		case "GET":
 			if err := s.apiGET(w, r); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
+		default:
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 		return
 	}
