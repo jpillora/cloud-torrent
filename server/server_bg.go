@@ -14,7 +14,7 @@ import (
 
 func (s *Server) backgroundRoutines() {
 
-	go s.fetchSearchConfig()
+	go s.fetchSearchConfig(s.state.Config.ScraperURL)
 
 	//poll torrents and files
 	go func() {

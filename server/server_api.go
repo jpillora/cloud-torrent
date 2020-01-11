@@ -196,9 +196,6 @@ func (s *Server) apiPOST(r *http.Request) error {
 
 func (s *Server) apiConfigure(data []byte) error {
 
-	// update search config anyway
-	go s.fetchSearchConfig()
-
 	c := engine.Config{}
 	if err := json.Unmarshal(data, &c); err != nil {
 		return err
@@ -252,5 +249,8 @@ func (s *Server) apiConfigure(data []byte) error {
 	} else {
 		log.Printf("[api] configure unchanged")
 	}
+
+	// update search config anyway
+	go s.fetchSearchConfig(s.state.Config.ScraperURL)
 	return nil
 }

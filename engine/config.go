@@ -22,7 +22,8 @@ const (
 )
 
 const (
-	trackerListURL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
+	defaultTrackerListURL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
+	defaultScraperURL     = "https://raw.githubusercontent.com/boypt/simple-torrent/master/scraper-config.json"
 )
 
 type Config struct {
@@ -46,6 +47,7 @@ type Config struct {
 	AlwaysAddTrackers    bool
 	ProxyURL             string
 	RssURL               string
+	ScraperURL           string
 }
 
 func InitConf(specPath string) (*Config, error) {
@@ -64,7 +66,8 @@ func InitConf(specPath string) (*Config, error) {
 	viper.SetDefault("ObfsPreferred", true)
 	viper.SetDefault("ObfsRequirePreferred", false)
 	viper.SetDefault("IncomingPort", 50007)
-	viper.SetDefault("TrackerListURL", trackerListURL)
+	viper.SetDefault("TrackerListURL", defaultTrackerListURL)
+	viper.SetDefault("ScraperURL", defaultScraperURL)
 
 	// user specific config path
 	if stat, err := os.Stat(specPath); stat != nil && err == nil {
