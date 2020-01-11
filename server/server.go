@@ -175,6 +175,7 @@ func (s *Server) Run(version string) error {
 
 	if s.Debug {
 		viper.Debug()
+		log.Printf("Effective Config: %#v", s.state.Config)
 	}
 
 	s.backgroundRoutines()

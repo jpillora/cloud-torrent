@@ -56,6 +56,7 @@ func InitConf(specPath string) (*Config, error) {
 	viper.AddConfigPath("/etc/cloud-torrent/")
 	viper.AddConfigPath("/etc/")
 	viper.AddConfigPath("$HOME/.cloud-torrent")
+	viper.AddConfigPath(".")
 
 	viper.SetDefault("DownloadDirectory", "./downloads")
 	viper.SetDefault("WatchDirectory", "./torrents")
@@ -77,6 +78,7 @@ func InitConf(specPath string) (*Config, error) {
 	configExists := true
 	if err := viper.ReadInConfig(); err != nil {
 		if strings.Contains(err.Error(), "Not Found") {
+			log.Println("[viper Config]", err)
 			configExists = false
 			if specPath == "" {
 				specPath = "./cloud-torrent.yaml"
@@ -105,7 +107,7 @@ func InitConf(specPath string) (*Config, error) {
 		if err := viper.WriteConfig(); err != nil {
 			return nil, err
 		}
-		log.Println("[config] config file written: ", cf)
+		log.Println("[config] config file written: ", cf, "exists:", configExists, "dirchanged", dirChanged)
 	}
 
 	return c, nil

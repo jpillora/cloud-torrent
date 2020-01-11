@@ -15,6 +15,7 @@ func (s *Server) fetchSearchConfig(confurl string) error {
 	log.Println("fetchSearchConfig: loading search config from", confurl)
 	resp, err := http.Get(confurl)
 	if err != nil {
+		log.Println("[fetchSearchConfig]", err)
 		return err
 	}
 	defer resp.Body.Close()
