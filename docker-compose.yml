@@ -1,0 +1,11 @@
+version: '3.3'
+services:
+    cloud-torrent:
+        ports:
+            - '3000:3000'
+        volumes:
+            - '/path/to/my/downloads:/downloads'
+            - '/path/to/my/torrents:/torrents'
+            - '/path/to/my/config:/etc/cloud-torrent'
+        image: boypt/cloud-torrent
+        command: --auth username:password
