@@ -117,8 +117,8 @@
     }
   },
   "torrentz2": {
-    "name": "Z2",
-    "url": "https://torrentz2.eu/search?f={{query}}&p={{page:1}}",
+    "name": "Torrentz2",
+    "url": "https://torrentz2.eu/search?f={{query}}&p={{page:0}}",
     "list": "div.results dl",
     "result": {
       "name": "dt a",
@@ -130,11 +130,13 @@
         "dt a",
         "@href"
       ],
-      "size": "dd span:nth-child(3)"
+      "size": "dd span:nth-child(3)",
+      "seeds": "dd span:nth-child(4)",
+      "peers": "dd span:nth-child(5)"
     }
   },
   "torrentz2/item": {
-    "name": "Z2/item",
+    "name": "Torrentz2/item",
     "url": "https://torrentz2.eu{{item}}",
     "result": {
       "infohash": [
