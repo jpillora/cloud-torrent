@@ -169,7 +169,7 @@ func (s *Server) Run(version string) error {
 
 	// engine configure
 	s.state.Config = *c
-	if err := s.engine.Configure(s.state.Config); err != nil {
+	if err := s.engine.Configure(&s.state.Config); err != nil {
 		return err
 	}
 

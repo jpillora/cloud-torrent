@@ -228,7 +228,7 @@ func (s *Server) apiConfigure(data []byte) error {
 
 		// finally to reconfigure the engine
 		if status&engine.NeedEngineReConfig > 0 {
-			if err := s.engine.Configure(s.state.Config); err != nil {
+			if err := s.engine.Configure(&s.state.Config); err != nil {
 				if !s.engine.IsConfigred() {
 					go func() {
 						log.Println("[apiConfigure] serious error occured while reconfigured, will exit in 10s")

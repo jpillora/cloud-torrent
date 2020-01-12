@@ -51,7 +51,7 @@ func (e *Engine) SetConfig(c Config) {
 	e.config = c
 }
 
-func (e *Engine) Configure(c Config) error {
+func (e *Engine) Configure(c *Config) error {
 	//recieve config
 	if c.IncomingPort <= 0 {
 		return fmt.Errorf("Invalid incoming port (%d)", c.IncomingPort)
@@ -118,7 +118,7 @@ func (e *Engine) Configure(c Config) error {
 
 	e.closeSync = make(chan struct{})
 	e.cacheDir = c.WatchDirectory
-	e.config = c
+	e.config = *c
 	return nil
 }
 
