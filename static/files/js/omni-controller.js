@@ -179,9 +179,13 @@ app.controller("OmniController", function (
     var provider = $scope.state.SearchProviders[$scope.inputs.provider];
     if (!provider) return;
     var origin = /(https?:\/\/[^\/]+)/.test(provider.url) && RegExp.$1;
+    var page = $scope.page;
+    if (/{{page:0}}/.test(provider.url)) {
+      page -= 1;
+    }
 
     search
-      .all($scope.inputs.provider, $scope.inputs.omni, $scope.page)
+      .all($scope.inputs.provider, $scope.inputs.omni, page)
       .success(function (results) {
         if (!results || results.length === 0) {
           $scope.noResults = true;
