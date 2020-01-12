@@ -53,11 +53,18 @@ func (e *Engine) SetConfig(c Config) {
 
 func (e *Engine) Configure(c Config) error {
 	//recieve config
-	e.Lock()
-	defer e.Unlock()
 	if c.IncomingPort <= 0 {
 		return fmt.Errorf("Invalid incoming port (%d)", c.IncomingPort)
 	}
+	if c.ScraperURL == "" {
+		c.ScraperURL = defaultScraperURL
+	}
+	if c.TrackerListURL == "" {
+		c.TrackerListURL = defaultTrackerListURL
+	}
+
+	e.Lock()
+	defer e.Unlock()
 	tc := torrent.NewDefaultClientConfig()
 	tc.ListenPort = c.IncomingPort
 	tc.DataDir = c.DownloadDirectory
