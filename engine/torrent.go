@@ -20,6 +20,7 @@ type Torrent struct {
 	Started       bool
 	Done          bool
 	DoneCmdCalled bool
+	IsDoneReady   bool
 	Percent       float32
 	DownloadRate  float32
 	UploadRate    float32
@@ -104,7 +105,7 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 
 	torrent.updatedAt = now
 	torrent.Percent = percent(bytes, torrent.Size)
-	torrent.Done = (bytes == torrent.Size)
+	torrent.Done = t.BytesMissing() == 0
 
 	// calculate ratio
 	bRead := torrent.Stats.BytesReadData.Int64()

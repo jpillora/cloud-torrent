@@ -29,14 +29,15 @@ type Server interface {
 
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
 type Engine struct {
-	sync.RWMutex // race condition on ts,client
-	cldServer    Server
-	cacheDir     string
-	client       *torrent.Client
-	closeSync    chan struct{}
-	config       Config
-	ts           map[string]*Torrent
-	bttracker    []string
+	sync.RWMutex  // race condition on ts,client
+	cldServer     Server
+	cacheDir      string
+	client        *torrent.Client
+	closeSync     chan struct{}
+	config        Config
+	ts            map[string]*Torrent
+	bttracker     []string
+	doneThreshold time.Duration
 }
 
 func New(s Server) *Engine {
@@ -61,6 +62,12 @@ func (e *Engine) Configure(c *Config) error {
 	}
 	if c.TrackerListURL == "" {
 		c.TrackerListURL = defaultTrackerListURL
+	}
+
+	if th, err := time.ParseDuration(c.DoneCmdThreshold); err == nil {
+		e.doneThreshold = th
+	} else {
+		return fmt.Errorf("fail to parse DoneCmdThreshold %w", err)
 	}
 
 	e.Lock()
@@ -215,6 +222,20 @@ func (e *Engine) TaskRoutine() {
 			t.Done {
 			log.Println("[Task Stoped] due to reaching SeedRatio")
 			go e.StopTorrent(t.InfoHash)
+		}
+
+		// task started in `DoneCmdThreshold` (default 30s), won't call the DoneCmd below
+		if !t.IsDoneReady {
+			if t.StartedAt.IsZero() {
+				continue
+			}
+
+			if time.Since(t.StartedAt) > e.doneThreshold && !t.Done {
+				// after 30s and task is not done yet, is ready for DoneCmd
+				t.IsDoneReady = true
+			}
+
+			continue
 		}
 
 		// call DoneCmd on task completed
