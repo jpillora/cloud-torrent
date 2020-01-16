@@ -451,8 +451,9 @@ func (e *Engine) callDoneCmd(env []string) {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Println("[DoneCmd] Err:", err)
+		return
 	}
-	log.Println("[DoneCmd] Output:", string(out))
+	log.Print("[DoneCmd] Exit:", cmd.ProcessState.ExitCode(), "Output:", string(out))
 }
 
 func (e *Engine) UpdateTrackers() error {
