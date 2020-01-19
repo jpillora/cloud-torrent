@@ -453,7 +453,7 @@ func (e *Engine) callDoneCmd(env []string) {
 		log.Println("[DoneCmd] Err:", err)
 		return
 	}
-	log.Print("[DoneCmd] Exit:", cmd.ProcessState.ExitCode(), "Output:", string(out))
+	log.Println("[DoneCmd] Exit:", cmd.ProcessState.ExitCode(), "Output:", string(out))
 }
 
 func (e *Engine) UpdateTrackers() error {
