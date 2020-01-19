@@ -1,4 +1,22 @@
 {
+  "torrentgalaxy": {
+    "name": "TorrentGalaxy",
+    "url": "https://torrentgalaxy.to/torrents.php?search={{query}}&sort=id&order=desc&page={{page:0}}",
+    "list": "div.tgxtablerow",
+    "result": {
+      "name": ["div:nth-of-type(4) div a", "@title"],
+      "url": ["div:nth-of-type(4) div a", "@href"],
+      "size": "div:nth-of-type(8)",
+      "seeds": "div:nth-of-type(10)"
+    }
+  },
+  "torrentgalaxy/item": {
+    "name": "TorrentGalaxy/item",
+    "url": "https://torrentgalaxy.to{{item}}",
+    "result": {
+      "infohash": [ "div.torrentpagetable div.tprow:nth-of-type(7) div:nth-of-type(2)" ]
+    }
+  },
   "yourbittorrent2": {
     "name": "YourBittorrent",
     "url": "https://yourbittorrent2.com/?q={{query}}&page={{page:1}}",
@@ -373,3 +391,4 @@
     }
   }
 }
+
