@@ -71,15 +71,3 @@ func (s *Server) restAPIhandle(w http.ResponseWriter, r *http.Request) {
 	}
 	http.Error(w, ret, http.StatusBadRequest)
 }
-
-func livenessWrap(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// liveness response
-		if r.URL.Path == "/healthz" {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
-			return
-		}
-		h.ServeHTTP(w, r)
-	})
-}
