@@ -10,7 +10,7 @@ GITVER=$(git describe --tags)
 OS=""
 ARCH=""
 EXESUFFIX=""
-PKGCMD="gzip"
+PKGCMD=
 NOSTATIC=
 
 for arg in "$@"; do
@@ -28,8 +28,8 @@ case $arg in
 	nostat)
 		NOSTATIC=1
     		;;
-	nozip)
-		PKGCMD=
+	gzip)
+		PKGCMD=gzip
 		;;
 esac
 done
