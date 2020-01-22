@@ -18,6 +18,12 @@ func (s *Server) backgroundRoutines() {
 
 	//poll torrents and files
 	go func() {
+		// initial state
+		s.state.Lock()
+		s.state.Torrents = s.engine.GetTorrents()
+		s.state.Downloads = s.listFiles()
+		s.state.Unlock()
+
 		for {
 			if s.state.NumConnections() > 0 {
 				// only update the state object if user connected
