@@ -27,10 +27,11 @@
 
 <!-- OMNI BAR -->
 <div class="omni ui fluid icon input">
-  <input placeholder="Enter search query, magnet URI, torrent URL or drop a torrent file here"
-    ng-model="inputs.omni" ng-change="parse()" ng-enter="submitOmni()" />
+  <input placeholder="Enter search query, magnet URI, torrent URL or drop a torrent file here" ng-model="inputs.omni"
+    ng-change="parse()" ng-enter="submitOmni()" />
   <div class="icon-wrapper" onfileclick="uploadTorrent($event)" multiple="multiple" accept=".torrent">
-    <i class="icon" ng-class="{search: mode.search, magnet: mode.magnet || mode.torrent, upload: !mode.search && !mode.magnet && !mode.torrent}"></i>
+    <i class="icon"
+      ng-class="{search: mode.search, magnet: mode.magnet || mode.torrent, upload: !mode.search && !mode.magnet && !mode.torrent}"></i>
   </div>
 </div>
 
@@ -48,7 +49,8 @@
 
 <!-- SEARCH BUTTONS -->
 <div class="search buttons" ng-show="mode.search && inputs.provider">
-  <select ng-hide="mode.rss" class="ui tiny button" ng-model="inputs.provider" ng-options="id as s.name for (id, s) in providers">
+  <select ng-hide="mode.rss" class="ui tiny button" ng-model="inputs.provider"
+    ng-options="id as s.name for (id, s) in providers">
   </select>
   <div ng-hide="mode.rss" ng-click="submitSearch()" class="ui tiny blue button" ng-class="{loading: searching,
       disabled: noResults || hasMore && results && results.length > 0
@@ -56,7 +58,7 @@
     <span ng-show="noResults"><i class="sticky note outline icon"></i>No results!</span>
     <span ng-show="!noResults"><i class="search icon"></i>Search</span>
   </div>
-  <div ng-hide="!mode.rss" ng-click="get_rss(true)" class="ui tiny teal button" ng-class="{loading: searching}">
+  <div ng-hide="!mode.rss" ng-click="get_rss(true)" class="ui tiny teal button" ng-class="{loading: searching||apiing}">
     <i class="redo icon"></i>Update Rss
   </div>
 </div>
@@ -87,7 +89,7 @@
         <td class="size" ng-if="r.size">{{ r.size }}</td>
         <td class="users">
           <span class="seeds">{{ r.seeds }}</span>
-          <br/>
+          <br />
           <span class="peers"> {{ r.peers }}</span>
         </td>
         <td class="controls">
@@ -97,7 +99,8 @@
     </table>
 
     <div class="ui two column centered grid loadmore">
-      <button ng-disabled="!hasMore" ng-click="submitSearch()" class="ui tiny blue button" ng-class="{loading: searching}">
+      <button ng-disabled="!hasMore" ng-click="submitSearch()" class="ui tiny blue button"
+        ng-class="{loading: searching}">
         <i class="angle down icon"></i>
         {{hasMore?"Load":"No"}} more
       </button>

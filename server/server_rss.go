@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -11,12 +12,17 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
+var (
+	magnetExp = regexp.MustCompile(`magnet:[^< ]+`)
+)
+
 type rssJSONItem struct {
-	Name            string `json:"name,omitempty"`
-	Magnet          string `json:"magnet,omitempty"`
-	InfoHash        string `json:"hashinfo,omitempty"`
-	Published       string `json:"published,omitempty"`
-	URL             string `json:"url,omitempty"`
+	Name            string `json:"name"`
+	Magnet          string `json:"magnet"`
+	InfoHash        string `json:"hashinfo"`
+	Published       string `json:"published"`
+	URL             string `json:"url"`
+	Torrent         string `json:"torrent"`
 	publishedParsed *time.Time
 }
 
@@ -107,12 +113,22 @@ func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
 		} else {
 			// some sites put it under enclosures
 			for _, e := range i.Enclosures {
+				if e.Type == "application/x-bittorrent" {
+					ritem.Torrent = e.URL
+					continue
+				}
 				if strings.HasPrefix(e.URL, "magnet:") {
 					ritem.Magnet = e.URL
 				}
 			}
 
-			if ritem.Magnet == "" {
+			// find magnet in description
+			if s := magnetExp.FindString(i.Description); s != "" {
+				ritem.Magnet = s
+			}
+
+			// not found magnet/torrent, fallback to the link (likely not a magnet feed)
+			if ritem.Magnet == "" && ritem.InfoHash == "" && ritem.Torrent == "" {
 				ritem.Magnet = i.Link
 			}
 		}
