@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -89,7 +90,11 @@ func (e *Engine) Configure(c *Config) error {
 	}
 	tc.DisableTrackers = c.DisableTrackers
 	tc.DisableIPv6 = c.DisableIPv6
-	tc.ProxyURL = c.ProxyURL
+	if c.ProxyURL != "" {
+		tc.HTTPProxy = func(*http.Request) (*url.URL, error) {
+			return url.Parse(c.ProxyURL)
+		}
+	}
 
 	{
 		if e.client != nil {
