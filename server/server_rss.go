@@ -122,14 +122,16 @@ func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			// find magnet in description
-			if s := magnetExp.FindString(i.Description); s != "" {
-				ritem.Magnet = s
-			}
-
-			// not found magnet/torrent, fallback to the link (likely not a magnet feed)
+			// not found magnet/torrent,
 			if ritem.Magnet == "" && ritem.InfoHash == "" && ritem.Torrent == "" {
-				ritem.Magnet = i.Link
+
+				// find magnet in description
+				if s := magnetExp.FindString(i.Description); s != "" {
+					ritem.Magnet = s
+				} else {
+					//fallback to the link (likely not a magnet feed)
+					ritem.Magnet = i.Link
+				}
 			}
 		}
 		results = append(results, ritem)
