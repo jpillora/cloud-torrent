@@ -7,6 +7,9 @@ import (
 )
 
 type Torrent struct {
+	// put at first postition to prevent memorty align issues.
+	Stats torrent.TorrentStats
+
 	//anacrolix/torrent
 	InfoHash   string
 	Name       string
@@ -16,6 +19,7 @@ type Torrent struct {
 	Uploaded   int64
 	Size       int64
 	Files      []*File
+
 	//cloud torrent
 	Started       bool
 	Done          bool
@@ -27,7 +31,6 @@ type Torrent struct {
 	SeedRatio     float32
 	AddedAt       time.Time
 	StartedAt     time.Time
-	Stats         torrent.TorrentStats
 	t             *torrent.Torrent
 	dropWait      chan struct{}
 	updatedAt     time.Time

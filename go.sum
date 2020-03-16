@@ -252,6 +252,8 @@ github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJS
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
 github.com/jpillora/ansi v1.0.1 h1:7P+6bEkKCe9owPdv4xhRWpfWhUDXL2ybpE7+IVFhqNo=
 github.com/jpillora/ansi v1.0.1/go.mod h1:D2tT+6uzJvN1nBVQILYWkIdq7zG+b5gcFN5WI/VyjMY=
+github.com/jpillora/ansi v1.0.2 h1:+Ei5HCAH0xsrQRCT2PDr4mq9r4Gm4tg+arNdXRkB22s=
+github.com/jpillora/ansi v1.0.2/go.mod h1:D2tT+6uzJvN1nBVQILYWkIdq7zG+b5gcFN5WI/VyjMY=
 github.com/jpillora/archive v0.0.0-20160301031048-e0b3681851f1 h1:3ggQJKuQ4rwBDUa3N3adJRrI8XkOS/7oWhKWbeuBIN0=
 github.com/jpillora/archive v0.0.0-20160301031048-e0b3681851f1/go.mod h1:MvVqA/jM3UcSNdHn6lskwC+/6qzjd9fmyCh+8cxrCRU=
 github.com/jpillora/cookieauth v1.0.0 h1:1BYnSG4c+/5kutOsY+7/Ba+rRhUfYv61Jrf605CxfRw=
