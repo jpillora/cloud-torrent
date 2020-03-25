@@ -46,6 +46,7 @@ jobs:
         bash scripts/ci_release.sh linux arm
         bash scripts/ci_release.sh linux mipsle
         bash scripts/ci_release.sh linux mips
+        bash scripts/ci_release.sh darwin amd64
         
     - name: Release
       uses: softprops/action-gh-release@v1
@@ -62,6 +63,7 @@ jobs:
           scripts/build/cloud-torrent_linux_arm_armv7.gz
           scripts/build/cloud-torrent_linux_mipsle.gz
           scripts/build/cloud-torrent_linux_mips.gz
+          scripts/build/cloud-torrent_darwin_amd64.gz
         prerelease: false
         draft: false
         body_path: gittaglogs.txt
