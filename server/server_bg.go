@@ -44,6 +44,7 @@ func (s *Server) backgroundRoutines() {
 			if s.state.NumConnections() > 0 {
 				c := s.engine.Config()
 				s.state.Stats.System.loadStats(c.DownloadDirectory)
+				s.state.Push()
 			}
 			time.Sleep(5 * time.Second)
 		}

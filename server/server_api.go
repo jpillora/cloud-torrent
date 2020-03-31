@@ -79,6 +79,8 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 		}
 	case "stat":
 		s.state.Lock()
+		c := s.engine.Config()
+		s.state.Stats.System.loadStats(c.DownloadDirectory)
 		json.NewEncoder(w).Encode(s.state.Stats)
 		s.state.Unlock()
 	case "enginedebug":

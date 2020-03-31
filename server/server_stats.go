@@ -22,6 +22,10 @@ type stats struct {
 	pusher velox.Pusher
 }
 
+func (s *stats) Push() {
+	s.pusher.Push()
+}
+
 func (s *stats) loadStats(diskDir string) {
 	//count cpu cycles between last count
 	//count disk usage
@@ -44,7 +48,6 @@ func (s *stats) loadStats(diskDir string) {
 	s.GoRoutines = runtime.NumGoroutine()
 	//done
 	s.Set = true
-	s.pusher.Push()
 }
 
 func detectDiskStat(dir string) error {
