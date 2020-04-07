@@ -13,5 +13,8 @@ Restart=always
 RestartPreventExitStatus=42
 RestartSec=3
 
+#adjust file limit if using non-root user.
+#LimitNOFILE=50000
+
 [Install]
 WantedBy=multi-user.target
