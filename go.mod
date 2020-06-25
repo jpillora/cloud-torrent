@@ -1,11 +1,11 @@
 module cloud-torrent
 
-go 1.13
+go 1.14
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/anacrolix/log v0.6.0
-	github.com/anacrolix/torrent v1.15.0
+	github.com/anacrolix/log v0.7.0
+	github.com/anacrolix/torrent v1.15.2
 	github.com/boypt/scraper v1.0.3
 	github.com/c2h5oh/datasize v0.0.0-20200112174442-28bbd4740fee
 	github.com/elazarl/go-bindata-assetfs v1.0.0
