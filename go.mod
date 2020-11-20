@@ -4,23 +4,23 @@ go 1.14
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/anacrolix/log v0.7.0
-	github.com/anacrolix/torrent v1.15.2
+	github.com/anacrolix/log v0.7.1-0.20200604014615-c244de44fd2d
+	github.com/anacrolix/torrent v1.18.1
 	github.com/boypt/scraper v1.0.3
-	github.com/c2h5oh/datasize v0.0.0-20200112174442-28bbd4740fee
-	github.com/elazarl/go-bindata-assetfs v1.0.0
+	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
+	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/jpillora/archive v0.0.0-20160301031048-e0b3681851f1
 	github.com/jpillora/cloud-torrent v0.0.0-20180427161701-1a741e3d8dd2
 	github.com/jpillora/cookieauth v1.0.0
-	github.com/jpillora/opts v1.1.2
+	github.com/jpillora/opts v1.2.0
 	github.com/jpillora/requestlog v1.0.0
-	github.com/jpillora/velox v0.3.3
-	github.com/mmcdole/gofeed v1.0.0-beta2
+	github.com/jpillora/velox v0.4.0
+	github.com/mmcdole/gofeed v1.1.0
 	github.com/radovskyb/watcher v1.0.7
-	github.com/shirou/gopsutil v2.20.2+incompatible
+	github.com/shirou/gopsutil v3.20.10+incompatible
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
-	github.com/spf13/viper v1.6.2
-	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
+	github.com/spf13/viper v1.7.1
+	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 )
 
 replace (
