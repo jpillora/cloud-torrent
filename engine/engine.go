@@ -236,8 +236,10 @@ func (e *Engine) TaskRoutine() {
 			}
 
 			if time.Since(t.StartedAt) > e.doneThreshold && !t.Done {
-				// after 30s and task is not done yet, is ready for DoneCmd
+				// after threshold and task is not done yet, is ready for DoneCmd
 				t.IsDoneReady = true
+			} else {
+				log.Println("[DoneCmd] canceled within DoneCmdThreshold, the task is started at ", t.StartedAt)
 			}
 
 			continue
