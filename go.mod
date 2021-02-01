@@ -1,11 +1,11 @@
 module cloud-torrent
 
-go 1.14
+go 1.15
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/anacrolix/log v0.7.1-0.20200604014615-c244de44fd2d
-	github.com/anacrolix/torrent v1.18.1
+	github.com/anacrolix/torrent v1.22.0
 	github.com/boypt/scraper v1.0.3
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
 	github.com/elazarl/go-bindata-assetfs v1.0.1
@@ -20,7 +20,7 @@ require (
 	github.com/shirou/gopsutil v3.20.10+incompatible
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/viper v1.7.1
-	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
+	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324
 )
 
 replace (
