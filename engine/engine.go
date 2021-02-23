@@ -368,7 +368,10 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	}
 
 	e.Lock()
-	close(t.dropWait)
+	if !t.Deleted {
+		close(t.dropWait)
+		t.Deleted = true
+	}
 	delete(e.ts, t.InfoHash)
 	e.Unlock()
 
