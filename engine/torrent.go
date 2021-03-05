@@ -25,7 +25,6 @@ type Torrent struct {
 	Deleted       bool
 	Done          bool
 	DoneCmdCalled bool
-	IsDoneReady   bool
 	Percent       float32
 	DownloadRate  float32
 	UploadRate    float32
