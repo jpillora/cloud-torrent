@@ -12,6 +12,7 @@ require (
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
 	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/elithrar/simple-scrypt v1.3.0 // indirect
+	github.com/go-bindata/go-bindata v3.1.2+incompatible // indirect
 	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/jpillora/ansi v1.0.2 // indirect
 	github.com/jpillora/archive v0.0.0-20160301031048-e0b3681851f1
