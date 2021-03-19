@@ -9,13 +9,13 @@ This project is a re-branded fork of [cloud-torrent](https://github.com/jpillora
 # Features
 
 * Individual file download control (1.1.3+)
-* Run extrenal program on tasks completed: `DoneCmd`
+* Run external program on tasks completion: `DoneCmd`
 * Stops task when seeding ratio reached: `SeedRatio`
 * Download/Upload speed limiter: `UploadRate`/`DownloadRate`
 * Detailed transfer stats in web UI.
 * [Torrent Watcher](https://github.com/boypt/simple-torrent/wiki/Torrent-Watcher)
 * K8s/docker health-check endpoint `/healthz`
-* Extra trackers from extrenal source
+* Extra trackers from external source
 * Protocol Handler to `magnet:`
 * Magnet RSS subscribing supported
 * Flexible config file accepts multiple formats (.json/.yaml/.toml) ([by spf13/Viper](https://github.com/spf13/viper/)) (1.2.0+)
@@ -28,7 +28,7 @@ Also:
 * Mobile-friendly
 * Fast [content server](http://golang.org/pkg/net/http/#ServeContent)
 * IPv6 out of the box
-* Updated torrnet engine from [anacrolix/torrent](https://github.com/anacrolix/torrent)
+* Updated torrent engine from [anacrolix/torrent](https://github.com/anacrolix/torrent)
 
 # Install
 
@@ -49,6 +49,9 @@ The script install a systemd unit (under `scripts/cloud-torrent.service`) as ser
 ``` sh
 $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads -v /path/to/my/torrents:/torrents boypt/cloud-torrent
 ```
+When running as a container, keep in mind:
+* You need also to expose your torrent incoming port (50007 by default) if you want to seed (`-p 50007:50007`). Also, you'll have to forward the port on your router.
+* Automatic port forwarding on your router via UPnP IGD will not work unless run in `host` mode (`--net=host`).
 
 ## Source
 
