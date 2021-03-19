@@ -1,0 +1,20 @@
+---
+- hosts: cld
+  user: root
+  strategy: free
+  gather_facts: no
+  vars:
+    - ansible_ssh_common_args: '-o ProxyCommand="~/bin/wslhostproxy.sh %h %p"'
+  tasks:
+        - name: up
+          ansible.builtin.copy:
+                src: cloud-torrent_linux_amd64.gz
+                dest: /tmp/
+            
+        - name: shell
+          shell: |
+                 systemctl stop cloudtorrent
+                 gzip -d -c /tmp/cloud-torrent_linux_amd64.gz > /usr/local/bin/cloud-torrent
+                 systemctl start cloudtorrent
+                 rm -f /tmp/cloud-torrent_linux_amd64.gz 
+

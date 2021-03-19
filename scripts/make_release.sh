@@ -56,7 +56,7 @@ fi
 pushd $__dir/..
 BINFILE=${BIN}_${OS}_${ARCH}${SUFFIX} 
 rm -fv ${BIN}_*
-CGO_ENABLED=0 GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE}${EXESUFFIX} -trimpath -ldflags "-s -w -X main.VERSION=$GITVER"
+GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE}${EXESUFFIX} -trimpath -ldflags "-s -w -X main.VERSION=$GITVER"
 if [[ ! -f ${BINFILE}${EXESUFFIX} ]]; then
   echo "Build failed. Check with error message above."
   exit 1

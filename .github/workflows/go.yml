@@ -43,9 +43,9 @@ jobs:
         bash scripts/ci_release.sh linux amd64
         bash scripts/ci_release.sh linux 386
         bash scripts/ci_release.sh linux arm64
-        bash scripts/ci_release.sh linux arm
-        bash scripts/ci_release.sh linux mipsle
-        bash scripts/ci_release.sh linux mips
+        # bash scripts/ci_release.sh linux arm
+        # bash scripts/ci_release.sh linux mipsle
+        # bash scripts/ci_release.sh linux mips
         bash scripts/ci_release.sh darwin amd64
         
     - name: Release
@@ -58,11 +58,11 @@ jobs:
           scripts/build/cloud-torrent_linux_amd64.gz
           scripts/build/cloud-torrent_linux_386.gz
           scripts/build/cloud-torrent_linux_arm64.gz
-          scripts/build/cloud-torrent_linux_arm_armv5.gz
-          scripts/build/cloud-torrent_linux_arm_armv6.gz
-          scripts/build/cloud-torrent_linux_arm_armv7.gz
-          scripts/build/cloud-torrent_linux_mipsle.gz
-          scripts/build/cloud-torrent_linux_mips.gz
+          # scripts/build/cloud-torrent_linux_arm_armv5.gz
+          # scripts/build/cloud-torrent_linux_arm_armv6.gz
+          # scripts/build/cloud-torrent_linux_arm_armv7.gz
+          # scripts/build/cloud-torrent_linux_mipsle.gz
+          # scripts/build/cloud-torrent_linux_mips.gz
           scripts/build/cloud-torrent_darwin_amd64.gz
         prerelease: false
         draft: false
