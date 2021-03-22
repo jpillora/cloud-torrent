@@ -57,9 +57,12 @@ func (torrent *Torrent) Update(t *torrent.Torrent) {
 		torrent.updateLoaded(t)
 	}
 	if torrent.Magnet == "" {
-		meta := t.Metainfo()
-		m := meta.Magnet(t.Name(), t.InfoHash())
-		torrent.Magnet = m.String()
+		// convert torrent to magnet
+		mi := t.Metainfo()
+		if ifo, err := mi.UnmarshalInfo(); err == nil {
+			magnet := mi.Magnet(nil, &ifo).String()
+			torrent.Magnet = magnet
+		}
 	}
 	torrent.t = t
 }
