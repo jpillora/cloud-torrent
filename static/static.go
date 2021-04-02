@@ -3,13 +3,15 @@
 package ctstatic
 
 import (
+	"embed"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/elazarl/go-bindata-assetfs"
 )
+
+//go:embed files
+var staticFS embed.FS
 
 // FileSystemHandler all static/ files embedded as a Go library
 func FileSystemHandler() http.Handler {
@@ -17,7 +19,7 @@ func FileSystemHandler() http.Handler {
 		log.Println("Using local static files")
 		return http.FileServer(http.Dir("static/files/"))
 	}
-	return http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "files"})
+	return http.FileServer(http.FS(staticFS))
 }
 
 // ReadAll return local file if exists
@@ -31,5 +33,5 @@ func ReadAll(name string) ([]byte, error) {
 		defer f.Close()
 		return ioutil.ReadAll(f)
 	}
-	return Asset("files/" + name)
+	return staticFS.ReadFile(name)
 }
