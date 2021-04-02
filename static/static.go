@@ -4,6 +4,7 @@ package ctstatic
 
 import (
 	"embed"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -19,7 +20,12 @@ func FileSystemHandler() http.Handler {
 		log.Println("Using local static files")
 		return http.FileServer(http.Dir("static/files/"))
 	}
-	return http.FileServer(http.FS(staticFS))
+	if fsys, err := fs.Sub(staticFS, "files"); err == nil {
+		return http.FileServer(http.FS(fsys))
+	} else {
+		log.Println("FileSystemHandler", err)
+	}
+	return http.NotFoundHandler()
 }
 
 // ReadAll return local file if exists

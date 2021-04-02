@@ -6,5 +6,3 @@ sed -i "s/CLDVER/${GITVER}/g" \
     files/template/downloads.html \
     files/css/app.css
 
-go generate
-git checkout -- files

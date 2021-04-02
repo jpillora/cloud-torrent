@@ -45,10 +45,6 @@ fi
 
 if [[ -z $NOSTATIC ]]; then
 	pushd $__dir/../static
-	if ! git diff-index --quiet HEAD . ; then
-	echo "Warning: static change and not commited"
-	exit 1
-	fi
 	sh generate.sh
 	popd
 fi
