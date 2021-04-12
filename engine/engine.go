@@ -306,13 +306,10 @@ func (e *Engine) StartTorrent(infohash string) error {
 		}
 	}
 	if t.t.Info() != nil {
-		// start file by setting the priority
+		// start all files by setting the priority to normal
 		for _, f := range t.t.Files() {
 			f.SetPriority(torrent.PiecePriorityNormal)
 		}
-
-		// call to DownloadAll cause StartFile/StopFile not working
-		// t.t.DownloadAll()
 	}
 	return nil
 }
@@ -326,8 +323,14 @@ func (e *Engine) StopTorrent(infohash string) error {
 	if !t.Started {
 		return fmt.Errorf("Already stopped")
 	}
-	//there is no stop - kill underlying torrent
-	t.t.Drop()
+
+	if t.t.Info() != nil {
+		// stop all files by setting the priority to None
+		for _, f := range t.t.Files() {
+			f.SetPriority(torrent.PiecePriorityNone)
+		}
+	}
+
 	t.Started = false
 	t.UploadRate = 0
 	t.DownloadRate = 0
