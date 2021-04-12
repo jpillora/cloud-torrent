@@ -310,6 +310,8 @@ func (e *Engine) StartTorrent(infohash string) error {
 		for _, f := range t.t.Files() {
 			f.SetPriority(torrent.PiecePriorityNormal)
 		}
+		t.t.AllowDataUpload()
+		t.t.AllowDataDownload()
 	}
 	return nil
 }
@@ -329,11 +331,11 @@ func (e *Engine) StopTorrent(infohash string) error {
 		for _, f := range t.t.Files() {
 			f.SetPriority(torrent.PiecePriorityNone)
 		}
+		t.t.DisallowDataUpload()
+		t.t.DisallowDataDownload()
 	}
 
 	t.Started = false
-	t.UploadRate = 0
-	t.DownloadRate = 0
 	for _, f := range t.Files {
 		if f != nil {
 			f.Started = false
