@@ -131,6 +131,8 @@ github.com/anacrolix/torrent v1.11.0/go.mod h1:FwBai7SyOFlflvfEOaM88ag/jjcBWxTOq
 github.com/anacrolix/torrent v1.15.0/go.mod h1:MFc6KcbpAyfwGqOyRkdarUK9QnKA/FkVg0usFk1OQxU=
 github.com/anacrolix/torrent v1.25.0 h1:QsnQzcxU5kbShe77SOPikzyP6hIkdZd2/JeklsxWlu4=
 github.com/anacrolix/torrent v1.25.0/go.mod h1:737rU+al1LBWEs3IHBystZvsbg24iSP+8Gb25Vc/s5U=
+github.com/anacrolix/torrent v1.25.1 h1:CWw5Kd1VGY3UUM82/xdn+JQBVfJZ8rDT29laKwRUIcI=
+github.com/anacrolix/torrent v1.25.1/go.mod h1:737rU+al1LBWEs3IHBystZvsbg24iSP+8Gb25Vc/s5U=
 github.com/anacrolix/upnp v0.1.1/go.mod h1:LXsbsp5h+WGN7YR+0A7iVXm5BL1LYryDev1zuJMWYQo=
 github.com/anacrolix/upnp v0.1.2-0.20200416075019-5e9378ed1425 h1:/Wi6l2ONI1FUFWN4cBwHOO90V4ylp4ud/eov6GUcVFk=
 github.com/anacrolix/upnp v0.1.2-0.20200416075019-5e9378ed1425/go.mod h1:Pz94W3kl8rf+wxH3IbCa9Sq+DTJr8OSbV2Q3/y51vYs=
