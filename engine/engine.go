@@ -67,6 +67,8 @@ func (e *Engine) Configure(c *Config) error {
 	e.Lock()
 	defer e.Unlock()
 	tc := torrent.NewDefaultClientConfig()
+	tc.NoDefaultPortForwarding = c.NoDefaultPortForwarding
+	tc.DisableUTP = c.DisableUTP
 	tc.ListenPort = c.IncomingPort
 	tc.DataDir = c.DownloadDirectory
 	tc.Debug = c.EngineDebug

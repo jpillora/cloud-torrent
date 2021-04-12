@@ -27,27 +27,29 @@ const (
 )
 
 type Config struct {
-	AutoStart            bool
-	EngineDebug          bool
-	MuteEngineLog        bool
-	ObfsPreferred        bool
-	ObfsRequirePreferred bool
-	DisableTrackers      bool
-	DisableIPv6          bool
-	DownloadDirectory    string
-	WatchDirectory       string
-	EnableUpload         bool
-	EnableSeeding        bool
-	IncomingPort         int
-	DoneCmd              string
-	SeedRatio            float32
-	UploadRate           string
-	DownloadRate         string
-	TrackerListURL       string
-	AlwaysAddTrackers    bool
-	ProxyURL             string
-	RssURL               string
-	ScraperURL           string
+	AutoStart               bool
+	EngineDebug             bool
+	MuteEngineLog           bool
+	ObfsPreferred           bool
+	ObfsRequirePreferred    bool
+	DisableTrackers         bool
+	DisableIPv6             bool
+	NoDefaultPortForwarding bool
+	DisableUTP              bool
+	DownloadDirectory       string
+	WatchDirectory          string
+	EnableUpload            bool
+	EnableSeeding           bool
+	IncomingPort            int
+	DoneCmd                 string
+	SeedRatio               float32
+	UploadRate              string
+	DownloadRate            string
+	TrackerListURL          string
+	AlwaysAddTrackers       bool
+	ProxyURL                string
+	RssURL                  string
+	ScraperURL              string
 }
 
 func InitConf(specPath string) (*Config, error) {
@@ -61,6 +63,8 @@ func InitConf(specPath string) (*Config, error) {
 	viper.SetDefault("DownloadDirectory", "./downloads")
 	viper.SetDefault("WatchDirectory", "./torrents")
 	viper.SetDefault("EnableUpload", true)
+	viper.SetDefault("NoDefaultPortForwarding", true)
+	viper.SetDefault("DisableUTP", false)
 	viper.SetDefault("AutoStart", true)
 	viper.SetDefault("DoneCmd", "")
 	viper.SetDefault("SeedRatio", 0)
