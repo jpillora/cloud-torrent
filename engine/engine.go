@@ -187,10 +187,10 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 		}
 
 		e.removeMagnetCache(t.InfoHash)
+		e.newTorrentCacheFile(t.InfoHash, t.t.Metainfo())
 		if e.config.AutoStart {
 			e.StartTorrent(t.InfoHash)
 		}
-		e.newTorrentCacheFile(t.InfoHash, t.t.Metainfo())
 	}()
 
 	return nil
@@ -306,12 +306,13 @@ func (e *Engine) StartTorrent(infohash string) error {
 		}
 	}
 	if t.t.Info() != nil {
+		t.t.AllowDataUpload()
+		t.t.AllowDataDownload()
+
 		// start all files by setting the priority to normal
 		for _, f := range t.t.Files() {
 			f.SetPriority(torrent.PiecePriorityNormal)
 		}
-		t.t.AllowDataUpload()
-		t.t.AllowDataDownload()
 	}
 	return nil
 }
@@ -331,6 +332,7 @@ func (e *Engine) StopTorrent(infohash string) error {
 		for _, f := range t.t.Files() {
 			f.SetPriority(torrent.PiecePriorityNone)
 		}
+
 		t.t.DisallowDataUpload()
 		t.t.DisallowDataDownload()
 	}
