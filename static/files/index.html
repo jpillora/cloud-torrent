@@ -81,12 +81,13 @@
 			</div>
 			<div>
 				<span ng-if="state.Stats.System.set">
-					<span ng-click="toggleSections('enginedebug')">ShowDebugInfo,</span>
 					<span>
-						disk {{ state.Stats.System.diskUsedPercent | round }}%,
+						UP: {{ state.Stats.ConnStat.BytesWrittenData | bytes }},
+						DN: {{ state.Stats.ConnStat.BytesWrittenData | bytes }},
 					</span>
 				</span>
-				<span ng-if="state.Stats.Uptime">up {{ ago(state.Stats.Uptime) }}</span>
+				<span ng-if="state.Stats.Uptime">Up {{ ago(state.Stats.Uptime) }},</span>
+				<span ng-click="toggleSections('enginedebug')">Debug</span>
 			</div>
 		</footer>
 		<div ng-if="$root.showEnineStatus" class="ui attached mini message">
@@ -116,7 +117,7 @@
 				Torrent Engine Status
 			</div>
 			<p>
-				<pre>{{ EngineStatus }}</pre>
+			<pre>{{ EngineStatus }}</pre>
 			</p>
 		</div>
 	</div>

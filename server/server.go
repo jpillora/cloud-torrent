@@ -17,6 +17,7 @@ import (
 	"errors"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/anacrolix/torrent"
 	"github.com/boypt/scraper"
 	"github.com/jpillora/cloud-torrent/engine"
 	ctstatic "github.com/jpillora/cloud-torrent/static"
@@ -82,11 +83,12 @@ type Server struct {
 		Torrents        map[string]*engine.Torrent
 		Users           map[string]string
 		Stats           struct {
-			Title   string
-			Version string
-			Runtime string
-			Uptime  time.Time
-			System  stats
+			Title    string
+			Version  string
+			Runtime  string
+			Uptime   time.Time
+			System   stats
+			ConnStat torrent.ConnStats
 		}
 	}
 }

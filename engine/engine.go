@@ -547,3 +547,7 @@ func (e *Engine) WriteStauts(_w io.Writer) {
 		e.client.WriteStatus(_w)
 	}
 }
+
+func (e *Engine) ConnStat() torrent.ConnStats {
+	return e.client.ConnStats()
+}
