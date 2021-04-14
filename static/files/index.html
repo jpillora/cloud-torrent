@@ -82,8 +82,8 @@
 			<div>
 				<span ng-if="state.Stats.System.set">
 					<span>
-						UP: {{ state.Stats.ConnStat.BytesWrittenData | bytes }},
-						DN: {{ state.Stats.ConnStat.BytesWrittenData | bytes }},
+						Torrent Transfered (Up: {{ state.Stats.ConnStat.BytesWrittenData | bytes }},
+						Dn: {{ state.Stats.ConnStat.BytesReadUsefulData | bytes }}),
 					</span>
 				</span>
 				<span ng-if="state.Stats.Uptime">Up {{ ago(state.Stats.Uptime) }},</span>
