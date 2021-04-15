@@ -186,10 +186,11 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 		case <-t.t.GotInfo():
 		}
 
-		e.removeMagnetCache(t.InfoHash)
-		e.newTorrentCacheFile(t.InfoHash, t.t.Metainfo())
+		h := t.InfoHash
+		e.removeMagnetCache(h)
+		e.newTorrentCacheFile(h, meta)
 		if e.config.AutoStart {
-			e.StartTorrent(t.InfoHash)
+			e.StartTorrent(h)
 		}
 	}()
 
