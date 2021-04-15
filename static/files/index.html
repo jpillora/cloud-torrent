@@ -73,21 +73,21 @@
 					<a rel="noreferrer" href="https://github.com/boypt/simple-torrent" target="_blank">SimpleTorrent</a>
 					<span>(based on <a rel="noreferrer" href="https://github.com/anacrolix/torrent"
 							target="_blank">anacrolix/torrent</a>)</span>
-					version {{ state.Stats.Version }} - </span>
-				<span ng-if="numKeys(state.Users) > 1">{{ numKeys(state.Users) }} users connected - </span>
+					ver {{ state.Stats.Version }} - </span>
 				<span>
-					<a rel="noreferrer" href="https://golang.org" target="_blank">Go</a> {{ state.Stats.Runtime }}
+					<a rel="noreferrer" href="https://golang.org" target="_blank">Go</a> {{ state.Stats.Runtime }},
 				</span>
+				<span ng-click="toggleSections('enginedebug')">Debug</span>
 			</div>
 			<div>
-				<span ng-if="state.Stats.System.set">
-					<span>
-						Torrent Transfered (Up: {{ state.Stats.ConnStat.BytesWrittenData | bytes }},
-						Dn: {{ state.Stats.ConnStat.BytesReadUsefulData | bytes }}),
-					</span>
-				</span>
 				<span ng-if="state.Stats.Uptime">Up {{ ago(state.Stats.Uptime) }},</span>
-				<span ng-click="toggleSections('enginedebug')">Debug</span>
+				<span>
+					Transfered (▲: {{ state.Stats.ConnStat.BytesWrittenData | bytes }},
+					▼: {{ state.Stats.ConnStat.BytesReadUsefulData | bytes }})
+				</span>
+			</div>
+			<div ng-if="numKeys(state.Users) > 1">
+				<span>{{ numKeys(state.Users) }} users connected</span>
 			</div>
 		</footer>
 		<div ng-if="$root.showEnineStatus" class="ui attached mini message">
