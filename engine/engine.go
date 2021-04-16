@@ -358,14 +358,10 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	if !t.Deleted {
 		close(t.dropWait)
 		t.Deleted = true
+		t.t.Drop()
 	}
 	delete(e.ts, t.InfoHash)
 	e.Unlock()
-
-	ih := metainfo.NewHashFromHex(infohash)
-	if tt, ok := e.client.Torrent(ih); ok {
-		tt.Drop()
-	}
 
 	e.removeMagnetCache(infohash)
 	e.removeTorrentCache(infohash)
