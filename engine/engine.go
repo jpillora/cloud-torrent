@@ -546,5 +546,10 @@ func (e *Engine) WriteStauts(_w io.Writer) {
 }
 
 func (e *Engine) ConnStat() torrent.ConnStats {
-	return e.client.ConnStats()
+	e.RLock()
+	defer e.RUnlock()
+	if e.client != nil {
+		return e.client.ConnStats()
+	}
+	return torrent.ConnStats{}
 }
