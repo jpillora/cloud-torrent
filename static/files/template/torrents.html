@@ -15,8 +15,8 @@
 </div>
 
 <div ng-if="!isEmpty(state.Torrents) && $expanded" class="ui raised segments">
-  <div ng-repeat="t in state.Torrents | dictValuesArray | orderBy:'AddedAt'"
-    ng-class="{open: t.open, 'positive message':t.IsSeeding}" class="ui torrent segment">
+  <div ng-repeat="t in state.Torrents | dictValuesArray | orderBy:'AddedAt'" ng-class="{open: t.open}"
+    class="ui torrent segment">
 
     <div ng-if="!t.Loaded" class="ui active inverted dimmer">
       <div class="ui text loader">Loading</div>
@@ -33,14 +33,14 @@
           </a>
         </div>
         <div class="speed">
-          <span data-mode="Speed" class="ui label" title="Upload Speed" ng-class="{
+          <span data-mode="UpSpeed" class="ui label" title="Upload Speed" ng-class="{
             yellow:t.UploadRate > 0 && t.UploadRate < 102400,
             green:t.UploadRate > 0 && t.UploadRate >= 102400
             }" ng-click="toggleTagDetail($event, t)">
             <i class="cloud upload icon"></i>
             {{t.UploadRate | bytes}}/s
           </span>
-          <span data-mode="Speed" class="ui label" title="Download Speed" ng-class="{
+          <span data-mode="DownSpeed" class="ui label" title="Download Speed" ng-class="{
             yellow:t.DownloadRate > 0 && t.DownloadRate < 102400,
             green:t.DownloadRate > 0 && t.DownloadRate >= 102400
             }" ng-click="toggleTagDetail($event, t)">
@@ -58,6 +58,9 @@
             green: t.SeedRatio >= 1 }" ng-click="toggleTagDetail($event, t)">
             <i class="exchange alternate icon"></i>
             {{ t.SeedRatio | round }}
+          </span>
+          <span class="ui green label" ng-if="t.IsSeeding">
+            <i class="archive icon"></i> Seeding
           </span>
         </div>
         <div class="ui blue small progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
@@ -105,8 +108,11 @@
           <div class="header">
             {{t.$detailTitle}}
           </div>
-          <p ng-if="t.$showMode === 'Speed'">
-            Upload : {{t.UploadRate | bytes}}/s | Download : {{t.DownloadRate | bytes}}/s
+          <p ng-if="t.$showMode === 'UpSpeed'">
+            Upload : {{t.UploadRate | bytes}}/s | Uploaded Data: {{ t.Stats.BytesWritten | bytes }}
+          </p>
+          <p ng-if="t.$showMode === 'DownSpeed'">
+            Upload : {{t.DownloadRate | bytes}}/s | Downloaded Data: {{ t.Stats.BytesRead | bytes }}
           </p>
           <p ng-if="t.$showMode === 'Peers'">
             Total: {{ t.Stats.TotalPeers }} / Active: {{t.Stats.ActivePeers}} / HalfOpen: {{t.Stats.HalfOpenPeers}} /
