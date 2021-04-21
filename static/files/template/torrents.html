@@ -5,9 +5,8 @@
       Torrents
       <span class="ui label">
         <i class="list icon"></i>
-        {{ numKeys(state.Torrents) }} task{{ numKeys(state.Torrents) <= 1 ? '' : 's' }}
+        {{ numKeys(state.Torrents) }} task{{ numKeys(state.Torrents) <= 1 ? '' : 's' }} </span>
       </span>
-    </span>
   </div>
 </div>
 
@@ -16,8 +15,8 @@
 </div>
 
 <div ng-if="!isEmpty(state.Torrents) && $expanded" class="ui raised segments">
-  <div ng-repeat="t in state.Torrents | dictValuesArray | orderBy:'AddedAt'" ng-class="{open: t.open}"
-    class="ui torrent segment">
+  <div ng-repeat="t in state.Torrents | dictValuesArray | orderBy:'AddedAt'"
+    ng-class="{open: t.open, 'positive message':t.IsSeeding}" class="ui torrent segment">
 
     <div ng-if="!t.Loaded" class="ui active inverted dimmer">
       <div class="ui text loader">Loading</div>

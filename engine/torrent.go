@@ -25,6 +25,7 @@ type Torrent struct {
 	Deleted       bool
 	Done          bool
 	DoneCmdCalled bool
+	IsSeeding     bool
 	Percent       float32
 	DownloadRate  float32
 	UploadRate    float32
@@ -96,6 +97,7 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 		file.f = f
 	}
 
+	torrent.IsSeeding = t.Seeding()
 	torrent.Stats = t.Stats()
 	now := time.Now()
 	bytes := t.BytesCompleted()
