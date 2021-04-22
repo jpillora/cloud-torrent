@@ -97,7 +97,6 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 		file.f = f
 	}
 
-	torrent.IsSeeding = t.Seeding()
 	torrent.Stats = t.Stats()
 	now := time.Now()
 	bytes := t.BytesCompleted()
@@ -120,6 +119,7 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 	torrent.updatedAt = now
 	torrent.Percent = percent(bytes, torrent.Size)
 	torrent.Done = t.BytesMissing() == 0
+	torrent.IsSeeding = t.Seeding() && torrent.Done
 
 	// calculate ratio
 	bRead := torrent.Stats.BytesReadData.Int64()
