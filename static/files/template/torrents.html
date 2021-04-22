@@ -33,14 +33,14 @@
           </a>
         </div>
         <div class="speed">
-          <span data-mode="UpSpeed" class="ui label" title="Upload Speed" ng-class="{
+          <span data-mode="UpSpeed" class="ui label" title="Upload" ng-class="{
             yellow:t.UploadRate > 0 && t.UploadRate < 102400,
             green:t.UploadRate > 0 && t.UploadRate >= 102400
             }" ng-click="toggleTagDetail($event, t)">
             <i class="cloud upload icon"></i>
             {{t.UploadRate | bytes}}/s
           </span>
-          <span data-mode="DownSpeed" class="ui label" title="Download Speed" ng-class="{
+          <span data-mode="DownSpeed" class="ui label" title="Download" ng-class="{
             yellow:t.DownloadRate > 0 && t.DownloadRate < 102400,
             green:t.DownloadRate > 0 && t.DownloadRate >= 102400
             }" ng-click="toggleTagDetail($event, t)">
@@ -60,7 +60,7 @@
             {{ t.SeedRatio | round }}
           </span>
           <span class="ui green label" ng-if="t.IsSeeding">
-            <i class="archive icon"></i> Seeding
+            <i class="archive icon"></i> Seed
           </span>
         </div>
         <div class="ui blue small progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
@@ -105,26 +105,74 @@
       <div class="ui sixteen wide column" ng-if="t.$showMode">
         <div class="ui info message">
           <i class="close icon" ng-click="t.$showMode = null"></i>
-          <div class="header">
+          <h3 class="header">
+            <i class="tags icon"></i>
             {{t.$detailTitle}}
+          </h3>
+          <p></p>
+          <div ng-if="t.$showMode === 'UpSpeed'">
+            <div class="ui blue basic label">
+              <i class="tachometer alternate icon"></i>
+              Upload Speed
+              <div class="detail">{{t.UploadRate | bytes}}/s</div>
+            </div>
+            <div class="ui blue basic label">
+              <i class="cloud upload icon"></i>
+              Uploaded Data
+              <div class="detail">{{ t.Stats.BytesWritten | bytes }}</div>
+            </div>
           </div>
-          <p ng-if="t.$showMode === 'UpSpeed'">
-            Upload : {{t.UploadRate | bytes}}/s | Uploaded Data: {{ t.Stats.BytesWritten | bytes }}
-          </p>
-          <p ng-if="t.$showMode === 'DownSpeed'">
-            Upload : {{t.DownloadRate | bytes}}/s | Downloaded Data: {{ t.Stats.BytesRead | bytes }}
-          </p>
-          <p ng-if="t.$showMode === 'Peers'">
-            Total: {{ t.Stats.TotalPeers }} / Active: {{t.Stats.ActivePeers}} / HalfOpen: {{t.Stats.HalfOpenPeers}} /
-            Pending: {{t.Stats.PendingPeers}}
-          </p>
-          <p ng-if="t.$showMode === 'Ratio'">
-            Exchanged Ratio:{{ t.SeedRatio | round }} / Uploaded Data: {{ t.Stats.BytesWritten | bytes }} / Downloaded
-            Data: {{ t.Stats.BytesRead | bytes }}
-          </p>
-          <p ng-if="t.$showMode === 'Downloaded'">
+          <div ng-if="t.$showMode === 'DownSpeed'">
+            <div class="ui blue basic label">
+              <i class="tachometer alternate icon"></i>
+              Download Speed
+              <div class="detail">{{t.DownloadRate | bytes}}/s</div>
+            </div>
+            <div class="ui blue basic label">
+              <i class="cloud download icon"></i>
+              Downloaded Data
+              <div class="detail">{{ t.Stats.BytesRead | bytes }}</div>
+            </div>
+          </div>
+          <div ng-if="t.$showMode === 'Peers'">
+
+            <div class="ui basic blue label">
+              <i class="users icon"></i>
+              Total
+              <div class="detail">{{ t.Stats.TotalPeers }}</div>
+            </div>
+            <div class="ui basic blue label">
+              <i class="user icon"></i>
+              Active
+              <div class="detail">{{t.Stats.ActivePeers}} </div>
+            </div>
+            <div class="ui basic blue label">
+              <i class="user md icon"></i>
+              HalfOpen
+              <div class="detail"> {{t.Stats.HalfOpenPeers}} </div>
+            </div>
+            <div class="ui basic blue label">
+              <i class="user plus icon"></i>
+              Pending
+              <div class="detail"> {{t.Stats.PendingPeers}} </div>
+            </div>
+          </div>
+
+          <div ng-if="t.$showMode === 'Ratio'">
+            <div class="ui blue basic label">
+              <i class="exchange icon"></i>
+              Exchanged Ratio
+              <div class="detail">{{ t.SeedRatio | round }}</div>
+            </div>
+            <div class="ui blue basic label">
+              <i class="clock outline icon"></i>
+              Started
+              <div class="detail">{{ ago(t.StartedAt) }}</div>
+            </div>
+          </div>
+          <div ng-if="t.$showMode === 'Downloaded'">
             Download Size: {{t.Downloaded | bytes}} / Total Size: {{t.Size | bytes}} - {{ t.Percent }}%
-          </p>
+          </div>
         </div>
       </div>
 
