@@ -162,12 +162,15 @@ func (e *Engine) NewTorrentBySpec(spec *torrent.TorrentSpec) error {
 
 // NewTorrentByFilePath -> NewTorrentBySpec
 func (e *Engine) NewTorrentByFilePath(path string) error {
-    defer func() error {
-        if r := recover(); r != nil {
-            return fmt.Errorf("Error loading new torrent from file %s: %+v", path, r)
-        }
-        return nil
-    }()
+
+	// torrent.TorrentSpecFromMetaInfo may panic if the info is malformed
+	defer func() error {
+		if r := recover(); r != nil {
+			return fmt.Errorf("Error loading new torrent from file %s: %+v", path, r)
+		}
+		return nil
+	}()
+
 	info, err := metainfo.LoadFromFile(path)
 	if err != nil {
 		return err
