@@ -123,7 +123,7 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 
 	// calculate ratio
 	bRead := torrent.Stats.BytesReadData.Int64()
-	bWrite := torrent.Stats.BytesWritten.Int64()
+	bWrite := torrent.Stats.BytesWrittenData.Int64()
 	if bRead > 0 {
 		torrent.SeedRatio = float32(bWrite) / float32(bRead)
 	}
