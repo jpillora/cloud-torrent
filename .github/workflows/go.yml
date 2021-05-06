@@ -33,38 +33,25 @@ jobs:
 
     - name: Get dependencies
       run: |
-        go get -v -u github.com/shuLhan/go-bindata/...
         go get -v -t -d ./...
 
     - name: Build
       run: |
-        #bash scripts/ci_release.sh windows amd64
-        #bash scripts/ci_release.sh windows 386
-        bash scripts/ci_release.sh linux amd64
-        bash scripts/ci_release.sh linux 386
-        bash scripts/ci_release.sh linux arm64
-        # bash scripts/ci_release.sh linux arm
-        # bash scripts/ci_release.sh linux mipsle
-        # bash scripts/ci_release.sh linux mips
-        # bash scripts/ci_release.sh darwin amd64
+        bash scripts/make_release.sh gzip amd64
+        bash scripts/make_release.sh gzip amd64 purego
+        bash scripts/make_release.sh gzip arm64
+        bash scripts/make_release.sh gzip arm64 purego
         
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          #scripts/build/cloud-torrent_windows_amd64.exe.gz
-          #scripts/build/cloud-torrent_windows_386.exe.gz
-          scripts/build/cloud-torrent_linux_amd64.gz
-          scripts/build/cloud-torrent_linux_386.gz
-          scripts/build/cloud-torrent_linux_arm64.gz
-          # scripts/build/cloud-torrent_linux_arm_armv5.gz
-          # scripts/build/cloud-torrent_linux_arm_armv6.gz
-          # scripts/build/cloud-torrent_linux_arm_armv7.gz
-          # scripts/build/cloud-torrent_linux_mipsle.gz
-          # scripts/build/cloud-torrent_linux_mips.gz
-          # scripts/build/cloud-torrent_darwin_amd64.gz
-        prerelease: false
+          cloud-torrent_linux_amd64.gz
+          cloud-torrent_linux_amd64_static.gz
+          cloud-torrent_linux_arm64.gz
+          cloud-torrent_linux_arm64_static.gz
+        prerelease: true
         draft: false
         body_path: gittaglogs.txt
       env:

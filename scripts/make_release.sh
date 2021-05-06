@@ -9,32 +9,38 @@ GITVER=$(git describe --tags)
 
 OS=""
 ARCH=""
-EXESUFFIX=""
+SUFFIX=""
 PKGCMD=
 NOSTATIC=
 CGO=1
 
 for arg in "$@"; do
 case $arg in
+	amd64)
+		ARCH=amd64
+		;;
+	arm64)
+		ARCH=arm64
+		;;
 	386)
-		GOARCH=386
+		ARCH=386
 		;;
 	windows)
 		OS=windows
-		EXESUFFIX=.exe
+		SUFFIX=.exe
 		;;
 	xz)
 		PKGCMD=xz
-    		;;
+    	;;
 	nostat)
 		NOSTATIC=1
-    		;;
+    	;;
 	gzip)
 		PKGCMD=gzip
 		;;
 	purego)
 		CGO=0
-		EXESUFFIX=_static
+		SUFFIX=_static
 		;;
 esac
 done
@@ -56,15 +62,16 @@ fi
 
 pushd $__dir/..
 BINFILE=${BIN}_${OS}_${ARCH}${SUFFIX} 
-rm -fv ${BIN}_*
-CGO_ENABLED=$CGO GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE}${EXESUFFIX} -trimpath -ldflags "-s -w -X main.VERSION=$GITVER"
-if [[ ! -f ${BINFILE}${EXESUFFIX} ]]; then
+CGO_ENABLED=$CGO GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE} -trimpath -ldflags "-s -w -X main.VERSION=$GITVER"
+if [[ ! -f ${BINFILE} ]]; then
   echo "Build failed. Check with error message above."
   exit 1
 fi
 
-git checkout HEAD -- static/*
+if [[ -z $NOSTATIC ]]; then
+	git checkout HEAD -- static/*
+fi
 
 if [[ ! -z $PKGCMD ]]; then
-  ${PKGCMD} -v -9 -k ${BINFILE}${EXESUFFIX}
+  ${PKGCMD} -v -9 ${BINFILE}
 fi
