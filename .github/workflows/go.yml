@@ -39,7 +39,6 @@ jobs:
       run: |
         bash scripts/make_release.sh gzip amd64
         bash scripts/make_release.sh gzip amd64 purego
-        bash scripts/make_release.sh gzip arm64
         bash scripts/make_release.sh gzip arm64 purego
         
     - name: Release
@@ -49,7 +48,6 @@ jobs:
         files: |
           cloud-torrent_linux_amd64.gz
           cloud-torrent_linux_amd64_static.gz
-          cloud-torrent_linux_arm64.gz
           cloud-torrent_linux_arm64_static.gz
         prerelease: true
         draft: false
