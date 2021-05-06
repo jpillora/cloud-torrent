@@ -12,6 +12,7 @@ ARCH=""
 EXESUFFIX=""
 PKGCMD=
 NOSTATIC=
+CGO=1
 
 for arg in "$@"; do
 case $arg in
@@ -30,6 +31,10 @@ case $arg in
     		;;
 	gzip)
 		PKGCMD=gzip
+		;;
+	purego)
+		CGO=0
+		EXESUFFIX=_static
 		;;
 esac
 done
@@ -52,7 +57,7 @@ fi
 pushd $__dir/..
 BINFILE=${BIN}_${OS}_${ARCH}${SUFFIX} 
 rm -fv ${BIN}_*
-GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE}${EXESUFFIX} -trimpath -ldflags "-s -w -X main.VERSION=$GITVER"
+CGO_ENABLED=$CGO GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE}${EXESUFFIX} -trimpath -ldflags "-s -w -X main.VERSION=$GITVER"
 if [[ ! -f ${BINFILE}${EXESUFFIX} ]]; then
   echo "Build failed. Check with error message above."
   exit 1
