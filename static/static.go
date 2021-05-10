@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 )
 
 //go:embed files
@@ -39,5 +40,5 @@ func ReadAll(name string) ([]byte, error) {
 		defer f.Close()
 		return ioutil.ReadAll(f)
 	}
-	return staticFS.ReadFile(name)
+	return staticFS.ReadFile(path.Join("files", name))
 }
