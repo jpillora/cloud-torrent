@@ -29,7 +29,7 @@ jobs:
         git checkout ${GITHUB_REF} -b compile
         GITVER=$(git describe --tags)
         PREVVER=$(git describe --tags --abbrev=0 ${GITVER}~1)
-        git log --oneline ${PREVVER}..${GITVER} > gittaglogs.txt
+        git log --oneline ${PREVVER}..${GITVER} | tee gittaglogs.txt
 
     - name: Get dependencies
       run: |
