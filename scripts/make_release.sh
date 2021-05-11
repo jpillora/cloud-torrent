@@ -4,7 +4,13 @@ __file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
 __base="$(basename ${__file} .sh)"
 __root="$(cd "$(dirname "${__dir}")" && pwd)" # <-- change this as it depends on your app
 
+BINPREFIX=""
 BIN=cloud-torrent
+
+if [[ -d ${BINLOCATION} ]]; then
+	BINPREFIX=${BINLOCATION}/
+fi
+
 GITVER=$(git describe --tags)
 
 OS=""
@@ -61,7 +67,7 @@ if [[ -z $NOSTATIC ]]; then
 fi
 
 pushd $__dir/..
-BINFILE=${BIN}_${OS}_${ARCH}${SUFFIX} 
+BINFILE=${BINPREFIX}${BIN}_${OS}_${ARCH}${SUFFIX} 
 CGO_ENABLED=$CGO GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE} -trimpath -ldflags "-s -w -X main.VERSION=$GITVER"
 if [[ ! -f ${BINFILE} ]]; then
   echo "Build failed. Check with error message above."
