@@ -59,7 +59,6 @@ type Server struct {
 	DebugTorrent   bool   `opts:"help=Debug torrent engine"`
 	ConvYAML       bool   `opts:"help=Convert old json config to yaml format."`
 	mainAddr       string
-	isPendingBoot  bool
 
 	//http handlers
 	files, static, rssh http.Handler
@@ -98,11 +97,6 @@ func (s *Server) GetRestAPI() string {
 	return s.RestAPI
 }
 
-// GetIsPendingBoot used by engine doneCmd
-func (s *Server) GetIsPendingBoot() bool {
-	return s.isPendingBoot
-}
-
 // Run the server
 func (s *Server) Run(version string) error {
 	isTLS := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
@@ -122,13 +116,6 @@ func (s *Server) Run(version string) error {
 	s.files = http.HandlerFunc(s.serveFiles)
 	s.static = ctstatic.FileSystemHandler()
 	s.rssh = http.HandlerFunc(s.serveRSS)
-
-	// isPendingBoot last for 30s, doneCMD won't be triggered
-	s.isPendingBoot = true
-	go func() {
-		<-time.After(time.Second * 30)
-		s.isPendingBoot = false
-	}()
 
 	//scraper
 	s.scraper = &scraper.Handler{

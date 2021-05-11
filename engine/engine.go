@@ -25,7 +25,6 @@ const (
 
 type Server interface {
 	GetRestAPI() string
-	GetIsPendingBoot() bool
 }
 
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
@@ -441,11 +440,6 @@ func (e *Engine) StopFile(infohash, filepath string) error {
 
 func (e *Engine) callDoneCmd(env []string) {
 	if e.config.DoneCmd == "" {
-		return
-	}
-
-	if e.cldServer.GetIsPendingBoot() {
-		log.Println("[DoneCmd] program is pending boot, skiping")
 		return
 	}
 
