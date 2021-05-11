@@ -137,9 +137,7 @@ func (e *Engine) IsConfigred() bool {
 // NewMagnet -> *Torrent -> addTorrentTask
 func (e *Engine) NewMagnet(magnetURI string) error {
 	log.Println("[NewMagnet] called: ", magnetURI)
-	e.RLock()
 	tt, err := e.client.AddMagnet(magnetURI)
-	e.RUnlock()
 	if err != nil {
 		return err
 	}
@@ -150,9 +148,7 @@ func (e *Engine) NewMagnet(magnetURI string) error {
 // NewTorrentBySpec -> *Torrent -> addTorrentTask
 func (e *Engine) NewTorrentBySpec(spec *torrent.TorrentSpec) error {
 	log.Println("[NewTorrentBySpec] called ")
-	e.RLock()
 	tt, _, err := e.client.AddTorrentSpec(spec)
-	e.RUnlock()
 	if err != nil {
 		return err
 	}
