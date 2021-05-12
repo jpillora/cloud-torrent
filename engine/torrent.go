@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"sync"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -35,6 +36,7 @@ type Torrent struct {
 	t             *torrent.Torrent
 	dropWait      chan struct{}
 	updatedAt     time.Time
+	sync.Mutex
 }
 
 type File struct {
@@ -52,6 +54,9 @@ type File struct {
 
 // Update retrive info from torrent.Torrent
 func (torrent *Torrent) Update(t *torrent.Torrent) {
+	torrent.Lock()
+	defer torrent.Unlock()
+
 	torrent.Name = t.Name()
 	if t.Info() != nil {
 		torrent.Loaded = true

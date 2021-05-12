@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/metainfo"
 )
 
 func (e *Engine) isTaskInList(ih string) bool {
@@ -44,12 +43,10 @@ func (e *Engine) upsertTorrent(ih, name string) *Torrent {
 func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
 	e.RLock()
 	defer e.RUnlock()
-	ih := metainfo.NewHashFromHex(infohash)
-	t, ok := e.ts[ih.HexString()]
-	if !ok {
-		return t, fmt.Errorf("Missing torrent %x", ih)
+	if t, ok := e.ts[infohash]; ok {
+		return t, nil
 	}
-	return t, nil
+	return nil, fmt.Errorf("Missing torrent %x", infohash)
 }
 
 func (e *Engine) callDoneCmd(env []string) {

@@ -300,6 +300,9 @@ func (e *Engine) StartTorrent(infohash string) error {
 	if err != nil {
 		return err
 	}
+	t.Lock()
+	defer t.Unlock()
+
 	if t.Started {
 		return fmt.Errorf("Already started")
 	}
@@ -328,6 +331,9 @@ func (e *Engine) StopTorrent(infohash string) error {
 	if err != nil {
 		return err
 	}
+	t.Lock()
+	defer t.Unlock()
+
 	if !t.Started {
 		return fmt.Errorf("Already stopped")
 	}
@@ -358,6 +364,9 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 		return err
 	}
 
+	t.Lock()
+	defer t.Unlock()
+
 	e.Lock()
 	if t.Loaded {
 		close(t.dropWait)
@@ -380,6 +389,8 @@ func (e *Engine) StartFile(infohash, filepath string) error {
 	if err != nil {
 		return err
 	}
+	t.Lock()
+	defer t.Unlock()
 	var f *File
 	for _, file := range t.Files {
 		if file.Path == filepath {
@@ -404,6 +415,8 @@ func (e *Engine) StopFile(infohash, filepath string) error {
 	if err != nil {
 		return err
 	}
+	t.Lock()
+	defer t.Unlock()
 	var f *File
 	for _, file := range t.Files {
 		if file.Path == filepath {
@@ -429,7 +442,7 @@ func (e *Engine) StopFile(infohash, filepath string) error {
 	}
 
 	if allStopped {
-		e.StopTorrent(infohash)
+		go e.StopTorrent(infohash)
 	}
 
 	return nil
