@@ -127,3 +127,7 @@ func (e *Engine) nextWaitTask() {
 		e.restoreFromElem(&taskElm)
 	}
 }
+
+func (e *Engine) pushWaitTask(ih string, tp taskType) {
+	e.waitList.Push(taskElem{ih: ih, tp: tp})
+}

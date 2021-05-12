@@ -176,7 +176,7 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 	if e.config.MaxConcurrentTask > 0 && len(e.client.Torrents()) >= e.config.MaxConcurrentTask {
 		if !e.isTaskInList(ih) {
 			log.Println("[newTorrentBySpec] reached max task, add as pretask: ", ih, taskT)
-			e.waitList.Push(taskElem{ih: ih, tp: taskT})
+			e.pushWaitTask(ih, taskT)
 		} else {
 			log.Println("[newTorrentBySpec] reached max task, task already in tasks: ", ih, taskT)
 		}
@@ -359,9 +359,8 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	}
 
 	e.Lock()
-	if t.Loaded && !t.Deleted {
+	if t.Loaded {
 		close(t.dropWait)
-		t.Deleted = true
 		t.t.Drop()
 		defer e.nextWaitTask()
 	} else {

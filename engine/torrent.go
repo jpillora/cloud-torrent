@@ -22,7 +22,6 @@ type Torrent struct {
 
 	//cloud torrent
 	Started       bool
-	Deleted       bool
 	Done          bool
 	DoneCmdCalled bool
 	IsSeeding     bool
