@@ -109,21 +109,21 @@ func (e *Engine) RestoreMagnet(fnpattern string) {
 }
 
 func (e *Engine) restoreFromElem(te *taskElem) {
-	fn := te.Filename()
+	var fn string
 	switch te.tp {
-	case taskMagnet:
-		e.RestoreMagnet(fn)
 	case taskTorrent:
+		fn = fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, te.ih)
 		e.RestoreTorrent(fn)
+	case taskMagnet:
+		fn = fmt.Sprintf("%s%s.info", cacheSavedPrefix, te.ih)
+		e.RestoreMagnet(fn)
 	}
+	log.Println("restoreFromElem", fn)
 }
 
 func (e *Engine) nextWaitTask() {
 	if elm := e.waitList.Pop(); elm != nil {
 		taskElm := elm.(taskElem)
-		log.Println("nextWaitTask", taskElm.Filename())
 		e.restoreFromElem(&taskElm)
-	} else {
-		log.Println("nextWaitTask: nil")
 	}
 }

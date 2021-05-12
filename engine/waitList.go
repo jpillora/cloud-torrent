@@ -2,7 +2,6 @@ package engine
 
 import (
 	"container/list"
-	"fmt"
 	"log"
 	"sync"
 )
@@ -46,7 +45,7 @@ func (l *syncList) Remove(ih string) {
 	}
 }
 
-type taskType int
+type taskType uint8
 
 const (
 	taskTorrent taskType = iota
@@ -56,17 +55,4 @@ const (
 type taskElem struct {
 	ih string
 	tp taskType
-}
-
-func (t taskElem) Filename() string {
-
-	var suffix string
-	switch t.tp {
-	case taskTorrent:
-		suffix = ".torrent"
-	case taskMagnet:
-		suffix = ".info"
-	}
-
-	return fmt.Sprintf("%s%s%s", cacheSavedPrefix, t.ih, suffix)
 }

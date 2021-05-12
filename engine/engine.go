@@ -126,7 +126,7 @@ func (e *Engine) IsConfigred() bool {
 	return e.client != nil
 }
 
-// NewMagnet -> *Torrent -> addTorrentTask
+// NewMagnet -> newTorrentBySpec
 func (e *Engine) NewMagnet(magnetURI string) error {
 	log.Println("[NewMagnet] called: ", magnetURI)
 	spec, err := torrent.TorrentSpecFromMagnetUri(magnetURI)
@@ -137,6 +137,7 @@ func (e *Engine) NewMagnet(magnetURI string) error {
 	return e.newTorrentBySpec(spec, taskMagnet)
 }
 
+// NewTorrentByReader -> newTorrentBySpec
 func (e *Engine) NewTorrentByReader(r io.Reader) error {
 	info, err := metainfo.Load(r)
 	if err != nil {
@@ -147,7 +148,7 @@ func (e *Engine) NewTorrentByReader(r io.Reader) error {
 	return e.newTorrentBySpec(spec, taskTorrent)
 }
 
-// NewTorrentByFilePath -> NewTorrentBySpec
+// NewTorrentByFilePath -> newTorrentBySpec
 func (e *Engine) NewTorrentByFilePath(path string) error {
 	// torrent.TorrentSpecFromMetaInfo may panic if the info is malformed
 	defer func() error {
@@ -170,6 +171,8 @@ func (e *Engine) NewTorrentByFilePath(path string) error {
 func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) error {
 	ih := spec.InfoHash.HexString()
 	log.Println("[newTorrentBySpec] called ", ih)
+
+	// whether add as pretasks
 	if e.config.MaxConcurrentTask > 0 && len(e.client.Torrents()) >= e.config.MaxConcurrentTask {
 		if !e.isTaskInList(ih) {
 			log.Println("[newTorrentBySpec] reached max task, add as pretask: ", ih, taskT)
@@ -179,6 +182,7 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 		}
 		return e.addPreTask(spec)
 	}
+
 	tt, _, err := e.client.AddTorrentSpec(spec)
 	if err != nil {
 		return err
