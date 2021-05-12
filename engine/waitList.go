@@ -3,6 +3,7 @@ package engine
 import (
 	"container/list"
 	"fmt"
+	"log"
 	"sync"
 )
 
@@ -30,6 +31,19 @@ func (l *syncList) Pop() interface{} {
 		return l.lst.Remove(elm)
 	}
 	return nil
+}
+
+func (l *syncList) Remove(ih string) {
+	l.Lock()
+	defer l.Unlock()
+
+	for temp := l.lst.Front(); temp != nil; temp = temp.Next() {
+		if elm, ok := temp.Value.(taskElem); ok && elm.ih == ih {
+			l.lst.Remove(temp)
+			log.Println("syncList removed ih", ih)
+			break
+		}
+	}
 }
 
 type taskType int

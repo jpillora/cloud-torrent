@@ -345,6 +345,9 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 		t.Deleted = true
 		t.t.Drop()
 		defer e.nextWaitTask()
+	} else {
+		// task not loaded, it's in the waiting list
+		e.waitList.Remove(infohash)
 	}
 	delete(e.ts, t.InfoHash)
 	e.Unlock()
