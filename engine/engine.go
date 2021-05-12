@@ -340,17 +340,17 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	}
 
 	e.Lock()
-	if !t.Deleted {
+	if t.Loaded && !t.Deleted {
 		close(t.dropWait)
 		t.Deleted = true
 		t.t.Drop()
+		defer e.nextWaitTask()
 	}
 	delete(e.ts, t.InfoHash)
 	e.Unlock()
 
 	e.removeMagnetCache(infohash)
 	e.removeTorrentCache(infohash)
-	e.nextWaitTask()
 	return nil
 }
 
