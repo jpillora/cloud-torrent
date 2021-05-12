@@ -148,7 +148,7 @@ func (s *Server) apiPOST(r *http.Request) error {
 		infohash := cmd[1]
 		switch state {
 		case "start":
-			if err := s.engine.StartTorrent(infohash); err != nil {
+			if err := s.engine.ManualStartTorrent(infohash); err != nil {
 				return err
 			}
 		case "stop":

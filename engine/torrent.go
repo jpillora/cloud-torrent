@@ -26,6 +26,7 @@ type Torrent struct {
 	Done          bool
 	DoneCmdCalled bool
 	IsSeeding     bool
+	ManualStarted bool
 	Percent       float32
 	DownloadRate  float32
 	UploadRate    float32

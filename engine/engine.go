@@ -257,6 +257,7 @@ func (e *Engine) TaskRoutine() {
 		if e.config.SeedRatio > 0 &&
 			t.SeedRatio > e.config.SeedRatio &&
 			t.Started &&
+			!t.ManualStarted &&
 			t.Done {
 			log.Println("[Task Stoped] due to reaching SeedRatio")
 			go e.StopTorrent(t.InfoHash)
@@ -281,6 +282,16 @@ func (e *Engine) TaskRoutine() {
 			}
 		}
 	}
+}
+
+func (e *Engine) ManualStartTorrent(infohash string) error {
+	if err := e.StartTorrent(infohash); err == nil {
+		t, _ := e.getTorrent(infohash)
+		t.ManualStarted = true
+	} else {
+		return err
+	}
+	return nil
 }
 
 func (e *Engine) StartTorrent(infohash string) error {
