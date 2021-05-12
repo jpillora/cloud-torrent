@@ -14,6 +14,13 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 )
 
+func (e *Engine) isTaskInList(ih string) bool {
+	e.RLock()
+	defer e.RUnlock()
+	_, ok := e.ts[ih]
+	return ok
+}
+
 func (e *Engine) upsertTorrent(ih, name string) *Torrent {
 	e.RLock()
 	torrent, ok := e.ts[ih]

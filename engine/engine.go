@@ -171,8 +171,12 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 	ih := spec.InfoHash.HexString()
 	log.Println("[newTorrentBySpec] called ", ih)
 	if e.config.MaxConcurrentTask > 0 && len(e.client.Torrents()) >= e.config.MaxConcurrentTask {
-		e.waitList.Push(taskElem{ih: spec.InfoHash.HexString(), tp: taskT})
-		log.Println("[newTorrentBySpec] reached max task, add as pretask: ", ih, taskT)
+		if !e.isTaskInList(ih) {
+			log.Println("[newTorrentBySpec] reached max task, add as pretask: ", ih, taskT)
+			e.waitList.Push(taskElem{ih: ih, tp: taskT})
+		} else {
+			log.Println("[newTorrentBySpec] reached max task, task already in tasks: ", ih, taskT)
+		}
 		return e.addPreTask(spec)
 	}
 	tt, _, err := e.client.AddTorrentSpec(spec)
