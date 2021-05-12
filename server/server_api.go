@@ -13,9 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/metainfo"
-
 	"github.com/jpillora/cloud-torrent/engine"
 	ctstatic "github.com/jpillora/cloud-torrent/static"
 )
@@ -125,14 +122,8 @@ func (s *Server) apiPOST(r *http.Request) error {
 
 	//convert torrent bytes into magnet
 	if action == "torrentfile" {
-		reader := bytes.NewBuffer(data)
-		info, err := metainfo.Load(reader)
-		if err != nil {
+		if err := s.engine.NewTorrentByReader(bytes.NewBuffer(data)); err != nil {
 			return err
-		}
-		spec := torrent.TorrentSpecFromMetaInfo(info)
-		if err := s.engine.NewTorrentBySpec(spec); err != nil {
-			return fmt.Errorf("Torrent error: %w", err)
 		}
 		return nil
 	}

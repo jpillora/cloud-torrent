@@ -1,26 +1,17 @@
 package engine
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
 	eglog "github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
-)
-
-const (
-	cacheSavedPrefix = "_CLDAUTOSAVED_"
 )
 
 type Server interface {
@@ -37,10 +28,11 @@ type Engine struct {
 	config       Config
 	ts           map[string]*Torrent
 	bttracker    []string
+	waitList     *syncList
 }
 
 func New(s Server) *Engine {
-	return &Engine{ts: make(map[string]*Torrent), cldServer: s}
+	return &Engine{ts: make(map[string]*Torrent), cldServer: s, waitList: NewSyncList()}
 }
 
 func (e *Engine) Config() Config {
@@ -137,27 +129,26 @@ func (e *Engine) IsConfigred() bool {
 // NewMagnet -> *Torrent -> addTorrentTask
 func (e *Engine) NewMagnet(magnetURI string) error {
 	log.Println("[NewMagnet] called: ", magnetURI)
-	tt, err := e.client.AddMagnet(magnetURI)
+	spec, err := torrent.TorrentSpecFromMagnetUri(magnetURI)
 	if err != nil {
 		return err
 	}
-	e.newMagnetCacheFile(magnetURI, tt.InfoHash().HexString())
-	return e.addTorrentTask(tt)
+	e.newMagnetCacheFile(magnetURI, spec.InfoHash.HexString())
+	return e.newTorrentBySpec(spec, taskMagnet)
 }
 
-// NewTorrentBySpec -> *Torrent -> addTorrentTask
-func (e *Engine) NewTorrentBySpec(spec *torrent.TorrentSpec) error {
-	log.Println("[NewTorrentBySpec] called ")
-	tt, _, err := e.client.AddTorrentSpec(spec)
+func (e *Engine) NewTorrentByReader(r io.Reader) error {
+	info, err := metainfo.Load(r)
 	if err != nil {
 		return err
 	}
-	return e.addTorrentTask(tt)
+	spec := torrent.TorrentSpecFromMetaInfo(info)
+	e.newTorrentCacheFile(info)
+	return e.newTorrentBySpec(spec, taskTorrent)
 }
 
 // NewTorrentByFilePath -> NewTorrentBySpec
 func (e *Engine) NewTorrentByFilePath(path string) error {
-
 	// torrent.TorrentSpecFromMetaInfo may panic if the info is malformed
 	defer func() error {
 		if r := recover(); r != nil {
@@ -170,36 +161,62 @@ func (e *Engine) NewTorrentByFilePath(path string) error {
 	if err != nil {
 		return err
 	}
+	e.newTorrentCacheFile(info)
 	spec := torrent.TorrentSpecFromMetaInfo(info)
-	return e.NewTorrentBySpec(spec)
+	return e.newTorrentBySpec(spec, taskTorrent)
+}
+
+// NewTorrentBySpec -> *Torrent -> addTorrentTask
+func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) error {
+	ih := spec.InfoHash.HexString()
+	log.Println("[newTorrentBySpec] called ", ih)
+	if e.config.MaxConcurrentTask > 0 && len(e.client.Torrents()) >= e.config.MaxConcurrentTask {
+		e.waitList.Push(taskElem{ih: spec.InfoHash.HexString(), tp: taskT})
+		log.Println("[newTorrentBySpec] reached max task, add as pretask: ", ih, taskT)
+		return e.addPreTask(spec)
+	}
+	tt, _, err := e.client.AddTorrentSpec(spec)
+	if err != nil {
+		return err
+	}
+	return e.addTorrentTask(tt)
 }
 
 // addTorrentTask
 // add the task to local cache object and wait for GotInfo
 func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 	meta := tt.Metainfo()
+	ih := meta.HashInfoBytes().HexString()
 	if len(e.bttracker) > 0 && (e.config.AlwaysAddTrackers || len(meta.AnnounceList) == 0) {
 		log.Printf("[newTorrent] added %d public trackers\n", len(e.bttracker))
 		tt.AddTrackers([][]string{e.bttracker})
 	}
-	t := e.upsertTorrent(tt)
+
+	t := e.upsertTorrent(ih, tt.Name())
+	t.Update(tt)
 	go func() {
 		select {
 		case <-e.closeSync:
 			return
 		case <-t.dropWait:
 			return
-		case <-t.t.GotInfo():
+		case <-tt.GotInfo():
 		}
 
-		h := t.InfoHash
-		e.removeMagnetCache(h)
-		e.newTorrentCacheFile(h, meta)
+		e.removeMagnetCache(ih)
+		e.newTorrentCacheFile(&meta)
 		if e.config.AutoStart {
-			e.StartTorrent(h)
+			e.StartTorrent(ih)
 		}
 	}()
 
+	return nil
+}
+
+// addPreTask
+// add a task not ready to load
+func (e *Engine) addPreTask(spec *torrent.TorrentSpec) error {
+	e.upsertTorrent(spec.InfoHash.HexString(), spec.DisplayName)
 	return nil
 }
 
@@ -220,7 +237,13 @@ func (e *Engine) TaskRoutine() {
 	for _, tt := range e.client.Torrents() {
 
 		// sync engine.Torrent to our Torrent struct
-		t := e.upsertTorrent(tt)
+		t, err := e.getTorrent(tt.InfoHash().HexString())
+		if err != nil {
+			log.Println("[TaskRoutine]", err)
+			continue
+		}
+
+		t.Update(tt)
 
 		// stops task on reaching ratio
 		if e.config.SeedRatio > 0 &&
@@ -250,50 +273,6 @@ func (e *Engine) TaskRoutine() {
 			}
 		}
 	}
-}
-
-func genEnv(dir, path, hash, ttype, api string, size int64, ts int64) []string {
-	env := append(os.Environ(),
-		fmt.Sprintf("CLD_DIR=%s", dir),
-		fmt.Sprintf("CLD_PATH=%s", path),
-		fmt.Sprintf("CLD_HASH=%s", hash),
-		fmt.Sprintf("CLD_TYPE=%s", ttype),
-		fmt.Sprintf("CLD_RESTAPI=%s", api),
-		fmt.Sprintf("CLD_SIZE=%d", size),
-		fmt.Sprintf("CLD_STARTTS=%d", ts),
-	)
-	return env
-}
-
-func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
-	ih := tt.InfoHash().HexString()
-	e.RLock()
-	torrent, ok := e.ts[ih]
-	e.RUnlock()
-	if !ok {
-		torrent = &Torrent{
-			InfoHash: ih,
-			AddedAt:  time.Now(),
-			dropWait: make(chan struct{}),
-		}
-		e.Lock()
-		e.ts[ih] = torrent
-		e.Unlock()
-	}
-	//update torrent fields using underlying torrent
-	torrent.Update(tt)
-	return torrent
-}
-
-func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
-	e.RLock()
-	defer e.RUnlock()
-	ih := metainfo.NewHashFromHex(infohash)
-	t, ok := e.ts[ih.HexString()]
-	if !ok {
-		return t, fmt.Errorf("Missing torrent %x", ih)
-	}
-	return t, nil
 }
 
 func (e *Engine) StartTorrent(infohash string) error {
@@ -371,6 +350,7 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 
 	e.removeMagnetCache(infohash)
 	e.removeTorrentCache(infohash)
+	e.nextWaitTask()
 	return nil
 }
 
@@ -432,125 +412,4 @@ func (e *Engine) StopFile(infohash, filepath string) error {
 	}
 
 	return nil
-}
-
-func (e *Engine) callDoneCmd(env []string) {
-	if e.config.DoneCmd == "" {
-		return
-	}
-
-	cmd := exec.Command(e.config.DoneCmd)
-	cmd.Env = env
-	log.Printf("[DoneCmd] [%s] environ:%v", e.config.DoneCmd, cmd.Env)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Println("[DoneCmd] Err:", err)
-		return
-	}
-	log.Println("[DoneCmd] Exit:", cmd.ProcessState.ExitCode(), "Output:", string(out))
-}
-
-func (e *Engine) UpdateTrackers() error {
-	var txtlines []string
-	url := e.config.TrackerListURL
-
-	if !strings.HasPrefix(url, "https://") {
-		err := fmt.Errorf("UpdateTrackers: trackers url invalid: %s (only https:// supported), extra trackers list now empty.", url)
-		log.Print(err.Error())
-		e.bttracker = txtlines
-		return err
-	}
-
-	log.Printf("UpdateTrackers: loading trackers from %s\n", url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	scanner := bufio.NewScanner(resp.Body)
-	scanner.Split(bufio.ScanLines)
-
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			continue
-		}
-		txtlines = append(txtlines, line)
-	}
-
-	e.bttracker = txtlines
-	log.Printf("UpdateTrackers: loaded %d trackers \n", len(txtlines))
-	return nil
-}
-
-func (e *Engine) newMagnetCacheFile(magnetURI, infohash string) {
-	// create .info file with hash as filename
-	if w, err := os.Stat(e.cacheDir); err == nil && w.IsDir() {
-		cacheInfoPath := filepath.Join(e.cacheDir,
-			fmt.Sprintf("%s%s.info", cacheSavedPrefix, infohash))
-		if _, err := os.Stat(cacheInfoPath); os.IsNotExist(err) {
-			cf, err := os.Create(cacheInfoPath)
-			defer cf.Close()
-			if err == nil {
-				cf.WriteString(magnetURI)
-				log.Println("created magnet cache info file", infohash)
-			}
-		}
-	}
-}
-
-func (e *Engine) newTorrentCacheFile(infohash string, meta metainfo.MetaInfo) {
-	// create .torrent file
-	if w, err := os.Stat(e.cacheDir); err == nil && w.IsDir() {
-		cacheFilePath := filepath.Join(e.cacheDir,
-			fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
-		// only create the cache file if not exists
-		// avoid recreating cache files during boot import
-		if _, err := os.Stat(cacheFilePath); os.IsNotExist(err) {
-			cf, err := os.Create(cacheFilePath)
-			defer cf.Close()
-			if err == nil {
-				meta.Write(cf)
-				log.Println("created torrent cache file", infohash)
-			} else {
-				log.Println("failed to create torrent file ", err)
-			}
-		}
-	}
-}
-
-func (e *Engine) removeMagnetCache(infohash string) {
-	// remove both magnet and torrent cache if exists.
-	cacheInfoPath := filepath.Join(e.cacheDir,
-		fmt.Sprintf("%s%s.info", cacheSavedPrefix, infohash))
-	if err := os.Remove(cacheInfoPath); err == nil {
-		log.Printf("removed magnet info file %s", infohash)
-	}
-}
-
-func (e *Engine) removeTorrentCache(infohash string) {
-	cacheFilePath := filepath.Join(e.cacheDir,
-		fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
-	if err := os.Remove(cacheFilePath); err == nil {
-		log.Printf("removed torrent file %s", infohash)
-	} else {
-		log.Printf("fail to removed torrent file %s, %s", infohash, err)
-	}
-}
-
-func (e *Engine) WriteStauts(_w io.Writer) {
-	e.RLock()
-	defer e.RUnlock()
-	if e.client != nil {
-		e.client.WriteStatus(_w)
-	}
-}
-
-func (e *Engine) ConnStat() torrent.ConnStats {
-	e.RLock()
-	defer e.RUnlock()
-	if e.client != nil {
-		return e.client.ConnStats()
-	}
-	return torrent.ConnStats{}
 }

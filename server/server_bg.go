@@ -2,10 +2,8 @@ package server
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -66,37 +64,8 @@ func (s *Server) RestoreTorrent() error {
 		return err
 	}
 
-	// restore saved torrent tasks
-	tors, _ := filepath.Glob(filepath.Join(s.state.Config.WatchDirectory, "*.torrent"))
-	for _, t := range tors {
-		if err := s.engine.NewTorrentByFilePath(t); err == nil {
-			if strings.HasPrefix(filepath.Base(t), cacheSavedPrefix) {
-				log.Printf("Inital Task Restored: %s \n", t)
-			} else {
-				log.Printf("Inital Task: added %s, file removed\n", t)
-				os.Remove(t)
-			}
-		} else {
-			log.Printf("Inital Task: fail to add %s, ERR:%#v\n", t, err)
-		}
-	}
-
-	// restore saved magnet tasks
-	infos, _ := filepath.Glob(filepath.Join(s.state.Config.WatchDirectory, "*.info"))
-	for _, i := range infos {
-		fn := filepath.Base(i)
-		if strings.HasPrefix(fn, cacheSavedPrefix) && len(fn) == 59 {
-			mag, err := ioutil.ReadFile(i)
-			if err != nil {
-				continue
-			}
-			if err := s.engine.NewMagnet(string(mag)); err == nil {
-				log.Printf("Inital Task Restored: %s \n", fn)
-			} else {
-				log.Printf("Inital Task: fail to add %s, ERR:%#v\n", fn, err)
-			}
-		}
-	}
+	s.engine.RestoreTorrent("*.torrent")
+	s.engine.RestoreMagnet("*.info")
 	return nil
 }
 
