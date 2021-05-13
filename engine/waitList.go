@@ -6,6 +6,7 @@ import (
 	"sync"
 )
 
+// syncList is a FIFO queue
 type syncList struct {
 	lst *list.List
 	sync.Mutex

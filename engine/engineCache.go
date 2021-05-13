@@ -73,6 +73,7 @@ func (e *Engine) removeTorrentCache(infohash string) {
 
 func (e *Engine) RestoreTorrent(fnpattern string) {
 	// restore saved torrent tasks
+	log.Println("RestoreTorrent", fnpattern)
 	tors, _ := filepath.Glob(filepath.Join(e.config.WatchDirectory, fnpattern))
 	for _, t := range tors {
 		if err := e.NewTorrentByFilePath(t); err == nil {
@@ -90,6 +91,7 @@ func (e *Engine) RestoreTorrent(fnpattern string) {
 
 func (e *Engine) RestoreMagnet(fnpattern string) {
 	// restore saved magnet tasks
+	log.Println("RestoreMagnet", fnpattern)
 	infos, _ := filepath.Glob(filepath.Join(e.config.WatchDirectory, fnpattern))
 	for _, i := range infos {
 		fn := filepath.Base(i)
@@ -108,23 +110,17 @@ func (e *Engine) RestoreMagnet(fnpattern string) {
 	}
 }
 
-func (e *Engine) restoreFromElem(te *taskElem) {
-	var fn string
-	switch te.tp {
-	case taskTorrent:
-		fn = fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, te.ih)
-		e.RestoreTorrent(fn)
-	case taskMagnet:
-		fn = fmt.Sprintf("%s%s.info", cacheSavedPrefix, te.ih)
-		e.RestoreMagnet(fn)
-	}
-	log.Println("restoreFromElem", fn)
-}
-
 func (e *Engine) nextWaitTask() {
 	if elm := e.waitList.Pop(); elm != nil {
-		taskElm := elm.(taskElem)
-		e.restoreFromElem(&taskElm)
+		te := elm.(taskElem)
+		switch te.tp {
+		case taskTorrent:
+			e.RestoreTorrent(fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, te.ih))
+		case taskMagnet:
+			e.RestoreMagnet(fmt.Sprintf("%s%s.info", cacheSavedPrefix, te.ih))
+		}
+	} else {
+		log.Println("nextWaitTask: wait list empty")
 	}
 }
 

@@ -365,8 +365,6 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	}
 
 	t.Lock()
-	defer t.Unlock()
-
 	e.Lock()
 	if t.Loaded {
 		close(t.dropWait)
@@ -378,6 +376,7 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	}
 	delete(e.ts, t.InfoHash)
 	e.Unlock()
+	t.Unlock()
 
 	e.removeMagnetCache(infohash)
 	e.removeTorrentCache(infohash)
