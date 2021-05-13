@@ -251,9 +251,11 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 					return
 				}
 			case <-timeTk.C:
-				log.Println("Task ticker updated", ih)
-				t.Update(tt)
-				e.taskRoutine(t)
+				if t.Started {
+					log.Println("Task ticker updated", ih)
+					t.Update(tt)
+					e.taskRoutine(t)
+				}
 			case <-e.closeSync:
 				return
 			case <-t.dropWait:
@@ -363,6 +365,12 @@ func (e *Engine) StopTorrent(infohash string) error {
 			f.Started = false
 		}
 	}
+
+	time.AfterFunc(10*time.Second, func() {
+		// when stopped, the main loop wont update this task anymore
+		// do a final update 10s later.
+		t.Update(t.t)
+	})
 	return nil
 }
 
