@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 func (s *Server) backgroundRoutines() {
@@ -18,12 +20,43 @@ func (s *Server) backgroundRoutines() {
 		s.state.Downloads = s.listFiles()
 		s.state.Unlock()
 
+		watcher, err := fsnotify.NewWatcher()
+		if err != nil {
+			log.Fatal(err)
+		}
+		// defer watcher.Close()
+		go func() {
+			for {
+				select {
+				case event, ok := <-watcher.Events:
+					if !ok {
+						return
+					}
+					if event.Op&(fsnotify.Create|fsnotify.Remove) > 0 && s.state.NumConnections() > 0 {
+						log.Println("event:", event)
+						s.state.Lock()
+						s.state.Downloads = s.listFiles()
+						s.state.Unlock()
+					}
+				case err, ok := <-watcher.Errors:
+					if !ok {
+						return
+					}
+					log.Println("error:", err)
+				}
+			}
+		}()
+
+		err = watcher.Add(s.state.Config.DownloadDirectory)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		for range time.Tick(time.Second) {
 			if s.state.NumConnections() > 0 {
 				// only update the state object if user connected
 				s.state.Lock()
 				s.state.Torrents = s.engine.GetTorrents()
-				s.state.Downloads = s.listFiles()
 				s.state.Unlock()
 				s.state.Push()
 			}

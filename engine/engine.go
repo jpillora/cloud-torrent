@@ -13,7 +13,7 @@ import (
 	eglog "github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
-	"github.com/radovskyb/watcher"
+	"github.com/fsnotify/fsnotify"
 	"golang.org/x/time/rate"
 )
 
@@ -33,7 +33,7 @@ type Engine struct {
 	bttracker    []string
 	waitList     *syncList
 	//file watcher
-	watcher *watcher.Watcher
+	watcher *fsnotify.Watcher
 }
 
 func New(s Server) *Engine {

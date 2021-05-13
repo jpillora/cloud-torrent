@@ -5,12 +5,12 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/anacrolix/torrent/metainfo"
-	"github.com/radovskyb/watcher"
+	"github.com/fsnotify/fsnotify"
 )
 
 const (
@@ -143,42 +143,53 @@ func (e *Engine) StartTorrentWatcher() error {
 	}
 
 	log.Printf("Torrent Watcher: watching torrent file in %s", e.config.WatchDirectory)
-	w := watcher.New()
-	w.SetMaxEvents(10)
-	w.FilterOps(watcher.Create)
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	e.watcher = watcher
 
 	go func() {
 		for {
 			select {
-			case event := <-w.Event:
-				if event.Op != watcher.Create {
-					continue
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
 				}
-				if event.IsDir() {
-					continue
-				}
-				if strings.HasSuffix(event.Name(), ".torrent") {
-					if err := e.NewTorrentByFilePath(event.Path); err == nil {
-						log.Printf("Torrent Watcher: added %s, file removed\n", event.Name())
-						os.Remove(event.Path)
+				// log.Println("event:", event)
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					baseName := path.Base(event.Name)
+					if strings.HasPrefix(baseName, cacheSavedPrefix) ||
+						!strings.HasSuffix(baseName, ".torrent") {
+						continue
+					}
+
+					if st, err := os.Stat(event.Name); err != nil {
+						log.Println(err)
+						continue
+					} else if st.IsDir() {
+						continue
+					}
+
+					if err := e.NewTorrentByFilePath(event.Name); err == nil {
+						log.Printf("Torrent Watcher: added %s, file removed\n", event.Name)
+						os.Remove(event.Name)
 					} else {
-						log.Printf("Torrent Watcher: fail to add %s, ERR:%#v\n", event.Name(), err)
+						log.Printf("Torrent Watcher: fail to add %s, ERR:%#v\n", event.Name, err)
 					}
 				}
-			case err := <-w.Error:
-				log.Print(err)
-			case <-w.Closed:
-				return
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Println("error:", err)
 			}
 		}
 	}()
-
-	// Watch this folder for changes.
-	if err := w.Add(e.config.WatchDirectory); err != nil {
-		return err
+	err = watcher.Add(e.config.WatchDirectory)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	e.watcher = w
-	go w.Start(time.Second * 5)
 	return nil
 }
