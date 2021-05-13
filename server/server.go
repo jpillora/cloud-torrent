@@ -25,14 +25,12 @@ import (
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/velox"
 	"github.com/mmcdole/gofeed"
-	"github.com/radovskyb/watcher"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/viper"
 )
 
 const (
-	cacheSavedPrefix = "_CLDAUTOSAVED_"
-	scraperUA        = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
+	scraperUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
 )
 
 var (
@@ -64,9 +62,6 @@ type Server struct {
 	files, static, rssh http.Handler
 	scraper             *scraper.Handler
 	scraperh            http.Handler
-
-	//file watcher
-	watcher *watcher.Watcher
 
 	//torrent engine
 	engine *engine.Engine
@@ -164,7 +159,6 @@ func (s *Server) Run(version string) error {
 	}
 
 	s.backgroundRoutines()
-	s.torrentWatcher()
 
 	s.mainAddr = fmt.Sprintf("%s:%d", s.Host, s.Port)
 	proto := "http"

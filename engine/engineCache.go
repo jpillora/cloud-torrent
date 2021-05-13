@@ -7,8 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/anacrolix/torrent/metainfo"
+	"github.com/radovskyb/watcher"
 )
 
 const (
@@ -126,4 +128,58 @@ func (e *Engine) nextWaitTask() {
 
 func (e *Engine) pushWaitTask(ih string, tp taskType) {
 	e.waitList.Push(taskElem{ih: ih, tp: tp})
+}
+
+func (e *Engine) StartTorrentWatcher() error {
+
+	if e.watcher != nil {
+		log.Print("Torrent Watcher: close")
+		e.watcher.Close()
+		e.watcher = nil
+	}
+
+	if w, err := os.Stat(e.config.WatchDirectory); os.IsNotExist(err) || (err == nil && !w.IsDir()) {
+		return fmt.Errorf("[Watcher] %s is not dir", e.config.WatchDirectory)
+	}
+
+	log.Printf("Torrent Watcher: watching torrent file in %s", e.config.WatchDirectory)
+	w := watcher.New()
+	w.SetMaxEvents(10)
+	w.FilterOps(watcher.Create)
+
+	go func() {
+		for {
+			select {
+			case event := <-w.Event:
+				if event.IsDir() {
+					continue
+				}
+				// skip auto saved torrent
+				if strings.HasPrefix(event.Name(), cacheSavedPrefix) {
+					continue
+				}
+				if strings.HasSuffix(event.Name(), ".torrent") {
+					if err := e.NewTorrentByFilePath(event.Path); err == nil {
+						log.Printf("Torrent Watcher: added %s, file removed\n", event.Name())
+						os.Remove(event.Path)
+					} else {
+						log.Printf("Torrent Watcher: fail to add %s, ERR:%#v\n", event.Name(), err)
+					}
+				}
+			case err := <-w.Error:
+				log.Print(err)
+			case <-w.Closed:
+				return
+			}
+		}
+	}()
+
+	// Watch this folder for changes.
+	if err := w.Add(e.config.WatchDirectory); err != nil {
+		return err
+	}
+
+	e.watcher = w
+	go w.Start(time.Second * 5)
+	return nil
 }

@@ -1,13 +1,9 @@
 package server
 
 import (
-	"fmt"
 	"log"
 	"os"
-	"strings"
 	"time"
-
-	"github.com/radovskyb/watcher"
 )
 
 func (s *Server) backgroundRoutines() {
@@ -57,6 +53,7 @@ func (s *Server) backgroundRoutines() {
 
 	go s.engine.UpdateTrackers()
 	go s.RestoreTorrent()
+	s.engine.StartTorrentWatcher()
 }
 
 func (s *Server) RestoreTorrent() error {
@@ -67,59 +64,5 @@ func (s *Server) RestoreTorrent() error {
 
 	s.engine.RestoreTorrent("*.torrent")
 	s.engine.RestoreMagnet("*.info")
-	return nil
-}
-
-func (s *Server) torrentWatcher() error {
-
-	if s.watcher != nil {
-		log.Print("Torrent Watcher: close")
-		s.watcher.Close()
-		s.watcher = nil
-	}
-
-	if w, err := os.Stat(s.state.Config.WatchDirectory); os.IsNotExist(err) || (err == nil && !w.IsDir()) {
-		return fmt.Errorf("[Watcher] %s is not dir", s.state.Config.WatchDirectory)
-	}
-
-	log.Printf("Torrent Watcher: watching torrent file in %s", s.state.Config.WatchDirectory)
-	w := watcher.New()
-	w.SetMaxEvents(10)
-	w.FilterOps(watcher.Create)
-
-	go func() {
-		for {
-			select {
-			case event := <-w.Event:
-				if event.IsDir() {
-					continue
-				}
-				// skip auto saved torrent
-				if strings.HasPrefix(event.Name(), cacheSavedPrefix) {
-					continue
-				}
-				if strings.HasSuffix(event.Name(), ".torrent") {
-					if err := s.engine.NewTorrentByFilePath(event.Path); err == nil {
-						log.Printf("Torrent Watcher: added %s, file removed\n", event.Name())
-						os.Remove(event.Path)
-					} else {
-						log.Printf("Torrent Watcher: fail to add %s, ERR:%#v\n", event.Name(), err)
-					}
-				}
-			case err := <-w.Error:
-				log.Print(err)
-			case <-w.Closed:
-				return
-			}
-		}
-	}()
-
-	// Watch this folder for changes.
-	if err := w.Add(s.state.Config.WatchDirectory); err != nil {
-		return err
-	}
-
-	s.watcher = w
-	go w.Start(time.Second * 5)
 	return nil
 }

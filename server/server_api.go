@@ -206,7 +206,7 @@ func (s *Server) apiConfigure(data []byte) error {
 			return errors.New("Nice Try! But this is NOT allowed being changed on runtime")
 		}
 		if status&engine.NeedRestartWatch > 0 {
-			s.torrentWatcher()
+			s.engine.StartTorrentWatcher()
 			log.Printf("[api] file watcher restartd")
 		}
 		if status&engine.NeedUpdateTracker > 0 {
