@@ -78,7 +78,7 @@ func (e *Engine) RestoreTorrent(fnpattern string) {
 	for _, t := range tors {
 		if err := e.NewTorrentByFilePath(t); err == nil {
 			if strings.HasPrefix(filepath.Base(t), cacheSavedPrefix) {
-				log.Printf("Task Restored: %s \n", t)
+				log.Printf("[RestoreTorrent] Restored: %s \n", t)
 			} else {
 				log.Printf("Task: added %s, file removed\n", t)
 				os.Remove(t)
@@ -102,7 +102,7 @@ func (e *Engine) RestoreMagnet(fnpattern string) {
 				continue
 			}
 			if err := e.NewMagnet(string(mag)); err == nil {
-				log.Printf("Task Restored: %s \n", fn)
+				log.Printf("[RestoreMagnet] Restored: %s \n", fn)
 			} else {
 				log.Printf("Task: fail to add %s, ERR:%#v\n", fn, err)
 			}

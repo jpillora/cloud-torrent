@@ -38,9 +38,11 @@ func (s *Server) backgroundRoutines() {
 	go func() {
 		for range time.Tick(5 * time.Second) {
 			if s.state.NumConnections() > 0 {
+				s.state.Lock()
 				c := s.engine.Config()
 				s.state.Stats.System.loadStats(c.DownloadDirectory)
 				s.state.Stats.ConnStat = s.engine.ConnStat()
+				s.state.Unlock()
 				s.state.Push()
 			}
 		}
