@@ -2,7 +2,6 @@ package server
 
 import (
 	"log"
-	"os"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -24,7 +23,6 @@ func (s *Server) backgroundRoutines() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		// defer watcher.Close()
 		go func() {
 			for {
 				select {
@@ -90,11 +88,6 @@ func (s *Server) backgroundRoutines() {
 }
 
 func (s *Server) RestoreTorrent() error {
-	if w, err := os.Stat(s.state.Config.WatchDirectory); os.IsNotExist(err) || (err == nil && !w.IsDir()) {
-		log.Printf("[Watcher] %s is not dir", s.state.Config.WatchDirectory)
-		return err
-	}
-
 	s.engine.RestoreTorrent("*.torrent")
 	s.engine.RestoreMagnet("*.info")
 	return nil

@@ -5,12 +5,10 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/anacrolix/torrent/metainfo"
-	"github.com/fsnotify/fsnotify"
 )
 
 const (
@@ -76,7 +74,7 @@ func (e *Engine) removeTorrentCache(infohash string) {
 func (e *Engine) RestoreTorrent(fnpattern string) {
 	// restore saved torrent tasks
 	log.Println("RestoreTorrent", fnpattern)
-	tors, _ := filepath.Glob(filepath.Join(e.config.WatchDirectory, fnpattern))
+	tors, _ := filepath.Glob(filepath.Join(e.cacheDir, fnpattern))
 	for _, t := range tors {
 		if err := e.NewTorrentByFilePath(t); err == nil {
 			if strings.HasPrefix(filepath.Base(t), cacheSavedPrefix) {
@@ -94,7 +92,7 @@ func (e *Engine) RestoreTorrent(fnpattern string) {
 func (e *Engine) RestoreMagnet(fnpattern string) {
 	// restore saved magnet tasks
 	log.Println("RestoreMagnet", fnpattern)
-	infos, _ := filepath.Glob(filepath.Join(e.config.WatchDirectory, fnpattern))
+	infos, _ := filepath.Glob(filepath.Join(e.cacheDir, fnpattern))
 	for _, i := range infos {
 		fn := filepath.Base(i)
 		// only restore our cache file
@@ -128,68 +126,4 @@ func (e *Engine) nextWaitTask() {
 
 func (e *Engine) pushWaitTask(ih string, tp taskType) {
 	e.waitList.Push(taskElem{ih: ih, tp: tp})
-}
-
-func (e *Engine) StartTorrentWatcher() error {
-
-	if e.watcher != nil {
-		log.Print("Torrent Watcher: close")
-		e.watcher.Close()
-		e.watcher = nil
-	}
-
-	if w, err := os.Stat(e.config.WatchDirectory); os.IsNotExist(err) || (err == nil && !w.IsDir()) {
-		return fmt.Errorf("[Watcher] %s is not dir", e.config.WatchDirectory)
-	}
-
-	log.Printf("Torrent Watcher: watching torrent file in %s", e.config.WatchDirectory)
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Fatal(err)
-	}
-	e.watcher = watcher
-
-	go func() {
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
-				// log.Println("event:", event)
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					baseName := path.Base(event.Name)
-					if strings.HasPrefix(baseName, cacheSavedPrefix) ||
-						!strings.HasSuffix(baseName, ".torrent") {
-						continue
-					}
-
-					if st, err := os.Stat(event.Name); err != nil {
-						log.Println(err)
-						continue
-					} else if st.IsDir() {
-						continue
-					}
-
-					if err := e.NewTorrentByFilePath(event.Name); err == nil {
-						log.Printf("Torrent Watcher: added %s, file removed\n", event.Name)
-						os.Remove(event.Name)
-					} else {
-						log.Printf("Torrent Watcher: fail to add %s, ERR:%#v\n", event.Name, err)
-					}
-				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				log.Println("error:", err)
-			}
-		}
-	}()
-	err = watcher.Add(e.config.WatchDirectory)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return nil
 }

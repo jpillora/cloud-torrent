@@ -1,12 +1,15 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
+	"path"
 	"sync"
 	"time"
 
@@ -20,6 +23,10 @@ import (
 type Server interface {
 	DoneCmd(path, hash, ttype string, size, ts int64) (*exec.Cmd, error)
 }
+
+const (
+	CachedTorrentDir = ".cachedTorrents"
+)
 
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
 type Engine struct {
@@ -120,7 +127,10 @@ func (e *Engine) Configure(c *Config) error {
 	}
 
 	e.closeSync = make(chan struct{})
-	e.cacheDir = c.WatchDirectory
+	e.cacheDir = path.Join(c.DownloadDirectory, CachedTorrentDir)
+	if st, err := os.Stat(e.cacheDir); errors.Is(err, os.ErrNotExist) || !st.IsDir() {
+		os.MkdirAll(e.cacheDir, os.ModePerm)
+	}
 	e.config = *c
 	return nil
 }

@@ -6,10 +6,12 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/anacrolix/torrent"
+	"github.com/fsnotify/fsnotify"
 )
 
 func (e *Engine) isTaskInList(ih string) bool {
@@ -97,4 +99,65 @@ func (e *Engine) ConnStat() torrent.ConnStats {
 		return e.client.ConnStats()
 	}
 	return torrent.ConnStats{}
+}
+
+func (e *Engine) StartTorrentWatcher() error {
+
+	if e.watcher != nil {
+		log.Print("Torrent Watcher: close")
+		e.watcher.Close()
+		e.watcher = nil
+	}
+
+	if w, err := os.Stat(e.config.WatchDirectory); os.IsNotExist(err) || (err == nil && !w.IsDir()) {
+		return fmt.Errorf("[Watcher] %s is not dir", e.config.WatchDirectory)
+	}
+
+	log.Printf("Torrent Watcher: watching torrent file in %s", e.config.WatchDirectory)
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	e.watcher = watcher
+
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				// log.Println("event:", event)
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					if !strings.HasSuffix(event.Name, ".torrent") {
+						continue
+					}
+					if st, err := os.Stat(event.Name); err != nil {
+						log.Println(err)
+						continue
+					} else if st.IsDir() {
+						continue
+					}
+
+					if err := e.NewTorrentByFilePath(event.Name); err == nil {
+						log.Printf("Torrent Watcher: added %s, file removed\n", event.Name)
+						os.Remove(event.Name)
+					} else {
+						log.Printf("Torrent Watcher: fail to add %s, ERR:%#v\n", event.Name, err)
+					}
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Println("error:", err)
+			}
+		}
+	}()
+	err = watcher.Add(e.config.WatchDirectory)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return nil
 }
