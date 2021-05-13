@@ -2,8 +2,6 @@ package engine
 
 import (
 	"errors"
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/c2h5oh/datasize"
@@ -40,17 +38,4 @@ func rateLimiter(rstr string) (*rate.Limiter, error) {
 		rateSize = int(v)
 	}
 	return rate.NewLimiter(rate.Limit(rateSize), rateSize*3), nil
-}
-
-func genEnv(dir, path, hash, ttype, api string, size int64, ts int64) []string {
-	env := append(os.Environ(),
-		fmt.Sprintf("CLD_DIR=%s", dir),
-		fmt.Sprintf("CLD_PATH=%s", path),
-		fmt.Sprintf("CLD_HASH=%s", hash),
-		fmt.Sprintf("CLD_TYPE=%s", ttype),
-		fmt.Sprintf("CLD_RESTAPI=%s", api),
-		fmt.Sprintf("CLD_SIZE=%d", size),
-		fmt.Sprintf("CLD_STARTTS=%d", ts),
-	)
-	return env
 }

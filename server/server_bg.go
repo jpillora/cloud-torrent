@@ -22,7 +22,7 @@ func (s *Server) backgroundRoutines() {
 		s.state.Downloads = s.listFiles()
 		s.state.Unlock()
 
-		for range time.Tick(3 * time.Second) {
+		for range time.Tick(time.Second) {
 			if s.state.NumConnections() > 0 {
 				// only update the state object if user connected
 				s.state.Lock()
@@ -31,7 +31,6 @@ func (s *Server) backgroundRoutines() {
 				s.state.Unlock()
 				s.state.Push()
 			}
-			s.engine.TaskRoutine()
 		}
 	}()
 

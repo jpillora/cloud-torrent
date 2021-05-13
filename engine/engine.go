@@ -6,16 +6,18 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os/exec"
 	"sync"
 	"time"
 
 	eglog "github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
+	"golang.org/x/time/rate"
 )
 
 type Server interface {
-	GetRestAPI() string
+	DoneCmd(path, hash, ttype string, size, ts int64) (*exec.Cmd, error)
 }
 
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
@@ -216,6 +218,36 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 		if e.config.AutoStart {
 			e.StartTorrent(ih)
 		}
+
+		t.Update(tt)
+		sub := tt.SubscribePieceStateChanges()
+		lim := rate.NewLimiter(rate.Every(time.Second), 1)
+		timeTk := time.NewTicker(3 * time.Second)
+		defer timeTk.Stop()
+		for {
+			select {
+			case _, ok := <-sub.Values:
+				//task made progress
+				if ok {
+					if lim.Allow() {
+						log.Println("Task sub updated", ih)
+						t.Update(tt)
+					}
+				} else {
+					log.Println("Task sub closed", ih)
+					return
+				}
+			case <-timeTk.C:
+				log.Println("Task ticker updated", ih)
+				t.Update(tt)
+				e.taskRoutine(t)
+			case <-e.closeSync:
+				return
+			case <-t.dropWait:
+				log.Println("Task Droped", ih)
+				return
+			}
+		}
 	}()
 
 	return nil
@@ -233,55 +265,19 @@ func (e *Engine) GetTorrents() map[string]*Torrent {
 	return e.ts
 }
 
-// TaskRoutine called by intevaled background goroutine
-// moves torrents out of the anacrolix/torrent and into the local cache
-// and do condition check and actions on them
-func (e *Engine) TaskRoutine() {
+// TaskRoutine
+func (e *Engine) taskRoutine(t *Torrent) {
 
-	if e.client == nil {
-		return
+	// stops task on reaching ratio
+	if e.config.SeedRatio > 0 &&
+		t.SeedRatio > e.config.SeedRatio &&
+		t.Started &&
+		!t.ManualStarted &&
+		t.Done {
+		log.Println("[Task Stoped] due to reaching SeedRatio")
+		go e.StopTorrent(t.InfoHash)
 	}
 
-	for _, tt := range e.client.Torrents() {
-
-		// sync engine.Torrent to our Torrent struct
-		t, err := e.getTorrent(tt.InfoHash().HexString())
-		if err != nil {
-			log.Println("[TaskRoutine]", err)
-			continue
-		}
-
-		t.Update(tt)
-
-		// stops task on reaching ratio
-		if e.config.SeedRatio > 0 &&
-			t.SeedRatio > e.config.SeedRatio &&
-			t.Started &&
-			!t.ManualStarted &&
-			t.Done {
-			log.Println("[Task Stoped] due to reaching SeedRatio")
-			go e.StopTorrent(t.InfoHash)
-		}
-
-		// call DoneCmd on task completed
-		if t.Done && !t.DoneCmdCalled {
-			t.DoneCmdCalled = true
-			go e.callDoneCmd(genEnv(e.config.DownloadDirectory,
-				t.Name, t.InfoHash, "torrent",
-				e.cldServer.GetRestAPI(), t.Size, t.StartedAt.Unix()))
-		}
-
-		// call DoneCmd on each file completed
-		// some files might finish before the whole task does
-		for _, f := range t.Files {
-			if f.Done && !f.DoneCmdCalled {
-				f.DoneCmdCalled = true
-				go e.callDoneCmd(genEnv(e.config.DownloadDirectory,
-					f.Path, "", "file",
-					e.cldServer.GetRestAPI(), f.Size, t.StartedAt.Unix()))
-			}
-		}
-	}
 }
 
 func (e *Engine) ManualStartTorrent(infohash string) error {

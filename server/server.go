@@ -92,11 +92,6 @@ type Server struct {
 	}
 }
 
-// GetRestAPI used by engine doneCmd
-func (s *Server) GetRestAPI() string {
-	return s.RestAPI
-}
-
 // Run the server
 func (s *Server) Run(version string) error {
 	isTLS := s.CertPath != "" || s.KeyPath != "" //poor man's XOR

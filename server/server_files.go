@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -106,4 +107,24 @@ func list(path string, info os.FileInfo, node *fsNode, n *int) error {
 	}
 
 	return nil
+}
+
+func (s *Server) DoneCmd(path, hash, ttype string, size, ts int64) (*exec.Cmd, error) {
+
+	if s.state.Config.DoneCmd == "" {
+		return nil, fmt.Errorf("No Donecmd")
+	}
+
+	cmd := exec.Command(s.state.Config.DoneCmd)
+	cmd.Env = append(os.Environ(),
+		fmt.Sprintf("CLD_DIR=%s", s.state.Config.DownloadDirectory),
+		fmt.Sprintf("CLD_RESTAPI=%s", s.RestAPI),
+		fmt.Sprintf("CLD_PATH=%s", path),
+		fmt.Sprintf("CLD_HASH=%s", hash),
+		fmt.Sprintf("CLD_TYPE=%s", ttype),
+		fmt.Sprintf("CLD_SIZE=%d", size),
+		fmt.Sprintf("CLD_STARTTS=%d", ts),
+	)
+	log.Printf("[DoneCmd] [%s] environ:%v", s.state.Config.DoneCmd, cmd.Env)
+	return cmd, nil
 }

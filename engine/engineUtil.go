@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -26,10 +25,11 @@ func (e *Engine) upsertTorrent(ih, name string) *Torrent {
 	e.RUnlock()
 	if !ok {
 		torrent = &Torrent{
-			Name:     name,
-			InfoHash: ih,
-			AddedAt:  time.Now(),
-			dropWait: make(chan struct{}),
+			Name:      name,
+			InfoHash:  ih,
+			AddedAt:   time.Now(),
+			cldServer: e.cldServer,
+			dropWait:  make(chan struct{}),
 		}
 		e.Lock()
 		e.ts[ih] = torrent
@@ -47,22 +47,6 @@ func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
 		return t, nil
 	}
 	return nil, fmt.Errorf("Missing torrent %x", infohash)
-}
-
-func (e *Engine) callDoneCmd(env []string) {
-	if e.config.DoneCmd == "" {
-		return
-	}
-
-	cmd := exec.Command(e.config.DoneCmd)
-	cmd.Env = env
-	log.Printf("[DoneCmd] [%s] environ:%v", e.config.DoneCmd, cmd.Env)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Println("[DoneCmd] Err:", err)
-		return
-	}
-	log.Println("[DoneCmd] Exit:", cmd.ProcessState.ExitCode(), "Output:", string(out))
 }
 
 func (e *Engine) UpdateTrackers() error {
