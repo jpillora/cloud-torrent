@@ -151,11 +151,10 @@ func (e *Engine) StartTorrentWatcher() error {
 		for {
 			select {
 			case event := <-w.Event:
-				if event.IsDir() {
+				if event.Op != watcher.Create {
 					continue
 				}
-				// skip auto saved torrent
-				if strings.HasPrefix(event.Name(), cacheSavedPrefix) {
+				if event.IsDir() {
 					continue
 				}
 				if strings.HasSuffix(event.Name(), ".torrent") {
