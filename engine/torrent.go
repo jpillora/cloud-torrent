@@ -60,6 +60,7 @@ func (torrent *Torrent) updateBase(t *torrent.Torrent) {
 	defer torrent.Unlock()
 
 	if t.Info() != nil {
+		torrent.t = t
 		torrent.Loaded = true
 		torrent.updateStatus()
 		torrent.updateConnStat()
@@ -74,7 +75,6 @@ func (torrent *Torrent) updateBase(t *torrent.Torrent) {
 			torrent.Magnet = "ERROR{}"
 		}
 		torrent.Name = t.Name()
-		torrent.t = t
 	}
 }
 
