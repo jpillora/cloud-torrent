@@ -254,8 +254,10 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 			case <-timeTk.C:
 				if t.Started {
 					log.Println("Task ticker updated", ih)
-					t.updateConnStat()
 					e.taskRoutine(t)
+				}
+				if t.Done {
+					t.updateConnStat()
 				}
 			case <-e.closeSync:
 				return
