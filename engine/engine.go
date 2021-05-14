@@ -230,7 +230,7 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 		t.updateBase(tt)
 
 		if e.config.AutoStart {
-			e.StartTorrent(ih)
+			go e.StartTorrent(ih)
 		}
 
 		sub := tt.SubscribePieceStateChanges()
