@@ -232,9 +232,7 @@ func (s *Server) apiConfigure(data []byte) error {
 				}
 				return err
 			}
-			if err := s.RestoreTorrent(); err != nil {
-				return err
-			}
+			s.engine.RestoreCacheDir()
 			log.Printf("[api] torrent engine reconfigred")
 		} else {
 			s.engine.SetConfig(s.state.Config)

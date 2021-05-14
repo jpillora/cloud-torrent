@@ -1,11 +1,14 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/anacrolix/torrent/metainfo"
@@ -71,42 +74,56 @@ func (e *Engine) removeTorrentCache(infohash string) {
 	}
 }
 
-func (e *Engine) RestoreTorrent(fnpattern string) {
-	// restore saved torrent tasks
-	log.Println("RestoreTorrent", fnpattern)
-	tors, _ := filepath.Glob(filepath.Join(e.cacheDir, fnpattern))
-	for _, t := range tors {
-		if err := e.NewTorrentByFilePath(t); err == nil {
-			if strings.HasPrefix(filepath.Base(t), cacheSavedPrefix) {
-				log.Printf("[RestoreTorrent] Restored: %s \n", t)
+func (e *Engine) RestoreTask(fn string) {
+	if _, err := os.Stat(fn); errors.Is(err, os.ErrNotExist) {
+		log.Println("RestoreTask: file not exists", fn)
+		return
+	}
+
+	if strings.HasSuffix(fn, ".torrent") {
+		if err := e.NewTorrentByFilePath(fn); err == nil {
+			if strings.HasPrefix(filepath.Base(fn), cacheSavedPrefix) {
+				log.Printf("[RestoreTask] Restored Torrent: %s \n", fn)
 			} else {
-				log.Printf("Task: added %s, file removed\n", t)
-				os.Remove(t)
+				log.Printf("Task: added %s, file removed\n", fn)
+				os.Remove(fn)
 			}
 		} else {
 			log.Printf("Inital Task: fail to add %s, ERR:%#v\n", t, err)
 		}
 	}
+	if strings.HasSuffix(fn, ".info") && strings.HasPrefix(fn, cacheSavedPrefix) && len(fn) == 59 {
+		mag, err := ioutil.ReadFile(fn)
+		if err != nil {
+			log.Printf("Task: fail to read %s\n", fn)
+			return
+		}
+		if err := e.NewMagnet(string(mag)); err == nil {
+			log.Printf("[RestoreMagnet] Restored: %s \n", fn)
+		} else {
+			log.Printf("Task: fail to add %s, ERR:%#v\n", fn, err)
+		}
+	}
 }
 
-func (e *Engine) RestoreMagnet(fnpattern string) {
-	// restore saved magnet tasks
-	log.Println("RestoreMagnet", fnpattern)
-	infos, _ := filepath.Glob(filepath.Join(e.cacheDir, fnpattern))
-	for _, i := range infos {
-		fn := filepath.Base(i)
-		// only restore our cache file
-		if strings.HasPrefix(fn, cacheSavedPrefix) && len(fn) == 59 {
-			mag, err := ioutil.ReadFile(i)
-			if err != nil {
-				continue
-			}
-			if err := e.NewMagnet(string(mag)); err == nil {
-				log.Printf("[RestoreMagnet] Restored: %s \n", fn)
-			} else {
-				log.Printf("Task: fail to add %s, ERR:%#v\n", fn, err)
-			}
+func (e *Engine) RestoreCacheDir() {
+
+	files, err := ioutil.ReadDir(e.cacheDir)
+	if err != nil {
+		log.Println("RestoreCacheDir failed read cachedir ", err)
+		return
+	}
+
+	// sort by modtime
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].ModTime().Before(files[j].ModTime())
+	})
+
+	for _, i := range files {
+		if i.IsDir() {
+			continue
 		}
+		e.RestoreTask(path.Join(e.cacheDir, i.Name()))
 	}
 }
 
@@ -115,9 +132,9 @@ func (e *Engine) nextWaitTask() {
 		te := elm.(taskElem)
 		switch te.tp {
 		case taskTorrent:
-			e.RestoreTorrent(fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, te.ih))
+			e.RestoreTask(fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, te.ih))
 		case taskMagnet:
-			e.RestoreMagnet(fmt.Sprintf("%s%s.info", cacheSavedPrefix, te.ih))
+			e.RestoreTask(fmt.Sprintf("%s%s.info", cacheSavedPrefix, te.ih))
 		}
 	} else {
 		log.Println("nextWaitTask: wait list empty")

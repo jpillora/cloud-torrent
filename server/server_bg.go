@@ -83,12 +83,6 @@ func (s *Server) backgroundRoutines() {
 	}()
 
 	go s.engine.UpdateTrackers()
-	go s.RestoreTorrent()
+	go s.engine.RestoreCacheDir()
 	s.engine.StartTorrentWatcher()
-}
-
-func (s *Server) RestoreTorrent() error {
-	s.engine.RestoreTorrent("*.torrent")
-	s.engine.RestoreMagnet("*.info")
-	return nil
 }
