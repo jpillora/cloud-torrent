@@ -227,11 +227,12 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 
 		e.removeMagnetCache(ih)
 		e.newTorrentCacheFile(&meta)
+		t.updateBase(tt)
+
 		if e.config.AutoStart {
 			e.StartTorrent(ih)
 		}
 
-		t.updateBase(tt)
 		sub := tt.SubscribePieceStateChanges()
 		lim := rate.NewLimiter(rate.Every(time.Second), 1)
 		timeTk := time.NewTicker(3 * time.Second)
