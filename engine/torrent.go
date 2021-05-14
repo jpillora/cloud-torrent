@@ -127,7 +127,7 @@ func (torrent *Torrent) updateStatus() {
 			file.Completed = f.BytesCompleted()
 			file.Percent = percent(file.Completed, file.Size)
 			file.Done = (file.Completed == file.Size)
-			if file.Done && !file.DoneCmdCalled && !torrent.updatedAt.IsZero() {
+			if file.Done && !file.DoneCmdCalled {
 				file.DoneCmdCalled = true
 				go torrent.callDoneCmd(file.Path, "file", file.Size)
 			}
@@ -140,7 +140,7 @@ func (torrent *Torrent) updateStatus() {
 	torrent.IsSeeding = torrent.t.Seeding() && torrent.Done
 
 	// this process called at least on second Update calls
-	if torrent.Done && !torrent.DoneCmdCalled && !torrent.updatedAt.IsZero() {
+	if torrent.Done && !torrent.DoneCmdCalled {
 		torrent.DoneCmdCalled = true
 		go torrent.callDoneCmd(torrent.Name, "torrent", torrent.Size)
 	}
@@ -154,8 +154,13 @@ func percent(n, total int64) float32 {
 }
 
 func (t *Torrent) callDoneCmd(name, tasktype string, size int64) {
+	ts := t.StartedAt
+	if ts.IsZero() {
+		ts = time.Now()
+	}
+
 	if cmd, err := t.cldServer.DoneCmd(name, t.InfoHash, tasktype,
-		size, t.StartedAt.Unix()); err == nil {
+		size, ts.Unix()); err == nil {
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			log.Println("[DoneCmd] Err:", err)

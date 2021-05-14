@@ -243,7 +243,7 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 				//task made progress
 				if ok {
 					if lim.Allow() {
-						log.Println("Task sub updated", ih)
+						// log.Println("Task sub updated", ih)
 						t.updateStatus()
 						t.updateConnStat()
 					}
@@ -253,10 +253,10 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 				}
 			case <-timeTk.C:
 				if t.Started {
-					log.Println("Task ticker updated", ih)
 					e.taskRoutine(t)
 				}
 				if t.Done {
+					// log.Println("Task ticker updated", ih)
 					t.updateConnStat()
 				}
 			case <-e.closeSync:
