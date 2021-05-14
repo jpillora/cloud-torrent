@@ -55,37 +55,62 @@ type File struct {
 }
 
 // Update retrive info from torrent.Torrent
-func (torrent *Torrent) Update(t *torrent.Torrent) {
+func (torrent *Torrent) updateBase(t *torrent.Torrent) {
 	torrent.Lock()
 	defer torrent.Unlock()
 
-	torrent.Name = t.Name()
 	if t.Info() != nil {
 		torrent.Loaded = true
-		torrent.updateLoaded(t)
+		torrent.updateStatus()
+		torrent.updateConnStat()
 	}
-	if torrent.Magnet == "" {
-		// meta := t.Metainfo()
-		// m := meta.Magnet(t.Name(), t.InfoHash())
-		// torrent.Magnet = m.String()
 
-		// convert torrent to magnet
-		// since anacrolix/torrent version 1.26+
+	if torrent.Magnet == "" {
 		meta := t.Metainfo()
 		if ifo, err := meta.UnmarshalInfo(); err == nil {
 			magnet := meta.Magnet(nil, &ifo).String()
 			torrent.Magnet = magnet
+		} else {
+			torrent.Magnet = "ERROR{}"
 		}
+		torrent.Name = t.Name()
+		torrent.t = t
 	}
-	torrent.t = t
 }
 
-func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
+func (torrent *Torrent) updateConnStat() {
+	torrent.Stats = torrent.t.Stats()
 
-	torrent.Size = t.Length()
+	// calculate ratio
+	bRead := torrent.Stats.BytesReadData.Int64()
+	bWrite := torrent.Stats.BytesWrittenData.Int64()
+	if bRead > 0 {
+		torrent.SeedRatio = float32(bWrite) / float32(bRead)
+	}
 
+	now := time.Now()
+	bytes := torrent.t.BytesCompleted()
+	ulbytes := torrent.Stats.BytesWrittenData.Int64()
+
+	if !torrent.updatedAt.IsZero() {
+		// calculate rate
+		dtinv := float32(time.Second) / float32(now.Sub(torrent.updatedAt))
+
+		dldb := float32(bytes - torrent.Downloaded)
+		torrent.DownloadRate = dldb * dtinv
+
+		uldb := float32(ulbytes - torrent.Uploaded)
+		torrent.UploadRate = uldb * dtinv
+	}
+
+	torrent.Downloaded = bytes
+	torrent.Uploaded = ulbytes
+	torrent.updatedAt = now
+}
+
+func (torrent *Torrent) updateStatus() {
 	{
-		tfiles := t.Files()
+		tfiles := torrent.t.Files()
 		if len(tfiles) > 0 && torrent.Files == nil {
 			torrent.Files = make([]*File, len(tfiles))
 		}
@@ -109,41 +134,15 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 		}
 	}
 
-	torrent.Stats = t.Stats()
-	now := time.Now()
-	bytes := t.BytesCompleted()
-	ulbytes := torrent.Stats.BytesWrittenData.Int64()
+	torrent.Size = torrent.t.Length()
+	torrent.Percent = 1 - percent(torrent.t.BytesMissing(), torrent.Size)
+	torrent.Done = torrent.t.BytesMissing() == 0
+	torrent.IsSeeding = torrent.t.Seeding() && torrent.Done
 
-	if !torrent.updatedAt.IsZero() {
-		// calculate rate
-		dtinv := float32(time.Second) / float32(now.Sub(torrent.updatedAt))
-
-		dldb := float32(bytes - torrent.Downloaded)
-		torrent.DownloadRate = dldb * dtinv
-
-		uldb := float32(ulbytes - torrent.Uploaded)
-		torrent.UploadRate = uldb * dtinv
-
-		// this process called at least on second Update calls
-		if torrent.Done && !torrent.DoneCmdCalled && !torrent.updatedAt.IsZero() {
-			torrent.DoneCmdCalled = true
-			go torrent.callDoneCmd(torrent.Name, "torrent", torrent.Size)
-		}
-	}
-
-	torrent.Downloaded = bytes
-	torrent.Uploaded = ulbytes
-
-	torrent.updatedAt = now
-	torrent.Percent = percent(bytes, torrent.Size)
-	torrent.Done = t.BytesMissing() == 0
-	torrent.IsSeeding = t.Seeding() && torrent.Done
-
-	// calculate ratio
-	bRead := torrent.Stats.BytesReadData.Int64()
-	bWrite := torrent.Stats.BytesWrittenData.Int64()
-	if bRead > 0 {
-		torrent.SeedRatio = float32(bWrite) / float32(bRead)
+	// this process called at least on second Update calls
+	if torrent.Done && !torrent.DoneCmdCalled && !torrent.updatedAt.IsZero() {
+		torrent.DoneCmdCalled = true
+		go torrent.callDoneCmd(torrent.Name, "torrent", torrent.Size)
 	}
 }
 

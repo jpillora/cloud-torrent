@@ -216,7 +216,6 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 	}
 
 	t := e.upsertTorrent(ih, tt.Name())
-	t.Update(tt)
 	go func() {
 		select {
 		case <-e.closeSync:
@@ -232,7 +231,7 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 			e.StartTorrent(ih)
 		}
 
-		t.Update(tt)
+		t.updateBase(tt)
 		sub := tt.SubscribePieceStateChanges()
 		lim := rate.NewLimiter(rate.Every(time.Second), 1)
 		timeTk := time.NewTicker(3 * time.Second)
@@ -244,7 +243,8 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 				if ok {
 					if lim.Allow() {
 						log.Println("Task sub updated", ih)
-						t.Update(tt)
+						t.updateStatus()
+						t.updateConnStat()
 					}
 				} else {
 					log.Println("Task sub closed", ih)
@@ -253,7 +253,7 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 			case <-timeTk.C:
 				if t.Started {
 					log.Println("Task ticker updated", ih)
-					t.Update(tt)
+					t.updateConnStat()
 					e.taskRoutine(t)
 				}
 			case <-e.closeSync:
@@ -369,7 +369,7 @@ func (e *Engine) StopTorrent(infohash string) error {
 	time.AfterFunc(10*time.Second, func() {
 		// when stopped, the main loop wont update this task anymore
 		// do a final update 10s later.
-		t.Update(t.t)
+		t.updateConnStat()
 	})
 	return nil
 }

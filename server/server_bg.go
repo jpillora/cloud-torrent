@@ -31,16 +31,15 @@ func (s *Server) backgroundRoutines() {
 						return
 					}
 					if event.Op&(fsnotify.Create|fsnotify.Remove) > 0 && s.state.NumConnections() > 0 {
-						log.Println("event:", event)
 						s.state.Lock()
 						s.state.Downloads = s.listFiles()
 						s.state.Unlock()
 					}
 				case err, ok := <-watcher.Errors:
+					log.Println("Download dir watcher error:", err)
 					if !ok {
 						return
 					}
-					log.Println("error:", err)
 				}
 			}
 		}()
