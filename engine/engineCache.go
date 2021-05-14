@@ -89,7 +89,7 @@ func (e *Engine) RestoreTask(fn string) {
 				os.Remove(fn)
 			}
 		} else {
-			log.Printf("Inital Task: fail to add %s, ERR:%#v\n", t, err)
+			log.Printf("RestoreTask: fail to add %s, ERR:%#v\n", fn, err)
 		}
 	}
 	if strings.HasSuffix(fn, ".info") && strings.HasPrefix(fn, cacheSavedPrefix) && len(fn) == 59 {
@@ -101,7 +101,7 @@ func (e *Engine) RestoreTask(fn string) {
 		if err := e.NewMagnet(string(mag)); err == nil {
 			log.Printf("[RestoreMagnet] Restored: %s \n", fn)
 		} else {
-			log.Printf("Task: fail to add %s, ERR:%#v\n", fn, err)
+			log.Printf("RestoreTask: fail to add %s, ERR:%#v\n", fn, err)
 		}
 	}
 }
