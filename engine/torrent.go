@@ -135,8 +135,8 @@ func (torrent *Torrent) updateStatus() {
 	}
 
 	torrent.Size = torrent.t.Length()
-	torrent.Percent = 1 - percent(torrent.t.BytesMissing(), torrent.Size)
-	torrent.Done = torrent.t.BytesMissing() == 0
+	torrent.Percent = percent(torrent.t.BytesCompleted(), torrent.Size)
+	torrent.Done = (torrent.t.BytesMissing() == 0)
 	torrent.IsSeeding = torrent.t.Seeding() && torrent.Done
 
 	// this process called at least on second Update calls
