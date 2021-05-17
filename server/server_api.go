@@ -253,7 +253,6 @@ func (s *Server) apiConfigure(data []byte) error {
 			go func() {
 				for {
 					if err := s.engine.NextWaitTask(); errors.Is(err, engine.ErrMaxConnTasks) || errors.Is(err, engine.ErrWaitListEmpty) {
-						log.Println(err)
 						break
 					}
 				}
