@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -75,8 +74,8 @@ func (e *Engine) removeTorrentCache(infohash string) {
 }
 
 func (e *Engine) RestoreTask(fn string) {
-	if _, err := os.Stat(fn); errors.Is(err, os.ErrNotExist) {
-		log.Println("RestoreTask: file not exists", fn)
+	if _, err := os.Stat(fn); err != nil && os.IsNotExist(err) {
+		log.Println("RestoreTask: file not exists", fn, err)
 		return
 	}
 
