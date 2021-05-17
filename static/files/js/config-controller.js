@@ -20,6 +20,7 @@ app.controller("ConfigController", function ($scope, $rootScope, storage, api) {
     "ProxyURL",
     "TrackerListURL",
     "AlwaysAddTrackers",
+    "MaxConcurrentTask",
     "RssURL"
   ];
 
@@ -40,6 +41,7 @@ app.controller("ConfigController", function ($scope, $rootScope, storage, api) {
     "ProxyURL": "Proxy URL",
     "TrackerListURL": "A https URL to a trackers list, this option is design to retrive public trackers from github.com/ngosang/trackerslist. ",
     "AlwaysAddTrackers": "Whether add trackers even there are trackers specified in the torrent/magnet",
+    "MaxConcurrentTask": "Maxmium downloading torrent tasks allowed.",
     "RssURL": "A newline seperated list of magnet RSS feeds. (http/https)"
   };
 
