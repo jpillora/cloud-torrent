@@ -244,8 +244,8 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 				if ok {
 					if lim.Allow() {
 						// log.Println("Task sub updated", ih)
-						t.updateTorrentStatus()
 						t.updateFileStatus()
+						t.updateTorrentStatus()
 						t.updateConnStat()
 					}
 				} else {
@@ -259,9 +259,9 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 				if t.Done {
 					// log.Println("Task ticker updated", ih)
 					t.updateConnStat()
-				}
-				if !t.IsAllFilesDone {
-					t.updateFileStatus()
+					if !t.IsAllFilesDone {
+						t.updateFileStatus()
+					}
 				}
 			case <-e.closeSync:
 				return
