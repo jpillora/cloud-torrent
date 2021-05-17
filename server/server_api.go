@@ -212,9 +212,6 @@ func (s *Server) apiConfigure(data []byte) error {
 		if status&engine.NeedUpdateTracker > 0 {
 			go s.engine.UpdateTrackers()
 		}
-		if status&engine.NeedLoadWaitList > 0 {
-			go s.engine.NextWaitTask()
-		}
 
 		// now it's safe to save the configure
 		if err := s.state.Config.SyncViper(c); err != nil {
@@ -241,6 +238,11 @@ func (s *Server) apiConfigure(data []byte) error {
 			s.engine.SetConfig(s.state.Config)
 		}
 		s.state.Push()
+
+		// do after config synced
+		if status&engine.NeedLoadWaitList > 0 {
+			go s.engine.NextWaitTask()
+		}
 	} else {
 		log.Printf("[api] configure unchanged")
 	}

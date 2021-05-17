@@ -190,10 +190,10 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 	// whether add as pretasks
 	if e.config.MaxConcurrentTask > 0 && len(e.client.Torrents()) >= e.config.MaxConcurrentTask {
 		if !e.isTaskInList(ih) {
-			log.Println("[newTorrentBySpec] reached max task, add as pretask: ", ih, taskT)
+			log.Printf("[newTorrentBySpec] reached max task %d, add as pretask: %s %v", e.config.MaxConcurrentTask, ih, taskT)
 			e.pushWaitTask(ih, taskT)
 		} else {
-			log.Println("[newTorrentBySpec] reached max task, task already in tasks: ", ih, taskT)
+			log.Printf("[newTorrentBySpec] reached max task %d, task already in tasks: %s %v", e.config.MaxConcurrentTask, ih, taskT)
 		}
 		return e.addPreTask(spec)
 	}
