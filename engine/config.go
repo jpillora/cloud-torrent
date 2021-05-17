@@ -17,6 +17,7 @@ const (
 	NeedEngineReConfig
 	NeedRestartWatch
 	NeedUpdateTracker
+	NeedLoadWaitList
 )
 
 const (
@@ -177,6 +178,9 @@ func (c *Config) Validate(nc *Config) uint8 {
 	}
 	if c.TrackerListURL != nc.TrackerListURL {
 		status |= NeedUpdateTracker
+	}
+	if c.MaxConcurrentTask < nc.MaxConcurrentTask {
+		status |= NeedLoadWaitList
 	}
 
 	rfc := reflect.ValueOf(c)

@@ -12,6 +12,7 @@ app.controller("ConfigController", function ($scope, $rootScope, storage, api) {
     "ObfsRequirePreferred",
     "DisableTrackers",
     "DisableIPv6",
+    "MaxConcurrentTask",
     "SeedRatio",
     "UploadRate",
     "DownloadRate",
@@ -20,7 +21,6 @@ app.controller("ConfigController", function ($scope, $rootScope, storage, api) {
     "ProxyURL",
     "TrackerListURL",
     "AlwaysAddTrackers",
-    "MaxConcurrentTask",
     "RssURL"
   ];
 

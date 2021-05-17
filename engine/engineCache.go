@@ -122,7 +122,7 @@ func (e *Engine) RestoreCacheDir() {
 	}
 }
 
-func (e *Engine) nextWaitTask() {
+func (e *Engine) NextWaitTask() {
 	var res string
 	if elm := e.waitList.Pop(); elm != nil {
 		te := elm.(taskElem)
