@@ -227,7 +227,7 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 
 		e.removeMagnetCache(ih)
 		e.newTorrentCacheFile(&meta)
-		t.updateBase(tt)
+		t.updateOnGotInfo(tt)
 
 		if e.config.AutoStart {
 			go e.StartTorrent(ih)

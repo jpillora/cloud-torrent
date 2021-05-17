@@ -56,9 +56,7 @@ type File struct {
 }
 
 // Update retrive info from torrent.Torrent
-func (torrent *Torrent) updateBase(t *torrent.Torrent) {
-	torrent.Lock()
-	defer torrent.Unlock()
+func (torrent *Torrent) updateOnGotInfo(t *torrent.Torrent) {
 
 	if t.Info() != nil && !torrent.Loaded {
 		torrent.t = t
@@ -66,17 +64,17 @@ func (torrent *Torrent) updateBase(t *torrent.Torrent) {
 		torrent.updateFileStatus()
 		torrent.updateTorrentStatus()
 		torrent.updateConnStat()
-	}
 
-	if torrent.Magnet == "" {
-		meta := t.Metainfo()
-		if ifo, err := meta.UnmarshalInfo(); err == nil {
-			magnet := meta.Magnet(nil, &ifo).String()
-			torrent.Magnet = magnet
-		} else {
-			torrent.Magnet = "ERROR{}"
+		if torrent.Magnet == "" {
+			meta := t.Metainfo()
+			if ifo, err := meta.UnmarshalInfo(); err == nil {
+				magnet := meta.Magnet(nil, &ifo).String()
+				torrent.Magnet = magnet
+			} else {
+				torrent.Magnet = "ERROR{}"
+			}
+			torrent.Name = t.Name()
 		}
-		torrent.Name = t.Name()
 	}
 }
 
