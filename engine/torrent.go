@@ -59,10 +59,11 @@ func (torrent *Torrent) updateBase(t *torrent.Torrent) {
 	torrent.Lock()
 	defer torrent.Unlock()
 
-	if t.Info() != nil {
+	if t.Info() != nil && !torrent.Loaded {
 		torrent.t = t
 		torrent.Loaded = true
-		torrent.updateStatus()
+		torrent.updateFileStatus()
+		torrent.updateTorrentStatus()
 		torrent.updateConnStat()
 	}
 
@@ -108,32 +109,32 @@ func (torrent *Torrent) updateConnStat() {
 	torrent.updatedAt = now
 }
 
-func (torrent *Torrent) updateStatus() {
-	{
-		tfiles := torrent.t.Files()
-		if len(tfiles) > 0 && torrent.Files == nil {
-			torrent.Files = make([]*File, len(tfiles))
+func (torrent *Torrent) updateFileStatus() {
+	tfiles := torrent.t.Files()
+	if len(tfiles) > 0 && torrent.Files == nil {
+		torrent.Files = make([]*File, len(tfiles))
+	}
+	//merge in files
+	for i, f := range tfiles {
+		path := f.Path()
+		file := torrent.Files[i]
+		if file == nil {
+			file = &File{Path: path, Started: torrent.Started, f: f}
+			torrent.Files[i] = file
 		}
-		//merge in files
-		for i, f := range tfiles {
-			path := f.Path()
-			file := torrent.Files[i]
-			if file == nil {
-				file = &File{Path: path, Started: torrent.Started, f: f}
-				torrent.Files[i] = file
-			}
 
-			file.Size = f.Length()
-			file.Completed = f.BytesCompleted()
-			file.Percent = percent(file.Completed, file.Size)
-			file.Done = (file.Completed == file.Size)
-			if file.Done && !file.DoneCmdCalled {
-				file.DoneCmdCalled = true
-				go torrent.callDoneCmd(file.Path, "file", file.Size)
-			}
+		file.Size = f.Length()
+		file.Completed = f.BytesCompleted()
+		file.Percent = percent(file.Completed, file.Size)
+		file.Done = (file.Completed == file.Size)
+		if file.Done && !file.DoneCmdCalled {
+			file.DoneCmdCalled = true
+			go torrent.callDoneCmd(file.Path, "file", file.Size)
 		}
 	}
+}
 
+func (torrent *Torrent) updateTorrentStatus() {
 	torrent.Size = torrent.t.Length()
 	torrent.Percent = percent(torrent.t.BytesCompleted(), torrent.Size)
 	torrent.Done = (torrent.t.BytesMissing() == 0)

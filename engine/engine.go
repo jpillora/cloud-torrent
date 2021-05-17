@@ -244,7 +244,8 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 				if ok {
 					if lim.Allow() {
 						// log.Println("Task sub updated", ih)
-						t.updateStatus()
+						t.updateTorrentStatus()
+						t.updateFileStatus()
 						t.updateConnStat()
 					}
 				} else {
