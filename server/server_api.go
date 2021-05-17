@@ -48,6 +48,9 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 
 		m := r.URL.Query().Get("m")
 		if err := s.engine.NewMagnet(m); err != nil {
+			if errors.Is(err, engine.ErrMaxConnTasks) {
+				return nil
+			}
 			tdata.HasError = true
 			tdata.Error = err.Error()
 		}
@@ -123,6 +126,9 @@ func (s *Server) apiPOST(r *http.Request) error {
 	//convert torrent bytes into magnet
 	if action == "torrentfile" {
 		if err := s.engine.NewTorrentByReader(bytes.NewBuffer(data)); err != nil {
+			if errors.Is(err, engine.ErrMaxConnTasks) {
+				return nil
+			}
 			return err
 		}
 		return nil
@@ -137,6 +143,9 @@ func (s *Server) apiPOST(r *http.Request) error {
 		return s.apiConfigure(data)
 	case "magnet":
 		if err := s.engine.NewMagnet(string(data)); err != nil {
+			if errors.Is(err, engine.ErrMaxConnTasks) {
+				return nil
+			}
 			return fmt.Errorf("Magnet error: %w", err)
 		}
 	case "torrent":
