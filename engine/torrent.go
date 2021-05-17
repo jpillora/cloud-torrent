@@ -23,21 +23,22 @@ type Torrent struct {
 	Files      []*File
 
 	//cloud torrent
-	Started       bool
-	Done          bool
-	DoneCmdCalled bool
-	IsSeeding     bool
-	ManualStarted bool
-	Percent       float32
-	DownloadRate  float32
-	UploadRate    float32
-	SeedRatio     float32
-	AddedAt       time.Time
-	StartedAt     time.Time
-	t             *torrent.Torrent
-	dropWait      chan struct{}
-	updatedAt     time.Time
-	cldServer     Server
+	Started        bool
+	Done           bool
+	DoneCmdCalled  bool
+	IsSeeding      bool
+	ManualStarted  bool
+	IsAllFilesDone bool
+	Percent        float32
+	DownloadRate   float32
+	UploadRate     float32
+	SeedRatio      float32
+	AddedAt        time.Time
+	StartedAt      time.Time
+	t              *torrent.Torrent
+	dropWait       chan struct{}
+	updatedAt      time.Time
+	cldServer      Server
 	sync.Mutex
 }
 
@@ -110,11 +111,19 @@ func (torrent *Torrent) updateConnStat() {
 }
 
 func (torrent *Torrent) updateFileStatus() {
+	torrent.Lock()
+	defer torrent.Unlock()
+	if torrent.IsAllFilesDone {
+		return
+	}
+
 	tfiles := torrent.t.Files()
 	if len(tfiles) > 0 && torrent.Files == nil {
 		torrent.Files = make([]*File, len(tfiles))
 	}
+
 	//merge in files
+	doneFlag := true
 	for i, f := range tfiles {
 		path := f.Path()
 		file := torrent.Files[i]
@@ -131,7 +140,12 @@ func (torrent *Torrent) updateFileStatus() {
 			file.DoneCmdCalled = true
 			go torrent.callDoneCmd(file.Path, "file", file.Size)
 		}
+		if !file.Done {
+			doneFlag = false
+		}
 	}
+
+	torrent.IsAllFilesDone = doneFlag
 }
 
 func (torrent *Torrent) updateTorrentStatus() {
