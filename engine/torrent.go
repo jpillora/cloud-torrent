@@ -111,8 +111,6 @@ func (torrent *Torrent) updateConnStat() {
 }
 
 func (torrent *Torrent) updateFileStatus() {
-	torrent.Lock()
-	defer torrent.Unlock()
 	if torrent.IsAllFilesDone {
 		return
 	}
