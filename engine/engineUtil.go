@@ -21,7 +21,7 @@ func (e *Engine) isTaskInList(ih string) bool {
 	return ok
 }
 
-func (e *Engine) upsertTorrent(ih, name string) *Torrent {
+func (e *Engine) upsertTorrent(ih, name string) (*Torrent, error) {
 	e.RLock()
 	torrent, ok := e.ts[ih]
 	e.RUnlock()
@@ -36,10 +36,9 @@ func (e *Engine) upsertTorrent(ih, name string) *Torrent {
 		e.Lock()
 		e.ts[ih] = torrent
 		e.Unlock()
+		return torrent, nil
 	}
-	//update torrent fields using underlying torrent
-	// torrent.Update(tt)
-	return torrent
+	return torrent, ErrTaskExists
 }
 
 func (e *Engine) getTorrent(infohash string) (*Torrent, error) {

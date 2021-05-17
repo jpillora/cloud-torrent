@@ -73,7 +73,7 @@ func (e *Engine) removeTorrentCache(infohash string) {
 	}
 }
 
-func (e *Engine) RestoreTask(fn string) {
+func (e *Engine) RestoreTask(fn string) error {
 
 	if strings.HasSuffix(fn, ".torrent") {
 		if err := e.NewTorrentByFilePath(fn); err == nil {
@@ -85,20 +85,24 @@ func (e *Engine) RestoreTask(fn string) {
 			}
 		} else {
 			log.Printf("RestoreTask: fail to add %s, ERR:%#v\n", fn, err)
+			return err
 		}
 	}
 	if strings.HasSuffix(fn, ".info") && strings.HasPrefix(fn, cacheSavedPrefix) && len(fn) == 59 {
 		mag, err := ioutil.ReadFile(fn)
 		if err != nil {
 			log.Printf("Task: fail to read %s\n", fn)
-			return
+			return err
 		}
 		if err := e.NewMagnet(string(mag)); err == nil {
 			log.Printf("[RestoreMagnet] Restored: %s \n", fn)
 		} else {
 			log.Printf("RestoreTask: fail to add %s, ERR:%#v\n", fn, err)
+			return err
 		}
 	}
+
+	return nil
 }
 
 func (e *Engine) RestoreCacheDir() {
@@ -122,7 +126,7 @@ func (e *Engine) RestoreCacheDir() {
 	}
 }
 
-func (e *Engine) NextWaitTask() {
+func (e *Engine) NextWaitTask() error {
 	var res string
 	if elm := e.waitList.Pop(); elm != nil {
 		te := elm.(taskElem)
@@ -135,14 +139,15 @@ func (e *Engine) NextWaitTask() {
 
 		fn := path.Join(e.cacheDir, res)
 		if _, err := os.Stat(fn); err == nil {
-			e.RestoreTask(fn)
+			return e.RestoreTask(fn)
 		} else {
 			log.Println("nextWaitTask RestoreTask: file not exists", res, err)
+			return err
 		}
-
-	} else {
-		log.Println("nextWaitTask: wait list empty")
 	}
+
+	log.Println("nextWaitTask: wait list empty")
+	return ErrWaitListEmpty
 }
 
 func (e *Engine) pushWaitTask(ih string, tp taskType) {

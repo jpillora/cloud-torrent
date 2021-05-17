@@ -241,7 +241,14 @@ func (s *Server) apiConfigure(data []byte) error {
 
 		// do after config synced
 		if status&engine.NeedLoadWaitList > 0 {
-			go s.engine.NextWaitTask()
+			go func() {
+				for {
+					if err := s.engine.NextWaitTask(); errors.Is(err, engine.ErrMaxConnTasks) || errors.Is(err, engine.ErrWaitListEmpty) {
+						log.Println(err)
+						break
+					}
+				}
+			}()
 		}
 	} else {
 		log.Printf("[api] configure unchanged")

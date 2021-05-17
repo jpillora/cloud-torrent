@@ -28,6 +28,12 @@ const (
 	CachedTorrentDir = ".cachedTorrents"
 )
 
+var (
+	ErrTaskExists    = errors.New("Task already exists")
+	ErrWaitListEmpty = errors.New("Wait list empty")
+	ErrMaxConnTasks  = errors.New("Max conncurrent task reached")
+)
+
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
 type Engine struct {
 	sync.RWMutex // race condition on ts,client
@@ -195,7 +201,8 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 		} else {
 			log.Printf("[newTorrentBySpec] reached max task %d, task already in tasks: %s %v", e.config.MaxConcurrentTask, ih, taskT)
 		}
-		return e.addPreTask(spec)
+		e.addPreTask(spec)
+		return ErrMaxConnTasks
 	}
 
 	tt, _, err := e.client.AddTorrentSpec(spec)
@@ -215,7 +222,7 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 		tt.AddTrackers([][]string{e.bttracker})
 	}
 
-	t := e.upsertTorrent(ih, tt.Name())
+	t, _ := e.upsertTorrent(ih, tt.Name())
 	go func() {
 		select {
 		case <-e.closeSync:
@@ -278,8 +285,8 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 // addPreTask
 // add a task not ready to load
 func (e *Engine) addPreTask(spec *torrent.TorrentSpec) error {
-	e.upsertTorrent(spec.InfoHash.HexString(), spec.DisplayName)
-	return nil
+	_, err := e.upsertTorrent(spec.InfoHash.HexString(), spec.DisplayName)
+	return err
 }
 
 //GetTorrents just get the local infohash->Torrent map
