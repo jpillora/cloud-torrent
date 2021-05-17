@@ -37,6 +37,7 @@ var (
 //the Engine Cloud Torrent engine, backed by anacrolix/torrent
 type Engine struct {
 	sync.RWMutex // race condition on ts,client
+	taskMutex    sync.Mutex
 	cldServer    Server
 	cacheDir     string
 	client       *torrent.Client
@@ -193,6 +194,8 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 	ih := spec.InfoHash.HexString()
 	log.Println("[newTorrentBySpec] called ", ih)
 
+	e.taskMutex.Lock()
+	defer e.taskMutex.Unlock()
 	// whether add as pretasks
 	if e.config.MaxConcurrentTask > 0 && len(e.client.Torrents()) >= e.config.MaxConcurrentTask {
 		if !e.isTaskInList(ih) {
