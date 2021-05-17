@@ -6,6 +6,8 @@ HASH=${CLD_HASH}
 TYPE=${CLD_TYPE}
 RESTAPI=${CLD_RESTAPI}
 SIZE=${CLD_SIZE}
+STARTTS=${CLD_STARTTS}
+
 
 if [[ ${TYPE} == "torrent" ]]; then
 
@@ -34,3 +36,4 @@ if [[ ${TYPE} == "file" ]] && [[ ${SIZE} -gt $((10*1024*1024)) ]]; then
         -H "Accept: application/json" \
         --data '{"jsonrpc": "2.0","id":1, "method": "aria2.addUri", "params":["token:Just4Aria2c", ['${DOWNLOADURL}']]}'
 fi
+
