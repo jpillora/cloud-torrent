@@ -74,10 +74,6 @@ func (e *Engine) removeTorrentCache(infohash string) {
 }
 
 func (e *Engine) RestoreTask(fn string) {
-	if _, err := os.Stat(fn); err != nil && os.IsNotExist(err) {
-		log.Println("RestoreTask: file not exists", fn, err)
-		return
-	}
 
 	if strings.HasSuffix(fn, ".torrent") {
 		if err := e.NewTorrentByFilePath(fn); err == nil {
@@ -127,14 +123,23 @@ func (e *Engine) RestoreCacheDir() {
 }
 
 func (e *Engine) nextWaitTask() {
+	var res string
 	if elm := e.waitList.Pop(); elm != nil {
 		te := elm.(taskElem)
 		switch te.tp {
 		case taskTorrent:
-			e.RestoreTask(fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, te.ih))
+			res = fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, te.ih)
 		case taskMagnet:
-			e.RestoreTask(fmt.Sprintf("%s%s.info", cacheSavedPrefix, te.ih))
+			res = fmt.Sprintf("%s%s.info", cacheSavedPrefix, te.ih)
 		}
+
+		fn := path.Join(e.cacheDir, res)
+		if _, err := os.Stat(fn); err == nil {
+			e.RestoreTask(fn)
+		} else {
+			log.Println("nextWaitTask RestoreTask: file not exists", res, err)
+		}
+
 	} else {
 		log.Println("nextWaitTask: wait list empty")
 	}
