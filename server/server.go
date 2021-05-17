@@ -158,6 +158,9 @@ func (s *Server) Run(version string) error {
 		log.Printf("Effective Config: %#v", s.state.Config)
 	}
 
+	if err := s.engine.UpdateTrackers(); err != nil {
+		log.Println("UpdateTrackers err", err)
+	}
 	s.backgroundRoutines()
 
 	s.mainAddr = fmt.Sprintf("%s:%d", s.Host, s.Port)

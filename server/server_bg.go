@@ -81,7 +81,6 @@ func (s *Server) backgroundRoutines() {
 		}
 	}()
 
-	go s.engine.UpdateTrackers()
 	go s.engine.RestoreCacheDir()
 	s.engine.StartTorrentWatcher()
 }

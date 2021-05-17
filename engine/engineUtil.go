@@ -58,12 +58,15 @@ func (e *Engine) UpdateTrackers() error {
 	if !strings.HasPrefix(url, "https://") {
 		err := fmt.Errorf("UpdateTrackers: trackers url invalid: %s (only https:// supported), extra trackers list now empty.", url)
 		log.Print(err.Error())
-		e.bttracker = txtlines
 		return err
 	}
 
 	log.Printf("UpdateTrackers: loading trackers from %s\n", url)
-	resp, err := http.Get(url)
+	client := http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Get(url)
 	if err != nil {
 		return err
 	}
