@@ -414,6 +414,7 @@ github.com/jpillora/backoff v1.0.0/go.mod h1:J/6gKK9jxlEcS3zixgDgUAsiuZ7yrSoa/FX
 github.com/jpillora/cookieauth v1.0.0 h1:1BYnSG4c+/5kutOsY+7/Ba+rRhUfYv61Jrf605CxfRw=
 github.com/jpillora/cookieauth v1.0.0/go.mod h1:cRoPIrfvkNAooAT07Ul6R1KpJ9zwSr+2AfRGYAcPAT8=
 github.com/jpillora/eventsource v0.0.0-20170920003432-7ed8c999e167/go.mod h1:qaSVvI/JUZarbxO3OwihjLyh9SO49T1cGjUeyIheDAs=
+github.com/jpillora/eventsource v1.0.0/go.mod h1:K3tRq8cBJgDqIQ8L5wKk9Fe5aeLgKfrRg1XF3zAO2lA=
 github.com/jpillora/eventsource v1.1.0 h1:6yPViLRhFLOSwpMZMeZ/PR3817N8G/+rzF+7l9xUmW0=
 github.com/jpillora/eventsource v1.1.0/go.mod h1:K3tRq8cBJgDqIQ8L5wKk9Fe5aeLgKfrRg1XF3zAO2lA=
 github.com/jpillora/opts v1.1.0/go.mod h1:7p7X/vlpKZmtaDFYKs956EujFqA6aCrOkcCaS6UBcR4=
@@ -423,6 +424,8 @@ github.com/jpillora/requestlog v1.0.0 h1:bg++eJ74T7DYL3DlIpiwknrtfdUA9oP/M4fL+Pp
 github.com/jpillora/requestlog v1.0.0/go.mod h1:HTWQb7QfDc2jtHnWe2XEIEeJB7gJPnVdpNn52HXPvy8=
 github.com/jpillora/sizestr v1.0.0 h1:4tr0FLxs1Mtq3TnsLDV+GYUWG7Q26a6s+tV5Zfw2ygw=
 github.com/jpillora/sizestr v1.0.0/go.mod h1:bUhLv4ctkknatr6gR42qPxirmd5+ds1u7mzD+MZ33f0=
+github.com/jpillora/velox v0.4.0 h1:96BPWo+zw2ywf4T/3C9kEKhzGABsjJ4vWSOkf93el/g=
+github.com/jpillora/velox v0.4.0/go.mod h1:3MUU8kZ9aCjzIsY4jd0Qk3kKuDMB3rjE/vdU5OWTDAM=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/json-iterator/go v1.1.7/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/json-iterator/go v1.1.8/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
@@ -1048,6 +1051,10 @@ golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8T
 gomodules.xyz/jsonpatch/v2 v2.0.1/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
 gomodules.xyz/jsonpatch/v2 v2.1.0 h1:Phva6wqu+xR//Njw6iorylFFgn/z547tw5Ne3HZPQ+k=
 gomodules.xyz/jsonpatch/v2 v2.1.0/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
+gomodules.xyz/jsonpatch/v3 v3.0.1 h1:Te7hKxV52TKCbNYq3t84tzKav3xhThdvSsSp/W89IyI=
+gomodules.xyz/jsonpatch/v3 v3.0.1/go.mod h1:CBhndykehEwTOlEfnsfJwvkFQbSN8YZFr9M+cIHAJto=
+gomodules.xyz/orderedmap v0.1.0 h1:fM/+TGh/O1KkqGR5xjTKg6bU8OKBkg7p0Y+x/J9m8Os=
+gomodules.xyz/orderedmap v0.1.0/go.mod h1:g9/TPUCm1t2gwD3j3zfV8uylyYhVdCNSi+xCEIu7yTU=
 google.golang.org/api v0.0.0-20180910000450-7ca32eb868bf/go.mod h1:4mhQ8q/RsB7i+udVvVy5NUi08OU8ZlA0gRVgrF7VFY0=
 google.golang.org/api v0.0.0-20181030000543-1d582fd0359e/go.mod h1:4mhQ8q/RsB7i+udVvVy5NUi08OU8ZlA0gRVgrF7VFY0=
 google.golang.org/api v0.1.0/go.mod h1:UGEZY7KEX120AnNLIHFMKIo4obdJhkp2tPbaPlQx13Y=

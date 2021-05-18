@@ -70,6 +70,6 @@ replace (
 	github.com/jpillora/cloud-torrent/engine => ./engine/
 	github.com/jpillora/cloud-torrent/server => ./server/
 	github.com/jpillora/cloud-torrent/static => ./static/
-	github.com/jpillora/velox => github.com/boypt/velox v0.0.0-20200121010907-a23fd04f2f68
+	// github.com/jpillora/velox => github.com/boypt/velox v0.0.0-20200121010907-a23fd04f2f68
 	github.com/willf/bitset => github.com/bits-and-blooms/bitset v1.2.0
 )
