@@ -127,8 +127,8 @@ func (e *Engine) RestoreCacheDir() {
 }
 
 func (e *Engine) NextWaitTask() error {
-	var res string
 	if elm := e.waitList.Pop(); elm != nil {
+		var res string
 		te := elm.(taskElem)
 		switch te.tp {
 		case taskTorrent:
@@ -138,12 +138,11 @@ func (e *Engine) NextWaitTask() error {
 		}
 
 		fn := path.Join(e.cacheDir, res)
-		if _, err := os.Stat(fn); err == nil {
-			return e.RestoreTask(fn)
-		} else {
-			log.Println("nextWaitTask RestoreTask: file not exists", res, err)
+		if _, err := os.Stat(fn); err != nil {
+			log.Println("nextWaitTask RestoreTask:", fn, err)
 			return err
 		}
+		return e.RestoreTask(fn)
 	}
 
 	log.Println("nextWaitTask: wait list empty")

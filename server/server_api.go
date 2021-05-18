@@ -252,8 +252,10 @@ func (s *Server) apiConfigure(data []byte) error {
 		if status&engine.NeedLoadWaitList > 0 {
 			go func() {
 				for {
-					if err := s.engine.NextWaitTask(); errors.Is(err, engine.ErrMaxConnTasks) || errors.Is(err, engine.ErrWaitListEmpty) {
-						break
+					if err := s.engine.NextWaitTask(); err != nil {
+						if errors.Is(err, engine.ErrMaxConnTasks) || errors.Is(err, engine.ErrWaitListEmpty) {
+							break
+						}
 					}
 				}
 			}()
