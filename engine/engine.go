@@ -315,6 +315,8 @@ func (e *Engine) taskRoutine(t *Torrent) {
 func (e *Engine) ManualStartTorrent(infohash string) error {
 	if err := e.StartTorrent(infohash); err == nil {
 		t, _ := e.getTorrent(infohash)
+		t.Lock()
+		defer t.Unlock()
 		t.ManualStarted = true
 	} else {
 		return err
@@ -335,7 +337,9 @@ func (e *Engine) StartTorrent(infohash string) error {
 		return fmt.Errorf("Already started")
 	}
 	t.Started = true
-	t.StartedAt = time.Now()
+	if t.StartedAt.IsZero() {
+		t.StartedAt = time.Now()
+	}
 	for _, f := range t.Files {
 		if f != nil {
 			f.Started = true
