@@ -3,5 +3,6 @@ downloads
 torrents
 cloud-torrent*
 tmp/
+play*.yml
 .vscode
 .torrent.bolt.db
