@@ -256,7 +256,6 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 						// log.Println("Task sub updated", ih)
 						t.updateFileStatus()
 						t.updateTorrentStatus()
-						t.updateConnStat()
 					}
 				} else {
 					log.Println("Task sub closed", ih)
@@ -266,13 +265,10 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 				if t.Started {
 					e.taskRoutine(t)
 				}
-				if t.Done {
-					// log.Println("Task ticker updated", ih)
-					t.updateConnStat()
-					if !t.IsAllFilesDone {
-						t.updateFileStatus()
-					}
+				if !t.IsAllFilesDone {
+					t.updateFileStatus()
 				}
+				t.updateConnStat()
 			case <-e.closeSync:
 				return
 			case <-t.dropWait:
@@ -387,11 +383,6 @@ func (e *Engine) StopTorrent(infohash string) error {
 		}
 	}
 
-	time.AfterFunc(10*time.Second, func() {
-		// when stopped, the main loop wont update this task anymore
-		// do a final update 10s later.
-		t.updateConnStat()
-	})
 	return nil
 }
 
