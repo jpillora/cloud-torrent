@@ -30,10 +30,14 @@ func (s *Server) backgroundRoutines() {
 					if !ok {
 						return
 					}
-					if event.Op&(fsnotify.Create|fsnotify.Remove) > 0 && s.state.NumConnections() > 0 {
+					if event.Op&(fsnotify.Create|fsnotify.Remove) > 0 {
+						log.Println("Download dir watcher:", event)
 						s.state.Lock()
 						s.state.Downloads = s.listFiles()
 						s.state.Unlock()
+						if s.state.NumConnections() > 0 {
+							s.state.Push()
+						}
 					}
 				case err, ok := <-watcher.Errors:
 					log.Println("Download dir watcher error:", err)
