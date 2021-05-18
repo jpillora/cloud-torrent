@@ -58,7 +58,7 @@
             green: t.SeedRatio >= 1 }" ng-click="toggleTagDetail($event, t)">
             <i class="exchange alternate icon"></i>
             {{ t.SeedRatio | round }}
-            <div ng-if="t.IsSeeding" class="detail">(🌱)</div>
+            <div ng-if="t.IsSeeding" class="detail">🌱</div>
           </span>
         </div>
         <div class="ui blue small progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
