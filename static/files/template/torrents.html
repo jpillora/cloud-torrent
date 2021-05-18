@@ -167,6 +167,11 @@
               Started
               <div class="detail">{{ ago(t.StartedAt) }}</div>
             </div>
+            <div ng-if="t.Done" class="ui blue basic label">
+              <i class="clock outline icon"></i>
+              Finished
+              <div class="detail">{{ ago(t.FinishedAt) }}</div>
+            </div>
           </div>
           <div ng-if="t.$showMode === 'Downloaded'">
             <div class="ui blue basic label">

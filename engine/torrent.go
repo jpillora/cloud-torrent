@@ -35,6 +35,7 @@ type Torrent struct {
 	SeedRatio      float32
 	AddedAt        time.Time
 	StartedAt      time.Time
+	FinishedAt     time.Time
 	t              *torrent.Torrent
 	dropWait       chan struct{}
 	updatedAt      time.Time
@@ -153,6 +154,7 @@ func (torrent *Torrent) updateTorrentStatus() {
 	// this process called at least on second Update calls
 	if torrent.Done && !torrent.DoneCmdCalled {
 		torrent.DoneCmdCalled = true
+		torrent.FinishedAt = time.Now()
 		go torrent.callDoneCmd(torrent.Name, "torrent", torrent.Size)
 	}
 }

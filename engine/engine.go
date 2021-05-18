@@ -333,9 +333,7 @@ func (e *Engine) StartTorrent(infohash string) error {
 		return fmt.Errorf("Already started")
 	}
 	t.Started = true
-	if t.StartedAt.IsZero() {
-		t.StartedAt = time.Now()
-	}
+	t.StartedAt = time.Now()
 	for _, f := range t.Files {
 		if f != nil {
 			f.Started = true
