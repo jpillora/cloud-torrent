@@ -43,6 +43,8 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
 
   //search for this file
   var torrents = $rootScope.state.Torrents;
+  n.$file = undefined;
+  n.$torrent = undefined;
   if ($scope.isfile() && torrents) {
     for (var ih in torrents) {
       var torrent = torrents[ih];
@@ -105,8 +107,10 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
   };
 
   $scope.remove = function () {
-    $http.delete("download/" + n.$path);
-    $scope.$apply();
+    $http.delete("download/" + n.$path)
+      .finally(function () {
+        $scope.$apply();
+      });
   };
 
   $scope.togglePreview = function () {

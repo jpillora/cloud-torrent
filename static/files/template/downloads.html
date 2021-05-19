@@ -1,14 +1,14 @@
 <div class="ui grid section-header" ng-click="section_expanded_toggle()">
-    <div class="column">
-      <i class="square outline icon" ng-class="{minus: !$expanded, plus: $expanded}"></i>
-      <span class="ui header"> 
-        Downloads 
-        <span class="ui label">
-          <i class="hdd icon"></i>
+  <div class="column">
+    <i class="square outline icon" ng-class="{minus: !$expanded, plus: $expanded}"></i>
+    <span class="ui header">
+      Downloads
+      <span class="ui label">
+        <i class="hdd icon"></i>
         {{ state.Stats.System.diskFree | bytes }} free
-        </span>
       </span>
-    </div>
+    </span>
+  </div>
 </div>
 
 <div ng-if="numDownloads() == 0" class="ui message nodownloads">
@@ -17,8 +17,8 @@
 
 <div ng-if="numDownloads() > 0 && $expanded" class="ui raised segment">
   <div class="ui list">
-    <div class="item" ng-repeat="node in state.Downloads.Children | orderBy:'Modified'" ng-controller="NodeController"
-      ng-include src="'template/download-tree.html?CLDVER'"></div>
+    <div class="item" ng-repeat="node in state.Downloads.Children | orderBy:'Modified':true"
+      ng-controller="NodeController" ng-include src="'template/download-tree.html?CLDVER'"></div>
   </div>
 </div>
 

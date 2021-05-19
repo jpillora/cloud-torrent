@@ -13,7 +13,8 @@
       <i ng-show="!confirm" ng-click="preremove()" class="red trash icon"></i>
       <i ng-show="!deleting && confirm" ng-click="deleting = true; remove();" class="red check icon"></i>
       <i ng-show="deleting" class="grey notched circle loading icon"></i>
-      <i ng-show="imagePreview || videoPreview || audioPreview" ng-click="togglePreview()" class="blue {{ showPreview ? 'circle outline' : 'video play outline' }} icon"></i>
+      <i ng-show="imagePreview || videoPreview || audioPreview" ng-click="togglePreview()"
+        class="blue {{ showPreview ? 'circle outline' : 'video play outline' }} icon"></i>
     </span>
   </div>
   <div class="description">{{ node.Size | bytes }} - {{ ago(node.Modified) }}</div>
@@ -27,7 +28,7 @@
     </video>
   </div>
   <div class="list" ng-if="isdir() && !closed()">
-    <div class="item" ng-repeat="node in node.Children | orderBy:'Modified'" ng-controller="NodeController" ng-include
-      src="'template/download-tree.html'"></div>
+    <div class="item" ng-repeat="node in node.Children | orderBy:'Modified':true" ng-controller="NodeController"
+      ng-include src="'template/download-tree.html'"></div>
   </div>
 </div>
