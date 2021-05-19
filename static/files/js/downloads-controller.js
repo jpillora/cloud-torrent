@@ -107,7 +107,7 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
   };
 
   $scope.remove = function () {
-    $http.delete(encodeURIComponent("download/" + n.$path))
+    $http.delete("download/" + encodeURIComponent(n.$path))
       .finally(function () {
         $scope.$apply();
       });
