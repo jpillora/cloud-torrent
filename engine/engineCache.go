@@ -84,7 +84,7 @@ func (e *Engine) RestoreTask(fn string) error {
 				os.Remove(fn)
 			}
 		} else {
-			log.Printf("RestoreTask: fail to add %s, ERR:%#v\n", fn, err)
+			log.Printf("RestoreTask: fail to add %s, ERR:%s\n", fn, err)
 			return err
 		}
 	}
@@ -97,7 +97,7 @@ func (e *Engine) RestoreTask(fn string) error {
 		if err := e.NewMagnet(string(mag)); err == nil {
 			log.Printf("[RestoreMagnet] Restored: %s \n", fn)
 		} else {
-			log.Printf("RestoreTask: fail to add %s, ERR:%#v\n", fn, err)
+			log.Printf("RestoreTask: fail to add %s, ERR:%s\n", fn, err)
 			return err
 		}
 	}

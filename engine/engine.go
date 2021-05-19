@@ -268,6 +268,9 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 				if !t.IsAllFilesDone {
 					t.updateFileStatus()
 				}
+				if !t.Done {
+					t.updateTorrentStatus()
+				}
 				t.updateConnStat()
 			case <-e.closeSync:
 				return
