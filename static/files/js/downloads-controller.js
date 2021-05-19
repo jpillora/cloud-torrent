@@ -12,6 +12,9 @@ app.controller("DownloadsController", function ($scope, $rootScope) {
   $scope.$expanded = false;
   $scope.section_expanded_toggle = function () {
     $scope.$expanded = !$scope.$expanded;
+    if ($scope.$expanded) {
+      $scope.$apply();
+    }
   };
 });
 
