@@ -175,7 +175,9 @@ func (e *Engine) NewTorrentByFilePath(path string) error {
 	// torrent.TorrentSpecFromMetaInfo may panic if the info is malformed
 	defer func() error {
 		if r := recover(); r != nil {
-			return fmt.Errorf("Error loading new torrent from file %s: %+v", path, r)
+			err := fmt.Errorf("Error loading new torrent from file %s: %+v", path, r)
+			log.Println(err)
+			return err
 		}
 		return nil
 	}()
@@ -218,8 +220,8 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 // addTorrentTask
 // add the task to local cache object and wait for GotInfo
 func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
+	ih := tt.InfoHash().HexString()
 	meta := tt.Metainfo()
-	ih := meta.HashInfoBytes().HexString()
 	if len(e.bttracker) > 0 && (e.config.AlwaysAddTrackers || len(meta.AnnounceList) == 0) {
 		log.Printf("[newTorrent] added %d public trackers\n", len(e.bttracker))
 		tt.AddTrackers([][]string{e.bttracker})
@@ -388,7 +390,7 @@ func (e *Engine) StopTorrent(infohash string) error {
 }
 
 func (e *Engine) DeleteTorrent(infohash string) error {
-	log.Println("DeleteTorrent ", infohash)
+	log.Println("DeleteTorrent", infohash)
 	t, err := e.getTorrent(infohash)
 	if err != nil {
 		return err

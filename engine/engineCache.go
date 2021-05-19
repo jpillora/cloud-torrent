@@ -60,6 +60,8 @@ func (e *Engine) removeMagnetCache(infohash string) {
 		fmt.Sprintf("%s%s.info", cacheSavedPrefix, infohash))
 	if err := os.Remove(cacheInfoPath); err == nil {
 		log.Printf("removed magnet info file %s", infohash)
+	} else if !os.IsNotExist(err) { // it's fine if the cache is not exists
+		log.Printf("fail to removed cache file %s, %s", infohash, err)
 	}
 }
 
@@ -68,16 +70,17 @@ func (e *Engine) removeTorrentCache(infohash string) {
 		fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
 	if err := os.Remove(cacheFilePath); err == nil {
 		log.Printf("removed torrent file %s", infohash)
-	} else {
-		log.Printf("fail to removed torrent file %s, %s", infohash, err)
+	} else if !os.IsNotExist(err) { // it's fine if the cache is not exists
+		log.Printf("fail to removed cache file %s, %s", infohash, err)
 	}
 }
 
 func (e *Engine) RestoreTask(fn string) error {
 
+	isCachedFile := strings.HasPrefix(filepath.Base(fn), cacheSavedPrefix)
 	if strings.HasSuffix(fn, ".torrent") {
 		if err := e.NewTorrentByFilePath(fn); err == nil {
-			if strings.HasPrefix(filepath.Base(fn), cacheSavedPrefix) {
+			if isCachedFile {
 				log.Printf("[RestoreTask] Restored Torrent: %s \n", fn)
 			} else {
 				log.Printf("Task: added %s, file removed\n", fn)
@@ -87,8 +90,7 @@ func (e *Engine) RestoreTask(fn string) error {
 			log.Printf("RestoreTask: fail to add %s, ERR:%s\n", fn, err)
 			return err
 		}
-	}
-	if strings.HasSuffix(fn, ".info") && strings.HasPrefix(fn, cacheSavedPrefix) && len(fn) == 59 {
+	} else if strings.HasSuffix(fn, ".info") && isCachedFile {
 		mag, err := ioutil.ReadFile(fn)
 		if err != nil {
 			log.Printf("Task: fail to read %s\n", fn)
@@ -100,6 +102,8 @@ func (e *Engine) RestoreTask(fn string) error {
 			log.Printf("RestoreTask: fail to add %s, ERR:%s\n", fn, err)
 			return err
 		}
+	} else {
+		log.Println("Cache file doesn't match", fn)
 	}
 
 	return nil
