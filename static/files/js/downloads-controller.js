@@ -1,26 +1,26 @@
 /* globals app */
 
-app.controller("DownloadsController", function($scope, $rootScope) {
+app.controller("DownloadsController", function ($scope, $rootScope) {
   $rootScope.downloads = $scope;
 
-  $scope.numDownloads = function() {
+  $scope.numDownloads = function () {
     if ($scope.state.Downloads && $scope.state.Downloads.Children)
       return $scope.state.Downloads.Children.length;
     return 0;
   };
 
   $scope.$expanded = false;
-  $scope.section_expanded_toggle = function() {
+  $scope.section_expanded_toggle = function () {
     $scope.$expanded = !$scope.$expanded;
   };
 });
 
-app.controller("NodeController", function($scope, $rootScope, $http, $timeout) {
+app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) {
   var n = $scope.node;
-  $scope.isfile = function() {
+  $scope.isfile = function () {
     return !n.Children;
   };
-  $scope.isdir = function() {
+  $scope.isdir = function () {
     return !$scope.isfile();
   };
 
@@ -58,31 +58,30 @@ app.controller("NodeController", function($scope, $rootScope, $http, $timeout) {
     }
   }
 
-  $scope.isdownloading = function() {
+  $scope.isdownloading = function () {
     return (
-      n.$torrent &&
+      n.$torrent !== undefined &&
+      n.$file !== undefined &&
       n.$torrent.Loaded &&
-      n.$torrent.Started &&
-      n.$file &&
       n.$file.Percent < 100
     );
   };
 
-  $scope.preremove = function() {
+  $scope.preremove = function () {
     $scope.confirm = true;
-    $timeout(function() {
+    $timeout(function () {
       $scope.confirm = false;
     }, 3000);
   };
 
   //defaults
-  $scope.closed = function() {
+  $scope.closed = function () {
     return n.$closed;
   };
-  $scope.toggle = function() {
+  $scope.toggle = function () {
     n.$closed = !n.$closed;
   };
-  $scope.icon = function() {
+  $scope.icon = function () {
     var c = [];
     if ($scope.isdownloading()) {
       c.push("spinner", "loading");
@@ -102,11 +101,11 @@ app.controller("NodeController", function($scope, $rootScope, $http, $timeout) {
     return c.join(" ");
   };
 
-  $scope.remove = function() {
+  $scope.remove = function () {
     $http.delete("download/" + n.$path);
   };
 
-  $scope.togglePreview = function() {
+  $scope.togglePreview = function () {
     $scope.showPreview = !$scope.showPreview;
   };
 });
