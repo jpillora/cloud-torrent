@@ -100,6 +100,11 @@ func (e *Engine) Configure(c *Config) error {
 		}
 	}
 
+	tc.EstablishedConnsPerTorrent = 25
+	tc.HalfOpenConnsPerTorrent = 12
+	tc.TorrentPeersHighWater = 250
+	tc.TorrentPeersLowWater = 25
+
 	{
 		if e.client != nil {
 			// stop all current torrents
