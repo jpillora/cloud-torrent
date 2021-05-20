@@ -17,7 +17,6 @@ import (
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/fsnotify/fsnotify"
-	"golang.org/x/time/rate"
 )
 
 type Server interface {
@@ -238,31 +237,18 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 		}
 
 		e.removeMagnetCache(ih)
-		e.newTorrentCacheFile(&meta)
+		m := tt.Metainfo()
+		e.newTorrentCacheFile(&m)
 		t.updateOnGotInfo(tt)
 
 		if e.config.AutoStart {
 			go e.StartTorrent(ih)
 		}
 
-		sub := tt.SubscribePieceStateChanges()
-		lim := rate.NewLimiter(rate.Every(time.Second), 1)
 		timeTk := time.NewTicker(3 * time.Second)
 		defer timeTk.Stop()
 		for {
 			select {
-			case _, ok := <-sub.Values:
-				//task made progress
-				if ok {
-					if lim.Allow() {
-						// log.Println("Task sub updated", ih)
-						t.updateFileStatus()
-						t.updateTorrentStatus()
-					}
-				} else {
-					log.Println("Task sub closed", ih)
-					return
-				}
 			case <-timeTk.C:
 				if t.Started {
 					e.taskRoutine(t)
