@@ -26,30 +26,33 @@ const (
 )
 
 type Config struct {
-	AutoStart               bool
-	EngineDebug             bool
-	MuteEngineLog           bool
-	ObfsPreferred           bool
-	ObfsRequirePreferred    bool
-	DisableTrackers         bool
-	DisableIPv6             bool
-	NoDefaultPortForwarding bool
-	DisableUTP              bool
-	DownloadDirectory       string
-	WatchDirectory          string
-	EnableUpload            bool
-	EnableSeeding           bool
-	IncomingPort            int
-	DoneCmd                 string
-	SeedRatio               float32
-	UploadRate              string
-	DownloadRate            string
-	TrackerListURL          string
-	AlwaysAddTrackers       bool
-	ProxyURL                string
-	RssURL                  string
-	ScraperURL              string
-	MaxConcurrentTask       int
+	AutoStart                  bool
+	EngineDebug                bool
+	MuteEngineLog              bool
+	ObfsPreferred              bool
+	ObfsRequirePreferred       bool
+	DisableTrackers            bool
+	DisableIPv6                bool
+	NoDefaultPortForwarding    bool
+	DisableUTP                 bool
+	DownloadDirectory          string
+	WatchDirectory             string
+	EnableUpload               bool
+	EnableSeeding              bool
+	IncomingPort               int
+	DoneCmd                    string
+	SeedRatio                  float32
+	UploadRate                 string
+	DownloadRate               string
+	TrackerListURL             string
+	AlwaysAddTrackers          bool
+	ProxyURL                   string
+	RssURL                     string
+	ScraperURL                 string
+	MaxConcurrentTask          int
+	EstablishedConnsPerTorrent int
+	HalfOpenConnsPerTorrent    int
+	TotalHalfOpenConns         int
 }
 
 func InitConf(specPath string) (*Config, error) {
@@ -75,6 +78,9 @@ func InitConf(specPath string) (*Config, error) {
 	viper.SetDefault("TrackerListURL", defaultTrackerListURL)
 	viper.SetDefault("ScraperURL", defaultScraperURL)
 	viper.SetDefault("MaxConcurrentTask", 0)
+	viper.SetDefault("EstablishedConnsPerTorrent", 50)
+	viper.SetDefault("HalfOpenConnsPerTorrent", 25)
+	viper.SetDefault("TotalHalfOpenConns", 100)
 
 	// user specific config path
 	if stat, err := os.Stat(specPath); stat != nil && err == nil {

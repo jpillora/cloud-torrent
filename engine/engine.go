@@ -100,10 +100,9 @@ func (e *Engine) Configure(c *Config) error {
 		}
 	}
 
-	tc.EstablishedConnsPerTorrent = 25
-	tc.HalfOpenConnsPerTorrent = 12
-	tc.TorrentPeersHighWater = 250
-	tc.TorrentPeersLowWater = 25
+	tc.EstablishedConnsPerTorrent = c.EstablishedConnsPerTorrent
+	tc.HalfOpenConnsPerTorrent = c.HalfOpenConnsPerTorrent
+	tc.TotalHalfOpenConns = c.TotalHalfOpenConns
 
 	{
 		if e.client != nil {
