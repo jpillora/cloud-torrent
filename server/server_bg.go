@@ -86,5 +86,7 @@ func (s *Server) backgroundRoutines() {
 	}()
 
 	go s.engine.RestoreCacheDir()
-	s.engine.StartTorrentWatcher()
+	if err := s.engine.StartTorrentWatcher(); err != nil {
+		log.Println("Bg", err)
+	}
 }
