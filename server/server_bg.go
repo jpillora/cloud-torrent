@@ -10,49 +10,66 @@ import (
 func (s *Server) backgroundRoutines() {
 
 	go s.fetchSearchConfig(s.state.Config.ScraperURL)
+	s.stateRoutines()
 
-	//poll torrents and files
+	// rss updater
 	go func() {
-		// initial state
-		s.state.Lock()
-		s.state.Torrents = s.engine.GetTorrents()
-		s.state.Downloads = s.listFiles()
-		s.state.Unlock()
-
-		watcher, err := fsnotify.NewWatcher()
-		if err != nil {
-			log.Fatal(err)
+		for range time.Tick(30 * time.Minute) {
+			s.updateRSS()
 		}
-		go func() {
-			for {
-				select {
-				case event, ok := <-watcher.Events:
-					if !ok {
-						return
-					}
-					if event.Op&(fsnotify.Create|fsnotify.Remove) > 0 {
-						log.Println("Download dir watcher:", event)
-						s.state.Lock()
-						s.state.Downloads = s.listFiles()
-						s.state.Unlock()
-						if s.state.NumConnections() > 0 {
-							s.state.Push()
-						}
-					}
-				case err, ok := <-watcher.Errors:
-					log.Println("Download dir watcher error:", err)
-					if !ok {
-						return
+	}()
+
+	go s.engine.RestoreCacheDir()
+
+	if err := s.engine.StartTorrentWatcher(); err != nil {
+		log.Println("Bg", err)
+	}
+}
+
+// stateRoutines watches the download dir / tasks / sys states
+func (s *Server) stateRoutines() {
+	// initial state
+	s.state.Lock()
+	s.state.Torrents = s.engine.GetTorrents()
+	s.state.Downloads = s.listFiles()
+	s.state.Unlock()
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Op&(fsnotify.Create|fsnotify.Remove) > 0 {
+					log.Println("Download dir watcher:", event)
+					s.state.Lock()
+					s.state.Downloads = s.listFiles()
+					s.state.Unlock()
+					if s.state.NumConnections() > 0 {
+						s.state.Push()
 					}
 				}
+			case err, ok := <-watcher.Errors:
+				log.Println("Download dir watcher error:", err)
+				if !ok {
+					return
+				}
 			}
-		}()
-
-		err = watcher.Add(s.state.Config.DownloadDirectory)
-		if err != nil {
-			log.Fatal(err)
 		}
+	}()
 
+	err = watcher.Add(s.state.Config.DownloadDirectory)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//torrents
+	go func() {
 		for range s.engine.TsChanged {
 			log.Println("Torrents Updated")
 			s.state.Lock()
@@ -62,7 +79,7 @@ func (s *Server) backgroundRoutines() {
 		}
 	}()
 
-	//start collecting stats
+	//collecting sys stats
 	go func() {
 		for range time.Tick(5 * time.Second) {
 			if s.state.NumConnections() > 0 {
@@ -75,16 +92,4 @@ func (s *Server) backgroundRoutines() {
 			}
 		}
 	}()
-
-	// rss updater
-	go func() {
-		for range time.Tick(30 * time.Minute) {
-			s.updateRSS()
-		}
-	}()
-
-	go s.engine.RestoreCacheDir()
-	if err := s.engine.StartTorrentWatcher(); err != nil {
-		log.Println("Bg", err)
-	}
 }
