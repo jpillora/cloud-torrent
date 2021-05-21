@@ -28,14 +28,34 @@ func (s *Server) backgroundRoutines() {
 
 // stateRoutines watches the download dir / tasks / sys states
 func (s *Server) stateRoutines() {
+	dir := s.engine.Config().DownloadDirectory
+
 	// initial state
 	s.state.Lock()
 	s.state.Torrents = s.engine.GetTorrents()
 	s.state.Downloads = s.listFiles()
+	s.state.Stats.System.loadStats(dir)
 	s.state.Unlock()
 
+	//collecting sys stats
+	go func() {
+		for range time.Tick(10 * time.Second) {
+			if s.state.NumConnections() > 0 {
+				s.state.Lock()
+				s.state.Stats.System.loadStats(dir)
+				s.state.Stats.ConnStat = s.engine.ConnStat()
+				s.state.Unlock()
+				s.state.Push()
+			}
+		}
+	}()
+
+	// download dir watcher
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
+		log.Fatal(err)
+	}
+	if err := watcher.Add(s.state.Config.DownloadDirectory); err != nil {
 		log.Fatal(err)
 	}
 	go func() {
@@ -63,11 +83,6 @@ func (s *Server) stateRoutines() {
 		}
 	}()
 
-	err = watcher.Add(s.state.Config.DownloadDirectory)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	//torrents
 	go func() {
 		for range s.engine.TsChanged {
@@ -79,17 +94,4 @@ func (s *Server) stateRoutines() {
 		}
 	}()
 
-	//collecting sys stats
-	go func() {
-		for range time.Tick(5 * time.Second) {
-			if s.state.NumConnections() > 0 {
-				s.state.Lock()
-				c := s.engine.Config()
-				s.state.Stats.System.loadStats(c.DownloadDirectory)
-				s.state.Stats.ConnStat = s.engine.ConnStat()
-				s.state.Unlock()
-				s.state.Push()
-			}
-		}
-	}()
 }
