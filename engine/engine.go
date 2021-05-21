@@ -43,6 +43,7 @@ type Engine struct {
 	closeSync    chan struct{}
 	config       Config
 	ts           map[string]*Torrent
+	TsChanged    chan struct{}
 	bttracker    []string
 	waitList     *syncList
 	//file watcher
@@ -50,7 +51,12 @@ type Engine struct {
 }
 
 func New(s Server) *Engine {
-	return &Engine{ts: make(map[string]*Torrent), cldServer: s, waitList: NewSyncList()}
+	return &Engine{
+		ts:        make(map[string]*Torrent),
+		cldServer: s,
+		waitList:  NewSyncList(),
+		TsChanged: make(chan struct{}),
+	}
 }
 
 func (e *Engine) Config() Config {
@@ -387,7 +393,6 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	}
 
 	t.Lock()
-	e.Lock()
 	if t.Loaded {
 		close(t.dropWait)
 		t.t.Drop()
@@ -396,8 +401,7 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 		// task not loaded, it's in the waiting list
 		e.waitList.Remove(infohash)
 	}
-	delete(e.ts, t.InfoHash)
-	e.Unlock()
+	e.deleteTorrent(infohash)
 	t.Unlock()
 
 	e.removeMagnetCache(infohash)

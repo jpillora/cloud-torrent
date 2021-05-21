@@ -53,14 +53,12 @@ func (s *Server) backgroundRoutines() {
 			log.Fatal(err)
 		}
 
-		for range time.Tick(time.Second) {
-			if s.state.NumConnections() > 0 {
-				// only update the state object if user connected
-				s.state.Lock()
-				s.state.Torrents = s.engine.GetTorrents()
-				s.state.Unlock()
-				s.state.Push()
-			}
+		for range s.engine.TsChanged {
+			log.Println("Torrents Updated")
+			s.state.Lock()
+			s.state.Torrents = s.engine.GetTorrents()
+			s.state.Unlock()
+			s.state.Push()
 		}
 	}()
 

@@ -36,6 +36,7 @@ func (e *Engine) upsertTorrent(ih, name string) (*Torrent, error) {
 		e.Lock()
 		e.ts[ih] = torrent
 		e.Unlock()
+		e.TsChanged <- struct{}{}
 		return torrent, nil
 	}
 	return torrent, ErrTaskExists
@@ -48,6 +49,13 @@ func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
 		return t, nil
 	}
 	return nil, fmt.Errorf("Missing torrent %x", infohash)
+}
+
+func (e *Engine) deleteTorrent(infohash string) {
+	e.Lock()
+	defer e.Unlock()
+	delete(e.ts, infohash)
+	e.TsChanged <- struct{}{}
 }
 
 func (e *Engine) UpdateTrackers() error {
