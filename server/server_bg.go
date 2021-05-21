@@ -86,7 +86,6 @@ func (s *Server) stateRoutines() {
 	//torrents
 	go func() {
 		for range s.engine.TsChanged {
-			log.Println("Torrents Updated")
 			s.state.Lock()
 			s.state.Torrents = s.engine.GetTorrents()
 			s.state.Unlock()
