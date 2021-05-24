@@ -82,14 +82,26 @@
             ng-click="submitTorrent('stop', t)">
             <i class="stop icon"></i> Stop
           </button>
-          <button ng-if="!t.Started" ng-disabled="$rootScope.apiing" class="ui compact red button"
+          <button ng-if="!t.Loaded" ng-disabled="$rootScope.apiing" class="ui compact red button"
             style="z-index: 99999;" ng-click="submitTorrent('delete', t)">
-            <span ng-if="!t.Loaded">
-              <i class="ban icon"></i> Cancel</span>
-            <span ng-if="t.Loaded">
-              <i class="trash icon"></i> Remove</span>
+            <i class="ban icon"></i> Cancel
+          </button>
+          <button ng-if="t.Loaded && !t.Started" ng-disabled="$rootScope.apiing" class="ui compact orange button"
+            ng-click="t.removeClicked = !(t.removeClicked)">
+            <i class="question icon"></i> Remove
           </button>
         </div>
+
+        <div ng-if="t.removeClicked" class="ui mini buttons">
+          <button ng-disabled="$rootScope.apiing" class="ui compact yellow button"
+            ng-click="submitTorrent('move2wait', t)">
+            <i class="clock icon"></i> Wait
+          </button>
+          <button ng-disabled="$rootScope.apiing" class="ui compact red button" ng-click="submitTorrent('delete', t)">
+            <i class="trash icon"></i> Remove
+          </button>
+        </div>
+
 
         <div ng-if="t.Started" class="status download">
           <span title="Download Data" data-mode="Downloaded" class="ui label" title="Downloaded"
