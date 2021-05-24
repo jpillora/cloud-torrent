@@ -75,6 +75,12 @@ func (e *Engine) removeTorrentCache(infohash string) {
 	}
 }
 
+func (e *Engine) TorrentCacheFileName(infohash string) string {
+	cacheFilePath := filepath.Join(e.cacheDir,
+		fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
+	return cacheFilePath
+}
+
 func (e *Engine) RestoreTask(fn string) error {
 
 	isCachedFile := strings.HasPrefix(filepath.Base(fn), cacheSavedPrefix)
