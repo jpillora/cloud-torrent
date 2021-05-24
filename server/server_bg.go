@@ -44,6 +44,7 @@ func (s *Server) stateRoutines() {
 				s.state.Lock()
 				s.state.Stats.System.loadStats(dir)
 				s.state.Stats.ConnStat = s.engine.ConnStat()
+				s.state.Downloads = s.listFiles()
 				s.state.Unlock()
 				s.state.Push()
 			}
@@ -90,7 +91,6 @@ func (s *Server) stateRoutines() {
 		for range s.engine.TsChanged {
 			s.state.Lock()
 			s.state.Torrents = s.engine.GetTorrents()
-			s.state.Downloads = s.listFiles()
 			s.state.Unlock()
 			s.state.Push()
 		}
