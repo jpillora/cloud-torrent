@@ -404,8 +404,6 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	e.deleteTorrent(infohash)
 	t.Unlock()
 
-	e.removeMagnetCache(infohash)
-	e.removeTorrentCache(infohash)
 	return nil
 }
 
@@ -471,4 +469,9 @@ func (e *Engine) StopFile(infohash, filepath string) error {
 	}
 
 	return nil
+}
+
+func (e *Engine) RemoveCache(infohash string) {
+	e.removeMagnetCache(infohash)
+	e.removeTorrentCache(infohash)
 }

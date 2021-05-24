@@ -168,6 +168,14 @@ func (s *Server) apiPOST(r *http.Request) error {
 			if err := s.engine.DeleteTorrent(infohash); err != nil {
 				return err
 			}
+			s.engine.RemoveCache(infohash)
+		case "move2wait":
+			if err := s.engine.DeleteTorrent(infohash); err != nil {
+				return err
+			}
+			if err := s.engine.RestoreTask(infohash); err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("Invalid state: %s", state)
 		}
