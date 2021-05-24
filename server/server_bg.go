@@ -55,6 +55,8 @@ func (s *Server) stateRoutines() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// TODO: user may change download dir in run time?
 	if err := watcher.Add(s.state.Config.DownloadDirectory); err != nil {
 		log.Fatal(err)
 	}
@@ -88,6 +90,7 @@ func (s *Server) stateRoutines() {
 		for range s.engine.TsChanged {
 			s.state.Lock()
 			s.state.Torrents = s.engine.GetTorrents()
+			s.state.Downloads = s.listFiles()
 			s.state.Unlock()
 			s.state.Push()
 		}
