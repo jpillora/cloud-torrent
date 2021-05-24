@@ -39,8 +39,8 @@
 				<i ng-click="toggleSections('rss')" class="ui circular rss square icon"
 					ng-class="{orange: state.LatestRSSGuid != storage.tcRSSGUID, green: $root.omni.mode.rss }"
 					title="RSS List"></i>
-				<i ng-click="toggleSections('config')" ng-class="{green: $root.config.edit}" title="Edit Config"
-					class="ui circular server icon"></i>
+				<i ng-hide="!(state.Config.AllowRuntimeConfigure)" ng-click="toggleSections('config')"
+					ng-class="{green: $root.config.edit}" title="Edit Config" class="ui circular server icon"></i>
 				<i ng-click="toggleSections('omni')" ng-class="{green: $root.omni.edit}" title="Edit Magnet/Torrent"
 					class="ui circular magnet icon"></i>
 				<i class="ui circular lightning icon" title="Connecting Status"
