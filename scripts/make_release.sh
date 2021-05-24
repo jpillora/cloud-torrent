@@ -35,6 +35,10 @@ case $arg in
 		OS=windows
 		SUFFIX=.exe
 		;;
+	darwin)
+		OS=darwin
+		ARCH=amd64
+		;;
 	xz)
 		PKGCMD=xz
     	;;

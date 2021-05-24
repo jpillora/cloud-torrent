@@ -40,6 +40,7 @@ jobs:
         bash scripts/make_release.sh gzip amd64
         bash scripts/make_release.sh gzip amd64 purego
         bash scripts/make_release.sh gzip arm64 purego
+        bash scripts/make_release.sh gzip darwin purego
         
     - name: Release
       uses: softprops/action-gh-release@v1
@@ -49,6 +50,7 @@ jobs:
           cloud-torrent_linux_amd64.gz
           cloud-torrent_linux_amd64_static.gz
           cloud-torrent_linux_arm64_static.gz
+          cloud-torrent_darwin_amd64_static.gz
         prerelease: true
         draft: false
         body_path: gittaglogs.txt
