@@ -114,7 +114,6 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
       })
       .finally(function () {
         $scope.deleting = false;
-        $scope.$applyAsync();
       });
   };
 

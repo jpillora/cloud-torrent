@@ -28,7 +28,7 @@
     </video>
   </div>
   <div class="list" ng-if="isdir() && !closed()">
-    <div class="item" ng-repeat="node in node.Children | orderBy:'Modified':true" ng-controller="NodeController"
+    <div class="item" ng-repeat="node in node.Children | orderBy:'Modified':false" ng-controller="NodeController"
       ng-include src="'template/download-tree.html'"></div>
   </div>
 </div>
