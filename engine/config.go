@@ -53,6 +53,7 @@ type Config struct {
 	EstablishedConnsPerTorrent int
 	HalfOpenConnsPerTorrent    int
 	TotalHalfOpenConns         int
+	AllowRuntimeConfigure      bool
 }
 
 func InitConf(specPath string) (*Config, error) {
@@ -81,6 +82,7 @@ func InitConf(specPath string) (*Config, error) {
 	viper.SetDefault("EstablishedConnsPerTorrent", 50)
 	viper.SetDefault("HalfOpenConnsPerTorrent", 25)
 	viper.SetDefault("TotalHalfOpenConns", 100)
+	viper.SetDefault("AllowRuntimeConfigure", true)
 
 	// user specific config path
 	if stat, err := os.Stat(specPath); stat != nil && err == nil {

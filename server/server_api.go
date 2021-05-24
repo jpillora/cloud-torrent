@@ -199,6 +199,10 @@ func (s *Server) apiPOST(r *http.Request) error {
 
 func (s *Server) apiConfigure(data []byte) error {
 
+	if !s.state.Config.AllowRuntimeConfigure {
+		return errors.New("AllowRuntimeConfigure is set to false")
+	}
+
 	c := engine.Config{}
 	if err := json.Unmarshal(data, &c); err != nil {
 		return err
