@@ -26,6 +26,7 @@ type Torrent struct {
 	Started        bool
 	Done           bool
 	DoneCmdCalled  bool
+	IsQueueing     bool
 	IsSeeding      bool
 	ManualStarted  bool
 	IsAllFilesDone bool

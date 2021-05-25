@@ -21,7 +21,7 @@ func (e *Engine) isTaskInList(ih string) bool {
 	return ok
 }
 
-func (e *Engine) upsertTorrent(ih, name string) (*Torrent, error) {
+func (e *Engine) upsertTorrent(ih, name string, isQueueing bool) (*Torrent, error) {
 	e.RLock()
 	torrent, ok := e.ts[ih]
 	e.RUnlock()
@@ -39,6 +39,7 @@ func (e *Engine) upsertTorrent(ih, name string) (*Torrent, error) {
 		e.TsChanged <- struct{}{}
 		return torrent, nil
 	}
+	torrent.IsQueueing = isQueueing
 	return torrent, ErrTaskExists
 }
 

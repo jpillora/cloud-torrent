@@ -236,7 +236,7 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 		tt.AddTrackers([][]string{e.bttracker})
 	}
 
-	t, _ := e.upsertTorrent(ih, tt.Name())
+	t, _ := e.upsertTorrent(ih, tt.Name(), false)
 	go func() {
 		select {
 		case <-e.closeSync:
@@ -285,7 +285,7 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 // addPreTask
 // add a task not ready to load
 func (e *Engine) addPreTask(spec *torrent.TorrentSpec) error {
-	_, err := e.upsertTorrent(spec.InfoHash.HexString(), spec.DisplayName)
+	_, err := e.upsertTorrent(spec.InfoHash.HexString(), spec.DisplayName, true)
 	return err
 }
 
