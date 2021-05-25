@@ -2,6 +2,7 @@ package server
 
 import (
 	"log"
+	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -14,6 +15,11 @@ func (s *Server) backgroundRoutines() {
 
 	// rss updater
 	go func() {
+		// skip if not configured
+		if !strings.HasPrefix(s.state.Config.RssURL, "http") {
+			return
+		}
+
 		for range time.Tick(30 * time.Minute) {
 			s.updateRSS()
 		}
