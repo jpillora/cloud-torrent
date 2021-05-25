@@ -155,6 +155,14 @@ func (e *Engine) NextWaitTask() error {
 	return ErrWaitListEmpty
 }
 
+func (e *Engine) FlushWaitList() {
+	for {
+		if elm := e.waitList.Pop(); elm == nil {
+			break
+		}
+	}
+}
+
 func (e *Engine) pushWaitTask(ih string, tp taskType) {
 	e.waitList.Push(taskElem{ih: ih, tp: tp})
 }

@@ -253,6 +253,7 @@ func (s *Server) apiConfigure(data []byte) error {
 				}
 				return err
 			}
+			s.engine.FlushWaitList()
 			s.engine.RestoreCacheDir()
 			log.Printf("[api] torrent engine reconfigred")
 		} else {
