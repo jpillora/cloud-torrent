@@ -8,7 +8,6 @@ import (
 	"net/http"
 )
 
-var fetches = 0
 var currentConfig, _ = normalize(defaultSearchConfig)
 
 func (s *Server) fetchSearchConfig(confurl string) error {
@@ -27,7 +26,6 @@ func (s *Server) fetchSearchConfig(confurl string) error {
 	if err != nil {
 		return err
 	}
-	fetches++
 	if bytes.Equal(currentConfig, newConfig) {
 		return nil //skip
 	}
