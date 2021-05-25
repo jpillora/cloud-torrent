@@ -173,7 +173,7 @@ func (s *Server) apiPOST(r *http.Request) error {
 			if err := s.engine.DeleteTorrent(infohash); err != nil {
 				return err
 			}
-			if err := s.engine.RestoreTask(s.engine.TorrentCacheFileName(infohash)); err != nil {
+			if err := s.engine.RestoreTask(s.engine.TorrentCacheFileName(infohash)); !errors.Is(err, engine.ErrMaxConnTasks) {
 				return err
 			}
 		default:

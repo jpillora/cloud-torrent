@@ -85,16 +85,14 @@ func (e *Engine) RestoreTask(fn string) error {
 
 	isCachedFile := strings.HasPrefix(filepath.Base(fn), cacheSavedPrefix)
 	if strings.HasSuffix(fn, ".torrent") {
-		if err := e.NewTorrentByFilePath(fn); err == nil {
-			if isCachedFile {
-				log.Printf("[RestoreTask] Restored Torrent: %s \n", fn)
-			} else {
-				log.Printf("Task: added %s, file removed\n", fn)
-				os.Remove(fn)
-			}
-		} else {
-			log.Printf("RestoreTask: fail to add %s, ERR:%s\n", fn, err)
+		if err := e.NewTorrentByFilePath(fn); err != nil {
 			return err
+		}
+		if isCachedFile {
+			log.Printf("[RestoreTask] Restored Torrent: %s \n", fn)
+		} else {
+			log.Printf("Task: added %s, file removed\n", fn)
+			os.Remove(fn)
 		}
 	} else if strings.HasSuffix(fn, ".info") && isCachedFile {
 		mag, err := ioutil.ReadFile(fn)
@@ -102,12 +100,10 @@ func (e *Engine) RestoreTask(fn string) error {
 			log.Printf("Task: fail to read %s\n", fn)
 			return err
 		}
-		if err := e.NewMagnet(string(mag)); err == nil {
-			log.Printf("[RestoreMagnet] Restored: %s \n", fn)
-		} else {
-			log.Printf("RestoreTask: fail to add %s, ERR:%s\n", fn, err)
+		if err := e.NewMagnet(string(mag)); err != nil {
 			return err
 		}
+		log.Printf("[RestoreMagnet] Restored: %s \n", fn)
 	} else {
 		log.Println("Cache file doesn't match", fn)
 	}
