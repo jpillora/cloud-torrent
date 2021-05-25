@@ -27,11 +27,12 @@ func (e *Engine) upsertTorrent(ih, name string, isQueueing bool) (*Torrent, erro
 	e.RUnlock()
 	if !ok {
 		torrent = &Torrent{
-			Name:      name,
-			InfoHash:  ih,
-			AddedAt:   time.Now(),
-			cldServer: e.cldServer,
-			dropWait:  make(chan struct{}),
+			Name:       name,
+			InfoHash:   ih,
+			IsQueueing: isQueueing,
+			AddedAt:    time.Now(),
+			cldServer:  e.cldServer,
+			dropWait:   make(chan struct{}),
 		}
 		e.Lock()
 		e.ts[ih] = torrent
