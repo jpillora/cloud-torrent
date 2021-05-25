@@ -153,6 +153,7 @@ app.controller("OmniController", function (
       $scope.magnet.trackers
     );
     $scope.magnet.trackers.push({ v: "" });
+    $scope.parse();
   };
 
   $scope.submitOmni = function () {
