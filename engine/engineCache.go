@@ -133,32 +133,26 @@ func (e *Engine) RestoreCacheDir() {
 }
 
 func (e *Engine) NextWaitTask() error {
-	if elm := e.waitList.Pop(); elm != nil {
-		var res string
-		te := elm.(taskElem)
-		switch te.tp {
-		case taskTorrent:
-			res = fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, te.ih)
-		case taskMagnet:
-			res = fmt.Sprintf("%s%s.info", cacheSavedPrefix, te.ih)
-		}
-
-		fn := path.Join(e.cacheDir, res)
-		if _, err := os.Stat(fn); err != nil {
-			log.Println("nextWaitTask RestoreTask:", fn, err)
-			return err
-		}
-		return e.RestoreTask(fn)
-	}
-
-	log.Println("nextWaitTask: wait list empty")
-	return ErrWaitListEmpty
-}
-
-func (e *Engine) FlushWaitList() {
 	for {
-		if elm := e.waitList.Pop(); elm == nil {
-			break
+		if elm := e.waitList.Pop(); elm != nil {
+			var res string
+			te := elm.(taskElem)
+			switch te.tp {
+			case taskTorrent:
+				res = fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, te.ih)
+			case taskMagnet:
+				res = fmt.Sprintf("%s%s.info", cacheSavedPrefix, te.ih)
+			}
+
+			fn := path.Join(e.cacheDir, res)
+			if _, err := os.Stat(fn); err != nil {
+				log.Println("nextWaitTask RestoreTask:", fn, err)
+				continue
+			}
+			return e.RestoreTask(fn)
+		} else {
+			log.Println("nextWaitTask: wait list empty")
+			return ErrWaitListEmpty
 		}
 	}
 }
