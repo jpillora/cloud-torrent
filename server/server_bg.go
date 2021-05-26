@@ -2,6 +2,7 @@ package server
 
 import (
 	"log"
+	"path"
 	"strings"
 	"time"
 
@@ -75,6 +76,10 @@ func (s *Server) stateRoutines() {
 					return
 				}
 				if event.Op&(fsnotify.Create|fsnotify.Remove) > 0 {
+					if strings.HasPrefix(path.Base(event.Name), ".torrent.db") {
+						continue
+					}
+
 					log.Println("Download dir watcher:", event)
 					s.state.Lock()
 					s.state.Downloads = s.listFiles()

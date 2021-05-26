@@ -246,6 +246,8 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 		case <-tt.GotInfo():
 		}
 
+		// Already got full torrent info
+		// If the origin is from a magnet link, remove it, cache the torrent data
 		e.removeMagnetCache(ih)
 		m := tt.Metainfo()
 		e.newTorrentCacheFile(&m)
@@ -257,6 +259,8 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 
 		timeTk := time.NewTicker(3 * time.Second)
 		defer timeTk.Stop()
+
+		// main loop updating the torrent status to our struct
 		for {
 			select {
 			case <-timeTk.C:
@@ -273,7 +277,7 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 			case <-e.closeSync:
 				return
 			case <-t.dropWait:
-				log.Println("Task Droped", ih)
+				log.Println("Task Droped, exit loop: ", ih)
 				return
 			}
 		}

@@ -146,12 +146,12 @@ func (e *Engine) NextWaitTask() error {
 
 			fn := path.Join(e.cacheDir, res)
 			if _, err := os.Stat(fn); err != nil {
-				log.Println("nextWaitTask RestoreTask:", fn, err)
+				log.Println("NextWaitTask RestoreTask err:", fn, err)
 				continue
 			}
 			return e.RestoreTask(fn)
 		} else {
-			log.Println("nextWaitTask: wait list empty")
+			log.Println("NextWaitTask: wait list empty")
 			return ErrWaitListEmpty
 		}
 	}
