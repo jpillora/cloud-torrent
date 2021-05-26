@@ -63,10 +63,9 @@
             <div ng-if="t.IsSeeding" class="detail">🌱</div>
           </span>
         </div>
-        <div class="ui blue small progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
-          <div class="bar" ng-style="{
-          width: (t.Percent > 10 ? t.Percent:10) + '%'}">
-            <div class="progress">{{t.Percent | round}}%</div>
+        <div class="ui blue small indeterminate progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
+          <div class="bar" ng-style="{width: t.Percent+'%'}">
+            <div class="centered progress">{{t.Percent | round}}%</div>
           </div>
         </div>
       </div>
@@ -223,7 +222,8 @@
               Copy
             </button>
           </div>
-          <table class="ui unstackable compact striped downloads tcld table">
+
+          <table class="ui unstackable compact striped downloads table">
             <thead>
               <tr>
                 <th class="name">File</th>
@@ -238,20 +238,22 @@
               </tr>
               <tr class="download file" ng-repeat="f in t.Files | orderBy:'Path'">
                 <td class="name">
-                  <div>
-                    <span>{{ f.Path | filename }}</span>
-                    <span class="percent" ng-if="f.Percent > 0 && f.Percent < 100">{{ f.Percent }}% </span>
-                    <div ng-if="f.Percent > 0 && f.Percent < 100" class="ui blue active progress">
-                      <div class="bar" ng-style="{width: f.Percent + '%'}">
-                        <div class="progress"></div>
-                      </div>
+
+                  <span class="name">{{ f.Path | filename }}</span>
+
+                  <div class="ui blue indeterminate progress">
+                    <div class="bar" ng-style="{width: f.Percent + '%'}">
+                      <div class="progress">{{f.Percent + '%'}}</div>
                     </div>
-                    <!--
+                  </div>
+
+
+
+                  <!--
                 <a ng-show="f.Percent == 100" ng-href="{{ f.Path }}">
                   {{ f.Path | filename }}
                 </a>
                  -->
-                  </div>
                   <div ng-if="f.downloadError" class="ui error message">
                     <i class="close icon" ng-click="f.downloadError = null"></i>
                     <p>{{f.downloadError}}</p>
@@ -285,6 +287,7 @@
               </tr>
             </tfoot>
           </table>
+
         </div>
       </div>
     </div>

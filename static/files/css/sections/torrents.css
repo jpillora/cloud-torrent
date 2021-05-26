@@ -58,9 +58,9 @@ section.torrents {
 
 
 
-.torrent .download.file .name span {
-	position: relative;
-	z-index: 1;
+.torrent .download.file td.name > div.progress {
+	/* font-weight: bold; */
+	margin: 0;
 }
 
 .torrent .download.file .name .percent {
@@ -68,28 +68,10 @@ section.torrents {
 	width: 60px;
 }
 
-
-.torrent .download.file .name,
-.torrent .download.file .percent {
-	position: relative;
+.torrent .download.file span.name {
 	overflow: hidden;
 }
 
-.torrent .downloads .progress {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	opacity: 0.55;
-	z-index: 0;
-	padding: 4px;
-	margin: 0;
-	height: 100%;
-	background: none;
-}
-.torrent .download.file .progress .bar {
-	height: 100%;
-}
 
 .torrent .downloads thead tr th.size {
 	width: 110px;
