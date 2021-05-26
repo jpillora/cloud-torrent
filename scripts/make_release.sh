@@ -19,6 +19,7 @@ SUFFIX=""
 PKGCMD=
 NOSTATIC=
 CGO=1
+STASHED=0
 
 for arg in "$@"; do
 case $arg in
@@ -66,6 +67,11 @@ fi
 
 if [[ -z $NOSTATIC ]]; then
 	pushd $__dir/../static
+	if [[ $(git status --short | wc -l) -gt 0 ]]; then
+		git stash
+		STASHED=1
+		echo "Current repo changed, stashed"
+	fi
 	sh generate.sh
 	popd
 fi
@@ -80,6 +86,9 @@ fi
 
 if [[ -z $NOSTATIC ]]; then
 	git checkout HEAD -- static/*
+	if [[ $STASHED -eq 1 ]]; then
+		git stash pop
+	fi
 fi
 
 if [[ ! -z $PKGCMD ]]; then
