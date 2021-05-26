@@ -59,8 +59,13 @@ section.torrents {
 
 
 .torrent .download.file td.name > div.progress {
-	/* font-weight: bold; */
+	font-weight: bold;
+	font-size: small;
 	margin: 0;
+}
+
+.torrent .download.file td.name > div.progress div.bar {
+	height: 0.8em;
 }
 
 .torrent .download.file .name .percent {

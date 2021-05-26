@@ -64,7 +64,7 @@
           </span>
         </div>
         <div class="ui blue small indeterminate progress" ng-class="{active: t.Percent > 0 && t.Percent < 100}">
-          <div class="bar" ng-style="{width: t.Percent+'%'}">
+          <div class="bar" ng-style="{width: (t.Percent < 10 ? 10: t.Percent)+'%'}">
             <div class="centered progress">{{t.Percent | round}}%</div>
           </div>
         </div>
@@ -241,13 +241,11 @@
 
                   <span class="name">{{ f.Path | filename }}</span>
 
-                  <div class="ui blue indeterminate progress">
-                    <div class="bar" ng-style="{width: f.Percent + '%'}">
+                  <div class="ui blue indeterminate mini progress">
+                    <div class="bar" ng-style="{width: (f.Percent < 10 ? 10: f.Percent) + '%'}">
                       <div class="progress">{{f.Percent + '%'}}</div>
                     </div>
                   </div>
-
-
 
                   <!--
                 <a ng-show="f.Percent == 100" ng-href="{{ f.Path }}">
