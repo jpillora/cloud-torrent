@@ -43,7 +43,7 @@ type Server struct {
 	//config
 	Title          string `opts:"help=Title of this instance,env=TITLE"`
 	Port           int    `opts:"help=Listening port,env=PORT"`
-	Host           string `opts:"help=Listening interface (default all)"`
+	Host           string `opts:"help=Listening interface (default all),env=HOST"`
 	Auth           string `opts:"help=Optional basic auth in form 'user:password',env=AUTH"`
 	ProxyURL       string `opts:"help=Proxy url,env=PROXY_URL"`
 	ConfigPath     string `opts:"help=Configuration file path (default /etc/cloud-torrent.yaml)"`
@@ -229,7 +229,7 @@ func (s *Server) Run(version string) error {
 		return server.Serve(lc)
 	} else {
 		server.Addr = fmt.Sprintf("%s:%d", s.Host, s.Port)
-		log.Println("Listening at ", server.Addr)
+		log.Println("Listening at", server.Addr)
 		if isTLS {
 			return server.ListenAndServeTLS(s.CertPath, s.KeyPath)
 		}
