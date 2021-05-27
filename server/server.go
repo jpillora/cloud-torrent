@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 	"path"
 	"runtime"
 	"strings"
@@ -163,12 +162,12 @@ func (s *Server) Run(version string) error {
 	}
 	s.backgroundRoutines()
 
-	proto := "http"
-	if isTLS {
-		proto += "s"
-	}
-	if s.Open {
+	if s.Open && !strings.HasPrefix(s.Host, "unix:") {
 		go func() {
+			proto := "http"
+			if isTLS {
+				proto += "s"
+			}
 			time.Sleep(1 * time.Second)
 			open.Run(fmt.Sprintf("%s://localhost:%d", proto, s.Port))
 		}()
@@ -236,9 +235,4 @@ func (s *Server) Run(version string) error {
 		}
 		return server.ListenAndServe()
 	}
-}
-
-func fileExists(fn string) bool {
-	stat, err := os.Stat(fn)
-	return stat != nil && err == nil
 }
