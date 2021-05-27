@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path"
@@ -56,7 +57,6 @@ type Server struct {
 	Debug          bool   `opts:"help=Debug app"`
 	DebugTorrent   bool   `opts:"help=Debug torrent engine"`
 	ConvYAML       bool   `opts:"help=Convert old json config to yaml format."`
-	mainAddr       string
 
 	//http handlers
 	files, static, rssh http.Handler
@@ -163,7 +163,6 @@ func (s *Server) Run(version string) error {
 	}
 	s.backgroundRoutines()
 
-	s.mainAddr = fmt.Sprintf("%s:%d", s.Host, s.Port)
 	proto := "http"
 	if isTLS {
 		proto += "s"
@@ -214,24 +213,29 @@ func (s *Server) Run(version string) error {
 	if s.Log {
 		h = requestlog.Wrap(h)
 	}
-	//serve!
 	server := http.Server{
 		//disable http2 due to velox bug
 		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){},
-		//address
-		Addr: s.mainAddr,
 		//handler stack
 		Handler: h,
 	}
-	listenLog := "0.0.0.0" + s.mainAddr
-	if !strings.HasPrefix(s.mainAddr, ":") {
-		listenLog = s.mainAddr
+
+	//serve!
+	if strings.HasPrefix(s.Host, "unix:") {
+		lc, err := net.Listen("unix", s.Host[5:])
+		if err != nil {
+			log.Fatalln(err)
+		}
+		log.Println("Listening at unix:", s.Host)
+		return server.Serve(lc)
+	} else {
+		server.Addr = fmt.Sprintf("%s:%d", s.Host, s.Port)
+		log.Println("Listening at ", server.Addr)
+		if isTLS {
+			return server.ListenAndServeTLS(s.CertPath, s.KeyPath)
+		}
+		return server.ListenAndServe()
 	}
-	log.Printf("Listening at %s://%s", proto, listenLog)
-	if isTLS {
-		return server.ListenAndServeTLS(s.CertPath, s.KeyPath)
-	}
-	return server.ListenAndServe()
 }
 
 func fileExists(fn string) bool {
