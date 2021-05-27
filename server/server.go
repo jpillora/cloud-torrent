@@ -8,8 +8,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"path"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,6 +46,7 @@ type Server struct {
 	Title          string `opts:"help=Title of this instance,env=TITLE"`
 	Port           int    `opts:"help=Listening port,env=PORT"`
 	Host           string `opts:"help=Listening interface (default all),env=HOST"`
+	UnixPerm       string `opts:"help=DomainSocket file permission (default 0755),env=UNIXPERM"`
 	Auth           string `opts:"help=Optional basic auth in form 'user:password',env=AUTH"`
 	ProxyURL       string `opts:"help=Proxy url,env=PROXY_URL"`
 	ConfigPath     string `opts:"help=Configuration file path (default /etc/cloud-torrent.yaml)"`
@@ -221,11 +224,21 @@ func (s *Server) Run(version string) error {
 
 	//serve!
 	if strings.HasPrefix(s.Host, "unix:") {
-		lc, err := net.Listen("unix", s.Host[5:])
+		sockPath := s.Host[5:]
+		if _, err := os.Stat(sockPath); err == nil {
+			log.Println("Listening sock exists, removing", sockPath)
+			os.Remove(sockPath)
+		}
+		lc, err := net.Listen("unix", sockPath)
 		if err != nil {
-			log.Fatalln(err)
+			log.Fatalln("Failed listening", err)
 		}
 		log.Println("Listening at unix:", s.Host)
+		if um, err := strconv.ParseInt(s.UnixPerm, 8, 0); err == nil {
+			uxmod := os.FileMode(um)
+			log.Println("Listening DomainSocket mode change to:", uxmod.String())
+			os.Chmod(sockPath, uxmod)
+		}
 		return server.Serve(lc)
 	} else {
 		server.Addr = fmt.Sprintf("%s:%d", s.Host, s.Port)

@@ -67,7 +67,7 @@ fi
 
 if [[ -z $NOSTATIC ]]; then
 	pushd $__dir/../static
-	if [[ $(git status --short | wc -l) -gt 0 ]]; then
+	if [[ $(git status . --short | wc -l) -gt 0 ]]; then
 		git stash
 		STASHED=1
 		echo "Current repo changed, stashed"
