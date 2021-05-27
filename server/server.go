@@ -225,7 +225,7 @@ func (s *Server) Run(version string) error {
 	//serve!
 	if strings.HasPrefix(s.Host, "unix:") {
 		sockPath := s.Host[5:]
-		if _, err := os.Stat(sockPath); err == nil {
+		if _, err := os.Stat(sockPath); !errors.Is(err, os.ErrNotExist) {
 			log.Println("Listening sock exists, removing", sockPath)
 			os.Remove(sockPath)
 		}
