@@ -236,7 +236,7 @@ func (s *Server) Run(version string) error {
 		log.Println("Listening at", s.Host)
 		if um, err := strconv.ParseInt(s.UnixPerm, 8, 0); err == nil {
 			uxmod := os.FileMode(um)
-			log.Println("Listening DomainSocket mode change to:", uxmod.String())
+			log.Println("Listening DomainSocket mode change to:", uxmod.String(), s.UnixPerm)
 			os.Chmod(sockPath, uxmod)
 		}
 		return server.Serve(lc)
