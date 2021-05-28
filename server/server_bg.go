@@ -53,7 +53,12 @@ func (s *Server) stateRoutines() {
 			select {
 			case <-tk.C:
 				if s.state.NumConnections() > 0 {
-					s.connSyncState <- struct{}{}
+					s.state.Lock()
+					s.state.Stats.System.loadStats(dir)
+					s.state.Stats.ConnStat = s.engine.ConnStat()
+					s.state.Downloads = s.listFiles()
+					s.state.Unlock()
+					s.state.Push()
 				}
 			case <-s.connSyncState:
 				s.state.Lock()
@@ -61,9 +66,7 @@ func (s *Server) stateRoutines() {
 				s.state.Stats.ConnStat = s.engine.ConnStat()
 				s.state.Downloads = s.listFiles()
 				s.state.Unlock()
-				if s.state.NumConnections() > 0 {
-					s.state.Push()
-				}
+				s.state.Push()
 			case <-s.engine.TsChanged:
 				s.state.Lock()
 				s.state.Torrents = s.engine.GetTorrents()
