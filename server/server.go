@@ -67,7 +67,11 @@ type Server struct {
 
 	//torrent engine
 	engine *engine.Engine
-	state  struct {
+
+	//signal to sync
+	connSyncState chan struct{}
+
+	state struct {
 		velox.State
 		sync.Mutex
 		Config          engine.Config
@@ -83,7 +87,7 @@ type Server struct {
 			Version  string
 			Runtime  string
 			Uptime   time.Time
-			System   stats
+			System   osStats
 			ConnStat torrent.ConnStats
 		}
 	}
@@ -100,6 +104,7 @@ func (s *Server) Run(version string) error {
 	s.state.Stats.Runtime = strings.TrimPrefix(runtime.Version(), "go")
 	s.state.Stats.Uptime = time.Now()
 	s.state.Stats.System.pusher = velox.Pusher(&s.state)
+
 	//init maps
 	s.state.Users = make(map[string]string)
 	s.state.rssMark = make(map[string]string)
@@ -109,6 +114,7 @@ func (s *Server) Run(version string) error {
 	s.static = ctstatic.FileSystemHandler()
 	s.rssh = http.HandlerFunc(s.serveRSS)
 
+	s.connSyncState = make(chan struct{})
 	//scraper
 	s.scraper = &scraper.Handler{
 		Log: s.Debug, Debug: s.Debug,

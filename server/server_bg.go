@@ -46,12 +46,27 @@ func (s *Server) stateRoutines() {
 
 	//collecting sys stats
 	go func() {
-		for range time.Tick(10 * time.Second) {
-			if s.state.NumConnections() > 0 {
+		tk := time.NewTicker(10 * time.Second)
+		defer tk.Stop()
+
+		for {
+			select {
+			case <-tk.C:
+				if s.state.NumConnections() > 0 {
+					s.connSyncState <- struct{}{}
+				}
+			case <-s.connSyncState:
 				s.state.Lock()
 				s.state.Stats.System.loadStats(dir)
 				s.state.Stats.ConnStat = s.engine.ConnStat()
 				s.state.Downloads = s.listFiles()
+				s.state.Unlock()
+				if s.state.NumConnections() > 0 {
+					s.state.Push()
+				}
+			case <-s.engine.TsChanged:
+				s.state.Lock()
+				s.state.Torrents = s.engine.GetTorrents()
 				s.state.Unlock()
 				s.state.Push()
 			}
@@ -81,12 +96,7 @@ func (s *Server) stateRoutines() {
 					}
 
 					log.Println("Download dir watcher:", event)
-					s.state.Lock()
-					s.state.Downloads = s.listFiles()
-					s.state.Unlock()
-					if s.state.NumConnections() > 0 {
-						s.state.Push()
-					}
+					s.connSyncState <- struct{}{}
 				}
 			case err, ok := <-watcher.Errors:
 				log.Println("Download dir watcher error:", err)
@@ -96,15 +106,4 @@ func (s *Server) stateRoutines() {
 			}
 		}
 	}()
-
-	//torrents
-	go func() {
-		for range s.engine.TsChanged {
-			s.state.Lock()
-			s.state.Torrents = s.engine.GetTorrents()
-			s.state.Unlock()
-			s.state.Push()
-		}
-	}()
-
 }

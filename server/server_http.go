@@ -26,6 +26,7 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.state.Users[conn.ID()] = r.RemoteAddr
+		s.connSyncState <- struct{}{} // sync
 		s.state.Push()
 		conn.Wait()
 		delete(s.state.Users, conn.ID())

@@ -10,7 +10,7 @@ import (
 	"github.com/shirou/gopsutil/mem"
 )
 
-type stats struct {
+type osStats struct {
 	Set             bool    `json:"set"`
 	CPU             float64 `json:"cpu"`
 	DiskFree        uint64  `json:"diskFree"`
@@ -22,11 +22,11 @@ type stats struct {
 	pusher velox.Pusher
 }
 
-func (s *stats) Push() {
+func (s *osStats) Push() {
 	s.pusher.Push()
 }
 
-func (s *stats) loadStats(diskDir string) {
+func (s *osStats) loadStats(diskDir string) {
 	//count cpu cycles between last count
 	//count disk usage
 	if cpu, err := cpu.Percent(0, false); err == nil {
