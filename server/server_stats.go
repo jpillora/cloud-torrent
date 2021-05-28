@@ -43,7 +43,7 @@ func (s *osStats) loadStats(diskDir string) {
 	//count total bytes allocated by the go runtime
 	memStats := runtime.MemStats{}
 	runtime.ReadMemStats(&memStats)
-	s.GoMemory = int64(memStats.Alloc)
+	s.GoMemory = int64(memStats.Sys)
 	//count current number of goroutines
 	s.GoRoutines = runtime.NumGoroutine()
 	//done
