@@ -16,6 +16,7 @@ GITVER=$(git describe --tags)
 OS=""
 ARCH=""
 SUFFIX=""
+OSSUFFIX=""
 PKGCMD=
 NOSTATIC=
 CGO=1
@@ -34,7 +35,7 @@ case $arg in
 		;;
 	windows)
 		OS=windows
-		SUFFIX=.exe
+		OSSUFFIX=.exe
 		;;
 	darwin)
 		OS=darwin
@@ -77,7 +78,7 @@ if [[ -z $NOSTATIC ]]; then
 fi
 
 pushd $__dir/..
-BINFILE=${BINPREFIX}${BIN}_${OS}_${ARCH}${SUFFIX} 
+BINFILE=${BINPREFIX}${BIN}_${OS}_${ARCH}${SUFFIX}${OSSUFFIX}
 CGO_ENABLED=$CGO GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE} -trimpath -ldflags "-s -w -X main.VERSION=$GITVER"
 if [[ ! -f ${BINFILE} ]]; then
   echo "Build failed. Check with error message above."
