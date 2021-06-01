@@ -180,6 +180,12 @@
               Started
               <div class="detail">{{ ago(t.StartedAt) }}</div>
             </div>
+            <div ng-if="!(t.Done)" class="ui blue basic label">
+              <i class="clock outline icon"></i>
+              ETA
+              <div class="detail">{{ (t.DownloadRate > 0 ? (t.Size - t.Downloaded)/t.DownloadRate : 999999999) | etaTime
+                }}</div>
+            </div>
             <div ng-if="t.Done" class="ui blue basic label">
               <i class="clock outline icon"></i>
               Finished
@@ -199,6 +205,7 @@
             </div>
             <div class="ui blue basic label">
               <i class="percent icon"></i>
+              Progress
               <div class="detail"> {{t.Percent}} </div>
             </div>
           </div>

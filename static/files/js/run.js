@@ -83,6 +83,10 @@ app.run(function ($rootScope, search, api, apiget, storage) {
     return $scope.agoHrs(t) <= hrs;
   };
 
+  $scope.etaTime = function (tsec) {
+    return moment().add(tsec, 'seconds').endOf('day').fromNow();
+  };
+
   $scope.uploadTorrent = function (event) {
     var fileContainer = event.dataTransfer || event.target;
     if (!fileContainer || !fileContainer.files) {
