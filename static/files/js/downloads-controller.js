@@ -47,8 +47,10 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
   if ($scope.isfile()) {
     angular.forEach($rootScope.state.Torrents, function (tval) {
       angular.forEach(tval.Files, function (fval) {
-        n.$torrent = tval;
-        n.$file = fval;
+        if (n.Path === f.Name) {
+          n.$torrent = tval;
+          n.$file = fval;
+        }
       });
     });
   }
