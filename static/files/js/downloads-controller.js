@@ -42,25 +42,15 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
   $scope.videoPreview = /\.(mp4|mkv|mov)$/.test(path);
 
   //search for this file
-  var torrents = $rootScope.state.Torrents;
   n.$file = undefined;
   n.$torrent = undefined;
   if ($scope.isfile() && torrents) {
-    for (var ih in torrents) {
-      var torrent = torrents[ih];
-      var files = torrent.Files;
-      if (files) {
-        for (var i = 0; i < files.length; i++) {
-          var f = files[i];
-          if (f.Path === path) {
-            n.$torrent = torrent;
-            n.$file = f;
-            break;
-          }
-        }
-      }
-      if (n.$file) break;
-    }
+    angular.forEach($rootScope.state.Torrents, function (tval) {
+      angular.forEach(tval.Files, function (fval) {
+        n.$torrent = tval;
+        n.$file = fval;
+      });
+    });
   }
 
   $scope.isdownloading = function () {
