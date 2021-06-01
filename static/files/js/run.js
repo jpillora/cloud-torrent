@@ -83,8 +83,12 @@ app.run(function ($rootScope, search, api, apiget, storage) {
     return $scope.agoHrs(t) <= hrs;
   };
 
-  $scope.etaTime = function (tsec) {
-    return moment().add(tsec, 'seconds').endOf('day').fromNow();
+  $scope.etaTime = function (dled, total, dlrate) {
+    if (dlrate <= 0) {
+      return "Infinite"
+    }
+    etaSec = Math.round((total - dled) / dlrate)
+    return moment().add(etaSec, 'seconds').fromNow();
   };
 
   $scope.uploadTorrent = function (event) {

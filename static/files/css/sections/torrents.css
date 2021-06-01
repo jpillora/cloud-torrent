@@ -45,6 +45,11 @@ section.torrents {
 	color: lightgray;
 }
 
+.torrent .torrentinfobar .label {
+	margin-left: 0.1em;
+	margin-bottom: 0.5em;
+}
+
 .torrent .controls.column {
 	/*padding-top: 5px;*/
 	text-align: right;
@@ -55,8 +60,6 @@ section.torrents {
 	text-align: center;
 	font-size: 0.75rem;
 }
-
-
 
 .torrent .download.file td.name > div.progress {
 	font-weight: bold;
@@ -76,7 +79,6 @@ section.torrents {
 .torrent .download.file span.name {
 	overflow: hidden;
 }
-
 
 .torrent .downloads thead tr th.size {
 	width: 110px;

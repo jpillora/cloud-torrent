@@ -113,7 +113,7 @@
         </div>
       </div>
 
-      <div class="ui sixteen wide column" ng-if="t.$showMode">
+      <div class="ui sixteen wide column torrentinfobar" ng-if="t.$showMode">
         <div class="ui info message">
           <i class="close icon" ng-click="t.$showMode = null"></i>
           <h3 class="header">
@@ -183,8 +183,9 @@
             <div ng-if="!(t.Done)" class="ui blue basic label">
               <i class="clock outline icon"></i>
               ETA
-              <div class="detail">{{ (t.DownloadRate > 0 ? (t.Size - t.Downloaded)/t.DownloadRate : 999999999) | etaTime
-                }}</div>
+              <div class="detail">
+                {{ etaTime(t.Downloaded, t.Size, t.DownloadRate) }}
+              </div>
             </div>
             <div ng-if="t.Done" class="ui blue basic label">
               <i class="clock outline icon"></i>
@@ -207,6 +208,13 @@
               <i class="percent icon"></i>
               Progress
               <div class="detail"> {{t.Percent}} </div>
+            </div>
+            <div ng-if="!(t.Done)" class="ui blue basic label">
+              <i class="clock outline icon"></i>
+              ETA
+              <div class="detail">
+                {{ etaTime(t.Downloaded, t.Size, t.DownloadRate) }}
+              </div>
             </div>
           </div>
         </div>
