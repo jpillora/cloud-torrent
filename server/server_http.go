@@ -20,6 +20,14 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	}
 	//handle realtime client connections
 	if r.URL.Path == "/sync" {
+
+		defer func() error {
+			if r := recover(); r != nil {
+				log.Println("velox sync panic", r)
+			}
+			return nil
+		}()
+
 		conn, err := velox.Sync(&s.state, w, r)
 		if err != nil {
 			log.Printf("sync failed: %s", err)
