@@ -122,7 +122,7 @@ func (e *Engine) StartTorrentWatcher() error {
 	}
 
 	if w, err := os.Stat(e.config.WatchDirectory); os.IsNotExist(err) || (err == nil && !w.IsDir()) {
-		return fmt.Errorf("[Watcher] %s is not dir", e.config.WatchDirectory)
+		return fmt.Errorf("[Watcher] WatchDirectory [%s] is not a dir, will not watch", e.config.WatchDirectory)
 	}
 
 	log.Printf("Torrent Watcher: watching torrent file in %s", e.config.WatchDirectory)

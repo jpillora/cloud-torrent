@@ -29,7 +29,7 @@ func (s *Server) backgroundRoutines() {
 	go s.engine.RestoreCacheDir()
 
 	if err := s.engine.StartTorrentWatcher(); err != nil {
-		log.Println("Bg", err)
+		log.Println(err)
 	}
 }
 
