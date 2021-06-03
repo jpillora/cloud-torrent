@@ -149,7 +149,7 @@ app.factory("bytes", function () {
 
     if (dg < 10) {
       dm = 2
-    } else if (digit < 100) {
+    } else if (dg < 100) {
       dm = 1
     }
 
