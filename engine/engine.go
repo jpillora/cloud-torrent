@@ -280,10 +280,13 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 					t.updateTorrentStatus()
 				}
 				t.updateConnStat()
-			case <-e.closeSync:
-				return
 			case <-t.dropWait:
+				tt.Drop()
 				log.Println("Task Droped, exit loop: ", ih)
+				return
+			case <-e.closeSync:
+				log.Println("Engine shutdown while downloading", ih)
+				tt.Drop()
 				return
 			}
 		}
