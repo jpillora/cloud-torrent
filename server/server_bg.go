@@ -60,14 +60,14 @@ func (s *Server) stateRoutines() {
 					s.state.Unlock()
 					s.state.Push()
 				}
-			case <-s.connSyncState:
+			case <-s.connSyncState: // web user connected
 				s.state.Lock()
 				s.state.Stats.System.loadStats(dir)
 				s.state.Stats.ConnStat = s.engine.ConnStat()
 				s.state.Downloads = s.listFiles()
 				s.state.Unlock()
 				s.state.Push()
-			case <-s.engine.TsChanged:
+			case <-s.engine.TsChanged: // task added/deleted
 				s.state.Lock()
 				s.state.Torrents = s.engine.GetTorrents()
 				s.state.Unlock()
@@ -94,7 +94,8 @@ func (s *Server) stateRoutines() {
 					return
 				}
 				if event.Op&(fsnotify.Create|fsnotify.Remove) > 0 {
-					if strings.HasPrefix(path.Base(event.Name), ".torrent.db") {
+					if strings.HasPrefix(path.Base(event.Name), ".") {
+						// ignore hidden files
 						continue
 					}
 
