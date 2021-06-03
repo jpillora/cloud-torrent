@@ -45,8 +45,6 @@ func (e *Engine) upsertTorrent(ih, name string, isQueueing bool) (*Torrent, erro
 }
 
 func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
-	e.RLock()
-	defer e.RUnlock()
 	if t, ok := e.ts[infohash]; ok {
 		return t, nil
 	}
@@ -54,8 +52,6 @@ func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
 }
 
 func (e *Engine) deleteTorrent(infohash string) {
-	e.Lock()
-	defer e.Unlock()
 	delete(e.ts, infohash)
 	e.TsChanged <- struct{}{}
 }

@@ -55,7 +55,7 @@ func New(s Server) *Engine {
 		ts:        make(map[string]*Torrent),
 		cldServer: s,
 		waitList:  NewSyncList(),
-		TsChanged: make(chan struct{}),
+		TsChanged: make(chan struct{}, 1),
 	}
 }
 
@@ -205,10 +205,12 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 	ih := spec.InfoHash.HexString()
 	log.Println("[newTorrentBySpec] called ", ih)
 
+	nowTorrentsLen := len(e.client.Torrents())
+
 	e.taskMutex.Lock()
 	defer e.taskMutex.Unlock()
 	// whether add as pretasks
-	if e.config.MaxConcurrentTask > 0 && len(e.client.Torrents()) >= e.config.MaxConcurrentTask {
+	if e.config.MaxConcurrentTask > 0 && nowTorrentsLen >= e.config.MaxConcurrentTask {
 		if !e.isTaskInList(ih) {
 			log.Printf("[newTorrentBySpec] reached max task %d, add as pretask: %s %v", e.config.MaxConcurrentTask, ih, taskT)
 			e.pushWaitTask(ih, taskT)
@@ -240,8 +242,12 @@ func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
 	go func() {
 		select {
 		case <-e.closeSync:
+			log.Println("Engine shutdown while waiting Info", ih)
+			tt.Drop()
 			return
 		case <-t.dropWait:
+			tt.Drop()
+			log.Println("Task Dropped while waiting Info", ih)
 			return
 		case <-tt.GotInfo():
 		}
@@ -327,6 +333,9 @@ func (e *Engine) ManualStartTorrent(infohash string) error {
 
 func (e *Engine) StartTorrent(infohash string) error {
 	log.Println("StartTorrent ", infohash)
+	e.Lock()
+	defer e.Unlock()
+
 	t, err := e.getTorrent(infohash)
 	if err != nil {
 		return err
@@ -358,6 +367,8 @@ func (e *Engine) StartTorrent(infohash string) error {
 
 func (e *Engine) StopTorrent(infohash string) error {
 	log.Println("StopTorrent ", infohash)
+	e.Lock()
+	defer e.Unlock()
 	t, err := e.getTorrent(infohash)
 	if err != nil {
 		return err
@@ -391,21 +402,16 @@ func (e *Engine) StopTorrent(infohash string) error {
 
 func (e *Engine) DeleteTorrent(infohash string) error {
 	log.Println("DeleteTorrent", infohash)
+	e.Lock()
+	defer e.Unlock()
+
 	t, err := e.getTorrent(infohash)
 	if err != nil {
 		return err
 	}
-
-	t.Lock()
-	if t.Loaded {
-		close(t.dropWait)
-		t.t.Drop()
-	} else {
-		// task not loaded, it's in the waiting list
-		e.waitList.Remove(infohash)
-	}
+	close(t.dropWait)
+	e.waitList.Remove(infohash)
 	e.deleteTorrent(infohash)
-	t.Unlock()
 
 	go e.NextWaitTask()
 	return nil
