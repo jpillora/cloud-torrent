@@ -145,7 +145,14 @@ app.factory("bytes", function () {
       dm = 0,
       sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
       i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+
+    var digit = (bytes / Math.pow(k, i))
+    if (digit < 10) {
+      dm = 2
+    } else if (digit < 100) {
+      dm = 1
+    }
+    return parseFloat(digit.toFixed(dm)) + ' ' + sizes[i];
   };
 });
 
