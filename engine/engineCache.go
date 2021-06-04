@@ -133,6 +133,11 @@ func (e *Engine) RestoreCacheDir() {
 }
 
 func (e *Engine) NextWaitTask() error {
+	if !e.isReadyAddTask() {
+		log.Println("NextWaitTask: engine tasks max")
+		return ErrMaxConnTasks
+	}
+
 	for {
 		if elm := e.waitList.Pop(); elm != nil {
 			var res string

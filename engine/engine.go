@@ -200,17 +200,23 @@ func (e *Engine) NewTorrentByFilePath(path string) error {
 	return e.newTorrentBySpec(spec, taskTorrent)
 }
 
+func (e *Engine) isReadyAddTask() bool {
+	nowTorrentsLen := len(e.client.Torrents())
+	if e.config.MaxConcurrentTask > 0 && nowTorrentsLen >= e.config.MaxConcurrentTask {
+		return false
+	}
+	return true
+}
+
 // NewTorrentBySpec -> *Torrent -> addTorrentTask
 func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) error {
 	ih := spec.InfoHash.HexString()
 	log.Println("[newTorrentBySpec] called ", ih)
 
-	nowTorrentsLen := len(e.client.Torrents())
-
 	e.taskMutex.Lock()
 	defer e.taskMutex.Unlock()
 	// whether add as pretasks
-	if e.config.MaxConcurrentTask > 0 && nowTorrentsLen >= e.config.MaxConcurrentTask {
+	if e.isReadyAddTask() {
 		if !e.isTaskInList(ih) {
 			log.Printf("[newTorrentBySpec] reached max task %d, add as pretask: %s %v", e.config.MaxConcurrentTask, ih, taskT)
 			e.pushWaitTask(ih, taskT)
