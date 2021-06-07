@@ -41,7 +41,6 @@ func (e *Engine) upsertTorrent(ih, name string, isQueueing bool) (*Torrent, erro
 		e.Lock()
 		e.ts[ih] = torrent
 		e.Unlock()
-		e.TsChanged <- struct{}{}
 		return torrent, nil
 	}
 	torrent.IsQueueing = isQueueing
