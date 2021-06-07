@@ -176,19 +176,19 @@
               <div class="detail">{{ t.SeedRatio | round }}</div>
             </div>
             <div class="ui blue basic label">
-              <i class="clock outline icon"></i>
+              <i class="hourglass start icon"></i>
               Started
               <div class="detail">{{ ago(t.StartedAt) }}</div>
             </div>
             <div ng-if="!(t.Done)" class="ui blue basic label">
-              <i class="clock outline icon"></i>
-              Finish
+              <i class="hourglass half icon"></i>
+              Will Finish
               <div class="detail">
                 {{ etaTime(t.Downloaded, t.Size, t.DownloadRate) }}
               </div>
             </div>
             <div ng-if="t.Done" class="ui blue basic label">
-              <i class="clock outline icon"></i>
+              <i class="hourglass end icon"></i>
               Finished
               <div class="detail">{{ ago(t.FinishedAt) }}</div>
             </div>
@@ -256,7 +256,7 @@
 
                   <span class="name">{{ f.Path | filename }}</span>
 
-                  <div class="ui blue indeterminate mini progress">
+                  <div class="ui teal indeterminate mini progress">
                     <div class="bar" ng-style="{width: (f.Percent < 10 ? 10: f.Percent) + '%'}">
                       <div class="progress">{{f.Percent + '%'}}</div>
                     </div>
