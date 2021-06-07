@@ -22,6 +22,10 @@ func (e *Engine) isTaskInList(ih string) bool {
 }
 
 func (e *Engine) upsertTorrent(ih, name string, isQueueing bool) (*Torrent, error) {
+	defer func() {
+		e.TsChanged <- struct{}{}
+	}()
+
 	e.RLock()
 	torrent, ok := e.ts[ih]
 	e.RUnlock()
