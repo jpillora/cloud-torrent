@@ -216,7 +216,7 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 	e.taskMutex.Lock()
 	defer e.taskMutex.Unlock()
 	// whether add as pretasks
-	if e.isReadyAddTask() {
+	if !e.isReadyAddTask() {
 		if !e.isTaskInList(ih) {
 			log.Printf("[newTorrentBySpec] reached max task %d, add as pretask: %s %v", e.config.MaxConcurrentTask, ih, taskT)
 			e.pushWaitTask(ih, taskT)
