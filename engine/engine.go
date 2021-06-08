@@ -223,7 +223,7 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 		} else {
 			log.Printf("[newTorrentBySpec] reached max task %d, task already in tasks: %s %v", e.config.MaxConcurrentTask, ih, taskT)
 		}
-		e.addPreTask(spec)
+		e.upsertTorrent(ih, spec.DisplayName, true) // show queueing task
 		return ErrMaxConnTasks
 	}
 
@@ -250,15 +250,14 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 			log.Println("Task Dropped while waiting Info", ih)
 			return
 		case <-tt.GotInfo():
+			// Already got full torrent info
+			// If the origin is from a magnet link, remove it, cache the torrent data
+			e.removeMagnetCache(ih)
+			m := tt.Metainfo()
+			e.newTorrentCacheFile(&m)
+			t.updateOnGotInfo(tt)
 		}
 
-		// Already got full torrent info
-		// If the origin is from a magnet link, remove it, cache the torrent data
-		e.removeMagnetCache(ih)
-		m := tt.Metainfo()
-		e.newTorrentCacheFile(&m)
-
-		t.updateOnGotInfo(tt)
 		if e.config.AutoStart {
 			go e.StartTorrent(ih)
 		}
@@ -293,13 +292,6 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 	}()
 
 	return nil
-}
-
-// addPreTask
-// add a task not ready to load
-func (e *Engine) addPreTask(spec *torrent.TorrentSpec) error {
-	_, err := e.upsertTorrent(spec.InfoHash.HexString(), spec.DisplayName, true)
-	return err
 }
 
 //GetTorrents just get the local infohash->Torrent map
