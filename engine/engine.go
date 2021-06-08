@@ -422,7 +422,10 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	e.waitList.Remove(infohash)
 	e.deleteTorrent(infohash)
 
-	go e.NextWaitTask()
+	go func() {
+		<-t.t.Closed()
+		e.NextWaitTask()
+	}()
 	return nil
 }
 
