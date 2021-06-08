@@ -256,6 +256,7 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 			m := tt.Metainfo()
 			e.newTorrentCacheFile(&m)
 			t.updateOnGotInfo(tt)
+			e.TsChanged <- struct{}{}
 		}
 
 		if e.config.AutoStart {
