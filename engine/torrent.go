@@ -62,6 +62,7 @@ func (torrent *Torrent) updateOnGotInfo(t *torrent.Torrent) {
 
 	if t.Info() != nil && !torrent.Loaded {
 		torrent.t = t
+		torrent.Name = t.Name()
 		torrent.Loaded = true
 		torrent.updateFileStatus()
 		torrent.updateTorrentStatus()

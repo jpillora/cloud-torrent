@@ -227,24 +227,18 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 		return ErrMaxConnTasks
 	}
 
+	t, _ := e.upsertTorrent(ih, spec.DisplayName, false)
 	tt, _, err := e.client.AddTorrentSpec(spec)
 	if err != nil {
 		return err
 	}
-	return e.addTorrentTask(tt)
-}
 
-// addTorrentTask
-// add the task to local cache object and wait for GotInfo
-func (e *Engine) addTorrentTask(tt *torrent.Torrent) error {
-	ih := tt.InfoHash().HexString()
 	meta := tt.Metainfo()
 	if len(e.bttracker) > 0 && (e.config.AlwaysAddTrackers || len(meta.AnnounceList) == 0) {
 		log.Printf("[newTorrent] added %d public trackers\n", len(e.bttracker))
 		tt.AddTrackers([][]string{e.bttracker})
 	}
 
-	t, _ := e.upsertTorrent(ih, tt.Name(), false)
 	go func() {
 		select {
 		case <-e.closeSync:
