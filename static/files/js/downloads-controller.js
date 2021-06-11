@@ -42,11 +42,7 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
   $scope.videoPreview = /\.(mp4|mkv|mov)$/.test(path);
 
   $scope.isdownloading = function (fileName) {
-    if (fileName in $rootScope.DownloadingFiles &&
-      $rootScope.DownloadingFiles[fileName].Percent < 100) {
-      return true
-    }
-    return false
+    return (fileName in $rootScope.DownloadingFiles)
   }
 
   $scope.preremove = function () {

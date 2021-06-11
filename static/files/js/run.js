@@ -19,10 +19,20 @@ app.run(function ($rootScope, search, api, apiget, storage) {
   }
 
   // velox event stream framework
+  $scope.DownloadingFiles = {};
   $scope.state = {};
   $scope.hasConnected = false;
   var v = velox(pn + "sync", $scope.state);
   v.onupdate = function () {
+    $scope.DownloadingFiles = {};
+    angular.forEach($scope.state.Torrents, function (tval) {
+      angular.forEach(tval.Files, function (fval) {
+        if (fval.Percent < 100) {
+          $scope.DownloadingFiles[fval.Path] = true;
+        }
+      });
+    });
+
     $scope.$applyAsync();
   };
   v.onchange = function (connected) {
@@ -175,15 +185,6 @@ app.run(function ($rootScope, search, api, apiget, storage) {
     }
   });
 
-  $rootScope.DownloadingFiles = {};
-  $rootScope.$watch("state.Torrents", function (tors) {
-    $rootScope.DownloadingFiles = {};
-    angular.forEach($rootScope.state.Torrents, function (tval) {
-      angular.forEach(tval.Files, function (fval) {
-        $rootScope.DownloadingFiles[fval.Path] = fval;
-      });
-    });
-  })
 });
 
 app.config([
