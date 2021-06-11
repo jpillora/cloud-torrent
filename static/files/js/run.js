@@ -115,7 +115,7 @@ app.run(function ($rootScope, search, api, apiget, storage) {
 
   $scope.alertErr = function (errMsg) {
     $scope.err = errMsg;
-    $scope.$apply();
+    $scope.$applyAsync();
     return false;
   }
 

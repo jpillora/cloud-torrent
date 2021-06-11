@@ -98,11 +98,11 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
     return c.join(" ");
   };
 
-  $scope.remove = function () {
+  $scope.remove = function (nodeName) {
     $scope.deleting = true;
-    $http.delete("download/" + encodeURIComponent(n.$path))
-      .error(function (err) {
-        $rootScope.alertErr(err);
+    $http.delete("download/" + encodeURIComponent(nodeName))
+      .then(console.log, function (resp) {
+        $rootScope.alertErr(resp.data);
       })
       .finally(function () {
         $scope.deleting = false;
