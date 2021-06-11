@@ -190,15 +190,6 @@ app.directive("ngEnter", function () {
   };
 });
 
-//TODO remove this hack
-app.directive("jpSrc", function () {
-  return function (scope, element, attrs) {
-    scope.$watch(attrs.jpSrc, function (src) {
-      element.attr("src", src);
-    });
-  };
-});
-
 app.directive("ondropfile", function () {
   return {
     restrict: "A",

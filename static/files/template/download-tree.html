@@ -7,9 +7,9 @@
 
 <div class="content">
   <div class="header">
-    <a ng-if="!isdownloading()" ng-href="download/{{ node.$path }}">{{ node.Name }}</a>
-    <span ng-if="isfile() && isdownloading()">{{ node.Name }}</span>
-    <span ng-if="!isdownloading()" class="controls">
+    <a ng-if="!isdownloading(node.Name)" ng-href="download/{{ node.$path }}">{{ node.Name }}</a>
+    <span ng-if="isfile() && isdownloading(node.Name)">{{ node.Name }}</span>
+    <span ng-if="!isdownloading(node.Name)" class="controls">
       <i ng-show="!confirm" ng-click="preremove()" class="red trash icon"></i>
       <i ng-show="!deleting && confirm" ng-click="remove(node.Name);" class="red check icon"></i>
       <i ng-show="deleting" class="grey notched circle loading icon"></i>

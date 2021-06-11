@@ -174,6 +174,16 @@ app.run(function ($rootScope, search, api, apiget, storage) {
       break;
     }
   });
+
+  $rootScope.DownloadingFiles = {};
+  $rootScope.$watch("state.Torrents", function (tors) {
+    $rootScope.DownloadingFiles = {};
+    angular.forEach($rootScope.state.Torrents, function (tval) {
+      angular.forEach(tval.Files, function (fval) {
+        $rootScope.DownloadingFiles[fval.Path] = fval;
+      });
+    });
+  })
 });
 
 app.config([

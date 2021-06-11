@@ -41,28 +41,13 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
   $scope.imagePreview = /\.(jpe?g|png|gif)$/.test(path);
   $scope.videoPreview = /\.(mp4|mkv|mov)$/.test(path);
 
-  //search for this file
-  n.$file = undefined;
-  n.$torrent = undefined;
-  if ($scope.isfile()) {
-    angular.forEach($rootScope.state.Torrents, function (tval) {
-      angular.forEach(tval.Files, function (fval) {
-        if (n.Name === fval.Path) {
-          n.$torrent = tval;
-          n.$file = fval;
-        }
-      });
-    });
+  $scope.isdownloading = function (fileName) {
+    if (fileName in $rootScope.DownloadingFiles &&
+      $rootScope.DownloadingFiles[fileName].Percent < 100) {
+      return true
+    }
+    return false
   }
-
-  $scope.isdownloading = function () {
-    return (
-      n.$torrent !== undefined &&
-      n.$file !== undefined &&
-      n.$torrent.Loaded &&
-      n.$file.Percent < 100
-    );
-  };
 
   $scope.preremove = function () {
     $scope.confirm = true;
@@ -80,7 +65,7 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
   };
   $scope.icon = function () {
     var c = [];
-    if ($scope.isdownloading()) {
+    if ($scope.isdownloading(n.Name)) {
       c.push("spinner", "loading");
     } else {
       c.push("outline");
