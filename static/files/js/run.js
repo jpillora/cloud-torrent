@@ -28,7 +28,8 @@ app.run(function ($rootScope, search, api, apiget, storage) {
     angular.forEach($scope.state.Torrents, function (tval) {
       angular.forEach(tval.Files, function (fval) {
         if (fval.Percent < 100) {
-          $scope.DownloadingFiles[fval.Path] = true;
+          var base = fval.Path.split(/[\\/]/).pop()
+          $scope.DownloadingFiles[base] = true;
         }
       });
     });

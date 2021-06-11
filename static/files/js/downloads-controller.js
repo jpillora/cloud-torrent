@@ -42,7 +42,10 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
   $scope.videoPreview = /\.(mp4|mkv|mov)$/.test(path);
 
   $scope.isdownloading = function (fileName) {
-    return (fileName in $rootScope.DownloadingFiles)
+    if ($scope.isfile() && (fileName in $rootScope.DownloadingFiles)) {
+      return true
+    }
+    return false
   }
 
   $scope.preremove = function () {
