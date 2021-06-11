@@ -32,6 +32,10 @@ section.torrents {
 	font-size: 0.75rem;
 }
 
+.torrent .info .speed span.label {
+	margin-bottom: 0.5em;
+}
+
 .torrent .info .progress {
     margin-top: 0.5rem;
     margin-bottom: 0;

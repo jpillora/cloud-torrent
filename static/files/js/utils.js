@@ -7,8 +7,7 @@ app.factory("api", function ($rootScope, $http, reqerr) {
     $rootScope.apiing = true;
     var req = $http.post(url, data, {
       transformRequest: []
-    })
-    req.error(reqerr);
+    });
     req.finally(function () {
       $rootScope.apiing = false;
     });
