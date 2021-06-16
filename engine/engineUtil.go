@@ -64,7 +64,7 @@ func (e *Engine) UpdateTrackers() error {
 
 	if !strings.HasPrefix(url, "https://") {
 		err := fmt.Errorf("UpdateTrackers: trackers url invalid: %s (only https:// supported), extra trackers list now empty.", url)
-		log.Print(err.Error())
+		log.Println(err.Error())
 		return err
 	}
 
@@ -114,7 +114,7 @@ func (e *Engine) ConnStat() torrent.ConnStats {
 func (e *Engine) StartTorrentWatcher() error {
 
 	if e.watcher != nil {
-		log.Print("Torrent Watcher: close")
+		log.Println("Torrent Watcher: close")
 		e.watcher.Close()
 		e.watcher = nil
 	}

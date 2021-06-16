@@ -56,6 +56,13 @@ func (f *filteredLogger) Println(v ...interface{}) {
 		if s, ok := arg.(string); ok && len(s) == 40 {
 			v[idx] = fmt.Sprintf("[%s...]", s[:6])
 		}
+		if s, ok := arg.(taskType); ok {
+			if s == taskTorrent {
+				v[idx] = "[Torrent]"
+			} else {
+				v[idx] = "[Magnet]"
+			}
+		}
 	}
 	f.logger.Println(v...)
 }
@@ -64,16 +71,15 @@ func (f *filteredLogger) Printf(format string, v ...interface{}) {
 		if s, ok := arg.(string); ok && len(s) == 40 {
 			v[idx] = fmt.Sprintf("[%s...]", s[:6])
 		}
-	}
-	f.logger.Printf(format, v...)
-}
-func (f *filteredLogger) Print(v ...interface{}) {
-	for idx, arg := range v {
-		if s, ok := arg.(string); ok && len(s) == 40 {
-			v[idx] = fmt.Sprintf("[%s...]", s[:6])
+		if s, ok := arg.(taskType); ok {
+			if s == taskTorrent {
+				v[idx] = "[Torrent]"
+			} else {
+				v[idx] = "[Magnet]"
+			}
 		}
 	}
-	f.logger.Print(v...)
+	f.logger.Printf(format, v...)
 }
 func (f *filteredLogger) Fatal(v ...interface{}) {
 	f.logger.Fatal(v...)
