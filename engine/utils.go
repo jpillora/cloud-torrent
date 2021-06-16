@@ -2,6 +2,9 @@ package engine
 
 import (
 	"errors"
+	"fmt"
+	stdlog "log"
+	"os"
 	"strings"
 
 	"github.com/c2h5oh/datasize"
@@ -38,4 +41,46 @@ func rateLimiter(rstr string) (*rate.Limiter, error) {
 		rateSize = int(v)
 	}
 	return rate.NewLimiter(rate.Limit(rateSize), rateSize*3), nil
+}
+
+var (
+	log *filteredLogger
+)
+
+type filteredLogger struct {
+	logger *stdlog.Logger
+}
+
+func (f *filteredLogger) Println(v ...interface{}) {
+	for idx, arg := range v {
+		if s, ok := arg.(string); ok && len(s) == 40 {
+			v[idx] = fmt.Sprintf("[%s...]", s[:6])
+		}
+	}
+	f.logger.Println(v...)
+}
+func (f *filteredLogger) Printf(format string, v ...interface{}) {
+	for idx, arg := range v {
+		if s, ok := arg.(string); ok && len(s) == 40 {
+			v[idx] = fmt.Sprintf("[%s...]", s[:6])
+		}
+	}
+	f.logger.Printf(format, v...)
+}
+func (f *filteredLogger) Print(v ...interface{}) {
+	for idx, arg := range v {
+		if s, ok := arg.(string); ok && len(s) == 40 {
+			v[idx] = fmt.Sprintf("[%s...]", s[:6])
+		}
+	}
+	f.logger.Print(v...)
+}
+func (f *filteredLogger) Fatal(v ...interface{}) {
+	f.logger.Fatal(v...)
+}
+
+func init() {
+	log = &filteredLogger{
+		logger: stdlog.New(os.Stdout, "[engine] ", stdlog.LstdFlags|stdlog.Lmsgprefix),
+	}
 }

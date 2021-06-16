@@ -2,7 +2,6 @@ package engine
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -92,7 +91,6 @@ func InitConf(specPath string) (*Config, error) {
 	configExists := true
 	if err := viper.ReadInConfig(); err != nil {
 		if strings.Contains(err.Error(), "Not Found") {
-			log.Println("[viper Config]", err)
 			configExists = false
 			if specPath == "" {
 				specPath = "./cloud-torrent.yaml"

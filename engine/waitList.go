@@ -2,7 +2,6 @@ package engine
 
 import (
 	"container/list"
-	"log"
 	"sync"
 )
 

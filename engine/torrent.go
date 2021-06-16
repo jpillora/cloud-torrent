@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"log"
 	"sync"
 	"time"
 
