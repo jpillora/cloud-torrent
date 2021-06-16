@@ -1,14 +1,14 @@
 /* globals app */
 
-app.controller("TorrentsController", function ($scope, $rootScope, api) {
+app.controller("TorrentsController", function ($scope, $rootScope, api, reqerr) {
   $rootScope.torrents = $scope;
 
   $scope.submitTorrent = function (action, t) {
-    api.torrent([action, t.InfoHash].join(":"));
+    api.torrent([action, t.InfoHash].join(":")).then(console.log, reqerr);
   };
 
   $scope.submitFile = function (action, t, f) {
-    api.file([action, t.InfoHash, f.Path].join(":"));
+    api.file([action, t.InfoHash, f.Path].join(":")).then(console.log, reqerr);;
   };
 
   $scope.downloading = function (f) {

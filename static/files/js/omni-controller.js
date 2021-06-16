@@ -5,7 +5,8 @@ app.controller("OmniController", function (
   storage,
   api,
   search,
-  rss
+  rss,
+  reqerr
 ) {
   $rootScope.omni = $scope;
   $scope.inputs = {
@@ -166,9 +167,9 @@ app.controller("OmniController", function (
 
   $scope.submitTorrent = function () {
     if ($scope.mode.torrent) {
-      api.url($scope.inputs.omni);
+      api.url($scope.inputs.omni).then(console.log, reqerr);;
     } else if ($scope.mode.magnet) {
-      api.magnet($scope.inputs.omni);
+      api.magnet($scope.inputs.omni).then(console.log, reqerr);;
     } else {
       window.alert("UI Bug");
     }
@@ -187,7 +188,8 @@ app.controller("OmniController", function (
 
     search
       .all($scope.inputs.provider, $scope.inputs.omni, page)
-      .success(function (results) {
+      .then(function (xhr) {
+        var results = xhr.data;
         if (!results || results.length === 0) {
           $scope.noResults = true;
           $scope.hasMore = false;
@@ -210,7 +212,7 @@ app.controller("OmniController", function (
           $scope.results.push(r);
         }
         $scope.page++;
-      });
+      }, reqerr);
   };
 
   $scope.submitSearchItem = function (result) {
@@ -219,10 +221,10 @@ app.controller("OmniController", function (
       api.magnet(result.magnet);
       return;
     } else if (result.infohash) {
-      api.magnet(magnetURI(result.name, result.infohash, parseTrackers(result)));
+      api.magnet(magnetURI(result.name, result.infohash, parseTrackers(result))).then(console.log, reqerr);;
       return;
     } else if (result.torrent) {
-      api.url(result.torrent);
+      api.url(result.torrent).then(console.log, reqerr);;
       return;
     }
     //else, look it up via url path
@@ -242,7 +244,7 @@ app.controller("OmniController", function (
           $scope.omnierr = "No magnet or infohash found";
           return;
         }
-        api.magnet(magnet);
+        api.magnet(magnet).then(console.log, reqerr);;
       },
       function (err) {
         $scope.omnierr = err;
@@ -265,7 +267,8 @@ app.controller("OmniController", function (
     $scope.parse();
     $scope.mode.search = true;
     $scope.mode.rss = true;
-    rss.getrss(update).success(function (results) {
+    rss.getrss(update).then(function (xhr) {
+      results = xhr.data;
       $scope.hasMore = false;
       if (!results || results.length === 0) {
         $scope.noResults = true;
@@ -276,7 +279,7 @@ app.controller("OmniController", function (
         r.seeds = $rootScope.ago(r.published);
         $scope.results.push(r);
       }
-    });
+    }, reqerr);
   };
 
   // $var uploadFile = function(files) {

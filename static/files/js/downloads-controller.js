@@ -85,9 +85,7 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
   $scope.remove = function (nodeName) {
     $scope.deleting = true;
     $http.delete("download/" + encodeURIComponent(nodeName))
-      .then(console.log, function (resp) {
-        $rootScope.alertErr(resp.data);
-      })
+      .then(console.log, reqerr)
       .finally(function () {
         $scope.deleting = false;
       });

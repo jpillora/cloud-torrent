@@ -1,6 +1,6 @@
 /* globals app,window */
 
-app.factory("api", function ($rootScope, $http, reqerr) {
+app.factory("api", function ($rootScope, $http) {
   window.http = $http;
   var request = function (action, data) {
     var url = "api/" + action;
@@ -29,12 +29,11 @@ app.factory("api", function ($rootScope, $http, reqerr) {
 });
 
 
-app.factory("apiget", function ($rootScope, $http, reqerr) {
+app.factory("apiget", function ($rootScope, $http) {
   var request = function (action, data) {
     var url = "api/" + action;
     $rootScope.apiing = true;
     var req = $http.get(url);
-    req.error(reqerr);
     req.finally(function () {
       $rootScope.apiing = false;
     });
@@ -50,14 +49,13 @@ app.factory("apiget", function ($rootScope, $http, reqerr) {
   return api;
 });
 
-app.factory("search", function ($rootScope, $http, reqerr) {
+app.factory("search", function ($rootScope, $http) {
   return {
     all: function (provider, query, page) {
       var params = { query: query };
       if (page !== undefined) params.page = page;
       $rootScope.searching = true;
       var req = $http.get("search/" + provider, { params: params });
-      req.error(reqerr);
       req.finally(function () {
         $rootScope.searching = false;
       });
@@ -67,7 +65,6 @@ app.factory("search", function ($rootScope, $http, reqerr) {
       var opts = { params: { item: path } };
       $rootScope.searching = true;
       var req = $http.get("search/" + provider + "/item", opts);
-      req.error(reqerr);
       req.finally(function () {
         $rootScope.searching = false;
       });
@@ -76,7 +73,7 @@ app.factory("search", function ($rootScope, $http, reqerr) {
   };
 });
 
-app.factory("rss", function ($rootScope, $http, reqerr) {
+app.factory("rss", function ($rootScope, $http) {
   return {
     getrss: function (update) {
       $rootScope.searching = true;
@@ -85,7 +82,6 @@ app.factory("rss", function ($rootScope, $http, reqerr) {
         config["params"]["update"] = 1;
       }
       var req = $http.get("rss", config);
-      req.error(reqerr);
       req.finally(function () {
         $rootScope.searching = false;
       });

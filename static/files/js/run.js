@@ -1,7 +1,7 @@
 /* globals app,window */
 
 //RootController
-app.run(function ($rootScope, search, api, apiget, storage) {
+app.run(function ($rootScope, search, api, apiget, storage, reqerr) {
   var $scope = (window.scope = $rootScope);
 
   var pn = window.location.pathname
@@ -119,7 +119,7 @@ app.run(function ($rootScope, search, api, apiget, storage) {
       reader.readAsArrayBuffer(file);
       reader.onload = function () {
         var data = new Uint8Array(reader.result);
-        api.torrentfile(data);
+        api.torrentfile(data).then(console.log, reqerr);
       };
     });
   };
@@ -147,9 +147,9 @@ app.run(function ($rootScope, search, api, apiget, storage) {
         $rootScope.showEnineStatus = !$rootScope.showEnineStatus;
         if ($rootScope.showEnineStatus) {
           $rootScope.EngineStatus = "loading...";
-          apiget.enginedebug().success(function (data) {
-            $rootScope.EngineStatus = data;
-          })
+          apiget.enginedebug().then(function (xhr) {
+            $rootScope.EngineStatus = xhr.data;
+          }, reqerr)
         }
         break
     }
