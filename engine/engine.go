@@ -411,7 +411,7 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Println("Recovered in f", r)
+				fmt.Println("Recovered in task Closed Wait", r)
 			}
 		}()
 
