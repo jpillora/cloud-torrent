@@ -409,7 +409,15 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	e.deleteTorrent(infohash)
 
 	go func() {
-		<-t.t.Closed()
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Recovered in f", r)
+			}
+		}()
+
+		if t.t != nil {
+			<-t.t.Closed()
+		}
 		e.NextWaitTask()
 	}()
 	return nil
