@@ -95,10 +95,11 @@
 
         <div ng-if="t.removeClicked" class="ui mini buttons">
           <button ng-disabled="$rootScope.apiing" class="ui compact yellow button"
-            ng-click="submitTorrent('move2wait', t)">
-            <i class="clock icon"></i> Wait
+            title="Move the task to the last of wait queue" ng-click="submitTorrent('move2wait', t)">
+            <i class="clock icon"></i> Queue
           </button>
-          <button ng-disabled="$rootScope.apiing" class="ui compact red button" ng-click="submitTorrent('delete', t)">
+          <button ng-disabled="$rootScope.apiing" class="ui compact red button" title="Confirm Removing this task"
+            ng-click="submitTorrent('delete', t)">
             <i class="trash icon"></i> Remove
           </button>
         </div>
