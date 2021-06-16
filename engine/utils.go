@@ -90,3 +90,7 @@ func init() {
 		logger: stdlog.New(os.Stdout, "[engine] ", stdlog.LstdFlags|stdlog.Lmsgprefix),
 	}
 }
+
+func SetLoggerFlag(flag int) {
+	log.logger.SetFlags(flag)
+}

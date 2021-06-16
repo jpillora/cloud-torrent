@@ -95,6 +95,11 @@ type Server struct {
 
 // Run the server
 func (s *Server) Run(version string) error {
+
+	if s.DisableLogTime {
+		engine.SetLoggerFlag(log.Lmsgprefix)
+	}
+
 	isTLS := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
 	if isTLS && (s.CertPath == "" || s.KeyPath == "") {
 		return fmt.Errorf("You must provide both key and cert paths")
