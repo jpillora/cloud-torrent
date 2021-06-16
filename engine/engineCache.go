@@ -163,4 +163,5 @@ func (e *Engine) NextWaitTask() error {
 
 func (e *Engine) pushWaitTask(ih string, tp taskType) {
 	e.waitList.Push(taskElem{ih: ih, tp: tp})
+	log.Println("waitqueue len", e.waitList.Len())
 }

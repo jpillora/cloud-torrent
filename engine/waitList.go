@@ -45,6 +45,10 @@ func (l *syncList) Remove(ih string) {
 	}
 }
 
+func (l *syncList) Len() int {
+	return l.lst.Len()
+}
+
 type taskType uint8
 
 const (
