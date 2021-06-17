@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/StackExchange/wmi v0.0.0-20210224194228-fe8f1750fd46 // indirect
+	github.com/anacrolix/dht/v2 v2.9.2-0.20210527235055-9013a10a0c7d // indirect
 	github.com/anacrolix/log v0.9.0
 	github.com/anacrolix/torrent v1.28.0
 	github.com/andrew-d/go-termutil v0.0.0-20150726205930-009166a695a2 // indirect
@@ -31,10 +32,12 @@ require (
 )
 
 replace (
+	github.com/anacrolix/dht/v2 => github.com/anacrolix/dht/v2 v2.9.2-0.20210527235055-9013a10a0c7d
 	github.com/boltdb/bolt => github.com/boypt/bolt v1.3.2
 	github.com/jpillora/cloud-torrent => ./
 	github.com/jpillora/cloud-torrent/engine => ./engine/
 	github.com/jpillora/cloud-torrent/server => ./server/
 	github.com/jpillora/cloud-torrent/static => ./static/
 	github.com/willf/bitset => github.com/bits-and-blooms/bitset v1.2.0
+
 )
