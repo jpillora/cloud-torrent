@@ -1,6 +1,6 @@
 /* globals app,window */
 
-app.controller("ConfigController", function ($scope, $rootScope, reqerr, api) {
+app.controller("ConfigController", function ($scope, $rootScope, api) {
   $rootScope.config = $scope;
   $scope.edit = false;
   $scope.configOrderdKey = [
@@ -54,9 +54,8 @@ app.controller("ConfigController", function ($scope, $rootScope, reqerr, api) {
     var data = JSON.stringify($rootScope.state.Config);
     api.configure(data).then(function (xhr) {
       $rootScope.info = `${xhr.data}: Config Saved`;
-    }, reqerr)
-      .finally(function () {
-        $scope.edit = false;
-      });
+    }).finally(function () {
+      $scope.edit = false;
+    });
   };
 });

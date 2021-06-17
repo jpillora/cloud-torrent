@@ -18,7 +18,7 @@ app.controller("DownloadsController", function ($scope, $rootScope) {
   };
 });
 
-app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) {
+app.controller("NodeController", function ($scope, $rootScope, $http, $timeout, reqerr) {
   var n = $scope.node;
   $scope.isfile = function () {
     return !n.Children;
@@ -85,7 +85,7 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout) 
   $scope.remove = function (nodeName) {
     $scope.deleting = true;
     $http.delete("download/" + encodeURIComponent(nodeName))
-      .then(console.log, reqerr)
+      .catch(reqerr)
       .finally(function () {
         $scope.deleting = false;
       });

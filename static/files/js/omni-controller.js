@@ -5,8 +5,7 @@ app.controller("OmniController", function (
   storage,
   api,
   search,
-  rss,
-  reqerr
+  rss
 ) {
   $rootScope.omni = $scope;
   $scope.inputs = {
@@ -167,9 +166,9 @@ app.controller("OmniController", function (
 
   $scope.submitTorrent = function () {
     if ($scope.mode.torrent) {
-      api.url($scope.inputs.omni).then(console.log, reqerr);;
+      api.url($scope.inputs.omni).then(console.log);;
     } else if ($scope.mode.magnet) {
-      api.magnet($scope.inputs.omni).then(console.log, reqerr);;
+      api.magnet($scope.inputs.omni).then(console.log);;
     } else {
       window.alert("UI Bug");
     }
@@ -212,7 +211,7 @@ app.controller("OmniController", function (
           $scope.results.push(r);
         }
         $scope.page++;
-      }, reqerr);
+      });
   };
 
   $scope.submitSearchItem = function (result) {
@@ -221,10 +220,10 @@ app.controller("OmniController", function (
       api.magnet(result.magnet);
       return;
     } else if (result.infohash) {
-      api.magnet(magnetURI(result.name, result.infohash, parseTrackers(result))).then(console.log, reqerr);;
+      api.magnet(magnetURI(result.name, result.infohash, parseTrackers(result))).then(console.log);;
       return;
     } else if (result.torrent) {
-      api.url(result.torrent).then(console.log, reqerr);;
+      api.url(result.torrent).then(console.log);
       return;
     }
     //else, look it up via url path
@@ -244,7 +243,7 @@ app.controller("OmniController", function (
           $scope.omnierr = "No magnet or infohash found";
           return;
         }
-        api.magnet(magnet).then(console.log, reqerr);;
+        api.magnet(magnet).then(console.log);;
       },
       function (err) {
         $scope.omnierr = err;
@@ -279,7 +278,7 @@ app.controller("OmniController", function (
         r.seeds = $rootScope.ago(r.published);
         $scope.results.push(r);
       }
-    }, reqerr);
+    });
   };
 
   // $var uploadFile = function(files) {

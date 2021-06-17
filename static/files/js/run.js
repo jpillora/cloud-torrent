@@ -1,7 +1,7 @@
 /* globals app,window */
 
 //RootController
-app.run(function ($rootScope, search, api, apiget, storage, reqerr) {
+app.run(function ($rootScope, search, api, apiget, storage) {
   var $scope = (window.scope = $rootScope);
 
   var pn = window.location.pathname
@@ -119,7 +119,7 @@ app.run(function ($rootScope, search, api, apiget, storage, reqerr) {
       reader.readAsArrayBuffer(file);
       reader.onload = function () {
         var data = new Uint8Array(reader.result);
-        api.torrentfile(data).then(console.log, reqerr);
+        api.torrentfile(data).then(console.log);
       };
     });
   };
@@ -149,7 +149,7 @@ app.run(function ($rootScope, search, api, apiget, storage, reqerr) {
           $rootScope.EngineStatus = "loading...";
           apiget.enginedebug().then(function (xhr) {
             $rootScope.EngineStatus = xhr.data;
-          }, reqerr)
+          });
         }
         break
     }
