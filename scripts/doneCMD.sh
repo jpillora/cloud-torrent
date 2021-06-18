@@ -7,7 +7,13 @@ TYPE=${CLD_TYPE}
 RESTAPI=${CLD_RESTAPI}
 SIZE=${CLD_SIZE}
 STARTTS=${CLD_STARTTS}
+LOCALPATH=${DIR}/${PATH}
 
+NOWTS=$(/usr/bin/date +%s)
+if [[ $(($NOWTS - $STARTTS)) -le 10 ]];then
+	echo "STARTTS less then 10s, should ignore this task"
+	exit 0
+fi
 
 if [[ ${TYPE} == "torrent" ]]; then
 
@@ -31,9 +37,13 @@ if [[ ${TYPE} == "file" ]] && [[ ${SIZE} -gt $((10*1024*1024)) ]]; then
     # when the file larger than 10MB, call aria2 jsonrpc to download from this server
     DOWNLOADURL=https://my-server-address/dldir/${PATH}
 
+    # Exmaple: call Aria2 RPC to start a download
     /usr/bin/curl http://my.ip.address:6800/jsonrpc \
         -H "Content-Type: application/json" \
         -H "Accept: application/json" \
         --data '{"jsonrpc": "2.0","id":1, "method": "aria2.addUri", "params":["token:Just4Aria2c", ['${DOWNLOADURL}']]}'
+
+    # Example: call rclone to upload to a remote space
+	/usr/local/bin/rclone copy --log-level INFO --no-traverse "${LOCALPATH}" mydrive:/Downloads
 fi
 
