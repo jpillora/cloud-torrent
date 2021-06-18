@@ -1,6 +1,9 @@
 package engine
 
 import (
+	"bufio"
+	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -175,11 +178,29 @@ func (t *Torrent) callDoneCmd(name, tasktype string, size int64) {
 
 	if cmd, err := t.cldServer.DoneCmd(name, t.InfoHash, tasktype,
 		size, ts.Unix()); err == nil {
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			log.Println("[DoneCmd] Err:", err)
+
+		sout, _ := cmd.StdoutPipe()
+		serr, _ := cmd.StderrPipe()
+		sc := bufio.NewScanner(io.MultiReader(sout, serr))
+
+		log.Println("[DoneCmd]", tasktype, "Cmd:", cmd.String(), "Env:", cmd.Env)
+		if err := cmd.Start(); err != nil {
+			log.Println("[DoneCmd]", tasktype, "Err:", err)
 			return
 		}
-		log.Println("[DoneCmd] Exit:", cmd.ProcessState.ExitCode(), "Output:", string(out))
+
+		for sc.Scan() {
+			oline := strings.TrimSpace(sc.Text())
+			if len(oline) > 0 {
+				log.Println("[DoneCmd]", tasktype, "Out:", oline)
+			}
+		}
+
+		// call Wait will close pipes above
+		if err := cmd.Wait(); err != nil {
+			log.Println("[DoneCmd]", tasktype, "Err:", err)
+		}
+
+		log.Println("[DoneCmd]", tasktype, "Exit Code:", cmd.ProcessState.ExitCode())
 	}
 }

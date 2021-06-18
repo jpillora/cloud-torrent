@@ -112,7 +112,7 @@ func list(path string, info os.FileInfo, node *fsNode, n *int) error {
 func (s *Server) DoneCmd(path, hash, ttype string, size, ts int64) (*exec.Cmd, error) {
 
 	if s.state.Config.DoneCmd == "" {
-		return nil, fmt.Errorf("No Donecmd")
+		return nil, fmt.Errorf("note: Donecmd unconfigred")
 	}
 
 	cmd := exec.Command(s.state.Config.DoneCmd)
@@ -125,6 +125,5 @@ func (s *Server) DoneCmd(path, hash, ttype string, size, ts int64) (*exec.Cmd, e
 		fmt.Sprintf("CLD_SIZE=%d", size),
 		fmt.Sprintf("CLD_STARTTS=%d", ts),
 	)
-	log.Printf("[DoneCmd] [%s] environ:%v", s.state.Config.DoneCmd, cmd.Env)
 	return cmd, nil
 }
