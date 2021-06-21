@@ -238,60 +238,64 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 		tt.AddTrackers([][]string{e.bttracker})
 	}
 
-	go func() {
+	go e.torrentEventProcessor(tt, t, ih)
+	return nil
+}
+
+func (e *Engine) torrentEventProcessor(tt *torrent.Torrent, t *Torrent, ih string) {
+
+	select {
+	case <-e.closeSync:
+		log.Println("Engine shutdown while waiting Info", ih)
+		tt.Drop()
+		return
+	case <-t.dropWait:
+		tt.Drop()
+		log.Println("Task Dropped while waiting Info", ih)
+		go e.NextWaitTask()
+		return
+	case <-tt.GotInfo():
+		// Already got full torrent info
+		// If the origin is from a magnet link, remove it, cache the torrent data
+		e.removeMagnetCache(ih)
+		m := tt.Metainfo()
+		e.newTorrentCacheFile(&m)
+		t.updateOnGotInfo(tt)
+		e.TsChanged <- struct{}{}
+	}
+
+	if e.config.AutoStart {
+		go e.StartTorrent(ih)
+	}
+
+	timeTk := time.NewTicker(3 * time.Second)
+	defer timeTk.Stop()
+
+	// main loop updating the torrent status to our struct
+	for {
 		select {
-		case <-e.closeSync:
-			log.Println("Engine shutdown while waiting Info", ih)
-			tt.Drop()
-			return
+		case <-timeTk.C:
+			if t.Started {
+				e.taskRoutine(t)
+			}
+			if !t.IsAllFilesDone {
+				t.updateFileStatus()
+			}
+			if !t.Done {
+				t.updateTorrentStatus()
+			}
+			t.updateConnStat()
 		case <-t.dropWait:
 			tt.Drop()
-			log.Println("Task Dropped while waiting Info", ih)
+			log.Println("Task Droped, exit loop: ", ih)
+			go e.NextWaitTask()
 			return
-		case <-tt.GotInfo():
-			// Already got full torrent info
-			// If the origin is from a magnet link, remove it, cache the torrent data
-			e.removeMagnetCache(ih)
-			m := tt.Metainfo()
-			e.newTorrentCacheFile(&m)
-			t.updateOnGotInfo(tt)
-			e.TsChanged <- struct{}{}
+		case <-e.closeSync:
+			log.Println("Engine shutdown while downloading", ih)
+			tt.Drop()
+			return
 		}
-
-		if e.config.AutoStart {
-			go e.StartTorrent(ih)
-		}
-
-		timeTk := time.NewTicker(3 * time.Second)
-		defer timeTk.Stop()
-
-		// main loop updating the torrent status to our struct
-		for {
-			select {
-			case <-timeTk.C:
-				if t.Started {
-					e.taskRoutine(t)
-				}
-				if !t.IsAllFilesDone {
-					t.updateFileStatus()
-				}
-				if !t.Done {
-					t.updateTorrentStatus()
-				}
-				t.updateConnStat()
-			case <-t.dropWait:
-				tt.Drop()
-				log.Println("Task Droped, exit loop: ", ih)
-				return
-			case <-e.closeSync:
-				log.Println("Engine shutdown while downloading", ih)
-				tt.Drop()
-				return
-			}
-		}
-	}()
-
-	return nil
+	}
 }
 
 //GetTorrents just get the local infohash->Torrent map
@@ -407,19 +411,6 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	close(t.dropWait)
 	e.waitList.Remove(infohash)
 	e.deleteTorrent(infohash)
-
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				fmt.Println("Recovered in task Closed Wait", r)
-			}
-		}()
-
-		if t.t != nil {
-			<-t.t.Closed()
-		}
-		e.NextWaitTask()
-	}()
 	return nil
 }
 
