@@ -69,7 +69,7 @@ func (f *filteredLogger) Println(v ...interface{}) {
 func (f *filteredLogger) Printf(format string, v ...interface{}) {
 	for idx, arg := range v {
 		if s, ok := arg.(string); ok && len(s) == 40 {
-			v[idx] = fmt.Sprintf("[%s...]", s[:6])
+			v[idx] = fmt.Sprintf("%s...", s[:6])
 		}
 		if s, ok := arg.(taskType); ok {
 			if s == taskTorrent {
@@ -87,7 +87,7 @@ func (f *filteredLogger) Fatal(v ...interface{}) {
 
 func init() {
 	log = &filteredLogger{
-		logger: stdlog.New(os.Stdout, "[engine] ", stdlog.LstdFlags|stdlog.Lmsgprefix),
+		logger: stdlog.New(os.Stdout, "[engine]", stdlog.LstdFlags|stdlog.Lmsgprefix),
 	}
 }
 

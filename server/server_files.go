@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -112,7 +111,7 @@ func list(path string, info os.FileInfo, node *fsNode, n *int) error {
 func (s *Server) DoneCmd(path, hash, ttype string, size, ts int64) (*exec.Cmd, error) {
 
 	if s.state.Config.DoneCmd == "" {
-		return nil, fmt.Errorf("note: Donecmd unconfigred")
+		return nil, fmt.Errorf("unconfigred Donecmd")
 	}
 
 	cmd := exec.Command(s.state.Config.DoneCmd)

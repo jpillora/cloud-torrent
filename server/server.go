@@ -5,7 +5,7 @@ import (
 	"compress/gzip"
 	"crypto/tls"
 	"fmt"
-	"log"
+	stdlog "log"
 	"net"
 	"net/http"
 	"os"
@@ -36,6 +36,7 @@ const (
 )
 
 var (
+	log *stdlog.Logger
 	//ErrDiskSpace raised if disk space not enough
 	ErrDiskSpace = errors.New("not enough disk space")
 )
@@ -97,7 +98,8 @@ type Server struct {
 func (s *Server) Run(version string) error {
 
 	if s.DisableLogTime {
-		engine.SetLoggerFlag(log.Lmsgprefix)
+		engine.SetLoggerFlag(stdlog.Lmsgprefix)
+		log.SetFlags(stdlog.Lmsgprefix)
 	}
 
 	isTLS := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
@@ -259,4 +261,8 @@ func (s *Server) Run(version string) error {
 		}
 		return server.ListenAndServe()
 	}
+}
+
+func init() {
+	log = stdlog.New(os.Stdout, "[server]", stdlog.LstdFlags|stdlog.Lmsgprefix)
 }

@@ -139,7 +139,7 @@ func (torrent *Torrent) updateFileStatus() {
 		file.Done = (file.Completed == file.Size)
 		if file.Done && !file.DoneCmdCalled {
 			file.DoneCmdCalled = true
-			go torrent.callDoneCmd(file.Path, "file", file.Size)
+			go torrent.callDoneCmd(torrent.InfoHash, file.Path, "file", file.Size)
 		}
 		if !file.Done {
 			doneFlag = false
@@ -159,7 +159,7 @@ func (torrent *Torrent) updateTorrentStatus() {
 	if torrent.Done && !torrent.DoneCmdCalled {
 		torrent.DoneCmdCalled = true
 		torrent.FinishedAt = time.Now()
-		go torrent.callDoneCmd(torrent.Name, "torrent", torrent.Size)
+		go torrent.callDoneCmd(torrent.InfoHash, torrent.Name, "torrent", torrent.Size)
 	}
 }
 
@@ -170,7 +170,7 @@ func percent(n, total int64) float32 {
 	return float32(int(float64(10000)*(float64(n)/float64(total)))) / 100
 }
 
-func (t *Torrent) callDoneCmd(name, tasktype string, size int64) {
+func (t *Torrent) callDoneCmd(ih, name, tasktype string, size int64) {
 	ts := t.StartedAt
 	if ts.IsZero() {
 		ts = time.Now()
@@ -186,29 +186,32 @@ func (t *Torrent) callDoneCmd(name, tasktype string, size int64) {
 			for sc.Scan() {
 				oline := strings.TrimSpace(sc.Text())
 				if len(oline) > 0 {
-					log.Println("[DoneCmd]", tasktype, pn, oline)
+					log.Printf("[DoneCmd:%s][%s][%s]:%s", tasktype, ih, pn, oline)
 				}
 			}
 		}
 
 		sout, _ := cmd.StdoutPipe()
 		serr, _ := cmd.StderrPipe()
-		log.Println("[DoneCmd]", tasktype, "Cmd:", cmd.String(), "Env:", cmd.Env)
+		log.Printf("[DoneCmd:%s][%s]CMD:`%s' ENV:%s", tasktype, ih, cmd.String(), cmd.Env)
 		if err := cmd.Start(); err != nil {
-			log.Println("[DoneCmd]", tasktype, err)
+			log.Printf("[DoneCmd:%s][%s]ERR: %v", tasktype, ih, err)
 			return
 		}
 
 		wg.Add(2)
-		go scanLine(sout, "Out:")
-		go scanLine(serr, "Err:")
+		go scanLine(sout, "OUT")
+		go scanLine(serr, "ERR")
 		wg.Wait()
 
 		// call Wait will close pipes above
 		if err := cmd.Wait(); err != nil {
-			log.Println("[DoneCmd]", tasktype, "Err:", err)
+			log.Printf("[DoneCmd:%s][%s]ERR: %v", tasktype, ih, err)
+			return
 		}
 
-		log.Println("[DoneCmd]", tasktype, "Exit Code:", cmd.ProcessState.ExitCode())
+		log.Printf("[DoneCmd:%s][%s]Exited %d", tasktype, ih, cmd.ProcessState.ExitCode())
+	} else {
+		log.Println("[DoneCmd]", ih, err)
 	}
 }

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"log"
 	"path"
 	"strings"
 	"time"
