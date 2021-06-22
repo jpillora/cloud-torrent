@@ -179,22 +179,30 @@ func (t *Torrent) callDoneCmd(name, tasktype string, size int64) {
 	if cmd, err := t.cldServer.DoneCmd(name, t.InfoHash, tasktype,
 		size, ts.Unix()); err == nil {
 
+		var wg sync.WaitGroup
+		scanLine := func(p io.ReadCloser, pn string) {
+			defer wg.Done()
+			sc := bufio.NewScanner(p)
+			for sc.Scan() {
+				oline := strings.TrimSpace(sc.Text())
+				if len(oline) > 0 {
+					log.Println("[DoneCmd]", tasktype, pn, oline)
+				}
+			}
+		}
+
 		sout, _ := cmd.StdoutPipe()
 		serr, _ := cmd.StderrPipe()
-		sc := bufio.NewScanner(io.MultiReader(sout, serr))
-
 		log.Println("[DoneCmd]", tasktype, "Cmd:", cmd.String(), "Env:", cmd.Env)
 		if err := cmd.Start(); err != nil {
-			log.Println("[DoneCmd]", tasktype, "Err:", err)
+			log.Println("[DoneCmd]", tasktype, err)
 			return
 		}
 
-		for sc.Scan() {
-			oline := strings.TrimSpace(sc.Text())
-			if len(oline) > 0 {
-				log.Println("[DoneCmd]", tasktype, "Out:", oline)
-			}
-		}
+		wg.Add(2)
+		go scanLine(sout, "Out:")
+		go scanLine(serr, "Err:")
+		wg.Wait()
 
 		// call Wait will close pipes above
 		if err := cmd.Wait(); err != nil {
