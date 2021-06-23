@@ -6,7 +6,7 @@ app.factory("reqerr", function ($rootScope) {
       $rootScope.err = `${xhr.statusText} - (${xhr.data})`
       $rootScope.$applyAsync();
     }
-    console.log(xhr);
+    return xhr;
   };
 });
 
@@ -19,6 +19,7 @@ app.factory("api", function ($rootScope, $http, reqerr) {
     })
       .then(function (xhr) {
         console.log(`API ${url}:${xhr.data}`);
+        return xhr;
       })
       .catch(reqerr)
       .finally(function () {

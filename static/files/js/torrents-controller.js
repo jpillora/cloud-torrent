@@ -4,7 +4,11 @@ app.controller("TorrentsController", function ($scope, $rootScope, api) {
   $rootScope.torrents = $scope;
 
   $scope.submitTorrent = function (action, t) {
-    api.torrent([action, t.InfoHash].join(":")).then(console.log);
+    api.torrent([action, t.InfoHash].join(":")).then(function (xhr) {
+      console.log(`${action}:${xhr.data}`);
+    }).finally(function () {
+      t.removeClicked = false;
+    });
   };
 
   $scope.submitFile = function (action, t, f) {
