@@ -315,7 +315,8 @@ func (e *Engine) taskRoutine(t *Torrent) {
 	}
 
 	// remove task when stopped start not restarted after `RemoveTaskAfterStopped`
-	if e.config.RemoveTaskAfterStopped > 0 && !t.Started && t.Done &&
+	if e.config.RemoveTaskAfterStopped > 0 && e.config.SeedRatio > 0 &&
+		t.SeedRatio >= e.config.SeedRatio && !t.Started && t.Done &&
 		int(time.Since(t.StartedAt).Seconds()) > e.config.RemoveTaskAfterStopped {
 		log.Println("[TaskRoutine] Delete due to reaching SeedRatio")
 		go e.DeleteTorrent(t.InfoHash)
