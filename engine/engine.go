@@ -319,7 +319,10 @@ func (e *Engine) taskRoutine(t *Torrent) {
 		t.SeedRatio >= e.config.SeedRatio && !t.Started && t.Done &&
 		int(time.Since(t.StartedAt).Seconds()) > e.config.RemoveTaskAfterStopped {
 		log.Println("[TaskRoutine] Delete due to reaching SeedRatio")
-		go e.DeleteTorrent(t.InfoHash)
+		go func() {
+			e.DeleteTorrent(t.InfoHash)
+			e.RemoveCache(t.InfoHash)
+		}()
 	}
 
 }
