@@ -39,6 +39,7 @@ type Torrent struct {
 	AddedAt        time.Time
 	StartedAt      time.Time
 	FinishedAt     time.Time
+	StoppedAt      time.Time
 	t              *torrent.Torrent
 	dropWait       chan struct{}
 	updatedAt      time.Time

@@ -275,9 +275,6 @@ func (e *Engine) torrentEventProcessor(tt *torrent.Torrent, t *Torrent, ih strin
 	for {
 		select {
 		case <-timeTk.C:
-			if t.Started {
-				e.taskRoutine(t)
-			}
 			if !t.IsAllFilesDone {
 				t.updateFileStatus()
 			}
@@ -285,6 +282,7 @@ func (e *Engine) torrentEventProcessor(tt *torrent.Torrent, t *Torrent, ih strin
 				t.updateTorrentStatus()
 			}
 			t.updateConnStat()
+			e.taskRoutine(t)
 		case <-t.dropWait:
 			tt.Drop()
 			log.Println("Task Droped, exit loop: ", ih)
@@ -312,8 +310,15 @@ func (e *Engine) taskRoutine(t *Torrent) {
 		t.Started &&
 		!t.ManualStarted &&
 		t.Done {
-		log.Println("[Task Stoped] due to reaching SeedRatio")
+		log.Println("[TaskRoutine] Stopped due to reaching SeedRatio")
 		go e.StopTorrent(t.InfoHash)
+	}
+
+	// remove task when stopped start not restarted after `RemoveTaskAfterStopped`
+	if e.config.RemoveTaskAfterStopped > 0 && !t.Started && t.Done &&
+		int(time.Since(t.StartedAt).Seconds()) > e.config.RemoveTaskAfterStopped {
+		log.Println("[TaskRoutine] Delete due to reaching SeedRatio")
+		go e.DeleteTorrent(t.InfoHash)
 	}
 
 }
@@ -390,6 +395,7 @@ func (e *Engine) StopTorrent(infohash string) error {
 	}
 
 	t.Started = false
+	t.StoppedAt = time.Now()
 	for _, f := range t.Files {
 		if f != nil {
 			f.Started = false

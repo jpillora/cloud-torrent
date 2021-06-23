@@ -41,6 +41,7 @@ type Config struct {
 	IncomingPort               int
 	DoneCmd                    string
 	SeedRatio                  float32
+	RemoveTaskAfterStopped     int
 	UploadRate                 string
 	DownloadRate               string
 	TrackerListURL             string
@@ -82,6 +83,7 @@ func InitConf(specPath string) (*Config, error) {
 	viper.SetDefault("HalfOpenConnsPerTorrent", 25)
 	viper.SetDefault("TotalHalfOpenConns", 100)
 	viper.SetDefault("AllowRuntimeConfigure", true)
+	viper.SetDefault("RemoveTaskAfterStopped", 0)
 
 	// user specific config path
 	if stat, err := os.Stat(specPath); stat != nil && err == nil {
