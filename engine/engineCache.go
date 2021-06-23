@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
 
@@ -80,9 +81,16 @@ func (e *Engine) TorrentCacheFileName(infohash string) string {
 	return cacheFilePath
 }
 
-func (e *Engine) PushWaitTask(ih string) {
+func (e *Engine) PushWaitTask(ih string) error {
 	log.Println("Pushed task to wait", ih)
 	e.pushWaitTask(ih, taskTorrent)
+	info, err := metainfo.LoadFromFile(e.TorrentCacheFileName(ih))
+	if err != nil {
+		return err
+	}
+	spec := torrent.TorrentSpecFromMetaInfo(info)
+	_, err = e.upsertTorrent(ih, spec.DisplayName, true)
+	return err
 }
 
 func (e *Engine) RestoreTask(fn string) error {
