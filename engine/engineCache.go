@@ -80,6 +80,11 @@ func (e *Engine) TorrentCacheFileName(infohash string) string {
 	return cacheFilePath
 }
 
+func (e *Engine) PushWaitTask(ih string) {
+	log.Println("Pushed task to wait", ih)
+	e.pushWaitTask(ih, taskTorrent)
+}
+
 func (e *Engine) RestoreTask(fn string) error {
 
 	isCachedFile := strings.HasPrefix(filepath.Base(fn), cacheSavedPrefix)
