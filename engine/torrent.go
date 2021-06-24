@@ -188,7 +188,7 @@ func (t *Torrent) callDoneCmd(ih, name, tasktype string, size int64) {
 			for sc.Scan() {
 				oline := strings.TrimSpace(sc.Text())
 				if len(oline) > 0 {
-					log.Printf("[DoneCmd:%s][%s][%s]:%s", tasktype, ih, pn, oline)
+					log.Printf("[DoneCmd:%s][%s]%s:%s", tasktype, ih, pn, oline)
 				}
 			}
 		}
@@ -214,7 +214,7 @@ func (t *Torrent) callDoneCmd(ih, name, tasktype string, size int64) {
 			return
 		}
 
-		log.Printf("[DoneCmd:%s][%s]Exited %d", tasktype, ih, cmd.ProcessState.ExitCode())
+		log.Printf("[DoneCmd:%s][%s]Exit code: %d", tasktype, ih, cmd.ProcessState.ExitCode())
 	} else {
 		log.Println("[DoneCmd]", ih, err)
 	}
