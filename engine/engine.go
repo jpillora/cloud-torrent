@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
 	"sync"
 	"time"
@@ -19,7 +18,7 @@ import (
 )
 
 type Server interface {
-	DoneCmd(path, hash, ttype string, size, ts int64) (*exec.Cmd, error)
+	DoneCmd(path, hash, ttype string, size, ts int64) ([]string, error)
 }
 
 const (

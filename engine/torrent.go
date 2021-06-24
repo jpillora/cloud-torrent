@@ -3,6 +3,7 @@ package engine
 import (
 	"bufio"
 	"io"
+	"os/exec"
 	"strings"
 	"sync"
 	"time"
@@ -177,7 +178,7 @@ func (t *Torrent) callDoneCmd(ih, name, tasktype string, size int64) {
 		ts = time.Now()
 	}
 
-	if cmd, err := t.cldServer.DoneCmd(name, t.InfoHash, tasktype,
+	if cmdenv, err := t.cldServer.DoneCmd(name, t.InfoHash, tasktype,
 		size, ts.Unix()); err == nil {
 
 		var wg sync.WaitGroup
@@ -192,6 +193,8 @@ func (t *Torrent) callDoneCmd(ih, name, tasktype string, size int64) {
 			}
 		}
 
+		cmd := exec.Command(cmdenv[0])
+		cmd.Env = cmdenv[1:]
 		sout, _ := cmd.StdoutPipe()
 		serr, _ := cmd.StderrPipe()
 		log.Printf("[DoneCmd:%s][%s]CMD:`%s' ENV:%s", tasktype, ih, cmd.String(), cmd.Env)
