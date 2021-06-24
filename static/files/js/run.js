@@ -1,7 +1,7 @@
 /* globals app,window */
 
 //RootController
-app.run(function ($rootScope, search, api, apiget, storage) {
+app.run(function ($rootScope, search, api, apiget, storage, reqinfo, reqerr) {
   var $scope = (window.scope = $rootScope);
 
   var pn = window.location.pathname
@@ -119,7 +119,7 @@ app.run(function ($rootScope, search, api, apiget, storage) {
       reader.readAsArrayBuffer(file);
       reader.onload = function () {
         var data = new Uint8Array(reader.result);
-        api.torrentfile(data).then(console.log);
+        api.torrentfile(data).then(reqinfo, reqerr);
       };
     });
   };

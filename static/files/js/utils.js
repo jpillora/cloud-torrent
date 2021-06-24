@@ -10,6 +10,16 @@ app.factory("reqerr", function ($rootScope) {
   };
 });
 
+app.factory("reqinfo", function ($rootScope) {
+  return function (xhr) {
+    if ("data" in xhr) {
+      $rootScope.info = `${xhr.data}`
+      $rootScope.$applyAsync();
+    }
+    return xhr;
+  };
+});
+
 app.factory("api", function ($rootScope, $http, reqerr) {
   var request = function (action, data) {
     var url = "api/" + action;
@@ -18,7 +28,7 @@ app.factory("api", function ($rootScope, $http, reqerr) {
       transformRequest: []
     })
       .then(function (xhr) {
-        console.log(`API ${url}:${xhr.data}`);
+        console.log(`API ${url}:${data}->${xhr.data}`);
         return xhr;
       })
       .catch(reqerr)

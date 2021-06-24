@@ -5,6 +5,7 @@ app.controller("OmniController", function (
   storage,
   api,
   search,
+  reqinfo,
   rss
 ) {
   $rootScope.omni = $scope;
@@ -166,9 +167,9 @@ app.controller("OmniController", function (
 
   $scope.submitTorrent = function () {
     if ($scope.mode.torrent) {
-      api.url($scope.inputs.omni).then(console.log);;
+      api.url($scope.inputs.omni).then(reqinfo);
     } else if ($scope.mode.magnet) {
-      api.magnet($scope.inputs.omni).then(console.log);;
+      api.magnet($scope.inputs.omni).then(reqinfo);
     } else {
       window.alert("UI Bug");
     }
@@ -220,10 +221,10 @@ app.controller("OmniController", function (
       api.magnet(result.magnet);
       return;
     } else if (result.infohash) {
-      api.magnet(magnetURI(result.name, result.infohash, parseTrackers(result))).then(console.log);;
+      api.magnet(magnetURI(result.name, result.infohash, parseTrackers(result))).then(reqinfo);
       return;
     } else if (result.torrent) {
-      api.url(result.torrent).then(console.log);
+      api.url(result.torrent).then(reqinfo);
       return;
     }
     //else, look it up via url path
@@ -243,7 +244,7 @@ app.controller("OmniController", function (
           $scope.omnierr = "No magnet or infohash found";
           return;
         }
-        api.magnet(magnet).then(console.log);;
+        api.magnet(magnet).then(reqinfo);;
       },
       function (err) {
         $scope.omnierr = err;
