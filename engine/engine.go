@@ -14,6 +14,7 @@ import (
 	eglog "github.com/anacrolix/log"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
+	"github.com/anacrolix/torrent/storage"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -84,10 +85,13 @@ func (e *Engine) Configure(c *Config) error {
 	tc.DisableUTP = c.DisableUTP
 	tc.ListenPort = c.IncomingPort
 	tc.DataDir = c.DownloadDirectory
-	tc.Debug = c.EngineDebug
+	if c.UseMmap {
+		tc.DefaultStorage = storage.NewMMap(tc.DataDir)
+	}
 	if c.MuteEngineLog {
 		tc.Logger = eglog.Discard
 	}
+	tc.Debug = c.EngineDebug
 	tc.NoUpload = !c.EnableUpload
 	tc.Seed = c.EnableSeeding
 	tc.UploadRateLimiter = c.UploadLimiter()
