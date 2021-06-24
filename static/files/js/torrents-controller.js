@@ -7,7 +7,7 @@ app.controller("TorrentsController", function ($scope, $rootScope, api) {
     api.torrent([action, t.InfoHash].join(":")).then(function (xhr) {
       console.log(`${action}:${xhr.data}`);
     }).finally(function () {
-      t.removeClicked = false;
+      t.showSubBtns = false;
     });
   };
 
@@ -37,6 +37,14 @@ app.controller("TorrentsController", function ($scope, $rootScope, api) {
     }
     return false;
   };
+
+  $scope.onDeleteBtnClick = function (t) {
+    if ("Config" in $scope.state && $scope.state.Config.MaxConcurrentTask === 0) {
+      $scope.submitTorrent("delete", t);
+      return
+    }
+    t.showSubBtns = !(t.showSubBtns);
+  }
 
   $scope.$expanded = true;
   $scope.section_expanded_toggle = function () {

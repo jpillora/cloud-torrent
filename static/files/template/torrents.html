@@ -88,12 +88,12 @@
             <i class="ban icon"></i> Cancel
           </button>
           <button ng-if="t.Loaded && !t.Started" ng-disabled="$rootScope.apiing" class="ui compact orange button"
-            ng-click="t.removeClicked = !(t.removeClicked)">
+            ng-click="onDeleteBtnClick(t)">
             <i class="question icon"></i> Remove
           </button>
         </div>
 
-        <div ng-if="t.removeClicked" class="ui mini buttons">
+        <div ng-if="t.showSubBtns" class="ui mini buttons">
           <button ng-disabled="$rootScope.apiing" class="ui compact yellow button"
             title="Move the task to the last of wait queue" ng-click="submitTorrent('move2wait', t)">
             <i class="clock icon"></i> Queue
