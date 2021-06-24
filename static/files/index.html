@@ -5,7 +5,10 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 	<link rel="stylesheet" type="text/css" href="css/Lato/Lato.css">
 	<link rel="stylesheet" type="text/css" href="css/semantic.min.css">
-	<link rel="stylesheet" type="text/css" href="css/app.css?CLDVER">
+	<link rel="stylesheet" type="text/css" href="css/sections/omni.css?[[.CLDVER]]">
+	<link rel="stylesheet" type="text/css" href="css/sections/torrents.css?[[.CLDVER]]">
+	<link rel="stylesheet" type="text/css" href="css/sections/downloads.css?[[.CLDVER]]">
+	<link rel="stylesheet" type="text/css" href="css/app.css?[[.CLDVER]]">
 	<link rel="icon" href="cloud-favicon.png" type="image/x-icon" />
 	<style type="text/css">
 		[ng-cloak] {
@@ -59,13 +62,43 @@
 			<p>{{$root.info}}</p>
 		</div>
 
-		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html?CLDVER'">
+		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html?[[.CLDVER]]'">
 		</section>
-		<section class="omni" ng-controller="OmniController" ng-include src="'template/omni.html?CLDVER'"></section>
-		<section class="torrents" ng-controller="TorrentsController" ng-include src="'template/torrents.html?CLDVER'">
+		<section class="omni" ng-controller="OmniController" ng-include src="'template/omni.html?[[.CLDVER]]'">
 		</section>
-		<section class="downloads" ng-controller="DownloadsController" ng-include
-			src="'template/downloads.html?CLDVER'"></section>
+		<section class="torrents" ng-controller="TorrentsController" ng-include
+			src="'template/torrents.html?[[.CLDVER]]'">
+		</section>
+		<section class="downloads" ng-controller="DownloadsController">
+			<div class="ui grid section-header" ng-click="section_expanded_toggle()">
+				<div class="column">
+					<i class="square outline icon" ng-class="{minus: !$expanded, plus: $expanded}"></i>
+					<span class="ui header">
+						Downloads
+						<span class="ui label">
+							<i class="hdd icon"></i>
+							{{ state.Stats.System.diskFree | bytes }} free
+						</span>
+					</span>
+				</div>
+			</div>
+
+			<div ng-if="numDownloads() == 0" class="ui message nodownloads">
+				<p>Download files above</p>
+			</div>
+
+			<div ng-if="numDownloads() > 0 && $expanded" class="ui raised segment">
+				<div class="ui list">
+					<div class="item" ng-repeat="node in state.Downloads.Children | orderBy:'Modified':false"
+						ng-controller="NodeController" ng-include src="'template/download-tree.html?[[.CLDVER]]'"></div>
+				</div>
+			</div>
+
+			<h5 ng-if="!$expanded" class="ui horizontal divider header" ng-click="section_expanded_toggle()">
+				<i class="angle double down icon"></i>
+				Click To Expand
+			</h5>
+		</section>
 
 		<footer>
 			<div>
@@ -124,17 +157,17 @@
 	<script src="js/vendor/query-string.js"></script>
 	<script src="js/vendor/angular.min.js"></script>
 	<script src="js/vendor/moment.min.js"></script>
-	<script src="js/velox.js?CLDVER"></script>
+	<script src="js/velox.js?[[.CLDVER]]"></script>
 	<script>
 		window.app = window.angular.module('app', []);
 	</script>
-	<script src="js/config-controller.js?CLDVER"></script>
-	<script src="js/omni-controller.js?CLDVER"></script>
-	<script src="js/torrents-controller.js?CLDVER"></script>
-	<script src="js/downloads-controller.js?CLDVER"></script>
-	<script src="js/utils.js?CLDVER"></script>
-	<script src="js/semantic-checkbox.js?CLDVER"></script>
-	<script src="js/run.js?CLDVER"></script>
+	<script src="js/config-controller.js?[[.CLDVER]]"></script>
+	<script src="js/omni-controller.js?[[.CLDVER]]"></script>
+	<script src="js/torrents-controller.js?[[.CLDVER]]"></script>
+	<script src="js/downloads-controller.js?[[.CLDVER]]"></script>
+	<script src="js/utils.js?[[.CLDVER]]"></script>
+	<script src="js/semantic-checkbox.js?[[.CLDVER]]"></script>
+	<script src="js/run.js?[[.CLDVER]]"></script>
 </body>
 
 </html>

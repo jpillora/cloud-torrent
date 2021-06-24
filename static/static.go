@@ -31,14 +31,18 @@ func FileSystemHandler() http.Handler {
 
 // ReadAll return local file if exists
 func ReadAll(name string) ([]byte, error) {
+	f, err := Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return ioutil.ReadAll(f)
+}
+
+func Open(name string) (fs.File, error) {
 	if info, err := os.Stat("static/files/"); err == nil && info.IsDir() {
 		diskPath := "static/files/" + name
-		f, err := os.Open(diskPath)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-		return ioutil.ReadAll(f)
+		return os.Open(diskPath)
 	}
-	return staticFS.ReadFile(path.Join("files", name))
+	return staticFS.Open(path.Join("files", name))
 }

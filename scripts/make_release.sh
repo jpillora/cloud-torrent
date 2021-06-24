@@ -66,30 +66,12 @@ if [[ -z $ARCH ]]; then
   ARCH=$(go env GOARCH)
 fi
 
-if [[ -z $NOSTATIC ]]; then
-	pushd $__dir/../static
-	if [[ $(git status . --short | wc -l) -gt 0 ]]; then
-		git stash
-		STASHED=1
-		echo "Current repo changed, stashed"
-	fi
-	sh generate.sh
-	popd
-fi
-
 pushd $__dir/..
 BINFILE=${BINPREFIX}${BIN}_${OS}_${ARCH}${SUFFIX}${OSSUFFIX}
 CGO_ENABLED=$CGO GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE} -trimpath -ldflags "-s -w -X main.VERSION=$GITVER"
 if [[ ! -f ${BINFILE} ]]; then
   echo "Build failed. Check with error message above."
   exit 1
-fi
-
-if [[ -z $NOSTATIC ]]; then
-	git checkout HEAD -- static/*
-	if [[ $STASHED -eq 1 ]]; then
-		git stash pop
-	fi
 fi
 
 if [[ ! -z $PKGCMD ]]; then

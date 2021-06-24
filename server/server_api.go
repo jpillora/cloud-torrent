@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"net/http"
 	"reflect"
@@ -13,7 +12,6 @@ import (
 	"time"
 
 	"github.com/jpillora/cloud-torrent/engine"
-	ctstatic "github.com/jpillora/cloud-torrent/static"
 )
 
 var (
@@ -33,12 +31,6 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 	action := routeDirs[0]
 	switch action {
 	case "magnet": // adds magnet by GET: /api/magnet?m=...
-		c, err := ctstatic.ReadAll("template/magadded.html")
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		tmpl := template.Must(template.New("tpl").Parse(string(c)))
 		tdata := struct {
 			HasError bool
 			Error    string
@@ -55,7 +47,7 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		tdata.Magnet = m
-		tmpl.Execute(w, tdata)
+		htmlTPL["template/magadded.html"].Execute(w, tdata)
 	case "torrents":
 		json.NewEncoder(w).Encode(s.engine.GetTorrents())
 	case "files":

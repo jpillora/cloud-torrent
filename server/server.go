@@ -44,6 +44,7 @@ var (
 //Server is the "State" portion of the diagram
 type Server struct {
 	//config
+	Verdata        string
 	Title          string `opts:"help=Title of this instance,env=TITLE"`
 	Port           int    `opts:"help=Listening port,env=PORT"`
 	Host           string `opts:"help=Listening interface (default all),env=HOST"`
