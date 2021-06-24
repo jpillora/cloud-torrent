@@ -18,10 +18,7 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 
 	case "/", "index.html":
-		tdata := struct {
-			CLDVER string
-		}{s.Verdata}
-		htmlTPL["index.html"].Execute(w, tdata)
+		htmlTPL["index.html"].Execute(w, struct{ CLDVER string }{s.Verdata})
 		return
 	case "/js/velox.js":
 		//handle realtime client library
@@ -95,8 +92,6 @@ func init() {
 			log.Fatalln(err)
 		}
 
-		tpl := template.New(fsn)
-		tpl.Delims("[[", "]]")
-		htmlTPL[fsn] = template.Must(tpl.Parse(string(c)))
+		htmlTPL[fsn] = template.Must(template.New(fsn).Delims("[[", "]]").Parse(string(c)))
 	}
 }

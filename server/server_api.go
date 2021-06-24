@@ -105,9 +105,12 @@ func (s *Server) apiPOST(r *http.Request) error {
 		if err != nil {
 			return fmt.Errorf("Invalid remote torrent URL: %s %w", url, err)
 		}
-		//TODO enforce max body size (32k?)
-		data, err = ioutil.ReadAll(remote.Body)
 		defer remote.Body.Close()
+		if remote.ContentLength > 64*1024 {
+			//enforce max body size (64k?)
+			return fmt.Errorf("Remote torrent too large")
+		}
+		data, err = ioutil.ReadAll(remote.Body)
 		if err != nil {
 			return fmt.Errorf("Failed to download remote torrent: %w", err)
 		}
