@@ -162,3 +162,7 @@ table.tcld .name {
   top: 30px;
   width: 100%;
 }
+
+[ng-cloak] {
+  display: none;
+}
