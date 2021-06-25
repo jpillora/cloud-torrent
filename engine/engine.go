@@ -223,7 +223,7 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 			log.Printf("[newTorrentBySpec] reached max task %d, add as pretask: %s %v", e.config.MaxConcurrentTask, ih, taskT)
 			e.pushWaitTask(ih, taskT)
 		} else {
-			log.Printf("[newTorrentBySpec] reached max task %d, task already in tasks: %s %v", e.config.MaxConcurrentTask, ih, taskT)
+			log.Printf("[newTorrentBySpec] reached max task %d, task already in queue: %s %v", e.config.MaxConcurrentTask, ih, taskT)
 		}
 		e.upsertTorrent(ih, spec.DisplayName, true) // show queueing task
 		return ErrMaxConnTasks
