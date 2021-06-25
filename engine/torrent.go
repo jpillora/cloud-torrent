@@ -204,8 +204,8 @@ func (t *Torrent) callDoneCmd(ih, name, tasktype string, size int64) {
 		}
 
 		wg.Add(2)
-		go scanLine(sout, "OUT")
-		go scanLine(serr, "ERR")
+		go scanLine(sout, "O")
+		go scanLine(serr, "E")
 		wg.Wait()
 
 		// call Wait will close pipes above
