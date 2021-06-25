@@ -320,17 +320,18 @@ func (e *Engine) taskRoutine(t *Torrent) {
 				// remove task when stopped start not restarted after `RemoveTaskAfterStopped`
 				select {
 				case <-t.dropWait:
-					log.Println("[TaskRoutine] Task dropped")
+					log.Println("[TaskRoutine] Task dropped", t.InfoHash)
 					return
 				case <-time.After(time.Duration(e.config.RemoveTaskAfterStopped) * time.Second):
-					if !t.ManualStarted {
-						log.Println("[TaskRoutine] Delete due to reaching SeedRatio", t.SeedRatio)
-						e.RemoveCache(t.InfoHash)
-						e.DeleteTorrent(t.InfoHash)
+					if t.ManualStarted {
+						log.Println("[TaskRoutine] Task manual started", t.InfoHash)
+						return
 					}
-					return
 				}
 			}
+			log.Println("[TaskRoutine] Delete due to reaching SeedRatio", t.SeedRatio)
+			e.RemoveCache(t.InfoHash)
+			e.DeleteTorrent(t.InfoHash)
 		}()
 	}
 }
