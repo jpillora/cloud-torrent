@@ -284,8 +284,10 @@ func (e *Engine) torrentEventProcessor(tt *torrent.Torrent, t *Torrent, ih strin
 			if !t.Done {
 				t.updateTorrentStatus()
 			}
+			if t.Started {
+				e.taskRoutine(t)
+			}
 			t.updateConnStat()
-			e.taskRoutine(t)
 		case <-t.dropWait:
 			tt.Drop()
 			log.Println("Task Droped, exit loop: ", ih)
@@ -308,26 +310,29 @@ func (e *Engine) GetTorrents() map[string]*Torrent {
 func (e *Engine) taskRoutine(t *Torrent) {
 
 	// stops task on reaching ratio
-	if e.config.SeedRatio > 0 &&
-		t.SeedRatio > e.config.SeedRatio &&
-		t.Started &&
-		!t.ManualStarted &&
-		t.Done {
-		log.Println("[TaskRoutine] Stopped due to reaching SeedRatio", t.SeedRatio)
-		go e.StopTorrent(t.InfoHash)
-	}
-
-	// remove task when stopped start not restarted after `RemoveTaskAfterStopped`
-	if e.config.RemoveTaskAfterStopped > 0 && e.config.SeedRatio > 0 &&
-		t.SeedRatio >= e.config.SeedRatio && !t.Started && t.Done &&
-		int(time.Since(t.StartedAt).Seconds()) > e.config.RemoveTaskAfterStopped {
-		log.Println("[TaskRoutine] Delete due to reaching SeedRatio", t.SeedRatio)
+	if e.config.SeedRatio > 0 && t.SeedRatio > e.config.SeedRatio &&
+		t.Started && !t.ManualStarted && t.Done {
 		go func() {
-			e.DeleteTorrent(t.InfoHash)
-			e.RemoveCache(t.InfoHash)
+			log.Println("[TaskRoutine] Stopped due to reaching SeedRatio", t.SeedRatio)
+			e.StopTorrent(t.InfoHash)
+			if e.config.RemoveTaskAfterStopped > 0 {
+				log.Printf("[TaskRoutine][%s] will be dropped in %d secounds if not manually started", t.InfoHash, e.config.RemoveTaskAfterStopped)
+				// remove task when stopped start not restarted after `RemoveTaskAfterStopped`
+				select {
+				case <-t.dropWait:
+					log.Println("[TaskRoutine] Task dropped")
+					return
+				case <-time.After(time.Duration(e.config.RemoveTaskAfterStopped) * time.Second):
+					if !t.ManualStarted {
+						log.Println("[TaskRoutine] Delete due to reaching SeedRatio", t.SeedRatio)
+						e.RemoveCache(t.InfoHash)
+						e.DeleteTorrent(t.InfoHash)
+					}
+					return
+				}
+			}
 		}()
 	}
-
 }
 
 func (e *Engine) ManualStartTorrent(infohash string) error {
