@@ -40,13 +40,11 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 
 		m := r.URL.Query().Get("m")
 		if err := s.engine.NewMagnet(m); err != nil {
-			if errors.Is(err, engine.ErrMaxConnTasks) {
-				return nil
+			if !errors.Is(err, engine.ErrMaxConnTasks) {
+				tdata.HasError = true
+				tdata.Error = err.Error()
 			}
-			tdata.HasError = true
-			tdata.Error = err.Error()
 		}
-
 		tdata.Magnet = m
 		htmlTPL["template/magadded.html"].Execute(w, tdata)
 	case "torrents":
