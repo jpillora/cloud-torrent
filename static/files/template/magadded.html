@@ -16,26 +16,26 @@
 
 <body class="app">
 	<div class="cage">
-		{{if .HasError}}
+		[[if .HasError]]
 		<div class="ui icon error message">
 			<i class="ban icon"></i>
 			<div class="content">
 				<div class="header">Error</div>
-				<p>{{.Error}}</p>
-				<p class="magnetlink">{{.Magnet}}</p>
+				<p>[[.Error]]</p>
+				<p class="magnetlink">[[.Magnet]]</p>
 				<p><a href="../">Go to Homepage</a></p>
 			</div>
 		</div>
-		{{else}}
+		[[else]]
 		<div class="ui icon info message">
 			<i class="cloud download icon"></i>
 			<div class="content">
 				<div class="header"> Magnet link has been added! </div>
-				<p class="magnetlink">{{.Magnet}}</p>
+				<p class="magnetlink">[[.Magnet]]</p>
 				<p><a href="../">Go to Homepage</a></p>
 			</div>
 		</div>
-		{{end}}
+		[[end]]
 		<a class="ui tiny primary button" href="javascript:window.history.back()">
 			<i class="angle left icon"></i>
 			Back
