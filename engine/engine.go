@@ -312,28 +312,22 @@ func (e *Engine) taskRoutine(t *Torrent) {
 	// stops task on reaching ratio
 	if e.config.SeedRatio > 0 && t.SeedRatio > e.config.SeedRatio &&
 		t.Started && !t.ManualStarted && t.Done {
-		go func() {
-			log.Println("[TaskRoutine] Stopped due to reaching SeedRatio", t.SeedRatio)
-			e.StopTorrent(t.InfoHash)
-			if e.config.RemoveTaskAfterStopped > 0 {
-				log.Printf("[TaskRoutine][%s] will be dropped in %d secounds if not manually started", t.InfoHash, e.config.RemoveTaskAfterStopped)
-				// remove task when stopped start not restarted after `RemoveTaskAfterStopped`
-				select {
-				case <-t.dropWait:
-					log.Println("[TaskRoutine] Task dropped", t.InfoHash)
-					return
-				case <-time.After(time.Duration(e.config.RemoveTaskAfterStopped) * time.Second):
-					if t.ManualStarted {
-						log.Println("[TaskRoutine] Task manual started", t.InfoHash)
-						return
-					}
-				}
-			}
-			log.Println("[TaskRoutine] Delete due to reaching SeedRatio", t.SeedRatio)
-			e.RemoveCache(t.InfoHash)
-			e.DeleteTorrent(t.InfoHash)
-		}()
+		log.Println("[TaskRoutine] Stopped and Drop due to reaching SeedRatio", t.SeedRatio)
+		go e.stopRemoveTask(t.InfoHash)
 	}
+
+	if e.config.SeedSeconds > 0 && t.Done && t.Started && !t.ManualStarted &&
+		!t.FinishedAt.IsZero() &&
+		int(time.Since(t.FinishedAt).Seconds()) > e.config.SeedSeconds {
+		log.Println("[TaskRoutine] Stopped and Drop due to timeup for SeedSeconds")
+		go e.stopRemoveTask(t.InfoHash)
+	}
+}
+
+func (e *Engine) stopRemoveTask(ih string) {
+	e.StopTorrent(ih)
+	e.RemoveCache(ih)
+	e.DeleteTorrent(ih)
 }
 
 func (e *Engine) ManualStartTorrent(infohash string) error {
