@@ -316,10 +316,10 @@ func (e *Engine) taskRoutine(t *Torrent) {
 		go e.stopRemoveTask(t.InfoHash)
 	}
 
-	if e.config.SeedSeconds > 0 && t.Done && t.Started && !t.ManualStarted &&
+	if e.config.SeedTime > 0 && t.Done && t.Started && !t.ManualStarted &&
 		!t.FinishedAt.IsZero() &&
-		int(time.Since(t.FinishedAt).Seconds()) > e.config.SeedSeconds {
-		log.Println("[TaskRoutine] Stopped and Drop due to timeup for SeedSeconds")
+		time.Since(t.FinishedAt) > e.config.SeedTime {
+		log.Println("[TaskRoutine] Stopped and Drop due to time up for SeedTime", e.config.SeedTime)
 		go e.stopRemoveTask(t.InfoHash)
 	}
 }

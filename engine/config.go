@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 	"golang.org/x/time/rate"
@@ -42,7 +43,7 @@ type Config struct {
 	IncomingPort               int
 	DoneCmd                    string
 	SeedRatio                  float32
-	SeedSeconds                int
+	SeedTime                   time.Duration
 	UploadRate                 string
 	DownloadRate               string
 	TrackerListURL             string
@@ -75,7 +76,7 @@ func InitConf(specPath string) (*Config, error) {
 	viper.SetDefault("AutoStart", true)
 	viper.SetDefault("DoneCmd", "")
 	viper.SetDefault("SeedRatio", 0)
-	viper.SetDefault("SeedSeconds", 0)
+	viper.SetDefault("SeedTime", "0")
 	viper.SetDefault("ObfsPreferred", true)
 	viper.SetDefault("ObfsRequirePreferred", false)
 	viper.SetDefault("IncomingPort", 50007)
