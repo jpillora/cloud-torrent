@@ -10,7 +10,6 @@ import (
 )
 
 type osStats struct {
-	Set             bool    `json:"set"`
 	CPU             float64 `json:"cpu"`
 	DiskFree        uint64  `json:"diskFree"`
 	DiskUsedPercent float64 `json:"diskUsedPercent"`
@@ -41,8 +40,6 @@ func (s *osStats) loadStats() {
 	s.GoMemory = int64(memStats.Sys)
 	//count current number of goroutines
 	s.GoRoutines = runtime.NumGoroutine()
-	//done
-	s.Set = true
 }
 
 func detectDiskStat(dir string) error {
