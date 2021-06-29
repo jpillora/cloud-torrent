@@ -49,29 +49,26 @@ func (s *Server) stateRoutines() {
 		defer tk.Stop()
 
 		for {
+
+		LRESELECT:
 			select {
 			case <-tk.C:
-				if s.state.NumConnections() > 0 {
-					s.state.Lock()
-					s.state.Stats.System.loadStats(dir)
-					s.state.Stats.ConnStat = s.engine.ConnStat()
-					s.state.Downloads = s.listFiles()
-					s.state.Unlock()
-					s.state.Push()
+				if s.state.NumConnections() == 0 {
+					goto LRESELECT
 				}
-			case <-s.connSyncState: // web user connected
-				s.state.Lock()
+
 				s.state.Stats.System.loadStats(dir)
 				s.state.Stats.ConnStat = s.engine.ConnStat()
 				s.state.Downloads = s.listFiles()
-				s.state.Unlock()
-				s.state.Push()
+			case <-s.connSyncState: // web user connected
+				s.state.Stats.System.loadStats(dir)
+				s.state.Stats.ConnStat = s.engine.ConnStat()
+				s.state.Downloads = s.listFiles()
 			case <-s.engine.TsChanged: // task added/deleted
-				s.state.Lock()
 				s.state.Torrents = s.engine.GetTorrents()
-				s.state.Unlock()
-				s.state.Push()
 			}
+
+			s.state.Push()
 		}
 	}()
 

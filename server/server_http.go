@@ -29,13 +29,13 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	case "/sync":
 		//handle realtime client connections
+		s.connSyncState <- struct{}{} // sync
 		conn, err := velox.Sync(&s.state, w, r)
 		if err != nil {
 			log.Printf("sync failed: %s", err)
 			return
 		}
 		s.state.Users[conn.ID()] = r.RemoteAddr
-		s.connSyncState <- struct{}{} // sync
 		s.state.Push()
 		conn.Wait()
 		delete(s.state.Users, conn.ID())
