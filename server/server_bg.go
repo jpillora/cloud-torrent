@@ -58,10 +58,12 @@ func (s *Server) stateRoutines() {
 				}
 
 				s.state.Stats.System.loadStats(dir)
+				s.state.Torrents = s.engine.GetTorrents()
 				s.state.Stats.ConnStat = s.engine.ConnStat()
 				s.state.Downloads = s.listFiles()
 			case <-s.connSyncState: // web user connected
 				s.state.Stats.System.loadStats(dir)
+				s.state.Torrents = s.engine.GetTorrents()
 				s.state.Stats.ConnStat = s.engine.ConnStat()
 				s.state.Downloads = s.listFiles()
 			case <-s.engine.TsChanged: // task added/deleted
