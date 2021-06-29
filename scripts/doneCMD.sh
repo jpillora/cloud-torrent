@@ -1,41 +1,45 @@
 #!/bin/bash
 
-DIR=${CLD_DIR}
-PATH=${CLD_PATH}
-HASH=${CLD_HASH}
-TYPE=${CLD_TYPE}
-RESTAPI=${CLD_RESTAPI}
-SIZE=${CLD_SIZE}
-STARTTS=${CLD_STARTTS}
-LOCALPATH=${DIR}/${PATH}
+# Available Variables
+# - ${CLD_DIR}
+# - ${CLD_PATH}
+# - ${CLD_HASH}
+# - ${CLD_TYPE}
+# - ${CLD_RESTAPI}
+# - ${CLD_SIZE}
+# - ${CLD_STARTTS}
+LOCALPATH="${CLD_DIR}/${CLD_PATH}"
+NOWTS=$(date +%s)
 
-NOWTS=$(/usr/bin/date +%s)
-if [[ $(($NOWTS - $STARTTS)) -le 10 ]];then
+# skip tasks finished too soon, more likely the program just restarted
+if [[ $(($NOWTS - $CLD_STARTTS)) -le 10 ]];then
 	echo "STARTTS less then 10s, should ignore this task"
 	exit 0
 fi
 
-if [[ ${TYPE} == "torrent" ]]; then
+# this is called when the whole task is finished
+if [[ ${CLD_TYPE} == "torrent" ]]; then
 
     # to notify a telegram bot that a task is finished
     # see https://gist.github.com/dideler/85de4d64f66c1966788c1b2304b9caf1
-    NOTIFYTEXT="${PATH} is finished!"
+    NOTIFYTEXT="${CLD_PATH} is finished!"
     /usr/bin/curl -X POST \
         -H 'Content-Type: application/json' \
         -d '{"chat_id": "123456789", "text": "'${NOTIFYTEXT}'", "disable_notification": true}' \
         https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage
 
     # to stop the task
-    /usr/bin/curl --data "stop:${HASH}" "http://${RESTAPI}/api/torrent"
+    /usr/bin/curl --data "stop:${CLD_HASH}" "http://${CLD_RESTAPI}/api/torrent"
 
     # to remove the task
-    /usr/bin/curl --data "delete:${HASH}" "http://${RESTAPI}/api/torrent"
+    /usr/bin/curl --data "delete:${CLD_HASH}" "http://${CLD_RESTAPI}/api/torrent"
 fi
 
-if [[ ${TYPE} == "file" ]] && [[ ${SIZE} -gt $((10*1024*1024)) ]]; then
+# this is called when one of the files is finish, here skips files with size smaller than 10MB
+if [[ ${CLD_TYPE} == "file" ]] && [[ ${CLD_SIZE} -gt $((10*1024*1024)) ]]; then
 
     # when the file larger than 10MB, call aria2 jsonrpc to download from this server
-    DOWNLOADURL=https://my-server-address/dldir/${PATH}
+    DOWNLOADURL="https://my-server-address/dldir/${CLD_PATH}"
 
     # Exmaple: call Aria2 RPC to start a download
     /usr/bin/curl http://my.ip.address:6800/jsonrpc \
