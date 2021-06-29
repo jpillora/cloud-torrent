@@ -110,7 +110,6 @@ func (s *Server) Run(version string) error {
 	s.state.Stats.Version = version
 	s.state.Stats.Runtime = strings.TrimPrefix(runtime.Version(), "go")
 	s.state.Stats.Uptime = time.Now()
-	s.state.Stats.System.pusher = velox.Pusher(&s.state)
 
 	//init maps
 	s.state.Users = make(map[string]string)

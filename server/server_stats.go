@@ -4,7 +4,6 @@ import (
 	"os"
 	"runtime"
 
-	velox "github.com/jpillora/velox/go"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/mem"
@@ -20,11 +19,6 @@ type osStats struct {
 	GoRoutines      int     `json:"goRoutines"`
 	//internal
 	diskDirPath string
-	pusher      velox.Pusher
-}
-
-func (s *osStats) Push() {
-	s.pusher.Push()
 }
 
 func (s *osStats) loadStats() {
