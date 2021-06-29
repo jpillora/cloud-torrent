@@ -19,20 +19,21 @@ type osStats struct {
 	GoMemory        int64   `json:"goMemory"`
 	GoRoutines      int     `json:"goRoutines"`
 	//internal
-	pusher velox.Pusher
+	diskDirPath string
+	pusher      velox.Pusher
 }
 
 func (s *osStats) Push() {
 	s.pusher.Push()
 }
 
-func (s *osStats) loadStats(diskDir string) {
+func (s *osStats) loadStats() {
 	//count cpu cycles between last count
 	//count disk usage
 	if cpu, err := cpu.Percent(0, false); err == nil {
 		s.CPU = cpu[0]
 	}
-	if stat, err := disk.Usage(diskDir); err == nil {
+	if stat, err := disk.Usage(s.diskDirPath); err == nil {
 		s.DiskUsedPercent = stat.UsedPercent
 		s.DiskFree = stat.Free
 	}

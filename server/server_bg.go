@@ -34,13 +34,12 @@ func (s *Server) backgroundRoutines() {
 
 // stateRoutines watches the download dir / tasks / sys states
 func (s *Server) stateRoutines() {
-	dir := s.engine.Config().DownloadDirectory
 
 	// initial state
 	s.state.Lock()
 	s.state.Torrents = s.engine.GetTorrents()
 	s.state.Downloads = s.listFiles()
-	s.state.Stats.System.loadStats(dir)
+	s.state.Stats.System.loadStats()
 	s.state.Unlock()
 
 	//collecting sys stats
@@ -57,12 +56,12 @@ func (s *Server) stateRoutines() {
 					goto LRESELECT
 				}
 
-				s.state.Stats.System.loadStats(dir)
+				s.state.Stats.System.loadStats()
 				s.state.Torrents = s.engine.GetTorrents()
 				s.state.Stats.ConnStat = s.engine.ConnStat()
 				s.state.Downloads = s.listFiles()
 			case <-s.connSyncState: // web user connected
-				s.state.Stats.System.loadStats(dir)
+				s.state.Stats.System.loadStats()
 				s.state.Torrents = s.engine.GetTorrents()
 				s.state.Stats.ConnStat = s.engine.ConnStat()
 				s.state.Downloads = s.listFiles()
