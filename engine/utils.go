@@ -1,11 +1,14 @@
 package engine
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	stdlog "log"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/c2h5oh/datasize"
 	"golang.org/x/time/rate"
@@ -93,4 +96,16 @@ func init() {
 
 func SetLoggerFlag(flag int) {
 	log.logger.SetFlags(flag)
+}
+
+func cmdScanLine(p io.ReadCloser, wg *sync.WaitGroup, logprefix string) {
+	sc := bufio.NewScanner(p)
+	for sc.Scan() {
+		oline := strings.TrimSpace(sc.Text())
+		if len(oline) > 0 {
+			log.Println(logprefix, oline)
+		}
+	}
+
+	wg.Done()
 }

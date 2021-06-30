@@ -107,14 +107,13 @@ func list(path string, info os.FileInfo, node *fsNode, n *int) error {
 	return nil
 }
 
-func (s *Server) DoneCmd(path, hash, ttype string, size, ts int64) ([]string, error) {
+func (s *Server) DoneCmd(path, hash, ttype string, size, ts int64) (string, []string, error) {
 
 	if s.state.Config.DoneCmd == "" {
-		return nil, fmt.Errorf("unconfigred Donecmd")
+		return "", nil, fmt.Errorf("unconfigred Donecmd")
 	}
 
 	env := []string{
-		s.state.Config.DoneCmd,
 		fmt.Sprintf("CLD_DIR=%s", s.state.Config.DownloadDirectory),
 		fmt.Sprintf("CLD_RESTAPI=%s", s.RestAPI),
 		fmt.Sprintf("CLD_PATH=%s", path),
@@ -124,5 +123,5 @@ func (s *Server) DoneCmd(path, hash, ttype string, size, ts int64) ([]string, er
 		fmt.Sprintf("CLD_STARTTS=%d", ts),
 	}
 	env = append(env, os.Environ()...)
-	return env, nil
+	return s.state.Config.DoneCmd, env, nil
 }

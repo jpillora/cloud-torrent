@@ -19,7 +19,7 @@ import (
 )
 
 type Server interface {
-	DoneCmd(path, hash, ttype string, size, ts int64) ([]string, error)
+	DoneCmd(path, hash, ttype string, size, ts int64) (string, []string, error)
 }
 
 const (

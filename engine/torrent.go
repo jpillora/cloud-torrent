@@ -1,10 +1,8 @@
 package engine
 
 import (
-	"bufio"
-	"io"
+	"fmt"
 	"os/exec"
-	"strings"
 	"sync"
 	"time"
 
@@ -178,23 +176,11 @@ func (t *Torrent) callDoneCmd(ih, name, tasktype string, size int64) {
 		ts = time.Now()
 	}
 
-	if cmdenv, err := t.cldServer.DoneCmd(name, t.InfoHash, tasktype,
+	if cmd, env, err := t.cldServer.DoneCmd(name, t.InfoHash, tasktype,
 		size, ts.Unix()); err == nil {
 
-		var wg sync.WaitGroup
-		scanLine := func(p io.ReadCloser, pn string) {
-			defer wg.Done()
-			sc := bufio.NewScanner(p)
-			for sc.Scan() {
-				oline := strings.TrimSpace(sc.Text())
-				if len(oline) > 0 {
-					log.Printf("[DoneCmd:%s][%s]%s:%s", tasktype, ih, pn, oline)
-				}
-			}
-		}
-
-		cmd := exec.Command(cmdenv[0])
-		cmd.Env = cmdenv[1:]
+		cmd := exec.Command(cmd)
+		cmd.Env = env
 		sout, _ := cmd.StdoutPipe()
 		serr, _ := cmd.StderrPipe()
 		log.Printf("[DoneCmd:%s][%s]CMD:`%s' ENV:%s", tasktype, ih, cmd.String(), cmd.Env)
@@ -203,9 +189,10 @@ func (t *Torrent) callDoneCmd(ih, name, tasktype string, size int64) {
 			return
 		}
 
+		var wg sync.WaitGroup
 		wg.Add(2)
-		go scanLine(sout, "O")
-		go scanLine(serr, "E")
+		go cmdScanLine(sout, &wg, fmt.Sprintf("[DoneCmd:%s][%s]O:", tasktype, ih))
+		go cmdScanLine(serr, &wg, fmt.Sprintf("[DoneCmd:%s][%s]E:", tasktype, ih))
 		wg.Wait()
 
 		// call Wait will close pipes above
