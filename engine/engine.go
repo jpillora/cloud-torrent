@@ -312,14 +312,14 @@ func (e *Engine) taskRoutine(t *Torrent) {
 	// stops task on reaching ratio
 	if e.config.SeedRatio > 0 && t.SeedRatio > e.config.SeedRatio &&
 		t.Started && !t.ManualStarted && t.Done {
-		log.Println("[TaskRoutine] Stopped and Drop due to reaching SeedRatio", t.SeedRatio)
+		log.Printf("[TaskRoutine][%s] Stopped and Drop due to reaching SeedRatio %f", t.InfoHash, t.SeedRatio)
 		go e.stopRemoveTask(t.InfoHash)
 	}
 
 	if e.config.SeedTime > 0 && t.Done && t.Started && !t.ManualStarted &&
 		!t.FinishedAt.IsZero() &&
 		time.Since(t.FinishedAt) > e.config.SeedTime {
-		log.Println("[TaskRoutine] Stopped and Drop due to time up for SeedTime", e.config.SeedTime)
+		log.Printf("[TaskRoutine][%s] Stopped and Drop due to timed up for SeedTime %s", t.InfoHash, e.config.SeedTime)
 		go e.stopRemoveTask(t.InfoHash)
 	}
 }
