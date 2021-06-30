@@ -48,7 +48,7 @@ func (e *Engine) newTorrentCacheFile(meta *metainfo.MetaInfo) {
 				meta.Write(cf)
 				log.Println("created torrent cache file", infohash)
 			} else {
-				log.Println("failed to create torrent file ", err)
+				log.Println("failed to create torrent file", err)
 			}
 		}
 	}
@@ -127,7 +127,7 @@ func (e *Engine) RestoreCacheDir() {
 
 	files, err := ioutil.ReadDir(e.cacheDir)
 	if err != nil {
-		log.Println("RestoreCacheDir failed read cachedir ", err)
+		log.Println("RestoreCacheDir failed read cachedir", err)
 		return
 	}
 

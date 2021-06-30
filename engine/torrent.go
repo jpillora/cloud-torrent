@@ -183,25 +183,25 @@ func (t *Torrent) callDoneCmd(ih, name, tasktype string, size int64) {
 		cmd.Env = env
 		sout, _ := cmd.StdoutPipe()
 		serr, _ := cmd.StderrPipe()
-		log.Printf("[DoneCmd:%s][%s]CMD:`%s' ENV:%s", tasktype, ih, cmd.String(), cmd.Env)
+		log.Printf("[DoneCmd:%s]%sCMD:`%s' ENV:%s", tasktype, ih, cmd.String(), cmd.Env)
 		if err := cmd.Start(); err != nil {
-			log.Printf("[DoneCmd:%s][%s]ERR: %v", tasktype, ih, err)
+			log.Printf("[DoneCmd:%s]%sERR: %v", tasktype, ih, err)
 			return
 		}
 
 		var wg sync.WaitGroup
 		wg.Add(2)
-		go cmdScanLine(sout, &wg, fmt.Sprintf("[DoneCmd:%s][%s]O:", tasktype, ih))
-		go cmdScanLine(serr, &wg, fmt.Sprintf("[DoneCmd:%s][%s]E:", tasktype, ih))
+		go cmdScanLine(sout, &wg, fmt.Sprintf("[DoneCmd:%s]%sO:", log.filteredArg(tasktype, ih)...))
+		go cmdScanLine(serr, &wg, fmt.Sprintf("[DoneCmd:%s]%sE:", log.filteredArg(tasktype, ih)...))
 		wg.Wait()
 
 		// call Wait will close pipes above
 		if err := cmd.Wait(); err != nil {
-			log.Printf("[DoneCmd:%s][%s]ERR: %v", tasktype, ih, err)
+			log.Printf("[DoneCmd:%s]%sERR: %v", tasktype, ih, err)
 			return
 		}
 
-		log.Printf("[DoneCmd:%s][%s]Exit code: %d", tasktype, ih, cmd.ProcessState.ExitCode())
+		log.Printf("[DoneCmd:%s]%sExit code: %d", tasktype, ih, cmd.ProcessState.ExitCode())
 	} else {
 		log.Println("[DoneCmd]", ih, err)
 	}

@@ -161,7 +161,7 @@ func (e *Engine) IsConfigred() bool {
 
 // NewMagnet -> newTorrentBySpec
 func (e *Engine) NewMagnet(magnetURI string) error {
-	log.Println("[NewMagnet] called: ", magnetURI)
+	log.Println("[NewMagnet] called:", magnetURI)
 	spec, err := torrent.TorrentSpecFromMagnetUri(magnetURI)
 	if err != nil {
 		return err
@@ -213,7 +213,7 @@ func (e *Engine) isReadyAddTask() bool {
 // NewTorrentBySpec -> *Torrent -> addTorrentTask
 func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) error {
 	ih := spec.InfoHash.HexString()
-	log.Println("[newTorrentBySpec] called ", ih)
+	log.Println("[newTorrentBySpec] called", ih)
 
 	e.taskMutex.Lock()
 	defer e.taskMutex.Unlock()
@@ -290,7 +290,7 @@ func (e *Engine) torrentEventProcessor(tt *torrent.Torrent, t *Torrent, ih strin
 			t.updateConnStat()
 		case <-t.dropWait:
 			tt.Drop()
-			log.Println("Task Droped, exit loop: ", ih)
+			log.Println("Task Droped, exit loop:", ih)
 			go e.NextWaitTask()
 			return
 		case <-e.closeSync:
@@ -312,14 +312,14 @@ func (e *Engine) taskRoutine(t *Torrent) {
 	// stops task on reaching ratio
 	if e.config.SeedRatio > 0 && t.SeedRatio > e.config.SeedRatio &&
 		t.Started && !t.ManualStarted && t.Done {
-		log.Printf("[TaskRoutine][%s] Stopped and Drop due to reaching SeedRatio %f", t.InfoHash, t.SeedRatio)
+		log.Printf("[TaskRoutine]%s Stopped and Drop due to reaching SeedRatio %f", t.InfoHash, t.SeedRatio)
 		go e.stopRemoveTask(t.InfoHash)
 	}
 
 	if e.config.SeedTime > 0 && t.Done && t.Started && !t.ManualStarted &&
 		!t.FinishedAt.IsZero() &&
 		time.Since(t.FinishedAt) > e.config.SeedTime {
-		log.Printf("[TaskRoutine][%s] Stopped and Drop due to timed up for SeedTime %s", t.InfoHash, e.config.SeedTime)
+		log.Printf("[TaskRoutine]%s Stopped and Drop due to timed up for SeedTime %s", t.InfoHash, e.config.SeedTime)
 		go e.stopRemoveTask(t.InfoHash)
 	}
 }
@@ -343,7 +343,7 @@ func (e *Engine) ManualStartTorrent(infohash string) error {
 }
 
 func (e *Engine) StartTorrent(infohash string) error {
-	log.Println("StartTorrent ", infohash)
+	log.Println("StartTorrent", infohash)
 	e.Lock()
 	defer e.Unlock()
 
@@ -377,7 +377,7 @@ func (e *Engine) StartTorrent(infohash string) error {
 }
 
 func (e *Engine) StopTorrent(infohash string) error {
-	log.Println("StopTorrent ", infohash)
+	log.Println("StopTorrent", infohash)
 	e.Lock()
 	defer e.Unlock()
 	t, err := e.getTorrent(infohash)
