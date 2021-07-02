@@ -85,7 +85,7 @@
 			<div ng-if="$DownloadedFiles.length > 0 && $expanded" class="ui raised segment">
 				<div class="ui list">
 					<div class="item" ng-repeat="node in $DownloadedFiles | orderBy:'Modified':false"
-						ng-if="!(node.$Deleted)" ng-controller="NodeController" ng-include
+						ng-hide="node.$Deleted" ng-controller="NodeController" ng-include
 						src="'template/download-tree.html?[[.CLDVER]]'"></div>
 				</div>
 			</div>

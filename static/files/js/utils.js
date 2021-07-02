@@ -57,9 +57,14 @@ app.factory("apiget", function ($rootScope, $http, reqerr) {
   var request = function (action, data) {
     var url = "api/" + action;
     $rootScope.apiing = true;
-    var req = $http.get(url).catch(reqerr).finally(function () {
-      $rootScope.apiing = false;
-    });
+    var req = $http.get(url)
+      .then(function (xhr) {
+        console.log(`APIGET ${url}`);
+        return xhr
+      }, reqerr)
+      .finally(function () {
+        $rootScope.apiing = false;
+      });
     return req;
   };
   var api = {};
