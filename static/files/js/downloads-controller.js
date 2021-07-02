@@ -84,15 +84,12 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout, 
     return c.join(" ");
   };
 
-  $scope.remove = function (nodeName) {
+  $scope.remove = function (node) {
     $scope.deleting = true;
-    $http.delete("download/" + encodeURIComponent(nodeName))
+    $http.delete("download/" + encodeURIComponent(node.Name))
       .then(function () {
-        apiget.files().then(function (xhr) {
-          $scope.$DownloadedFiles = xhr.data.Children;
-        }).finally(function () {
-          $scope.$applyAsync();
-        });
+        node.$Deleted = true;
+        $scope.$applyAsync();
       })
       .catch(reqerr)
       .finally(function () {
