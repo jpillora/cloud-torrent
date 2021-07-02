@@ -37,7 +37,6 @@ func (s *Server) stateRoutines() {
 
 	// initial state
 	s.state.Torrents = s.engine.GetTorrents()
-	s.state.Downloads = s.listFiles()
 	s.state.Stats.System.loadStats()
 
 	//collecting sys stats
@@ -57,12 +56,10 @@ func (s *Server) stateRoutines() {
 				s.state.Stats.System.loadStats()
 				s.state.Torrents = s.engine.GetTorrents()
 				s.state.Stats.ConnStat = s.engine.ConnStat()
-				s.state.Downloads = s.listFiles()
 			case <-s.connSyncState: // web user connected
 				s.state.Stats.System.loadStats()
 				s.state.Torrents = s.engine.GetTorrents()
 				s.state.Stats.ConnStat = s.engine.ConnStat()
-				s.state.Downloads = s.listFiles()
 			case <-s.engine.TsChanged: // task added/deleted
 				s.state.Torrents = s.engine.GetTorrents()
 			}

@@ -64,7 +64,8 @@ app.factory("apiget", function ($rootScope, $http, reqerr) {
   };
   var api = {};
   var actions = [
-    "enginedebug"
+    "enginedebug",
+    "files"
   ];
   actions.forEach(function (action) {
     api[action] = request.bind(null, action);

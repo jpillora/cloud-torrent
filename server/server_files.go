@@ -26,7 +26,7 @@ func (s *Server) listFiles() *fsNode {
 	rootDir := s.state.Config.DownloadDirectory
 	root := &fsNode{}
 	if info, err := os.Stat(rootDir); err == nil {
-		if err := list(rootDir, info, root, new(int)); err != nil {
+		if err := list(rootDir, info, root, new(uint)); err != nil {
 			log.Printf("File listing failed: %s", err)
 		}
 	}
@@ -75,7 +75,7 @@ func (s *Server) serveFiles(w http.ResponseWriter, r *http.Request) {
 
 //custom directory walk
 
-func list(path string, info os.FileInfo, node *fsNode, n *int) error {
+func list(path string, info os.FileInfo, node *fsNode, n *uint) error {
 	if (!info.IsDir() && !info.Mode().IsRegular()) || strings.HasPrefix(info.Name(), ".") {
 		return errors.New("Non-regular file")
 	}

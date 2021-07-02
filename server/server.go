@@ -75,7 +75,6 @@ type Server struct {
 		velox.State
 		Config          engine.Config
 		SearchProviders scraper.Config
-		Downloads       *fsNode
 		rssMark         map[string]string
 		rssCache        []*gofeed.Item
 		LatestRSSGuid   string

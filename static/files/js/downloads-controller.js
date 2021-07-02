@@ -1,19 +1,21 @@
 /* globals app */
 
-app.controller("DownloadsController", function ($scope, $rootScope) {
-  $rootScope.downloads = $scope;
+app.controller("DownloadsController", function ($scope, $rootScope, apiget) {
 
-  $scope.numDownloads = function () {
-    if ($scope.state.Downloads && $scope.state.Downloads.Children)
-      return $scope.state.Downloads.Children.length;
-    return 0;
-  };
+  $scope.$DownloadedFiles = [];
+  apiget.files().then(function (xhr) {
+    $scope.$DownloadedFiles = xhr.data.Children;
+  });
 
   $scope.$expanded = false;
   $scope.section_expanded_toggle = function () {
     $scope.$expanded = !$scope.$expanded;
     if ($scope.$expanded) {
-      $scope.$applyAsync();
+      apiget.files().then(function (xhr) {
+        $scope.$DownloadedFiles = xhr.data.Children;
+      }).finally(function () {
+        $scope.$applyAsync();
+      });
     }
   };
 });

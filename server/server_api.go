@@ -50,7 +50,7 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 	case "torrents":
 		json.NewEncoder(w).Encode(s.engine.GetTorrents())
 	case "files":
-		json.NewEncoder(w).Encode(s.state.Downloads)
+		json.NewEncoder(w).Encode(s.listFiles())
 	case "torrent":
 		if len(routeDirs) != 2 {
 			return errUnknowAct
