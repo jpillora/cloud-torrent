@@ -13,7 +13,7 @@ import (
 	"github.com/jpillora/archive"
 )
 
-const fileNumberLimit = 1000
+const fileNumberLimit = 65535
 
 type fsNode struct {
 	Name     string
