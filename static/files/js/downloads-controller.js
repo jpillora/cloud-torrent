@@ -87,6 +87,13 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout, 
   $scope.remove = function (nodeName) {
     $scope.deleting = true;
     $http.delete("download/" + encodeURIComponent(nodeName))
+      .then(function () {
+        apiget.files().then(function (xhr) {
+          $scope.$DownloadedFiles = xhr.data.Children;
+        }).finally(function () {
+          $scope.$applyAsync();
+        });
+      })
       .catch(reqerr)
       .finally(function () {
         $scope.deleting = false;
