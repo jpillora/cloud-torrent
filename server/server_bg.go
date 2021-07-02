@@ -36,11 +36,9 @@ func (s *Server) backgroundRoutines() {
 func (s *Server) stateRoutines() {
 
 	// initial state
-	s.state.Lock()
 	s.state.Torrents = s.engine.GetTorrents()
 	s.state.Downloads = s.listFiles()
 	s.state.Stats.System.loadStats()
-	s.state.Unlock()
 
 	//collecting sys stats
 	go func() {

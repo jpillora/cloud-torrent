@@ -13,7 +13,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"errors"
@@ -74,7 +73,6 @@ type Server struct {
 
 	state struct {
 		velox.State
-		sync.Mutex
 		Config          engine.Config
 		SearchProviders scraper.Config
 		Downloads       *fsNode

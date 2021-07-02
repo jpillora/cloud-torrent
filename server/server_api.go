@@ -50,9 +50,7 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 	case "torrents":
 		json.NewEncoder(w).Encode(s.engine.GetTorrents())
 	case "files":
-		s.state.Lock()
 		json.NewEncoder(w).Encode(s.state.Downloads)
-		s.state.Unlock()
 	case "torrent":
 		if len(routeDirs) != 2 {
 			return errUnknowAct
@@ -68,11 +66,9 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 			return errUnknowPath
 		}
 	case "stat":
-		s.state.Lock()
 		s.state.Stats.System.loadStats()
 		s.state.Stats.ConnStat = s.engine.ConnStat()
 		json.NewEncoder(w).Encode(s.state.Stats)
-		s.state.Unlock()
 	case "enginedebug":
 		w.Header().Set("Content-Type", "text/plain")
 		s.engine.WriteStauts(w)
