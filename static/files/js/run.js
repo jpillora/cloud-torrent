@@ -22,7 +22,12 @@ app.run(function ($rootScope, search, api, apiget, storage, reqinfo, reqerr) {
   $scope.DownloadingFiles = {};
   $scope.state = {};
   $scope.hasConnected = false;
-  var v = velox(pn + "sync", $scope.state);
+  var v, vtype = storage.veloxconn || "sse";;
+  if (vtype == "ws") {
+    v = velox.ws(pn + "sync", $scope.state);
+  } else {
+    v = velox.sse(pn + "sync", $scope.state);
+  }
   v.onupdate = function () {
     $scope.DownloadingFiles = {};
     angular.forEach($scope.state.Torrents, function (tval) {
