@@ -78,6 +78,11 @@
 				</div>
 			</div>
 
+			<div ng-if="$isLoadingFiles" class="ui message nodownloads">
+				<i class="ui circular lightning icon" title="Loading FIles"></i>
+				<p>Loading</p>
+			</div>
+
 			<div ng-if="$DownloadedFiles.length == 0" class="ui message nodownloads">
 				<p>Download files above</p>
 			</div>

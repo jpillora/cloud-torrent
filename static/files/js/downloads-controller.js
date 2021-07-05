@@ -2,6 +2,7 @@
 
 app.controller("DownloadsController", function ($scope, $rootScope, apiget) {
 
+  $scope.$isLoadingFiles = false;
   $scope.$DownloadedFiles = [];
   apiget.files().then(function (xhr) {
     $scope.$DownloadedFiles = xhr.data.Children;
@@ -11,9 +12,11 @@ app.controller("DownloadsController", function ($scope, $rootScope, apiget) {
   $scope.section_expanded_toggle = function () {
     $scope.$expanded = !$scope.$expanded;
     var updateDownloaded = function () {
+      $scope.$isLoadingFiles = true;
       apiget.files().then(function (xhr) {
         $scope.$DownloadedFiles = xhr.data.Children;
       }).finally(function () {
+        $scope.$isLoadingFiles = false;
         $scope.$applyAsync();
       });
     }
