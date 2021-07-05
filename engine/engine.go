@@ -271,7 +271,7 @@ func (e *Engine) torrentEventProcessor(tt *torrent.Torrent, t *Torrent, ih strin
 		go e.StartTorrent(ih)
 	}
 
-	timeTk := time.NewTicker(3 * time.Second)
+	timeTk := time.NewTicker(e.config.DataTick)
 	defer timeTk.Stop()
 
 	// main loop updating the torrent status to our struct

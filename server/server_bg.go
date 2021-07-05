@@ -48,11 +48,10 @@ func (s *Server) backgroundRoutines() {
 
 // stateRoutines watches the tasks / sys states
 func (s *Server) tickerRoutine() {
-	dur := 3 * time.Second
-	tk := time.NewTicker(dur)
+	tk := time.NewTicker(s.state.Config.DataTick)
 	defer tk.Stop()
 
-	log.Println("[tickerRoutine] sync connected, ticking for", dur)
+	log.Println("[tickerRoutine] sync connected, ticking for", s.state.Config.DataTick)
 	var noConnCount uint
 	for range tk.C {
 
@@ -61,7 +60,7 @@ func (s *Server) tickerRoutine() {
 		}
 		if noConnCount > 60 { // about 3 minutes
 			atomic.StoreInt32(&(s.syncSemphor), 0)
-			log.Println("[tickerRoutine] exit for no web connections")
+			log.Println("[tickerRoutine] sync exit for no web connections")
 			return
 		}
 

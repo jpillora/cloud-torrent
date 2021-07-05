@@ -44,6 +44,7 @@ type Config struct {
 	DoneCmd                    string
 	SeedRatio                  float32
 	SeedTime                   time.Duration
+	DataTick                   time.Duration
 	UploadRate                 string
 	DownloadRate               string
 	TrackerListURL             string
@@ -77,6 +78,7 @@ func InitConf(specPath string) (*Config, error) {
 	viper.SetDefault("DoneCmd", "")
 	viper.SetDefault("SeedRatio", 0)
 	viper.SetDefault("SeedTime", "0")
+	viper.SetDefault("DataTick", "3s")
 	viper.SetDefault("ObfsPreferred", true)
 	viper.SetDefault("ObfsRequirePreferred", false)
 	viper.SetDefault("IncomingPort", 50007)
