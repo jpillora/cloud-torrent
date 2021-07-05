@@ -91,6 +91,8 @@ func (torrent *Torrent) updateConnStat() {
 	bWrite := torrent.Stats.BytesWrittenData.Int64()
 	if bRead > 0 {
 		torrent.SeedRatio = float32(bWrite) / float32(bRead)
+	} else if torrent.Done {
+		torrent.SeedRatio = float32(bWrite) / float32(torrent.Size)
 	}
 
 	now := time.Now()
