@@ -68,6 +68,10 @@ type Server struct {
 	//torrent engine
 	engine *engine.Engine
 
+	//sync req
+	syncConnected chan struct{}
+	syncSemphor   int32
+
 	state struct {
 		velox.State
 		Config          engine.Config
@@ -170,6 +174,7 @@ func (s *Server) Run(version string) error {
 		log.Println("UpdateTrackers err", err)
 	}
 	s.backgroundRoutines()
+	s.syncConnected = make(chan struct{})
 
 	if s.Open && !strings.HasPrefix(s.Host, "unix:") {
 		go func() {

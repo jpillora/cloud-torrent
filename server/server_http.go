@@ -34,6 +34,7 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 			log.Printf("sync failed: %s", err)
 			return
 		}
+		s.syncConnected <- struct{}{}
 		s.state.Users[conn.ID()] = r.RemoteAddr
 		s.state.Push()
 		conn.Wait()
