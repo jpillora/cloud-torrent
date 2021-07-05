@@ -70,6 +70,7 @@
 					<i class="square outline icon" ng-class="{minus: !$expanded, plus: $expanded}"></i>
 					<span class="ui header">
 						Downloads
+						<i ng-show="$isLoadingFiles" class="sync mini icon loading"></i>
 						<span class="ui label">
 							<i class="hdd icon"></i>
 							{{ state.Stats.System.diskFree | bytes }} free
@@ -77,12 +78,6 @@
 					</span>
 				</div>
 			</div>
-
-			<div ng-if="$isLoadingFiles" class="ui message nodownloads">
-				<i class="ui circular lightning icon" title="Loading FIles"></i>
-				<p>Loading</p>
-			</div>
-
 			<div ng-if="$DownloadedFiles.length == 0" class="ui message nodownloads">
 				<p>Download files above</p>
 			</div>
