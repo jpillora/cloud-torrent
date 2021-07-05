@@ -22,7 +22,7 @@ app.run(function ($rootScope, search, api, apiget, storage, reqinfo, reqerr) {
   $scope.DownloadingFiles = {};
   $scope.state = {};
   $scope.hasConnected = false;
-  var v, vtype = storage.veloxconn || "sse";;
+  var v, vtype = storage.veloxCON || "sse";
   if (vtype == "ws") {
     v = velox.ws(pn + "sync", $scope.state);
   } else {
@@ -158,6 +158,10 @@ app.run(function ($rootScope, search, api, apiget, storage, reqinfo, reqerr) {
         }
         break
     }
+  }
+
+  $scope.toggleWebsocket = function () {
+    storage.veloxCON = (storage.veloxCON !== "ws") ? "ws" : "sse";
   }
 
   //page-wide keybinding, listen for space,
