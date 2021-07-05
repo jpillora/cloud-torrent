@@ -19,7 +19,7 @@ func (s *Server) backgroundRoutines() {
 			select {
 			case <-s.syncConnected:
 				if atomic.CompareAndSwapInt32(&(s.syncSemphor), 0, 1) {
-					go s.tickerRouting()
+					go s.tickerRoutine()
 				}
 			case <-s.engine.TsChanged: // task added/deleted
 				s.state.Torrents = s.engine.GetTorrents()
@@ -47,19 +47,21 @@ func (s *Server) backgroundRoutines() {
 }
 
 // stateRoutines watches the tasks / sys states
-func (s *Server) tickerRouting() {
-	tk := time.NewTicker(3 * time.Second)
+func (s *Server) tickerRoutine() {
+	dur := 3 * time.Second
+	tk := time.NewTicker(dur)
 	defer tk.Stop()
 
+	log.Println("[tickerRoutine] sync connected, ticking for", dur)
 	var noConnCount uint
 	for range tk.C {
 
 		if s.state.NumConnections() == 0 {
 			noConnCount++
 		}
-		if noConnCount > 60 {
+		if noConnCount > 60 { // about 3 minutes
 			atomic.StoreInt32(&(s.syncSemphor), 0)
-			log.Println("[tickerRouting] exit for no web connections")
+			log.Println("[tickerRoutine] exit for no web connections")
 			return
 		}
 
@@ -68,5 +70,4 @@ func (s *Server) tickerRouting() {
 		s.state.Stats.ConnStat = s.engine.ConnStat()
 		s.state.Push()
 	}
-
 }
