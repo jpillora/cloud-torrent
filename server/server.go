@@ -68,9 +68,6 @@ type Server struct {
 	//torrent engine
 	engine *engine.Engine
 
-	//signal to sync
-	connSyncState chan struct{}
-
 	state struct {
 		velox.State
 		Config          engine.Config
@@ -117,7 +114,6 @@ func (s *Server) Run(version string) error {
 	s.static = ctstatic.FileSystemHandler()
 	s.rssh = http.HandlerFunc(s.serveRSS)
 
-	s.connSyncState = make(chan struct{})
 	//scraper
 	s.scraper = &scraper.Handler{
 		Log: s.Debug, Debug: s.Debug,

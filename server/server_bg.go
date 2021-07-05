@@ -1,11 +1,8 @@
 package server
 
 import (
-	"path"
 	"strings"
 	"time"
-
-	"github.com/fsnotify/fsnotify"
 )
 
 func (s *Server) backgroundRoutines() {
@@ -32,7 +29,7 @@ func (s *Server) backgroundRoutines() {
 	}
 }
 
-// stateRoutines watches the download dir / tasks / sys states
+// stateRoutines watches the tasks / sys states
 func (s *Server) stateRoutines() {
 
 	// initial state
@@ -56,50 +53,11 @@ func (s *Server) stateRoutines() {
 				s.state.Stats.System.loadStats()
 				s.state.Torrents = s.engine.GetTorrents()
 				s.state.Stats.ConnStat = s.engine.ConnStat()
-			case <-s.connSyncState: // web user connected
-				s.state.Stats.System.loadStats()
-				s.state.Torrents = s.engine.GetTorrents()
-				s.state.Stats.ConnStat = s.engine.ConnStat()
 			case <-s.engine.TsChanged: // task added/deleted
 				s.state.Torrents = s.engine.GetTorrents()
 			}
 
 			s.state.Push()
-		}
-	}()
-
-	// download dir watcher
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// TODO: user may change download dir in run time?
-	if err := watcher.Add(s.state.Config.DownloadDirectory); err != nil {
-		log.Fatal(err)
-	}
-	go func() {
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
-				if event.Op&(fsnotify.Create|fsnotify.Remove) > 0 {
-					if strings.HasPrefix(path.Base(event.Name), ".") {
-						// ignore hidden files
-						continue
-					}
-
-					log.Println("Download dir watcher:", event)
-					s.connSyncState <- struct{}{}
-				}
-			case err, ok := <-watcher.Errors:
-				log.Println("Download dir watcher error:", err)
-				if !ok {
-					return
-				}
-			}
 		}
 	}()
 }

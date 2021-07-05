@@ -29,7 +29,6 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	case "/sync":
 		//handle realtime client connections
-		s.connSyncState <- struct{}{} // sync
 		conn, err := velox.Sync(&s.state, w, r)
 		if err != nil {
 			log.Printf("sync failed: %s", err)
