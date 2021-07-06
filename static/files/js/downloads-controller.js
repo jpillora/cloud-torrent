@@ -11,7 +11,7 @@ app.controller("DownloadsController", function ($scope, $rootScope, apiget) {
   $scope.$expanded = false;
   $scope.section_expanded_toggle = function () {
     $scope.$expanded = !$scope.$expanded;
-    var updateDownloaded = function () {
+    if ($scope.$expanded) {
       $scope.$isLoadingFiles = true;
       apiget.files().then(function (xhr) {
         $scope.$DownloadedFiles = xhr.data.Children;
@@ -19,15 +19,6 @@ app.controller("DownloadsController", function ($scope, $rootScope, apiget) {
         $scope.$isLoadingFiles = false;
         $scope.$applyAsync();
       });
-    }
-    if ($scope.$expanded) {
-      if ($scope.intevID) {
-        clearInterval($scope.intevID);
-      }
-      $scope.intevID = setInterval(updateDownloaded, 30000);
-      updateDownloaded();
-    } else {
-      clearInterval($scope.intevID);
     }
   };
 });
