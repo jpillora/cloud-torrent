@@ -79,7 +79,7 @@ type Server struct {
 		rssMark         map[string]string
 		rssCache        []*gofeed.Item
 		LatestRSSGuid   string
-		Torrents        map[string]*engine.Torrent
+		Torrents        *map[string]*engine.Torrent
 		Users           map[string]string
 		Stats           struct {
 			Title    string

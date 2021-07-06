@@ -268,7 +268,7 @@ func (e *Engine) torrentEventProcessor(tt *torrent.Torrent, t *Torrent, ih strin
 		go e.StartTorrent(ih)
 	}
 
-	timeTk := time.NewTicker(e.config.DataTick)
+	timeTk := time.NewTicker(3 * time.Second)
 	defer timeTk.Stop()
 
 	// main loop updating the torrent status to our struct
@@ -299,8 +299,8 @@ func (e *Engine) torrentEventProcessor(tt *torrent.Torrent, t *Torrent, ih strin
 }
 
 //GetTorrents just get the local infohash->Torrent map
-func (e *Engine) GetTorrents() map[string]*Torrent {
-	return e.ts
+func (e *Engine) GetTorrents() *map[string]*Torrent {
+	return &e.ts
 }
 
 // TaskRoutine

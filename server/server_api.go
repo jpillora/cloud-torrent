@@ -60,7 +60,7 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 			return errUnknowPath
 		}
 		m := s.engine.GetTorrents()
-		if t, ok := m[hash]; ok {
+		if t, ok := (*m)[hash]; ok {
 			json.NewEncoder(w).Encode(t)
 		} else {
 			return errUnknowPath
