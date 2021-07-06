@@ -24,8 +24,8 @@ func (e *Engine) newMagnetCacheFile(magnetURI, infohash string) {
 			fmt.Sprintf("%s%s.info", cacheSavedPrefix, infohash))
 		if _, err := os.Stat(cacheInfoPath); os.IsNotExist(err) {
 			cf, err := os.Create(cacheInfoPath)
-			defer cf.Close()
 			if err == nil {
+				defer cf.Close()
 				cf.WriteString(magnetURI)
 				log.Println("created magnet cache info file", infohash)
 			}
@@ -43,8 +43,8 @@ func (e *Engine) newTorrentCacheFile(meta *metainfo.MetaInfo) {
 		// avoid recreating cache files during boot import
 		if _, err := os.Stat(cacheFilePath); os.IsNotExist(err) {
 			cf, err := os.Create(cacheFilePath)
-			defer cf.Close()
 			if err == nil {
+				defer cf.Close()
 				meta.Write(cf)
 				log.Println("created torrent cache file", infohash)
 			} else {
