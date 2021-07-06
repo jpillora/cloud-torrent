@@ -72,7 +72,7 @@ func (e *Engine) removeTorrentCache(infohash string, toTrash bool) {
 	if toTrash {
 		trashFilePath := filepath.Join(e.trashDir, fileName)
 		if err := os.Rename(cacheFilePath, trashFilePath); err == nil {
-			log.Printf("move torrent file to trash [%s]", cacheFilePath)
+			log.Printf("move torrent file to trash [%s]", trashFilePath)
 		} else {
 			log.Println("fail to move to trash", err)
 		}
