@@ -1,7 +1,6 @@
 package server
 
 import (
-	"cloud-torrent/server/httpmiddleware"
 	"compress/gzip"
 	"crypto/tls"
 	"fmt"
@@ -14,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/boypt/simple-torrent/server/httpmiddleware"
 
 	"errors"
 
