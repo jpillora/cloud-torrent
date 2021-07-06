@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"sync"
 	"time"
@@ -24,6 +23,7 @@ type Server interface {
 
 const (
 	CachedTorrentDir = ".cachedTorrents"
+	TrashTorrentDir  = ".trashTorrents"
 )
 
 var (
@@ -38,6 +38,7 @@ type Engine struct {
 	taskMutex    sync.Mutex
 	cldServer    Server
 	cacheDir     string
+	trashDir     string
 	client       *torrent.Client
 	closeSync    chan struct{}
 	config       Config
@@ -142,9 +143,9 @@ func (e *Engine) Configure(c *Config) error {
 
 	e.closeSync = make(chan struct{})
 	e.cacheDir = path.Join(c.DownloadDirectory, CachedTorrentDir)
-	if st, err := os.Stat(e.cacheDir); errors.Is(err, os.ErrNotExist) || !st.IsDir() {
-		os.MkdirAll(e.cacheDir, os.ModePerm)
-	}
+	e.trashDir = path.Join(c.DownloadDirectory, TrashTorrentDir)
+	mkdir(e.cacheDir)
+	mkdir(e.trashDir)
 	e.config = *c
 	return nil
 }
@@ -489,5 +490,5 @@ func (e *Engine) StopFile(infohash, filepath string) error {
 
 func (e *Engine) RemoveCache(infohash string) {
 	e.removeMagnetCache(infohash)
-	e.removeTorrentCache(infohash)
+	e.removeTorrentCache(infohash, true)
 }

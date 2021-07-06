@@ -65,13 +65,23 @@ func (e *Engine) removeMagnetCache(infohash string) {
 	}
 }
 
-func (e *Engine) removeTorrentCache(infohash string) {
-	cacheFilePath := filepath.Join(e.cacheDir,
-		fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash))
-	if err := os.Remove(cacheFilePath); err == nil {
-		log.Printf("removed torrent file [%s]", cacheFilePath)
-	} else if !os.IsNotExist(err) { // it's fine if the cache is not exists
-		log.Printf("fail to removed cache file [%s] %s", infohash, err)
+func (e *Engine) removeTorrentCache(infohash string, toTrash bool) {
+	fileName := fmt.Sprintf("%s%s.torrent", cacheSavedPrefix, infohash)
+	cacheFilePath := filepath.Join(e.cacheDir, fileName)
+
+	if toTrash {
+		trashFilePath := filepath.Join(e.trashDir, fileName)
+		if err := os.Rename(cacheFilePath, trashFilePath); err == nil {
+			log.Printf("move torrent file to trash [%s]", cacheFilePath)
+		} else {
+			log.Println("fail to move to trash", err)
+		}
+	} else {
+		if err := os.Remove(cacheFilePath); err == nil {
+			log.Printf("removed torrent file [%s]", cacheFilePath)
+		} else if !os.IsNotExist(err) { // it's fine if the cache is not exists
+			log.Printf("fail to removed cache file [%s] %s", infohash, err)
+		}
 	}
 }
 

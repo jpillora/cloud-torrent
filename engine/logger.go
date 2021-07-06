@@ -40,6 +40,9 @@ func (f *filteredLogger) Printf(format string, v ...interface{}) {
 func (f *filteredLogger) Fatal(v ...interface{}) {
 	f.logger.Fatal(f.filteredArg(v...)...)
 }
+func (f *filteredLogger) Panic(v ...interface{}) {
+	f.logger.Panicln(f.filteredArg(v...)...)
+}
 
 func init() {
 	log = &filteredLogger{
