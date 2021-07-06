@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	ctstatic "github.com/jpillora/cloud-torrent/static"
+	ctstatic "github.com/boypt/simple-torrent/static"
 	"github.com/jpillora/velox"
 )
 

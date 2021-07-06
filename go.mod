@@ -1,4 +1,4 @@
-module cloud-torrent
+module simple-torrent
 
 go 1.16
 
@@ -19,7 +19,6 @@ require (
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/jpillora/ansi v1.0.2 // indirect
 	github.com/jpillora/archive v0.0.0-20160301031048-e0b3681851f1
-	github.com/jpillora/cloud-torrent v0.0.0-20180427161701-1a741e3d8dd2
 	github.com/jpillora/cookieauth v1.0.0
 	github.com/jpillora/opts v1.2.0
 	github.com/jpillora/requestlog v1.0.0
@@ -44,11 +43,6 @@ require (
 replace (
 	github.com/anacrolix/dht/v2 => github.com/anacrolix/dht/v2 v2.9.2-0.20210527235055-9013a10a0c7d
 	github.com/boltdb/bolt => github.com/boypt/bolt v1.3.2
-	github.com/jpillora/cloud-torrent => ./
-	github.com/jpillora/cloud-torrent/engine => ./engine/
-	github.com/jpillora/cloud-torrent/server => ./server/
-	github.com/jpillora/cloud-torrent/static => ./static/
 	github.com/jpillora/velox => github.com/boypt/velox v0.0.0-20210702064309-321adb7223d6
 	github.com/willf/bitset => github.com/bits-and-blooms/bitset v1.2.0
-
 )

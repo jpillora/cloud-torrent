@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/jpillora/cloud-torrent/server"
+	"github.com/boypt/simple-torrent/server"
 	"github.com/jpillora/opts"
 )
 

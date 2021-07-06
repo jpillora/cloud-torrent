@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jpillora/cloud-torrent/engine"
+	"github.com/boypt/simple-torrent/engine"
 )
 
 var (
