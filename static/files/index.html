@@ -1,14 +1,14 @@
 <html ng-app="app">
 
 <head>
-	<title ng-bind="state.Stats.Title">SimpleTorrent</title>
+	<title>[[.Title]]</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 	<link rel="stylesheet" type="text/css" href="css/Lato/Lato.css">
 	<link rel="stylesheet" type="text/css" href="css/semantic.min.css">
-	<link rel="stylesheet" type="text/css" href="css/sections/omni.css?[[.CLDVER]]">
-	<link rel="stylesheet" type="text/css" href="css/sections/torrents.css?[[.CLDVER]]">
-	<link rel="stylesheet" type="text/css" href="css/sections/downloads.css?[[.CLDVER]]">
-	<link rel="stylesheet" type="text/css" href="css/app.css?[[.CLDVER]]">
+	<link rel="stylesheet" type="text/css" href="css/sections/omni.css?[[.Version]]">
+	<link rel="stylesheet" type="text/css" href="css/sections/torrents.css?[[.Version]]">
+	<link rel="stylesheet" type="text/css" href="css/sections/downloads.css?[[.Version]]">
+	<link rel="stylesheet" type="text/css" href="css/app.css?[[.Version]]">
 	<link rel="icon" href="cloud-favicon.png" type="image/x-icon" />
 </head>
 
@@ -29,7 +29,7 @@
 			<h2>
 				<a rel="noreferrer" href="https://github.com/boypt/simple-torrent" target="_blank"
 					ng-init="logoHover = false" ng-mouseover="logoHover = true" ng-mouseleave="logoHover = false">
-					<i class="blue icon" ng-class="{cloud:!logoHover, github: logoHover}"></i> {{ state.Stats.Title }}
+					<i class="blue icon" ng-class="{cloud:!logoHover, github: logoHover}"></i> [[.Title]]
 				</a>
 			</h2>
 			<div class="status">
@@ -60,12 +60,12 @@
 			<p>{{$root.info}}</p>
 		</div>
 
-		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html?[[.CLDVER]]'">
+		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html?[[.Version]]'">
 		</section>
-		<section class="omni" ng-controller="OmniController" ng-include src="'template/omni.html?[[.CLDVER]]'">
+		<section class="omni" ng-controller="OmniController" ng-include src="'template/omni.html?[[.Version]]'">
 		</section>
 		<section class="torrents" ng-controller="TorrentsController" ng-include
-			src="'template/torrents.html?[[.CLDVER]]'">
+			src="'template/torrents.html?[[.Version]]'">
 		</section>
 		<section class="downloads" ng-controller="DownloadsController">
 			<div class="ui grid section-header" ng-click="section_expanded_toggle()">
@@ -89,7 +89,7 @@
 				<div class="ui list">
 					<div class="item" ng-repeat="node in $DownloadedFiles | orderBy:'Modified':false"
 						ng-hide="node.$Deleted" ng-controller="NodeController" ng-include
-						src="'template/download-tree.html?[[.CLDVER]]'"></div>
+						src="'template/download-tree.html?[[.Version]]'"></div>
 				</div>
 			</div>
 
@@ -104,15 +104,12 @@
 				<span>
 					<a rel="noreferrer" href="https://github.com/boypt/simple-torrent" target="_blank">SimpleTorrent</a>
 					<span>(based on <a rel="noreferrer" href="https://github.com/anacrolix/torrent"
-							target="_blank">anacrolix/torrent</a>)</span>
-					ver {{ state.Stats.Version }} - </span>
-				<span>
-					<a rel="noreferrer" href="https://golang.org" target="_blank">Go</a> {{ state.Stats.Runtime }},
-				</span>
-				<span ng-click="toggleSections('enginedebug')">Debug</span>
+							target="_blank">anacrolix/torrent</a>)
+						ver [[.Version]]</span>
+					<span ng-click="toggleSections('enginedebug')">Debug</span>
 			</div>
 			<div>
-				<span ng-if="state.Stats.Uptime">Up {{ ago(state.Stats.Uptime) }},</span>
+				<span>Up {{ ago("[[.Uptime]]") }},</span>
 				<span>
 					Transfered (▲: {{ state.Stats.ConnStat.BytesWrittenData | bytes }},
 					▼: {{ state.Stats.ConnStat.BytesReadUsefulData | bytes }})
@@ -129,6 +126,9 @@
 			</div>
 			<p>
 				<span>
+					Go [[.Runtime]],
+				</span>
+				<span>
 					goroutines {{ state.Stats.System.goRoutines }},
 				</span>
 				<span>
@@ -141,9 +141,8 @@
 					mem {{ state.Stats.System.memUsedPercent | round }}%,
 				</span>
 				<span>
-					disk {{ state.Stats.System.diskUsedPercent | round }}%,
+					disk {{ state.Stats.System.diskUsedPercent | round }}%
 				</span>
-				<span ng-if="state.Stats.Uptime">up {{ ago(state.Stats.Uptime) }}</span>
 			</p>
 			<div class="header">
 				Torrent Engine Status
@@ -156,17 +155,17 @@
 	<script src="js/vendor/query-string.js"></script>
 	<script src="js/vendor/angular.min.js"></script>
 	<script src="js/vendor/moment.min.js"></script>
-	<script src="js/velox.js?[[.CLDVER]]"></script>
+	<script src="js/velox.js?[[.Version]]"></script>
 	<script>
 		window.app = window.angular.module('app', []);
 	</script>
-	<script src="js/config-controller.js?[[.CLDVER]]"></script>
-	<script src="js/omni-controller.js?[[.CLDVER]]"></script>
-	<script src="js/torrents-controller.js?[[.CLDVER]]"></script>
-	<script src="js/downloads-controller.js?[[.CLDVER]]"></script>
-	<script src="js/utils.js?[[.CLDVER]]"></script>
-	<script src="js/semantic-checkbox.js?[[.CLDVER]]"></script>
-	<script src="js/run.js?[[.CLDVER]]"></script>
+	<script src="js/config-controller.js?[[.Version]]"></script>
+	<script src="js/omni-controller.js?[[.Version]]"></script>
+	<script src="js/torrents-controller.js?[[.Version]]"></script>
+	<script src="js/downloads-controller.js?[[.Version]]"></script>
+	<script src="js/utils.js?[[.Version]]"></script>
+	<script src="js/semantic-checkbox.js?[[.Version]]"></script>
+	<script src="js/run.js?[[.Version]]"></script>
 </body>
 
 </html>

@@ -18,7 +18,7 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 
 	case "/", "index.html":
-		htmlTPL["index.html"].Execute(w, struct{ CLDVER string }{s.state.Stats.Version})
+		htmlTPL["index.html"].Execute(w, s.baseInfo)
 		return
 	case "/js/velox.js":
 		//handle realtime client library

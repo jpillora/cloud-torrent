@@ -83,13 +83,16 @@ type Server struct {
 		Torrents        *map[string]*engine.Torrent
 		Users           map[string]string
 		Stats           struct {
-			Title    string
-			Version  string
-			Runtime  string
-			Uptime   time.Time
 			System   osStats
 			ConnStat torrent.ConnStats
 		}
+	}
+
+	baseInfo struct {
+		Title   string
+		Version string
+		Runtime string
+		Uptime  string
 	}
 }
 
@@ -105,10 +108,10 @@ func (s *Server) Run(version string) error {
 	if isTLS && (s.CertPath == "" || s.KeyPath == "") {
 		return fmt.Errorf("You must provide both key and cert paths")
 	}
-	s.state.Stats.Title = s.Title
-	s.state.Stats.Version = version
-	s.state.Stats.Runtime = strings.TrimPrefix(runtime.Version(), "go")
-	s.state.Stats.Uptime = time.Now()
+	s.baseInfo.Title = s.Title
+	s.baseInfo.Version = version
+	s.baseInfo.Runtime = strings.TrimPrefix(runtime.Version(), "go")
+	s.baseInfo.Uptime = time.Now().Format(time.RFC822Z)
 
 	//init maps
 	s.state.Users = make(map[string]string)

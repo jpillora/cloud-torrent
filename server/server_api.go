@@ -32,11 +32,10 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 	switch action {
 	case "magnet": // adds magnet by GET: /api/magnet?m=...
 		tdata := struct {
-			CLDVER   string
 			HasError bool
 			Error    string
 			Magnet   string
-		}{CLDVER: s.state.Stats.Version}
+		}{}
 
 		m := r.URL.Query().Get("m")
 		if err := s.engine.NewMagnet(m); err != nil {
