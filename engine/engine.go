@@ -108,10 +108,6 @@ func (e *Engine) Configure(c *Config) error {
 		}
 	}
 
-	tc.EstablishedConnsPerTorrent = c.EstablishedConnsPerTorrent
-	tc.HalfOpenConnsPerTorrent = c.HalfOpenConnsPerTorrent
-	tc.TotalHalfOpenConns = c.TotalHalfOpenConns
-
 	{
 		if e.client != nil {
 			// stop all current torrents

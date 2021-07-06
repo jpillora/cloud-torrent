@@ -26,37 +26,34 @@ const (
 )
 
 type Config struct {
-	AutoStart                  bool
-	EngineDebug                bool
-	MuteEngineLog              bool
-	ObfsPreferred              bool
-	ObfsRequirePreferred       bool
-	DisableTrackers            bool
-	DisableIPv6                bool
-	NoDefaultPortForwarding    bool
-	DisableUTP                 bool
-	UseMmap                    bool
-	DownloadDirectory          string
-	WatchDirectory             string
-	EnableUpload               bool
-	EnableSeeding              bool
-	IncomingPort               int
-	DoneCmd                    string
-	SeedRatio                  float32
-	SeedTime                   time.Duration
-	DataTick                   time.Duration
-	UploadRate                 string
-	DownloadRate               string
-	TrackerListURL             string
-	AlwaysAddTrackers          bool
-	ProxyURL                   string
-	RssURL                     string
-	ScraperURL                 string
-	MaxConcurrentTask          int
-	EstablishedConnsPerTorrent int
-	HalfOpenConnsPerTorrent    int
-	TotalHalfOpenConns         int
-	AllowRuntimeConfigure      bool
+	AutoStart               bool
+	EngineDebug             bool
+	MuteEngineLog           bool
+	ObfsPreferred           bool
+	ObfsRequirePreferred    bool
+	DisableTrackers         bool
+	DisableIPv6             bool
+	NoDefaultPortForwarding bool
+	DisableUTP              bool
+	UseMmap                 bool
+	DownloadDirectory       string
+	WatchDirectory          string
+	EnableUpload            bool
+	EnableSeeding           bool
+	IncomingPort            int
+	DoneCmd                 string
+	SeedRatio               float32
+	SeedTime                time.Duration
+	DataTick                time.Duration
+	UploadRate              string
+	DownloadRate            string
+	TrackerListURL          string
+	AlwaysAddTrackers       bool
+	ProxyURL                string
+	RssURL                  string
+	ScraperURL              string
+	MaxConcurrentTask       int
+	AllowRuntimeConfigure   bool
 }
 
 func InitConf(specPath string) (*Config, error) {
@@ -85,9 +82,6 @@ func InitConf(specPath string) (*Config, error) {
 	viper.SetDefault("TrackerListURL", defaultTrackerListURL)
 	viper.SetDefault("ScraperURL", defaultScraperURL)
 	viper.SetDefault("MaxConcurrentTask", 0)
-	viper.SetDefault("EstablishedConnsPerTorrent", 50)
-	viper.SetDefault("HalfOpenConnsPerTorrent", 25)
-	viper.SetDefault("TotalHalfOpenConns", 100)
 	viper.SetDefault("AllowRuntimeConfigure", true)
 
 	// user specific config path
