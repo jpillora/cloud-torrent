@@ -110,7 +110,7 @@
 					<span ng-click="toggleSections('enginedebug')">Debug</span>
 			</div>
 			<div>
-				<span>Up {{ ago("[[.Uptime]]") }},</span>
+				<span>Up {{ ago([[.Uptime]]*1000) }},</span>
 				<span>
 					Transfered (▲: {{ state.Stats.ConnStat.BytesWrittenData | bytes }},
 					▼: {{ state.Stats.ConnStat.BytesReadUsefulData | bytes }})

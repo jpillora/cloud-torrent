@@ -92,7 +92,7 @@ type Server struct {
 		Title   string
 		Version string
 		Runtime string
-		Uptime  string
+		Uptime  int64
 	}
 }
 
@@ -111,7 +111,7 @@ func (s *Server) Run(version string) error {
 	s.baseInfo.Title = s.Title
 	s.baseInfo.Version = version
 	s.baseInfo.Runtime = strings.TrimPrefix(runtime.Version(), "go")
-	s.baseInfo.Uptime = time.Now().Format(time.RFC822Z)
+	s.baseInfo.Uptime = time.Now().Unix()
 
 	//init maps
 	s.state.Users = make(map[string]string)
