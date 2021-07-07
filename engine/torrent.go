@@ -161,6 +161,7 @@ func (torrent *Torrent) updateTorrentStatus() {
 	if torrent.Done && !torrent.DoneCmdCalled {
 		torrent.DoneCmdCalled = true
 		torrent.FinishedAt = time.Now()
+		log.Println("[TaskFinished]", torrent.InfoHash)
 		go torrent.callDoneCmd(torrent.InfoHash, torrent.Name, "torrent", torrent.Size)
 	}
 }
