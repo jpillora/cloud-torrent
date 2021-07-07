@@ -53,20 +53,23 @@ func (s *Server) tickerRoutine() {
 	defer tk.Stop()
 
 	log.Println("[tickerRoutine] sync connected, ticking for", tick)
-	var noConnCount uint
+	var iterCount, noConnCount uint
 	for range tk.C {
-
+		iterCount++
 		if s.state.NumConnections() == 0 {
 			noConnCount++
 		}
+
 		if noConnCount > 30 { // 1mins
 			atomic.StoreInt32(&(s.syncSemphor), 0)
 			log.Println("[tickerRoutine] sync exit for no web connections")
 			return
 		}
 
-		s.state.Stats.System.loadStats()
-		s.state.Stats.ConnStat = s.engine.ConnStat()
+		if iterCount%4 == 0 {
+			s.state.Stats.System.loadStats()
+			s.state.Stats.ConnStat = s.engine.ConnStat()
+		}
 		s.state.Push()
 	}
 }
