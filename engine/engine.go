@@ -313,8 +313,9 @@ func (e *Engine) taskRoutine(t *Torrent) {
 		go e.stopRemoveTask(t.InfoHash)
 	}
 
-	if e.config.SeedTime > 0 && t.Done && t.Started && !t.ManualStarted &&
-		e.waitList.Len() > 0 &&
+	// stops task when there're tasks waiting after `SeedTime`
+	if e.config.SeedTime > 0 && e.waitList.Len() > 0 &&
+		t.Done && t.Started && !t.ManualStarted &&
 		!t.FinishedAt.IsZero() &&
 		time.Since(t.FinishedAt) > e.config.SeedTime {
 		log.Printf("[TaskRoutine]%s Stopped and Drop due to timed up for SeedTime %s", t.InfoHash, e.config.SeedTime)
