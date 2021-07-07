@@ -33,11 +33,12 @@
 				</a>
 			</h2>
 			<div class="status">
+				<i ng-show="apiing" class="ui circular loading repeat icon"></i>
 				<i class="ui circular retweet icon" ng-class="{green: storage.veloxCON=='ws'}"
 					title="Green icon to use websocket, instead of eventstream to connect. Refresh the page to take effect."
 					ng-click="toggleWebsocket()"></i>
-				<i ng-show="request.count > 0" class="ui circular loading repeat icon"></i>
-				<i ng-click="toggleSections('rss')" class="ui circular rss square icon"
+				<i ng-if="state.LatestRSSGuid != ''" ng-click="toggleSections('rss')"
+					class="ui circular rss square icon"
 					ng-class="{orange: state.LatestRSSGuid != storage.tcRSSGUID, green: $root.omni.mode.rss }"
 					title="RSS List"></i>
 				<i ng-hide="!(state.Config.AllowRuntimeConfigure)" ng-click="toggleSections('config')"
