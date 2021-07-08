@@ -2,7 +2,7 @@
 # STEP 1 build executable binary
 ############################
 FROM golang:alpine AS builder
-RUN apk update && apk add --no-cache git
+RUN apk update && apk add --no-cache git make build-base
 WORKDIR /root/cloud-torrent
 ENV PATH=$HOME/go/bin:$PATH 
 ENV GO111MODULE=on CGO_ENABLED=1
