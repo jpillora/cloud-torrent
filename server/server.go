@@ -81,6 +81,7 @@ type Server struct {
 		LatestRSSGuid   string
 		Torrents        *map[string]*engine.Torrent
 		Users           map[string]string
+		UseQueue        bool
 		Stats           struct {
 			System   osStats
 			ConnStat torrent.ConnStats
@@ -88,11 +89,11 @@ type Server struct {
 	}
 
 	baseInfo struct {
+		Uptime                int64
 		Title                 string
 		Version               string
 		Runtime               string
 		AllowRuntimeConfigure bool
-		Uptime                int64
 	}
 
 	engineConfig *engine.Config
@@ -166,6 +167,7 @@ func (s *Server) Run(version string) error {
 
 	// engine configure
 	s.state.Stats.System.diskDirPath = c.DownloadDirectory
+	s.state.UseQueue = (c.MaxConcurrentTask > 0)
 	s.engineConfig = c
 	s.baseInfo.AllowRuntimeConfigure = c.AllowRuntimeConfigure
 	if err := s.engine.Configure(c); err != nil {

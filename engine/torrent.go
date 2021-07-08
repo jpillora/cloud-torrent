@@ -39,9 +39,9 @@ type Torrent struct {
 	StartedAt      time.Time
 	FinishedAt     time.Time
 	StoppedAt      time.Time
+	updatedAt      time.Time
 	t              *torrent.Torrent
 	dropWait       chan struct{}
-	updatedAt      time.Time
 	cldServer      Server
 	sync.Mutex
 }

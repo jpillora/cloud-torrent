@@ -1,20 +1,16 @@
 /* globals app,window */
 
 //RootController
-app.run(function ($rootScope, search, api, apiget, storage, reqinfo, reqerr) {
+app.run(function ($rootScope, $location, search, api, apiget, storage, reqinfo, reqerr) {
   var $scope = (window.scope = $rootScope);
-
-  var pn = window.location.pathname;
-  if (pn[pn.length - 1] != "/") {
-    pn += "/";
-  }
+  var basePath = $location.path();
 
   // register as "magnet:" protocol handler
   // only available when visited as a https site
   if ('registerProtocolHandler' in navigator) {
     navigator.registerProtocolHandler(
       'magnet',
-      document.location.origin + pn + 'api/magnet?m=%s',
+      document.location.origin + basePath + 'api/magnet?m=%s',
       'SimpleTorrent'
     );
   }
@@ -24,9 +20,9 @@ app.run(function ($rootScope, search, api, apiget, storage, reqinfo, reqerr) {
   $scope.hasConnected = false;
   var v, vtype = storage.veloxCON || "sse";
   if (vtype == "ws") {
-    v = velox.ws(pn + "sync", $scope.state);
+    v = velox.ws(basePath + "sync", $scope.state);
   } else {
-    v = velox.sse(pn + "sync", $scope.state);
+    v = velox.sse(basePath + "sync", $scope.state);
   }
   v.onupdate = function () {
     $scope.$applyAsync();

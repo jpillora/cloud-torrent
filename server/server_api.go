@@ -249,6 +249,7 @@ func (s *Server) apiConfigure(data []byte) error {
 
 		// do after config synced
 		if status&engine.NeedLoadWaitList > 0 {
+			s.state.UseQueue = true
 			go func() {
 				for {
 					if err := s.engine.NextWaitTask(); err != nil {

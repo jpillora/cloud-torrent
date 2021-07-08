@@ -39,7 +39,7 @@ app.controller("TorrentsController", function ($scope, $rootScope, api, reqinfo,
   };
 
   $scope.onDeleteBtnClick = function (t) {
-    if ($rootScope.config.ConfigObj.MaxConcurrentTask === 0) {
+    if (!$rootScope.state.UseQueue) {
       $scope.submitTorrent("delete", t);
       return
     }
