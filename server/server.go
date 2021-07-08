@@ -75,7 +75,6 @@ type Server struct {
 
 	state struct {
 		velox.State
-		Config          engine.Config
 		SearchProviders scraper.Config
 		rssMark         map[string]string
 		rssCache        []*gofeed.Item
@@ -89,11 +88,14 @@ type Server struct {
 	}
 
 	baseInfo struct {
-		Title   string
-		Version string
-		Runtime string
-		Uptime  int64
+		Title                 string
+		Version               string
+		Runtime               string
+		AllowRuntimeConfigure bool
+		Uptime                int64
 	}
+
+	engineConfig *engine.Config
 }
 
 // Run the server
@@ -164,14 +166,15 @@ func (s *Server) Run(version string) error {
 
 	// engine configure
 	s.state.Stats.System.diskDirPath = c.DownloadDirectory
-	s.state.Config = *c
-	if err := s.engine.Configure(&s.state.Config); err != nil {
+	s.engineConfig = c
+	s.baseInfo.AllowRuntimeConfigure = c.AllowRuntimeConfigure
+	if err := s.engine.Configure(c); err != nil {
 		return err
 	}
 
 	if s.Debug {
 		viper.Debug()
-		log.Printf("Effective Config: %#v", s.state.Config)
+		log.Printf("Effective Config: %#v", *c)
 	}
 
 	if err := s.engine.UpdateTrackers(); err != nil {

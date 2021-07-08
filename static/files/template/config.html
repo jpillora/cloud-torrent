@@ -11,10 +11,10 @@
   <div class="ui horizontal divider">
     Configuration
   </div>
-  <div class="field" ng-if="state.Config !== undefined" ng-repeat="k in configOrderdKey"
-    ng-init="type = inputType(k, state.Config[k])">
+  <div class="field" ng-repeat="k in configOrderdKey">
+    {{ type = inputType(k, configObj[k]);""}}
     <div ng-if="type == 'check'">
-      <checkbox type="toggle" ng-model="state.Config[k]">{{ k | addspaces }}</checkbox>
+      <checkbox type="toggle" ng-model="configObj[k]">{{ k | addspaces }}</checkbox>
       <span title="{{ configTip[k] }}"><i class="question circle icon"></i></span>
     </div>
     <div ng-if="type == 'text' || type == 'number'">
@@ -22,13 +22,13 @@
         <h5>{{ k | addspaces }} <span title="{{ configTip[k] }}"><i class="question circle icon"></i></span>
         </h5>
       </label>
-      <input type="{{type}}" ng-model="state.Config[k]"></input>
+      <input type="{{type}}" ng-model="configObj[k]"></input>
     </div>
     <div ng-if="type == 'multiline'">
       <label>
         <h5>{{ k | addspaces }}<span title="{{ configTip[k] }}"><i class="question circle icon"></i></span></h5>
       </label>
-      <textarea ng-model="state.Config[k]"></textarea>
+      <textarea ng-model="configObj[k]"></textarea>
     </div>
   </div>
   <div class="ui horizontal divider">

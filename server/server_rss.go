@@ -30,7 +30,7 @@ func (s *Server) updateRSS() {
 	fp.Client = &http.Client{
 		Timeout: 60 * time.Second,
 	}
-	for _, rss := range strings.Split(s.state.Config.RssURL, "\n") {
+	for _, rss := range strings.Split(s.engineConfig.RssURL, "\n") {
 		if !strings.HasPrefix(rss, "http://") && !strings.HasPrefix(rss, "https://") {
 			continue
 		}

@@ -41,7 +41,7 @@
 					class="ui circular rss square icon"
 					ng-class="{orange: state.LatestRSSGuid != storage.tcRSSGUID, green: $root.omni.mode.rss }"
 					title="RSS List"></i>
-				<i ng-hide="!(state.Config.AllowRuntimeConfigure)" ng-click="toggleSections('config')"
+				<i ng-if="[[.AllowRuntimeConfigure]]" ng-click="toggleSections('config')"
 					ng-class="{green: $root.config.edit}" title="Edit Config" class="ui circular server icon"></i>
 				<i ng-click="toggleSections('omni')" ng-class="{green: $root.omni.edit}" title="Edit Magnet/Torrent"
 					class="ui circular magnet icon"></i>
@@ -157,7 +157,7 @@
 	<script src="js/vendor/angular.min.js"></script>
 	<script src="js/vendor/moment.min.js"></script>
 	<script src="js/velox.js?[[.Version]]"></script>
-	<script>
+	<script type="text/javascript">
 		window.app = window.angular.module('app', []);
 	</script>
 	<script src="js/config-controller.js?[[.Version]]"></script>

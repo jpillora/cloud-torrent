@@ -23,7 +23,7 @@ type fsNode struct {
 }
 
 func (s *Server) listFiles() *fsNode {
-	rootDir := s.state.Config.DownloadDirectory
+	rootDir := s.engineConfig.DownloadDirectory
 	root := &fsNode{}
 	if info, err := os.Stat(rootDir); err == nil {
 		if err := list(rootDir, info, root, new(uint)); err != nil {
@@ -37,7 +37,7 @@ func (s *Server) serveFiles(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, "/download/") {
 		url := strings.TrimPrefix(r.URL.Path, "/download/")
 		//dldir is absolute
-		dldir := s.state.Config.DownloadDirectory
+		dldir := s.engineConfig.DownloadDirectory
 		file := filepath.Join(dldir, url)
 		//only allow fetches/deletes inside the dl dir
 		if !strings.HasPrefix(file, dldir) || dldir == file {
@@ -109,12 +109,12 @@ func list(path string, info os.FileInfo, node *fsNode, n *uint) error {
 
 func (s *Server) DoneCmd(path, hash, ttype string, size, ts int64) (string, []string, error) {
 
-	if s.state.Config.DoneCmd == "" {
+	if s.engineConfig.DoneCmd == "" {
 		return "", nil, fmt.Errorf("unconfigred Donecmd")
 	}
 
 	env := []string{
-		fmt.Sprintf("CLD_DIR=%s", s.state.Config.DownloadDirectory),
+		fmt.Sprintf("CLD_DIR=%s", s.engineConfig.DownloadDirectory),
 		fmt.Sprintf("CLD_RESTAPI=%s", s.RestAPI),
 		fmt.Sprintf("CLD_PATH=%s", path),
 		fmt.Sprintf("CLD_HASH=%s", hash),
@@ -123,5 +123,5 @@ func (s *Server) DoneCmd(path, hash, ttype string, size, ts int64) (string, []st
 		fmt.Sprintf("CLD_STARTTS=%d", ts),
 	}
 	env = append(env, os.Environ()...)
-	return s.state.Config.DoneCmd, env, nil
+	return s.engineConfig.DoneCmd, env, nil
 }

@@ -8,7 +8,7 @@ import (
 
 func (s *Server) backgroundRoutines() {
 
-	go s.fetchSearchConfig(s.state.Config.ScraperURL)
+	go s.fetchSearchConfig(s.engineConfig.ScraperURL)
 
 	// initial state
 	s.state.Torrents = s.engine.GetTorrents()
@@ -31,7 +31,7 @@ func (s *Server) backgroundRoutines() {
 	// rss updater
 	go func() {
 		// skip if not configured
-		if !strings.HasPrefix(s.state.Config.RssURL, "http") {
+		if !strings.HasPrefix(s.engineConfig.RssURL, "http") {
 			return
 		}
 

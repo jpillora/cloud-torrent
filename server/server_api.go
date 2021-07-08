@@ -46,6 +46,8 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 		}
 		tdata.Magnet = m
 		htmlTPL["template/magadded.html"].Execute(w, tdata)
+	case "configure":
+		json.NewEncoder(w).Encode(*(s.engineConfig))
 	case "torrents":
 		json.NewEncoder(w).Encode(s.engine.GetTorrents())
 	case "files":
@@ -192,7 +194,7 @@ func (s *Server) apiPOST(r *http.Request) error {
 
 func (s *Server) apiConfigure(data []byte) error {
 
-	if !s.state.Config.AllowRuntimeConfigure {
+	if !s.engineConfig.AllowRuntimeConfigure {
 		return errors.New("AllowRuntimeConfigure is set to false")
 	}
 
@@ -204,8 +206,8 @@ func (s *Server) apiConfigure(data []byte) error {
 		return err
 	}
 
-	if !reflect.DeepEqual(s.state.Config, c) {
-		status := s.state.Config.Validate(&c)
+	if !reflect.DeepEqual(s.engineConfig, c) {
+		status := s.engineConfig.Validate(&c)
 
 		if status&engine.ForbidRuntimeChange > 0 {
 			log.Printf("[api] warnning! someone tried to change DoneCmd config")
@@ -220,15 +222,15 @@ func (s *Server) apiConfigure(data []byte) error {
 		}
 
 		// now it's safe to save the configure
-		if err := s.state.Config.SyncViper(c); err != nil {
+		if err := s.engineConfig.SyncViper(c); err != nil {
 			return err
 		}
-		s.state.Config = c
+		s.engineConfig = &c
 		log.Printf("[api] config saved")
 
 		// finally to reconfigure the engine
 		if status&engine.NeedEngineReConfig > 0 {
-			if err := s.engine.Configure(&s.state.Config); err != nil {
+			if err := s.engine.Configure(s.engineConfig); err != nil {
 				if !s.engine.IsConfigred() {
 					go func() {
 						log.Println("[apiConfigure] serious error occured while reconfigured, will exit in 10s")
@@ -241,7 +243,7 @@ func (s *Server) apiConfigure(data []byte) error {
 			s.engine.RestoreCacheDir()
 			log.Printf("[api] torrent engine reconfigred")
 		} else {
-			s.engine.SetConfig(s.state.Config)
+			s.engine.SetConfig(s.engineConfig)
 		}
 		s.state.Push()
 
@@ -262,6 +264,6 @@ func (s *Server) apiConfigure(data []byte) error {
 	}
 
 	// update search config anyway
-	go s.fetchSearchConfig(s.state.Config.ScraperURL)
+	go s.fetchSearchConfig(s.engineConfig.ScraperURL)
 	return nil
 }

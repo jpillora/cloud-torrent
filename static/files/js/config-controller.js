@@ -2,23 +2,17 @@
 
 app.controller("ConfigController", function ($scope, $rootScope, api) {
   $rootScope.config = $scope;
+  $scope.configObj = {};
   $scope.edit = false;
   $scope.configOrderdKey = [
     "AutoStart",
     "EnableSeeding",
     "EnableUpload",
-    "IncomingPort",
-    "ObfsPreferred",
-    "ObfsRequirePreferred",
     "DisableTrackers",
-    "DisableIPv6",
     "MaxConcurrentTask",
     "SeedRatio",
     "UploadRate",
     "DownloadRate",
-    "DownloadDirectory",
-    "WatchDirectory",
-    "ProxyURL",
     "TrackerListURL",
     "AlwaysAddTrackers",
     "RssURL"
@@ -49,9 +43,7 @@ app.controller("ConfigController", function ($scope, $rootScope, api) {
     $scope.edit = b === undefined ? !$scope.edit : b;
   };
   $scope.submitConfig = function () {
-    $rootScope.info = null;
-    $rootScope.err = null;
-    var data = JSON.stringify($rootScope.state.Config);
+    var data = JSON.stringify($scope.configObj);
     api.configure(data).then(function (xhr) {
       $rootScope.info = `${xhr.data}: Config Saved`;
     }).finally(function () {

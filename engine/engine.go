@@ -63,8 +63,8 @@ func (e *Engine) Config() Config {
 	return e.config
 }
 
-func (e *Engine) SetConfig(c Config) {
-	e.config = c
+func (e *Engine) SetConfig(c *Config) {
+	e.config = *c
 }
 
 func (e *Engine) Configure(c *Config) error {

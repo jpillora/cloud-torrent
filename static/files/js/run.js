@@ -144,6 +144,11 @@ app.run(function ($rootScope, search, api, apiget, storage, reqinfo, reqerr) {
         break;
       case "config":
         $rootScope.config.edit = !$rootScope.config.edit;
+        if ($rootScope.config.edit) {
+          apiget.configure().then(function (xhr) {
+            $rootScope.config.configObj = xhr.data;
+          })
+        }
         break
       case "omni":
         $rootScope.omni.edit = !$rootScope.omni.edit;

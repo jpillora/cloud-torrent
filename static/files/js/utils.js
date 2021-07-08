@@ -69,6 +69,7 @@ app.factory("apiget", function ($rootScope, $http, reqerr) {
   };
   var api = {};
   var actions = [
+    "configure",
     "enginedebug",
     "files"
   ];
