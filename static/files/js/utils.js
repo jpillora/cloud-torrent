@@ -28,7 +28,7 @@ app.factory("api", function ($rootScope, $http, reqerr) {
       transformRequest: []
     })
       .then(function (xhr) {
-        console.log(`API ${url}:${data}->${xhr.data}`);
+        console.log(`API ${url}->${xhr.data}`);
         return xhr;
       })
       .catch(reqerr)

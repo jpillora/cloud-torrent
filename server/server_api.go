@@ -115,10 +115,9 @@ func (s *Server) apiPOST(r *http.Request) error {
 	//convert torrent bytes into magnet
 	if action == "torrentfile" {
 		if err := s.engine.NewTorrentByReader(bytes.NewBuffer(data)); err != nil {
-			if errors.Is(err, engine.ErrMaxConnTasks) {
-				return nil
+			if !errors.Is(err, engine.ErrMaxConnTasks) {
+				return err
 			}
-			return err
 		}
 		return nil
 	}
