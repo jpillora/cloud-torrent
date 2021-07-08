@@ -5,7 +5,9 @@ app.controller("DownloadsController", function ($scope, $rootScope, apiget) {
   $scope.$isLoadingFiles = false;
   $scope.$DownloadedFiles = [];
   apiget.files().then(function (xhr) {
-    $scope.$DownloadedFiles = xhr.data.Children;
+    if (xhr.data.Children) {
+      $scope.$DownloadedFiles = xhr.data.Children;
+    }
   });
 
   $scope.$expanded = false;
@@ -14,7 +16,9 @@ app.controller("DownloadsController", function ($scope, $rootScope, apiget) {
     if ($scope.$expanded) {
       $scope.$isLoadingFiles = true;
       apiget.files().then(function (xhr) {
-        $scope.$DownloadedFiles = xhr.data.Children;
+        if (xhr.data.Children) {
+          $scope.$DownloadedFiles = xhr.data.Children;
+        }
       }).finally(function () {
         $scope.$isLoadingFiles = false;
         $scope.$applyAsync();
