@@ -1,18 +1,14 @@
 /* globals app,window */
 
 //RootController
-app.run(function ($rootScope, $location, $log, search, api, apiget, storage, reqinfo, reqerr) {
+app.run(function ($rootScope, $window, $location, $log, search, api, apiget, storage, reqinfo, reqerr) {
   var $scope = (window.scope = $rootScope);
-  var basePath = $location.path();
-  if (basePath.slice(-1) != "/") {
-    basePath += "/"
-  }
 
   // register as "magnet:" protocol handler
   // only available when visited as a https site
-  if ('registerProtocolHandler' in navigator) {
+  if ('registerProtocolHandler' in $window.navigator) {
     var handlurl = $location.absUrl() + 'api/magnet?m=%s';
-    navigator.registerProtocolHandler('magnet', handlurl, 'SimpleTorrent');
+    $window.navigator.registerProtocolHandler('magnet', handlurl, 'SimpleTorrent');
     $log.info("Registered protocol handler", handlurl);
   }
 
@@ -20,10 +16,13 @@ app.run(function ($rootScope, $location, $log, search, api, apiget, storage, req
   $scope.state = {};
   $scope.hasConnected = false;
   var v, vtype = storage.veloxCON || "sse";
+  var syncLoc = $location.absUrl() + "sync";
   if (vtype == "ws") {
-    v = velox.ws(basePath + "sync", $scope.state);
+    v = velox.ws(syncLoc, $scope.state);
+    $log.info("Velox is using Websocket")
   } else {
-    v = velox.sse(basePath + "sync", $scope.state);
+    v = velox.sse(syncLoc, $scope.state);
+    $log.info("Velox is using EventStream")
   }
   v.onupdate = function () {
     $scope.$applyAsync();
