@@ -4,12 +4,13 @@
 app.run(function ($rootScope, search, api, apiget, storage, reqinfo, reqerr) {
   var $scope = (window.scope = $rootScope);
 
-  var pn = window.location.pathname
+  var pn = window.location.pathname;
   if (pn[pn.length - 1] != "/") {
-    pn += "/"
+    pn += "/";
   }
 
   // register as "magnet:" protocol handler
+  // only available when visited as a https site
   if ('registerProtocolHandler' in navigator) {
     navigator.registerProtocolHandler(
       'magnet',
@@ -53,21 +54,6 @@ app.run(function ($rootScope, search, api, apiget, storage, reqinfo, reqerr) {
   $scope.search = search;
   $scope.api = api;
   $scope.storage = storage;
-
-  $scope.inputType = function (k, v) {
-    multiLines = ["RssURL"];
-    if (multiLines.includes(k)) {
-      return "multiline"
-    }
-
-    switch (typeof v) {
-      case "number":
-        return "number";
-      case "boolean":
-        return "check";
-    }
-    return "text";
-  };
 
   $scope.ready = function (f) {
     var path = typeof f === "object" ? f.path : f;
