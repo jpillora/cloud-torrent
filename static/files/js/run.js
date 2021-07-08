@@ -37,9 +37,13 @@ app.run(function ($rootScope, $window, $location, $log, search, api, apiget, sto
   };
 
   $scope.DownloadingFiles = {};
-  $scope.$watch("state.Torrents", function (o, n) {
+  $scope.$watch("state.Torrents", function (newobj, oldobj) {
     $scope.DownloadingFiles = {};
-    angular.forEach(n, function (tval) {
+    if (!angular.isObject(newobj) || angular.equals(newobj, {})) {
+      return
+    }
+
+    angular.forEach(newobj, function (tval) {
       angular.forEach(tval.Files, function (fval) {
         if (fval.Percent < 100) {
           var base = fval.Path.split(/[\\/]/).pop()
