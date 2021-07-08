@@ -26,17 +26,15 @@ require (
 	github.com/jpillora/velox v0.4.1
 	github.com/mmcdole/gofeed v1.1.3
 	github.com/moul/http2curl v1.0.0 // indirect
-	github.com/shirou/gopsutil v3.21.4+incompatible
+	github.com/shirou/gopsutil/v3 v3.21.6
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/viper v1.7.1
-	github.com/tklauser/go-sysconf v0.3.6 // indirect
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce // indirect
 	github.com/valyala/fasthttp v1.28.0 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/yalp/jsonpath v0.0.0-20180802001716-5cc68e5049a0 // indirect
 	github.com/yudai/gojsondiff v1.0.0 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 )
 
