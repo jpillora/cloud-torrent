@@ -4,6 +4,9 @@
 app.run(function ($rootScope, $location, search, api, apiget, storage, reqinfo, reqerr) {
   var $scope = (window.scope = $rootScope);
   var basePath = $location.path();
+  if (basePath.slice(-1) != "/") {
+    basePath += "/"
+  }
 
   // register as "magnet:" protocol handler
   // only available when visited as a https site
