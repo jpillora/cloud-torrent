@@ -248,8 +248,8 @@ func (s *Server) apiConfigure(data []byte) error {
 		s.state.Push()
 
 		// do after config synced
+		s.state.UseQueue = (s.engineConfig.MaxConcurrentTask > 0)
 		if status&engine.NeedLoadWaitList > 0 {
-			s.state.UseQueue = true
 			go func() {
 				for {
 					if err := s.engine.NextWaitTask(); err != nil {
