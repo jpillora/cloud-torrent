@@ -24,6 +24,7 @@ app.factory("api", function ($rootScope, $http, reqerr) {
   var request = function (action, data) {
     var url = "api/" + action;
     $rootScope.apiing = true;
+    $rootScope.$applyAsync();
     var req = $http.post(url, data, {
       transformRequest: []
     })
@@ -57,6 +58,7 @@ app.factory("apiget", function ($rootScope, $http, reqerr) {
   var request = function (action, data) {
     var url = "api/" + action;
     $rootScope.apiing = true;
+    $rootScope.$applyAsync();
     var req = $http.get(url)
       .then(function (xhr) {
         console.log(`APIGET ${url}`);
