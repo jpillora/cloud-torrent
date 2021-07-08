@@ -1,7 +1,7 @@
 /* globals app,window */
 
 //RootController
-app.run(function ($rootScope, $location, search, api, apiget, storage, reqinfo, reqerr) {
+app.run(function ($rootScope, $location, $log, search, api, apiget, storage, reqinfo, reqerr) {
   var $scope = (window.scope = $rootScope);
   var basePath = $location.path();
   if (basePath.slice(-1) != "/") {
@@ -11,11 +11,9 @@ app.run(function ($rootScope, $location, search, api, apiget, storage, reqinfo, 
   // register as "magnet:" protocol handler
   // only available when visited as a https site
   if ('registerProtocolHandler' in navigator) {
-    navigator.registerProtocolHandler(
-      'magnet',
-      document.location.origin + basePath + 'api/magnet?m=%s',
-      'SimpleTorrent'
-    );
+    var handlurl = $location.absUrl() + 'api/magnet?m=%s';
+    navigator.registerProtocolHandler('magnet', handlurl, 'SimpleTorrent');
+    $log.info("Registered protocol handler", handlurl);
   }
 
   // velox event stream framework
