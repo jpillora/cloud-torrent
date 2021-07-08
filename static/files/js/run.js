@@ -20,7 +20,6 @@ app.run(function ($rootScope, search, api, apiget, storage, reqinfo, reqerr) {
   }
 
   // velox event stream framework
-  $scope.DownloadingFiles = {};
   $scope.state = {};
   $scope.hasConnected = false;
   var v, vtype = storage.veloxCON || "sse";
@@ -30,16 +29,6 @@ app.run(function ($rootScope, search, api, apiget, storage, reqinfo, reqerr) {
     v = velox.sse(pn + "sync", $scope.state);
   }
   v.onupdate = function () {
-    $scope.DownloadingFiles = {};
-    angular.forEach($scope.state.Torrents, function (tval) {
-      angular.forEach(tval.Files, function (fval) {
-        if (fval.Percent < 100) {
-          var base = fval.Path.split(/[\\/]/).pop()
-          $scope.DownloadingFiles[base] = true;
-        }
-      });
-    });
-
     $scope.$applyAsync();
   };
   v.onchange = function (connected) {
@@ -50,6 +39,19 @@ app.run(function ($rootScope, search, api, apiget, storage, reqinfo, reqerr) {
       $scope.connected = connected;
     });
   };
+
+  $scope.DownloadingFiles = {};
+  $scope.$watch("state.Torrents", function (o, n) {
+    $scope.DownloadingFiles = {};
+    angular.forEach(n, function (tval) {
+      angular.forEach(tval.Files, function (fval) {
+        if (fval.Percent < 100) {
+          var base = fval.Path.split(/[\\/]/).pop()
+          $scope.DownloadingFiles[base] = true;
+        }
+      });
+    });
+  }, true)
   //expose services
   $scope.search = search;
   $scope.api = api;
