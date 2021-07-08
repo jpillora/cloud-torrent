@@ -160,7 +160,7 @@ app.run(function ($rootScope, $window, $location, $log, search, api, apiget, sto
   //page-wide keybinding, listen for space,
   //toggle pause/play the video on-screen
   document.addEventListener("keydown", function (e) {
-    if (e.keyCode !== 32) {
+    if (e.code !== "Space") { // space key
       return;
     }
     var typing = document.querySelector("input:focus");
