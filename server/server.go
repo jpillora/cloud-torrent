@@ -47,7 +47,7 @@ type Server struct {
 	Title          string `opts:"help=Title of this instance,env=TITLE"`
 	Port           int    `opts:"help=Listening port,env=PORT"`
 	Host           string `opts:"help=Listening interface (default all),env=HOST"`
-	UnixPerm       string `opts:"help=DomainSocket file permission (default 0755),env=UNIXPERM"`
+	UnixPerm       string `opts:"help=DomainSocket file permission (default 0666),env=UNIXPERM"`
 	Auth           string `opts:"help=Optional basic auth in form 'user:password',env=AUTH"`
 	ProxyURL       string `opts:"help=Proxy url,env=PROXY_URL"`
 	ConfigPath     string `opts:"help=Configuration file path (default /etc/cloud-torrent.yaml)"`
