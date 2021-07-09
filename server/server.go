@@ -62,9 +62,8 @@ type Server struct {
 	ConvYAML       bool   `opts:"help=Convert old json config to yaml format."`
 
 	//http handlers
-	files, static, rssh http.Handler
-	scraper             *scraper.Handler
-	scraperh            http.Handler
+	scraperh, dlfilesh, statich, verStatich, rssh http.Handler
+	scraper                                       *scraper.Handler
 
 	//torrent engine
 	engine *engine.Engine
@@ -121,8 +120,9 @@ func (s *Server) Run(version string) error {
 	s.state.rssMark = make(map[string]string)
 
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
-	s.static = ctstatic.FileSystemHandler()
-	s.files = http.HandlerFunc(s.serveFiles)
+	s.statich = ctstatic.FileSystemHandler()
+	s.verStatich = http.StripPrefix("/"+version, s.statich)
+	s.dlfilesh = http.StripPrefix("/download", http.HandlerFunc(s.serveDownloadFiles))
 	s.rssh = http.HandlerFunc(s.serveRSS)
 
 	//scraper

@@ -38,31 +38,27 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 		delete(s.state.Users, conn.ID())
 		s.state.Push()
 		return
-	default:
-		//search
-		if strings.HasPrefix(r.URL.Path, "/search") {
-			s.scraperh.ServeHTTP(w, r)
-			return
-		}
-		//api call
-		if strings.HasPrefix(r.URL.Path, "/api/") {
-			w.Header().Set("Access-Control-Allow-Headers", "authorization")
-			s.restAPIhandle(w, r)
-			return
-		}
-		if strings.HasSuffix(r.URL.Path, "velox.js") {
-			//handle realtime client library
-			velox.JS.ServeHTTP(w, r)
-			return
-		}
-		verPrefix := "/" + s.baseInfo.Version
-		if strings.HasPrefix(r.URL.Path, verPrefix) {
-			http.StripPrefix(verPrefix, s.files).ServeHTTP(w, r)
-			return
-		}
-		//no match, assume static file
-		s.files.ServeHTTP(w, r)
+	case "/js/velox.js", fmt.Sprintf("/%s/js/velox.js", s.baseInfo.Version):
+		velox.JS.ServeHTTP(w, r)
+		return
 	}
+
+	pathDir := strings.SplitN(r.URL.Path[1:], "/", 2)
+	switch pathDir[0] {
+	case "search":
+		s.scraperh.ServeHTTP(w, r)
+	case "api":
+		w.Header().Set("Access-Control-Allow-Headers", "authorization")
+		s.restAPIhandle(w, r)
+	case "download":
+		s.dlfilesh.ServeHTTP(w, r)
+	case s.baseInfo.Version:
+		s.verStatich.ServeHTTP(w, r)
+	default:
+		//no match, assume static file
+		s.statich.ServeHTTP(w, r)
+	}
+
 }
 
 // restAPIhandle is used both by main webserver and restapi server

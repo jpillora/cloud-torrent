@@ -33,44 +33,40 @@ func (s *Server) listFiles() *fsNode {
 	return root
 }
 
-func (s *Server) serveFiles(w http.ResponseWriter, r *http.Request) {
-	if strings.HasPrefix(r.URL.Path, "/download/") {
-		url := strings.TrimPrefix(r.URL.Path, "/download/")
-		//dldir is absolute
-		dldir := s.engineConfig.DownloadDirectory
-		file := filepath.Join(dldir, url)
-		//only allow fetches/deletes inside the dl dir
-		if !strings.HasPrefix(file, dldir) || dldir == file {
-			http.Error(w, "Nice try\n"+dldir+"\n"+file, http.StatusBadRequest)
-			return
-		}
-		info, err := os.Stat(file)
-		if err != nil {
-			http.Error(w, "File stat error: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-		switch r.Method {
-		case "GET":
-			if info.IsDir() {
-				w.Header().Set("Content-Type", "application/zip")
-				w.WriteHeader(200)
-				//write .zip archive directly into response
-				a := archive.NewZipWriter(w)
-				a.AddDir(file)
-				a.Close()
-			} else {
-				http.ServeFile(w, r, file)
-			}
-		case "DELETE":
-			if err := os.RemoveAll(file); err != nil {
-				http.Error(w, "Delete failed: "+err.Error(), http.StatusInternalServerError)
-			}
-		default:
-			http.Error(w, "Not allowed", http.StatusMethodNotAllowed)
-		}
+func (s *Server) serveDownloadFiles(w http.ResponseWriter, r *http.Request) {
+	url := strings.TrimPrefix(r.URL.Path, "/download/")
+	//dldir is absolute
+	dldir := s.engineConfig.DownloadDirectory
+	file := filepath.Join(dldir, url)
+	//only allow fetches/deletes inside the dl dir
+	if !strings.HasPrefix(file, dldir) || dldir == file {
+		http.Error(w, "Nice try\n"+dldir+"\n"+file, http.StatusBadRequest)
 		return
 	}
-	s.static.ServeHTTP(w, r)
+	info, err := os.Stat(file)
+	if err != nil {
+		http.Error(w, "File stat error: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	switch r.Method {
+	case "GET":
+		if info.IsDir() {
+			w.Header().Set("Content-Type", "application/zip")
+			w.WriteHeader(200)
+			//write .zip archive directly into response
+			a := archive.NewZipWriter(w)
+			a.AddDir(file)
+			a.Close()
+		} else {
+			http.ServeFile(w, r, file)
+		}
+	case "DELETE":
+		if err := os.RemoveAll(file); err != nil {
+			http.Error(w, "Delete failed: "+err.Error(), http.StatusInternalServerError)
+		}
+	default:
+		http.Error(w, "Not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 //custom directory walk
