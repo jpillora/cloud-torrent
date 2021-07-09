@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -66,27 +67,23 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 
 // restAPIhandle is used both by main webserver and restapi server
 func (s *Server) restAPIhandle(w http.ResponseWriter, r *http.Request) {
-	ret := "Bad Request"
-	if strings.HasPrefix(r.URL.Path, "/api/") {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		switch r.Method {
-		case "POST":
-			if err := s.apiPOST(r); err == nil {
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("OK"))
-			} else {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-			}
-		case "GET":
-			if err := s.apiGET(w, r); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-			}
-		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	switch r.Method {
+	case "POST":
+		if err := s.apiPOST(r); err != nil {
+			http.Error(w, fmt.Sprintf("%s:%s:%v", r.Method, r.URL, err.Error()), http.StatusBadRequest)
+			return
 		}
-		return
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	case "GET":
+		if err := s.apiGET(w, r); err != nil {
+			http.Error(w, fmt.Sprintf("%s:%s:%v", r.Method, r.URL, err.Error()), http.StatusBadRequest)
+			return
+		}
+	default:
+		http.Error(w, fmt.Sprintf("%s:%s:Method Not Allowed", r.Method, r.URL), http.StatusBadRequest)
 	}
-	http.Error(w, ret, http.StatusBadRequest)
 }
 
 func init() {
