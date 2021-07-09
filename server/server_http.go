@@ -20,10 +20,6 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	case "/", "index.html":
 		htmlTPL["index.html"].Execute(w, s.baseInfo)
 		return
-	case "/js/velox.js":
-		//handle realtime client library
-		velox.JS.ServeHTTP(w, r)
-		return
 	case "/rss":
 		s.rssh.ServeHTTP(w, r)
 		return
@@ -51,6 +47,16 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			w.Header().Set("Access-Control-Allow-Headers", "authorization")
 			s.restAPIhandle(w, r)
+			return
+		}
+		if strings.HasSuffix(r.URL.Path, "velox.js") {
+			//handle realtime client library
+			velox.JS.ServeHTTP(w, r)
+			return
+		}
+		verPrefix := "/" + s.baseInfo.Version
+		if strings.HasPrefix(r.URL.Path, verPrefix) {
+			http.StripPrefix(verPrefix, s.files).ServeHTTP(w, r)
 			return
 		}
 		//no match, assume static file

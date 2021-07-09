@@ -3,12 +3,12 @@
 <head>
 	<title>[[.Title]]</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-	<link rel="stylesheet" type="text/css" href="css/Lato/Lato.css">
-	<link rel="stylesheet" type="text/css" href="css/semantic.min.css">
-	<link rel="stylesheet" type="text/css" href="css/sections/omni.css?[[.Version]]">
-	<link rel="stylesheet" type="text/css" href="css/sections/torrents.css?[[.Version]]">
-	<link rel="stylesheet" type="text/css" href="css/sections/downloads.css?[[.Version]]">
-	<link rel="stylesheet" type="text/css" href="css/app.css?[[.Version]]">
+	<link rel="stylesheet" type="text/css" href="[[.Version]]/css/Lato/Lato.css">
+	<link rel="stylesheet" type="text/css" href="[[.Version]]/css/semantic.min.css">
+	<link rel="stylesheet" type="text/css" href="[[.Version]]/css/sections/omni.css">
+	<link rel="stylesheet" type="text/css" href="[[.Version]]/css/sections/torrents.css">
+	<link rel="stylesheet" type="text/css" href="[[.Version]]/css/sections/downloads.css">
+	<link rel="stylesheet" type="text/css" href="[[.Version]]/css/app.css">
 	<link rel="icon" href="cloud-favicon.png" type="image/x-icon" />
 </head>
 
@@ -61,12 +61,12 @@
 			<p>{{$root.info}}</p>
 		</div>
 
-		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html?[[.Version]]'">
+		<section class="config" ng-controller="ConfigController" ng-include src="'[[.Version]]/template/config.html'">
 		</section>
-		<section class="omni" ng-controller="OmniController" ng-include src="'template/omni.html?[[.Version]]'">
+		<section class="omni" ng-controller="OmniController" ng-include src="'[[.Version]]/template/omni.html'">
 		</section>
 		<section class="torrents" ng-controller="TorrentsController" ng-include
-			src="'template/torrents.html?[[.Version]]'">
+			src="'[[.Version]]/template/torrents.html'">
 		</section>
 		<section class="downloads" ng-controller="DownloadsController">
 			<div class="ui grid section-header" ng-click="section_expanded_toggle()">
@@ -90,7 +90,7 @@
 				<div class="ui list">
 					<div class="item" ng-repeat="node in $DownloadedFiles | orderBy:'Modified':false"
 						ng-hide="node.$Deleted" ng-controller="NodeController" ng-include
-						src="'template/download-tree.html?[[.Version]]'"></div>
+						src="'[[.Version]]/template/download-tree.html'"></div>
 				</div>
 			</div>
 
@@ -149,20 +149,20 @@
 			</p>
 		</div>
 	</div>
-	<script src="js/vendor/query-string.js"></script>
-	<script src="js/vendor/angular.min.js"></script>
-	<script src="js/vendor/moment.min.js"></script>
-	<script src="js/velox.js?[[.Version]]"></script>
+	<script src="[[.Version]]/js/vendor/query-string.js"></script>
+	<script src="[[.Version]]/js/vendor/angular.min.js"></script>
+	<script src="[[.Version]]/js/vendor/moment.min.js"></script>
+	<script src="[[.Version]]/js/velox.js"></script>
 	<script type="text/javascript">
 		window.app = window.angular.module('app', []);
 	</script>
-	<script src="js/config-controller.js?[[.Version]]"></script>
-	<script src="js/omni-controller.js?[[.Version]]"></script>
-	<script src="js/torrents-controller.js?[[.Version]]"></script>
-	<script src="js/downloads-controller.js?[[.Version]]"></script>
-	<script src="js/utils.js?[[.Version]]"></script>
-	<script src="js/semantic-checkbox.js?[[.Version]]"></script>
-	<script src="js/run.js?[[.Version]]"></script>
+	<script src="[[.Version]]/js/config-controller.js"></script>
+	<script src="[[.Version]]/js/omni-controller.js"></script>
+	<script src="[[.Version]]/js/torrents-controller.js"></script>
+	<script src="[[.Version]]/js/downloads-controller.js"></script>
+	<script src="[[.Version]]/js/utils.js"></script>
+	<script src="[[.Version]]/js/semantic-checkbox.js"></script>
+	<script src="[[.Version]]/js/run.js"></script>
 </body>
 
 </html>
