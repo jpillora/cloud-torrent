@@ -122,7 +122,7 @@ func (s *Server) Run(version string) error {
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
 	s.statich = ctstatic.FileSystemHandler()
 	s.verStatich = http.StripPrefix("/"+version, s.statich)
-	s.dlfilesh = http.StripPrefix("/download", http.HandlerFunc(s.serveDownloadFiles))
+	s.dlfilesh = http.StripPrefix("/download/", http.HandlerFunc(s.serveDownloadFiles))
 	s.rssh = http.HandlerFunc(s.serveRSS)
 
 	//scraper

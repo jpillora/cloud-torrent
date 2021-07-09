@@ -34,10 +34,14 @@ func (s *Server) listFiles() *fsNode {
 }
 
 func (s *Server) serveDownloadFiles(w http.ResponseWriter, r *http.Request) {
-	url := strings.TrimPrefix(r.URL.Path, "/download/")
 	//dldir is absolute
 	dldir := s.engineConfig.DownloadDirectory
-	file := filepath.Join(dldir, url)
+	file, err := filepath.Abs(filepath.Join(dldir, r.URL.Path))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	//only allow fetches/deletes inside the dl dir
 	if !strings.HasPrefix(file, dldir) || dldir == file {
 		http.Error(w, "Nice try\n"+dldir+"\n"+file, http.StatusBadRequest)
