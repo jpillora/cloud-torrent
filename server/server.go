@@ -121,8 +121,8 @@ func (s *Server) Run(version string) error {
 	s.state.rssMark = make(map[string]string)
 
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
-	s.files = http.HandlerFunc(s.serveFiles)
 	s.static = ctstatic.FileSystemHandler()
+	s.files = http.HandlerFunc(s.serveFiles)
 	s.rssh = http.HandlerFunc(s.serveRSS)
 
 	//scraper

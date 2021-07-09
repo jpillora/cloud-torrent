@@ -18,7 +18,7 @@ var staticFS embed.FS
 // FileSystemHandler all static/ files embedded as a Go library
 func FileSystemHandler() http.Handler {
 	if info, err := os.Stat("static/files/"); err == nil && info.IsDir() {
-		log.Println("Using local static files")
+		log.Println("Using filesystem static files (dev mode)")
 		return http.FileServer(http.Dir("static/files/"))
 	}
 	if fsys, err := fs.Sub(staticFS, "files"); err == nil {
