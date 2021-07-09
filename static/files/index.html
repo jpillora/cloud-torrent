@@ -110,14 +110,10 @@
 					<span ng-click="toggleSections('enginedebug')">Debug</span>
 			</div>
 			<div>
-				<span>Up {{ ago([[.Uptime]]*1000) }},</span>
-				<span>
-					Transfered (▲: {{ state.Stats.ConnStat.BytesWrittenData | bytes }},
-					▼: {{ state.Stats.ConnStat.BytesReadUsefulData | bytes }})
-				</span>
+				<span>Up {{ ago([[.Uptime]]*1000) }}</span>
 			</div>
 			<div ng-if="numKeys(state.Users) > 1">
-				<span>{{ numKeys(state.Users) }} users connected</span>
+				<span>,{{ numKeys(state.Users) }} users connected</span>
 			</div>
 		</footer>
 		<div ng-if="$root.showEnineStatus" class="ui attached mini message">

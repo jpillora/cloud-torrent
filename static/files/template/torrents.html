@@ -2,11 +2,13 @@
   <div class="column">
     <i class="square outline icon" ng-class="{minus: !$expanded, plus: $expanded}"></i>
     <span class="ui header">
-      Torrents
+      Torrents ({{ numKeys(state.Torrents) }})
       <span class="ui label">
         <i class="list icon"></i>
-        {{ numKeys(state.Torrents) }} task{{ numKeys(state.Torrents) <= 1 ? '' : 's' }} </span>
+        ▲: {{ state.Stats.ConnStat.BytesWrittenData | bytes }} -
+        ▼: {{ state.Stats.ConnStat.BytesReadUsefulData | bytes }}
       </span>
+    </span>
   </div>
 </div>
 
