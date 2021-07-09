@@ -182,6 +182,19 @@ app.filter("round", function () {
   };
 });
 
+
+app.filter("ratioRound", function () {
+  return function (n) {
+    if (typeof n !== "number" || n == 0) {
+      return n;
+    }
+    if (n < 10) {
+      return n.toFixed(2);
+    }
+    return Math.round(n * 10) / 10;
+  };
+});
+
 app.filter('dictValuesArray', function () {
   return function (obj) {
     if (!(obj instanceof Object)) return obj;

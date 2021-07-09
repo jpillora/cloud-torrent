@@ -61,7 +61,7 @@
           <span data-mode="Ratio" title="Ratio" class="ui label" ng-class="{
             green: t.SeedRatio >= 1 }" ng-click="toggleTagDetail($event, t)">
             <i class="exchange alternate icon"></i>
-            {{ t.SeedRatio | round }}
+            {{ t.SeedRatio | ratioRound }}
             <div ng-if="t.IsSeeding" class="detail">🌱</div>
           </span>
         </div>
