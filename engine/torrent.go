@@ -41,8 +41,9 @@ type Torrent struct {
 	StoppedAt      time.Time
 	updatedAt      time.Time
 	t              *torrent.Torrent
+	e              *Engine
 	dropWait       chan struct{}
-	cldServer      Server
+	cld            Server
 	sync.Mutex
 }
 
@@ -141,7 +142,7 @@ func (torrent *Torrent) updateFileStatus() {
 		file.Done = (file.Completed == file.Size)
 		if file.Done && !file.DoneCmdCalled {
 			file.DoneCmdCalled = true
-			go torrent.callDoneCmd(torrent.InfoHash, file.Path, "file", file.Size)
+			go torrent.callDoneCmd(file.Path, "file", file.Size)
 		}
 		if !file.Done {
 			doneFlag = false
@@ -162,7 +163,7 @@ func (torrent *Torrent) updateTorrentStatus() {
 		torrent.DoneCmdCalled = true
 		torrent.FinishedAt = time.Now()
 		log.Println("[TaskFinished]", torrent.InfoHash)
-		go torrent.callDoneCmd(torrent.InfoHash, torrent.Name, "torrent", torrent.Size)
+		go torrent.callDoneCmd(torrent.Name, "torrent", torrent.Size)
 	}
 }
 
@@ -173,17 +174,24 @@ func percent(n, total int64) float32 {
 	return float32(int(float64(10000)*(float64(n)/float64(total)))) / 100
 }
 
-func (t *Torrent) callDoneCmd(ih, name, tasktype string, size int64) {
+func (t *Torrent) callDoneCmd(name, tasktype string, size int64) {
 	ts := t.StartedAt
 	if ts.IsZero() {
 		ts = time.Now()
 	}
 
-	if cmd, env, err := t.cldServer.DoneCmd(name, t.InfoHash, tasktype,
-		size, ts.Unix()); err == nil {
-
+	if cmd, env, err := t.e.config.GetCmdConfig(); err != nil {
 		cmd := exec.Command(cmd)
-		cmd.Env = env
+		ih := t.InfoHash
+		cmd.Env = append(env,
+			fmt.Sprintf("CLD_RESTAPI=%s", t.cld.GetStrAttribute("RestAPI")),
+			fmt.Sprintf("CLD_PATH=%s", name),
+			fmt.Sprintf("CLD_HASH=%s", ih),
+			fmt.Sprintf("CLD_TYPE=%s", tasktype),
+			fmt.Sprintf("CLD_SIZE=%d", size),
+			fmt.Sprintf("CLD_STARTTS=%d", ts),
+			fmt.Sprintf("CLD_FILENUM=%d", len(t.Files)),
+		)
 		sout, _ := cmd.StdoutPipe()
 		serr, _ := cmd.StderrPipe()
 		log.Printf("[DoneCmd:%s]%sCMD:`%s' ENV:%s", tasktype, ih, cmd.String(), cmd.Env)
@@ -206,6 +214,6 @@ func (t *Torrent) callDoneCmd(ih, name, tasktype string, size int64) {
 
 		log.Printf("[DoneCmd:%s]%sExit code: %d", tasktype, ih, cmd.ProcessState.ExitCode())
 	} else {
-		log.Println("[DoneCmd]", ih, err)
+		log.Println("[DoneCmd]", t.InfoHash, err)
 	}
 }

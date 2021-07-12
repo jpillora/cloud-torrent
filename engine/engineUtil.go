@@ -34,7 +34,8 @@ func (e *Engine) upsertTorrent(ih, name string, isQueueing bool) (*Torrent, erro
 			InfoHash:   ih,
 			IsQueueing: isQueueing,
 			AddedAt:    time.Now(),
-			cldServer:  e.cldServer,
+			cld:        e.cld,
+			e:          e,
 			dropWait:   make(chan struct{}),
 		}
 		e.Lock()

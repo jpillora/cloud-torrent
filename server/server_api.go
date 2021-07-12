@@ -267,3 +267,8 @@ func (s *Server) apiConfigure(data []byte) error {
 	go s.fetchSearchConfig(s.engineConfig.ScraperURL)
 	return nil
 }
+
+func (s *Server) GetStrAttribute(name string) string {
+	cval := reflect.Indirect(reflect.ValueOf(s)).FieldByName(name)
+	return cval.String()
+}

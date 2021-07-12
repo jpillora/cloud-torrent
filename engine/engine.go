@@ -18,7 +18,7 @@ import (
 )
 
 type Server interface {
-	DoneCmd(path, hash, ttype string, size, ts int64) (string, []string, error)
+	GetStrAttribute(name string) string
 }
 
 const (
@@ -36,7 +36,7 @@ var (
 type Engine struct {
 	sync.RWMutex // race condition on ts,client
 	taskMutex    sync.Mutex
-	cldServer    Server
+	cld          Server
 	cacheDir     string
 	trashDir     string
 	client       *torrent.Client
@@ -53,7 +53,7 @@ type Engine struct {
 func New(s Server) *Engine {
 	return &Engine{
 		ts:        make(map[string]*Torrent),
-		cldServer: s,
+		cld:       s,
 		waitList:  NewSyncList(),
 		TsChanged: make(chan struct{}, 1),
 	}

@@ -224,3 +224,11 @@ func (c *Config) SyncViper(nc Config) error {
 
 	return viper.WriteConfig()
 }
+
+func (c *Config) GetCmdConfig() (string, []string, error) {
+	if c.DoneCmd == "" {
+		return "", nil, fmt.Errorf("unconfigred Donecmd")
+	}
+	env := append(os.Environ(), fmt.Sprintf("CLD_DIR=%s", c.DownloadDirectory))
+	return c.DoneCmd, env, nil
+}
