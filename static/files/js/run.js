@@ -155,6 +155,13 @@ app.run(function ($rootScope, $window, $location, $log, search, api, apiget, sto
 
   $scope.toggleWebsocket = function () {
     storage.veloxCON = (storage.veloxCON !== "ws") ? "ws" : "sse";
+    switch (storage.veloxCON) {
+      case "ws":
+        $rootScope.info = "Websocket mode, refresh to take affect.";
+      case "sse":
+        $rootScope.info = "Eventstream mode, refresh to take affect.";
+    }
+    $rootScope.$applyAsync();
   }
 
   //page-wide keybinding, listen for space,

@@ -34,9 +34,6 @@
 			</h2>
 			<div class="status">
 				<i ng-show="apiing" class="ui circular loading repeat icon"></i>
-				<i class="ui circular retweet icon" ng-class="{green: storage.veloxCON=='ws'}"
-					title="Green icon to use websocket, instead of eventstream to connect. Refresh the page to take effect."
-					ng-click="toggleWebsocket()"></i>
 				<i ng-if="state.LatestRSSGuid != ''" ng-click="toggleSections('rss')"
 					class="ui circular rss square icon"
 					ng-class="{orange: state.LatestRSSGuid != storage.tcRSSGUID, green: $root.omni.mode.rss }"
@@ -45,8 +42,8 @@
 					ng-class="{green: $root.config.edit}" title="Edit Config" class="ui circular server icon"></i>
 				<i ng-click="toggleSections('omni')" ng-class="{green: $root.omni.edit}" title="Edit Magnet/Torrent"
 					class="ui circular magnet icon"></i>
-				<i class="ui circular lightning icon" title="Connecting Status"
-					ng-class="{ green: connected, red: !connected }"></i>
+				<i class="ui circular icon" title="Connecting Status" ng-click="toggleWebsocket()"
+					ng-class="{ green: connected, red: !connected, retweet: storage.veloxCON=='ws', lightning: storage.veloxCON!='ws' }"></i>
 			</div>
 		</div>
 		<!-- GLOBAL ERROR MESSAGE ===================== -->
