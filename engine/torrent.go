@@ -175,10 +175,6 @@ func percent(n, total int64) float32 {
 }
 
 func (t *Torrent) callDoneCmd(name, tasktype string, size int64) {
-	ts := t.StartedAt
-	if ts.IsZero() {
-		ts = time.Now()
-	}
 
 	if cmd, env, err := t.e.config.GetCmdConfig(); err == nil {
 		cmd := exec.Command(cmd)
@@ -189,7 +185,7 @@ func (t *Torrent) callDoneCmd(name, tasktype string, size int64) {
 			fmt.Sprintf("CLD_HASH=%s", ih),
 			fmt.Sprintf("CLD_TYPE=%s", tasktype),
 			fmt.Sprintf("CLD_SIZE=%d", size),
-			fmt.Sprintf("CLD_STARTTS=%d", ts.Unix()),
+			fmt.Sprintf("CLD_STARTTS=%d", t.StartedAt.Unix()),
 			fmt.Sprintf("CLD_FILENUM=%d", len(t.Files)),
 		)
 		sout, _ := cmd.StdoutPipe()
