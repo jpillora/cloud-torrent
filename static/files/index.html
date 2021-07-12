@@ -58,43 +58,13 @@
 			<p>{{$root.info}}</p>
 		</div>
 
-		<section class="config" ng-controller="ConfigController" ng-include src="'[[.Version]]/template/config.html'">
+		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html'">
 		</section>
-		<section class="omni" ng-controller="OmniController" ng-include src="'[[.Version]]/template/omni.html'">
+		<section class="omni" ng-controller="OmniController" ng-include src="'template/omni.html'">
 		</section>
-		<section class="torrents" ng-controller="TorrentsController" ng-include
-			src="'[[.Version]]/template/torrents.html'">
+		<section class="torrents" ng-controller="TorrentsController" ng-include src="'template/torrents.html'">
 		</section>
-		<section class="downloads" ng-controller="DownloadsController">
-			<div class="ui grid section-header" ng-click="section_expanded_toggle()">
-				<div class="column">
-					<i class="square outline icon" ng-class="{minus: !$expanded, plus: $expanded}"></i>
-					<span class="ui header">
-						Downloads
-						<i ng-show="$isLoadingFiles" class="sync mini icon loading"></i>
-						<span class="ui label">
-							<i class="hdd icon"></i>
-							{{ state.Stats.System.diskFree | bytes }} free
-						</span>
-					</span>
-				</div>
-			</div>
-			<div ng-if="$DownloadedFiles.length == 0" class="ui message nodownloads">
-				<p>DownloadDirectory empty</p>
-			</div>
-
-			<div ng-if="$DownloadedFiles.length > 0 && $expanded" class="ui raised segment">
-				<div class="ui list">
-					<div class="item" ng-repeat="node in $DownloadedFiles | orderBy:'Modified':false"
-						ng-hide="node.$Deleted" ng-controller="NodeController" ng-include
-						src="'[[.Version]]/template/download-tree.html'"></div>
-				</div>
-			</div>
-
-			<h5 ng-if="!$expanded" class="ui horizontal divider header" ng-click="section_expanded_toggle()">
-				<i class="angle double down icon"></i>
-				Click To Expand
-			</h5>
+		<section class="downloads" ng-controller="DownloadsController" ng-include src="'template/download.html'">
 		</section>
 
 		<footer>
@@ -161,5 +131,21 @@
 	<script src="[[.Version]]/js/semantic-checkbox.js"></script>
 	<script src="[[.Version]]/js/run.js"></script>
 </body>
+
+<script type="text/ng-template" id="template/config.html">
+[[.GetTemplate "template/config.html"]]
+</script>
+<script type="text/ng-template" id="template/omni.html">
+[[.GetTemplate "template/omni.html"]]
+</script>
+<script type="text/ng-template" id="template/torrents.html">
+[[.GetTemplate "template/torrents.html"]]
+</script>
+<script type="text/ng-template" id="template/download.html">
+[[.GetTemplate "template/download.html"]]
+</script>
+<script type="text/ng-template" id="template/download-tree.html">
+[[.GetTemplate "template/download-tree.html"]]
+</script>
 
 </html>

@@ -38,7 +38,7 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 		delete(s.state.Users, conn.ID())
 		s.state.Push()
 		return
-	case "/js/velox.js", fmt.Sprintf("/%s/js/velox.js", s.baseInfo.Version):
+	case "/js/velox.js":
 		velox.JS.ServeHTTP(w, r)
 		return
 	}
@@ -80,6 +80,22 @@ func (s *Server) restAPIhandle(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, fmt.Sprintf("%s:%s:Method Not Allowed", r.Method, r.URL), http.StatusBadRequest)
 	}
+}
+
+type BaseInfo struct {
+	Uptime                int64
+	Title                 string
+	Version               string
+	Runtime               string
+	AllowRuntimeConfigure bool
+}
+
+func (BaseInfo) GetTemplate(n string) (template.HTML, error) {
+	b, err := ctstatic.ReadAll(n)
+	if err != nil {
+		return "", err
+	}
+	return template.HTML(b), nil
 }
 
 func init() {
