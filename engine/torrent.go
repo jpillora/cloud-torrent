@@ -189,7 +189,7 @@ func (t *Torrent) callDoneCmd(name, tasktype string, size int64) {
 			fmt.Sprintf("CLD_HASH=%s", ih),
 			fmt.Sprintf("CLD_TYPE=%s", tasktype),
 			fmt.Sprintf("CLD_SIZE=%d", size),
-			fmt.Sprintf("CLD_STARTTS=%d", ts),
+			fmt.Sprintf("CLD_STARTTS=%d", ts.Unix()),
 			fmt.Sprintf("CLD_FILENUM=%d", len(t.Files)),
 		)
 		sout, _ := cmd.StdoutPipe()
