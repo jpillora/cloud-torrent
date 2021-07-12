@@ -89,31 +89,17 @@
 				System Info
 			</div>
 			<p>
-				<span>
-					Go [[.Runtime]],
-				</span>
-				<span>
-					goroutines {{ state.Stats.System.goRoutines }},
-				</span>
-				<span>
-					gomem {{ state.Stats.System.goMemory | bytes }},
-				</span>
-				<span>
-					cpu {{ state.Stats.System.cpu | round }}%,
-				</span>
-				<span>
-					mem {{ state.Stats.System.memUsedPercent | round }}%,
-				</span>
-				<span>
-					disk {{ state.Stats.System.diskUsedPercent | round }}%
-				</span>
+				<span> Go [[.Runtime]], </span>
+				<span> goroutines {{ state.Stats.System.goRoutines }}, </span>
+				<span> gomem {{ state.Stats.System.goMemory | bytes }}, </span>
+				<span> cpu {{ state.Stats.System.cpu | round }}%, </span>
+				<span> mem {{ state.Stats.System.memUsedPercent | round }}%, </span>
+				<span> disk {{ state.Stats.System.diskUsedPercent | round }}% </span>
 			</p>
 			<div class="header">
 				Torrent Engine Status
 			</div>
-			<p>
 			<pre>{{ EngineStatus }}</pre>
-			</p>
 		</div>
 	</div>
 	<script src="js/vendor/query-string.js"></script>
