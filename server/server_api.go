@@ -45,7 +45,7 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 			}
 		}
 		tdata.Magnet = m
-		htmlTPL["template/magadded.html"].Execute(w, tdata)
+		htmlTPL["magadded.html"].Execute(w, tdata)
 	case "configure":
 		json.NewEncoder(w).Encode(*(s.engineConfig))
 	case "torrents":

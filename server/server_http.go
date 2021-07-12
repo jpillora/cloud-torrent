@@ -100,7 +100,7 @@ func (BaseInfo) GetTemplate(n string) (template.HTML, error) {
 
 func init() {
 	htmlTPL = make(map[string]*template.Template)
-	for _, fsn := range []string{"index.html", "template/magadded.html"} {
+	for _, fsn := range []string{"index.html", "magadded.html"} {
 
 		c, err := ctstatic.ReadAll(fsn)
 		if err != nil {
