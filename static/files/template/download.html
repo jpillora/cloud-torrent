@@ -15,14 +15,14 @@
 	<p>DownloadDirectory empty</p>
 </div>
 
-<div ng-if="$DownloadedFiles.length > 0 && $expanded" class="ui raised segment">
+<div ng-show="$DownloadedFiles.length > 0 && $expanded" class="ui raised segment">
 	<div class="ui list">
 		<div class="item" ng-repeat="node in $DownloadedFiles | orderBy:'Modified':false" ng-hide="node.$Deleted"
 			ng-controller="NodeController" ng-include src="'template/download-tree.html'"></div>
 	</div>
 </div>
 
-<h5 ng-if="!$expanded" class="ui horizontal divider header" ng-click="section_expanded_toggle()">
+<h5 ng-show="!$expanded" class="ui horizontal divider header" ng-click="section_expanded_toggle()">
 	<i class="angle double down icon"></i>
 	Click To Expand
 </h5>
