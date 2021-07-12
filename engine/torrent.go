@@ -180,7 +180,7 @@ func (t *Torrent) callDoneCmd(name, tasktype string, size int64) {
 		ts = time.Now()
 	}
 
-	if cmd, env, err := t.e.config.GetCmdConfig(); err != nil {
+	if cmd, env, err := t.e.config.GetCmdConfig(); err == nil {
 		cmd := exec.Command(cmd)
 		ih := t.InfoHash
 		cmd.Env = append(env,
