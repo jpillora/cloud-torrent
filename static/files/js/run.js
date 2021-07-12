@@ -158,8 +158,10 @@ app.run(function ($rootScope, $window, $location, $log, search, api, apiget, sto
     switch (storage.veloxCON) {
       case "ws":
         $rootScope.info = "Websocket mode, refresh to take affect.";
+        break
       case "sse":
         $rootScope.info = "Eventstream mode, refresh to take affect.";
+        break
     }
     $rootScope.$applyAsync();
   }
