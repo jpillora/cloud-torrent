@@ -72,8 +72,7 @@ func (e *Engine) ParseTrackerList() error {
 			if lst, err := fetchTxtList(line[7:]); err == nil {
 				trackers = append(trackers, lst...)
 			} else {
-				log.Println(err)
-				return err
+				log.Println("[ParseTrackerList] ignored", err)
 			}
 		} else {
 			trackers = append(trackers, line)
