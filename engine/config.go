@@ -46,7 +46,7 @@ type Config struct {
 	SeedTime                time.Duration
 	UploadRate              string
 	DownloadRate            string
-	TrackerListURL          string
+	TrackerList             string
 	AlwaysAddTrackers       bool
 	ProxyURL                string
 	RssURL                  string
@@ -77,7 +77,6 @@ func InitConf(specPath string) (*Config, error) {
 	viper.SetDefault("ObfsPreferred", true)
 	viper.SetDefault("ObfsRequirePreferred", false)
 	viper.SetDefault("IncomingPort", 50007)
-	viper.SetDefault("TrackerListURL", defaultTrackerListURL)
 	viper.SetDefault("ScraperURL", defaultScraperURL)
 	viper.SetDefault("MaxConcurrentTask", 0)
 	viper.SetDefault("AllowRuntimeConfigure", true)
@@ -181,7 +180,7 @@ func (c *Config) Validate(nc *Config) uint8 {
 	if c.WatchDirectory != nc.WatchDirectory {
 		status |= NeedRestartWatch
 	}
-	if c.TrackerListURL != nc.TrackerListURL {
+	if c.TrackerList != nc.TrackerList {
 		status |= NeedUpdateTracker
 	}
 	if c.MaxConcurrentTask < nc.MaxConcurrentTask {

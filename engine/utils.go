@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"errors"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/c2h5oh/datasize"
 	"golang.org/x/time/rate"
@@ -63,4 +65,32 @@ func mkdir(dirpath string) error {
 		log.Panic("[FATAL] path exists but is not a directory, please remove it:", dirpath)
 	}
 	return nil
+}
+
+func fetchTxtList(url string) ([]string, error) {
+	var txtlines []string
+
+	log.Println("fetchTxtList: fetching", url)
+	client := http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	scanner := bufio.NewScanner(resp.Body)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		txtlines = append(txtlines, line)
+	}
+
+	log.Println("fetchTxtList: got lines", len(txtlines))
+	return txtlines, nil
 }

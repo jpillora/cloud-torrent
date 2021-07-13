@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -71,8 +72,12 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 		s.state.Stats.ConnStat = s.engine.ConnStat()
 		json.NewEncoder(w).Encode(s.state.Stats)
 	case "enginedebug":
-		w.Header().Set("Content-Type", "text/plain")
-		s.engine.WriteStauts(w)
+		var buf bytes.Buffer
+		s.engine.WriteStauts(bufio.NewWriter(&buf))
+		json.NewEncoder(w).Encode(struct {
+			EngineStatus string
+			Trackers     []string
+		}{buf.String(), s.engine.Trackers})
 	default:
 		return errUnknowAct
 	}
@@ -216,9 +221,6 @@ func (s *Server) apiConfigure(data []byte) error {
 			s.engine.StartTorrentWatcher()
 			log.Printf("[api] file watcher restartd")
 		}
-		if status&engine.NeedUpdateTracker > 0 {
-			go s.engine.UpdateTrackers()
-		}
 
 		// now it's safe to save the configure
 		if err := s.engineConfig.SyncViper(c); err != nil {
@@ -243,6 +245,10 @@ func (s *Server) apiConfigure(data []byte) error {
 			log.Printf("[api] torrent engine reconfigred")
 		} else {
 			s.engine.SetConfig(s.engineConfig)
+		}
+
+		if status&engine.NeedUpdateTracker > 0 {
+			go s.engine.ParseTrackerList()
 		}
 		s.state.Push()
 

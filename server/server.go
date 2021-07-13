@@ -174,7 +174,7 @@ func (s *Server) Run(version string) error {
 		log.Printf("Effective Config: %#v", *c)
 	}
 
-	if err := s.engine.UpdateTrackers(); err != nil {
+	if err := s.engine.ParseTrackerList(); err != nil {
 		log.Println("UpdateTrackers err", err)
 	}
 	s.backgroundRoutines()

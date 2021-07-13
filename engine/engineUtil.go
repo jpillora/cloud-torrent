@@ -1,10 +1,8 @@
 package engine
 
 import (
-	"bufio"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -59,39 +57,30 @@ func (e *Engine) deleteTorrent(infohash string) {
 	e.TsChanged <- struct{}{}
 }
 
-func (e *Engine) UpdateTrackers() error {
-	var txtlines []string
-	url := e.config.TrackerListURL
+func (e *Engine) ParseTrackerList() error {
+	conf := e.config.TrackerList
 
-	if !strings.HasPrefix(url, "https://") {
-		err := fmt.Errorf("UpdateTrackers: trackers url invalid: %s (only https:// supported), extra trackers list now empty.", url)
-		log.Println(err.Error())
-		return err
-	}
+	trackers := []string{}
 
-	log.Printf("UpdateTrackers: loading trackers from %s\n", url)
-	client := http.Client{
-		Timeout: 10 * time.Second,
-	}
-
-	resp, err := client.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	scanner := bufio.NewScanner(resp.Body)
-	scanner.Split(bufio.ScanLines)
-
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
+	for _, l := range strings.Split(conf, "\n") {
+		line := strings.TrimSpace(l)
 		if line == "" {
 			continue
 		}
-		txtlines = append(txtlines, line)
+
+		if strings.HasPrefix(line, "remote:") {
+			if lst, err := fetchTxtList(line[7:]); err == nil {
+				trackers = append(trackers, lst...)
+			} else {
+				log.Println(err)
+				return err
+			}
+		} else {
+			trackers = append(trackers, line)
+		}
 	}
 
-	e.bttracker = txtlines
-	log.Printf("UpdateTrackers: loaded %d trackers \n", len(txtlines))
+	e.Trackers = trackers
 	return nil
 }
 

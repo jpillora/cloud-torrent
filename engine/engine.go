@@ -44,7 +44,7 @@ type Engine struct {
 	config       Config
 	ts           map[string]*Torrent
 	TsChanged    chan struct{}
-	bttracker    []string
+	Trackers     []string
 	waitList     *syncList
 	//file watcher
 	watcher *fsnotify.Watcher
@@ -75,8 +75,8 @@ func (e *Engine) Configure(c *Config) error {
 	if c.ScraperURL == "" {
 		c.ScraperURL = defaultScraperURL
 	}
-	if c.TrackerListURL == "" {
-		c.TrackerListURL = defaultTrackerListURL
+	if c.TrackerList == "" {
+		c.TrackerList = "remote:" + defaultTrackerListURL
 	}
 
 	e.Lock()
@@ -233,9 +233,9 @@ func (e *Engine) newTorrentBySpec(spec *torrent.TorrentSpec, taskT taskType) err
 	}
 
 	meta := tt.Metainfo()
-	if len(e.bttracker) > 0 && (e.config.AlwaysAddTrackers || len(meta.AnnounceList) == 0) {
-		log.Printf("[newTorrent] added %d public trackers\n", len(e.bttracker))
-		tt.AddTrackers([][]string{e.bttracker})
+	if len(e.Trackers) > 0 && (e.config.AlwaysAddTrackers || len(meta.AnnounceList) == 0) {
+		log.Printf("[newTorrent] added %d public trackers\n", len(e.Trackers))
+		tt.AddTrackers([][]string{e.Trackers})
 	}
 
 	go e.torrentEventProcessor(tt, t, ih)
