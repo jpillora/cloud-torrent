@@ -81,6 +81,7 @@ func (e *Engine) ParseTrackerList() error {
 	}
 
 	e.Trackers = trackers
+	log.Printf("[ParseTrackerList] got %d trackers", len(e.Trackers))
 	return nil
 }
 
