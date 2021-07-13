@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"sync"
 	"time"
 
@@ -86,7 +87,10 @@ func (e *Engine) Configure(c *Config) error {
 	tc.DisableUTP = c.DisableUTP
 	tc.ListenPort = c.IncomingPort
 	tc.DataDir = c.DownloadDirectory
-	if c.UseMmap {
+
+	// enable MMap on 64bit machines
+	if strconv.IntSize == 64 {
+		log.Println("[Configure] 64bit arch detected, using MMap for storage")
 		tc.DefaultStorage = storage.NewMMap(tc.DataDir)
 	}
 	if c.MuteEngineLog {

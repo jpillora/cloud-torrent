@@ -35,7 +35,6 @@ type Config struct {
 	DisableIPv6             bool
 	NoDefaultPortForwarding bool
 	DisableUTP              bool
-	UseMmap                 bool
 	DownloadDirectory       string
 	WatchDirectory          string
 	EnableUpload            bool
@@ -69,7 +68,6 @@ func InitConf(specPath string) (*Config, error) {
 	viper.SetDefault("EnableSeeding", true)
 	viper.SetDefault("NoDefaultPortForwarding", true)
 	viper.SetDefault("DisableUTP", false)
-	viper.SetDefault("UseMmap", false)
 	viper.SetDefault("AutoStart", true)
 	viper.SetDefault("DoneCmd", "")
 	viper.SetDefault("SeedRatio", 0)
