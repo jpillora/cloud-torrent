@@ -29,8 +29,9 @@ jobs:
       - name: Get tag to build
         id: tag
         run: |
-          echo "Use tag: ${{ github.event.inputs.tag }}"
-          echo ::set-output name=tag::${{ github.event.inputs.tag }}
+          latest_tag=$(git describe --tags)
+          echo "Use the latest release tag: ${latest_tag}"
+          echo ::set-output name=tag::${latest_tag}
 
       - name: Determine whether to push to DockerHub
         if: github.event_name == 'workflow_dispatch'
