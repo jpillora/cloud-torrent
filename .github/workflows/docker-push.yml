@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v1
