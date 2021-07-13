@@ -114,7 +114,7 @@ app.controller("OmniController", function (
       (infohash || "") +
       "&" +
       "dn=" +
-      (name || "").replace(/\W/g, "").replace(/\s+/g, "+") +
+      encodeURIComponent(name) || "" +
       (trackers || [])
         .filter(function (t) {
           return !!t.v;
