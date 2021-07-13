@@ -1,0 +1,55 @@
+name: docker build
+on:
+  push:
+    tags:
+    - '*'
+    paths:
+      - "Dockerfile"
+      - ".github/workflows/docker-push.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v2
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get tag to build
+        id: tag
+        run: |
+          echo "Use tag: ${{ github.event.inputs.tag }}"
+          echo ::set-output name=tag::${{ github.event.inputs.tag }}
+
+      - name: Determine whether to push to DockerHub
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "PUSH=true" >> $GITHUB_ENV
+
+      - name: Prepare environment variables
+        id: prepare
+        run: |
+          echo ::set-output name=docker_platforms::linux/386,linux/amd64,linux/arm64
+          echo ::set-output name=docker_image::boypt/cloud-torrent
+          echo ::set-output name=docker_tag::${{ steps.tag.outputs.tag }}
+          echo ::set-output name=docker_is_push::${PUSH:-false}
+
+      - name: Build tag & latest release
+        run: |
+          docker buildx build --platform ${{ steps.prepare.outputs.docker_platforms }} \
+          --output "type=image,push=${{ steps.prepare.outputs.docker_is_push }}" \
+          --tag "${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.docker_tag }}" \
+          --tag "${{ steps.prepare.outputs.docker_image }}:latest" \
+          --build-arg TAG=${{ steps.prepare.outputs.docker_tag }} \
+          --file Dockerfile .

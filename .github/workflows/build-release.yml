@@ -1,4 +1,4 @@
-name: Go
+name: release build
 on:
   push:
     tags:
@@ -39,6 +39,7 @@ jobs:
       run: |
         bash scripts/make_release.sh gzip amd64
         bash scripts/make_release.sh gzip amd64 purego
+        bash scripts/make_release.sh gzip 386 purego
         bash scripts/make_release.sh gzip arm64 purego
         bash scripts/make_release.sh gzip darwin purego
         
@@ -49,6 +50,7 @@ jobs:
         files: |
           cloud-torrent_linux_amd64.gz
           cloud-torrent_linux_amd64_static.gz
+          cloud-torrent_linux_386_static.gz
           cloud-torrent_linux_arm64_static.gz
           cloud-torrent_darwin_amd64_static.gz
         prerelease: true
@@ -56,4 +58,3 @@ jobs:
         body_path: gittaglogs.txt
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
