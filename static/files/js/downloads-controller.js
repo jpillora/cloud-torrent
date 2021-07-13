@@ -46,9 +46,9 @@ app.controller("NodeController", function ($scope, $rootScope, $http, $timeout, 
   }
   var path = (n.$path = pathArray.join("/"));
   n.$closed = $scope.agoHrs(n.Modified) > 24;
-  $scope.audioPreview = /\.(mp3|m4a)$/.test(path);
-  $scope.imagePreview = /\.(jpe?g|png|gif)$/.test(path);
-  $scope.videoPreview = /\.(mp4|mkv|mov)$/.test(path);
+  $scope.audioPreview = /\.(mp3|m4a)$/i.test(path);
+  $scope.imagePreview = /\.(jpe?g|png|gif)$/i.test(path);
+  $scope.videoPreview = /\.(mp4|mkv|mov)$/i.test(path);
 
   $scope.isdownloading = function (fileName) {
     if ($scope.isfile() && (fileName in $rootScope.DownloadingFiles)) {
