@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 //go:embed default-scraper-config.json
@@ -13,6 +14,10 @@ var defaultSearchConfig []byte
 var currentConfig []byte
 
 func (s *Server) fetchSearchConfig(confurl string) error {
+	if !strings.HasPrefix(confurl, "http") {
+		log.Println("fetchSearchConfig: unconfigured, using the default conf", confurl)
+		return nil
+	}
 	log.Println("fetchSearchConfig: loading search config from", confurl)
 	resp, err := http.Get(confurl)
 	if err != nil {
