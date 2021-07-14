@@ -18,6 +18,8 @@ app.controller("DownloadsController", function ($scope, $rootScope, apiget) {
       apiget.files().then(function (xhr) {
         if (xhr.data.Children) {
           $scope.$DownloadedFiles = xhr.data.Children;
+        } else {
+          $scope.$DownloadedFiles = [];
         }
       }).finally(function () {
         $scope.$isLoadingFiles = false;
