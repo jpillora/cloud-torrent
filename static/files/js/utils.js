@@ -1,11 +1,20 @@
 /* globals app,window */
 
-app.factory("reqerr", function ($rootScope) {
+app.factory("reqerr", function ($rootScope, $log) {
   return function (xhr) {
     if ("data" in xhr) {
       $rootScope.err = `${xhr.status} - ${xhr.statusText}`
-      if ("error" in xhr.data) {
-        $rootScope.err += ` :${xhr.data.error}`;
+      switch (typeof xhr.data) {
+        case "string":
+          $rootScope.err += ` :${xhr.data}`;
+          break;
+        case "object":
+          if ("error" in xhr.data) {
+            $rootScope.err += ` :${xhr.data.error}`;
+          } else {
+            $rootScope.err += JSON.stringify(xhr.data);
+          }
+          break
       }
       $log.error(xhr.data);
       $rootScope.$applyAsync();
