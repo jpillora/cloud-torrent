@@ -215,8 +215,13 @@ func (s *Server) Run(version string) error {
 	//gzip
 	h = httpmiddleware.RealIP(h)
 	h = httpmiddleware.Liveness(h)
-	gzipWrap, _ := gziphandler.NewGzipLevelAndMinSize(gzip.DefaultCompression, 1024)
-	h = gzipWrap(h)
+
+	// dont enable gzip handler if certantlly we are behind a web server
+	if !strings.HasPrefix(s.Host, "unix:") {
+		gzipWrap, _ := gziphandler.NewGzipLevelAndMinSize(gzip.DefaultCompression, 1024)
+		h = gzipWrap(h)
+	}
+
 	//auth
 	if s.Auth != "" {
 		user := s.Auth
