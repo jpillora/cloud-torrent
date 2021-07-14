@@ -25,7 +25,8 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 		s.rssh.ServeHTTP(w, r)
 		return
 	case "/sync":
-		//handle realtime client connections
+		//handle realtime client connections, setting content-encoding to avoid gzip buffer
+		w.Header().Set("Content-Encoding", "identity")
 		conn, err := velox.Sync(&s.state, w, r)
 		if err != nil {
 			log.Printf("sync failed: %s", err)

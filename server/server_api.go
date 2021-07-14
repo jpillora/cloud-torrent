@@ -29,6 +29,7 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 		return errUnknowAct
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	action := routeDirs[0]
 	switch action {
 	case "magnet": // adds magnet by GET: /api/magnet?m=...
@@ -46,6 +47,7 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 			}
 		}
 		tdata.Magnet = m
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		htmlTPL["magadded.html"].Execute(w, tdata)
 	case "configure":
 		json.NewEncoder(w).Encode(*(s.engineConfig))
@@ -71,7 +73,10 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 		s.state.Stats.System.loadStats()
 		s.state.Stats.ConnStat = s.engine.ConnStat()
 		json.NewEncoder(w).Encode(s.state.Stats)
+	case "searchproviders":
+		json.NewEncoder(w).Encode(s.searchProviders)
 	case "enginedebug":
+		w.Header().Set("Content-Type", "application/json")
 		var buf bytes.Buffer
 		s.engine.WriteStauts(bufio.NewWriter(&buf))
 		json.NewEncoder(w).Encode(struct {

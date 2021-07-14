@@ -11,7 +11,6 @@ func (s *Server) backgroundRoutines() {
 	go s.fetchSearchConfig(s.engineConfig.ScraperURL)
 
 	// initial state
-	s.state.Torrents = s.engine.GetTorrents()
 	s.state.Stats.System.loadStats()
 	//collecting sys stats
 	go func() {
@@ -22,7 +21,6 @@ func (s *Server) backgroundRoutines() {
 					go s.tickerRoutine()
 				}
 			case <-s.engine.TsChanged: // task added/deleted
-				s.state.Torrents = s.engine.GetTorrents()
 				s.state.Push()
 			}
 		}

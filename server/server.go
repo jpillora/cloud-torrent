@@ -74,21 +74,21 @@ type Server struct {
 
 	state struct {
 		velox.State
-		SearchProviders scraper.Config
-		rssMark         map[string]string
-		rssCache        []*gofeed.Item
-		LatestRSSGuid   string
-		Torrents        *map[string]*engine.Torrent
-		Users           map[string]string
-		UseQueue        bool
-		Stats           struct {
+		UseQueue      bool
+		LatestRSSGuid string
+		Torrents      *map[string]*engine.Torrent
+		Users         map[string]string
+		Stats         struct {
 			System   osStats
 			ConnStat torrent.ConnStats
 		}
 	}
 
-	baseInfo     *BaseInfo
-	engineConfig *engine.Config
+	rssMark         map[string]string
+	rssCache        []*gofeed.Item
+	searchProviders *scraper.Config
+	baseInfo        *BaseInfo
+	engineConfig    *engine.Config
 }
 
 // Run the server
@@ -110,9 +110,10 @@ func (s *Server) Run(version string) error {
 		Uptime:  time.Now().Unix(),
 	}
 
+	s.syncConnected = make(chan struct{})
 	//init maps
 	s.state.Users = make(map[string]string)
-	s.state.rssMark = make(map[string]string)
+	s.rssMark = make(map[string]string)
 
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
 	s.statich = ctstatic.FileSystemHandler()
@@ -131,7 +132,7 @@ func (s *Server) Run(version string) error {
 	if err := s.scraper.LoadConfig(defaultSearchConfig); err != nil {
 		log.Fatal(err)
 	}
-	s.state.SearchProviders = s.scraper.Config //share scraper config with web frontend
+	s.searchProviders = &s.scraper.Config //share scraper config with web frontend
 	s.scraperh = http.StripPrefix("/search", s.scraper)
 
 	// sync config from cmd arg to viper
@@ -168,6 +169,7 @@ func (s *Server) Run(version string) error {
 	if err := s.engine.Configure(c); err != nil {
 		return err
 	}
+	s.state.Torrents = s.engine.GetTorrents()
 
 	if s.Debug {
 		viper.Debug()
@@ -178,7 +180,6 @@ func (s *Server) Run(version string) error {
 		log.Println("UpdateTrackers err", err)
 	}
 	s.backgroundRoutines()
-	s.syncConnected = make(chan struct{})
 
 	if s.Open && !strings.HasPrefix(s.Host, "unix:") {
 		go func() {

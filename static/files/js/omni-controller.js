@@ -4,6 +4,7 @@ app.controller("OmniController", function (
   $rootScope,
   storage,
   api,
+  apiget,
   search,
   reqinfo,
   rss
@@ -23,15 +24,12 @@ app.controller("OmniController", function (
     if (p) storage.tcProvider = p;
     $scope.parse();
   });
-  //if unset, set to first provider
-  $rootScope.$watch("state.SearchProviders", function (searchProviders) {
-    //remove last set
-    if (!searchProviders) return;
-    //filter
-    for (var id in searchProviders) {
-      if (/\/item$/.test(id)) continue;
-      $scope.providers[id] = searchProviders[id];
-    }
+  apiget.searchproviders().then(function (xhr) {
+    angular.forEach(xhr.data, function (val, k) {
+      if (/\/item$/.test(k)) return;
+      $scope.providers[k] = val;
+    });
+    $scope.SearchProvidersConfig = xhr.data;
     $scope.parse();
   });
 
@@ -178,7 +176,7 @@ app.controller("OmniController", function (
 
   $scope.submitSearch = function () {
     //lookup provider's origin
-    var provider = $scope.state.SearchProviders[$scope.inputs.provider];
+    var provider = $scope.SearchProvidersConfig[$scope.inputs.provider];
     if (!provider) return;
     var origin = /(https?:\/\/[^\/]+)/.test(provider.url) && RegExp.$1;
     var page = $scope.page;

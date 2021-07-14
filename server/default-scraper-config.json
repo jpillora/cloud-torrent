@@ -1,0 +1,394 @@
+{
+  "torrentgalaxy": {
+    "name": "TorrentGalaxy",
+    "url": "https://torrentgalaxy.to/torrents.php?search={{query}}&sort=id&order=desc&page={{page:0}}",
+    "list": "div.tgxtablerow",
+    "result": {
+      "name": ["div:nth-of-type(4) div a", "@title"],
+      "url": ["div:nth-of-type(4) div a", "@href"],
+      "size": "div:nth-of-type(8)",
+      "seeds": "div:nth-of-type(10)"
+    }
+  },
+  "torrentgalaxy/item": {
+    "name": "TorrentGalaxy/item",
+    "url": "https://torrentgalaxy.to{{item}}",
+    "result": {
+      "infohash": [ "div.torrentpagetable div.tprow:nth-of-type(7) div:nth-of-type(2)" ]
+    }
+  },
+  "yourbittorrent2": {
+    "name": "YourBittorrent",
+    "url": "https://yourbittorrent2.com/?q={{query}}&page={{page:1}}",
+    "list": "div.table-responsive table tbody tr.table-default",
+    "result": {
+      "name": "td:nth-of-type(2) a",
+      "url": [
+        "td:nth-of-type(2) a",
+        "@href"
+      ],
+      "magnet": [
+        "td:nth-of-type(3) a:nth-of-type(2)",
+        "@href"
+      ],
+      "size": "td:nth-child(4)",
+      "seeds": "td:nth-child(6)"
+    }
+  },
+  "seedpeer": {
+    "name": "SeedPeer",
+    "url": "https://www.seedpeer.me/search/{{query}}?page={{page:1}}",
+    "list": "div.table-container table.table tbody tr",
+    "result": {
+      "name": [
+        "td:first-of-type",
+        "@title"
+      ],
+      "url": [
+        "td:first-of-type a",
+        "@href"
+      ],
+      "size": "td:nth-of-type(3)",
+      "seeds": "td:nth-of-type(4)",
+      "peers": "td:nth-of-type(5)"
+    }
+  },
+  "seedpeer/item": {
+    "name": "SeedPeer/item",
+    "url": "https://www.seedpeer.me{{item}}",
+    "result": {
+      "magnet": [
+        "div.content div.is-one-third p:nth-of-type(3) a",
+        "@href"
+      ]
+    }
+  },
+  "skytorrents": {
+    "name": "SkyTorrent",
+    "url": "https://www.skytorrents.lol/?query={{query}}&sort=seeders&page={{page:1}}",
+    "list": "#results tr.result",
+    "result": {
+      "name": [
+        "td:first-child a:first-of-type"
+      ],
+      "magnet": [
+        "td:first-child a:nth-of-type(3)",
+        "@href"
+      ],
+      "size": "td:nth-child(2)",
+      "seeds": "td:nth-child(5)"
+    }
+  },
+  "btspread": {
+    "name": "BTSOW",
+    "url": "https://btos.pw/search/{{query}}/page/{{page:1}}",
+    "list": "div.data-list div.row",
+    "result": {
+      "name": [
+        "a:first-child",
+        "@title"
+      ],
+      "infohash": [
+        "a:first-child",
+        "@href",
+        "s#^.+/##"
+      ],
+      "size": "div:nth-child(2)"
+    }
+  },
+  "monova": {
+    "name": "MONOVA_ORG",
+    "url": "https://monova.org/search?term={{query}}&page={{page:1}}",
+    "list": "section.main-container table.main-table tr.desktop",
+    "result": {
+      "name": [
+        "td.torrent_name a",
+        "s/\n//g",
+        "s/ $//"
+      ],
+      "url": [
+        "td.torrent_name a",
+        "@href",
+        "s/^/https:/"
+      ],
+      "infohash": [
+        "td.torrent_name a",
+        "@href",
+        "s#^//monova.org/##"
+      ],
+      "size": "td:last-child"
+    }
+  },
+  "zhima998": {
+    "name": "大白菜",
+    "url": "https://zhima998.com/infolist.php?q={{query}}&f=_all&s=&p={{page:1}}",
+    "list": "div.container ul.list-group li.list-group-item",
+    "result": {
+      "name": [
+        "node(0)",
+        "s/\\n *//"
+      ],
+      "magnet": [
+        "a:last-child",
+        "@href"
+      ]
+    }
+  },
+  "torrentz2": {
+    "name": "Torrentz2",
+    "url": "https://torrentz2.eu/search?f={{query}}&p={{page:0}}",
+    "list": "div.results dl",
+    "result": {
+      "name": "dt a",
+      "url": [
+        "dt a",
+        "@href"
+      ],
+      "path": [
+        "dt a",
+        "@href"
+      ],
+      "size": "dd span:nth-child(3)",
+      "seeds": "dd span:nth-child(4)",
+      "peers": "dd span:nth-child(5)"
+    }
+  },
+  "torrentz2/item": {
+    "name": "Torrentz2/item",
+    "url": "https://torrentz2.eu{{item}}",
+    "result": {
+      "infohash": [
+        "div.trackers div:first-child",
+        "s/info_hash: //g"
+      ],
+      "tracker": "div.trackers dl dt"
+    }
+  },
+  "yiso": {
+    "name": "一搜",
+    "url": "https://www.yscili.com/search/",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "method": "POST",
+    "body": "keyword={{query}}",
+    "list": "div.list-area dl.item",
+    "result": {
+      "name": "dt a",
+      "url": [
+        "dt a",
+        "@href"
+      ],
+      "size": [
+        "dd.attr span:nth-child(2)",
+        "s/^.+: //"
+      ],
+      "seeds": "dd.attr span:nth-child(4)",
+      "magnet": [
+        "dd.attr span:nth-child(5) a",
+        "@href"
+      ]
+    }
+  },
+  "bthaha": {
+    "name": "BT哈哈",
+    "url": "https://bthaha.men/search/{{query}}/?c=&s=create_time&p={{page:1}}",
+    "list": "div.container table.table tbody tr",
+    "result": {
+      "name": [
+        "td div a",
+        "@title"
+      ],
+      "url": [
+        "td div a",
+        "@href"
+      ],
+      "path": [
+        "td div a",
+        "@href",
+        "s#^/wiki/##",
+        "s#.html$##"
+      ],
+      "size": [
+        "div.tail",
+        "s/\n//g",
+        "s/.+?size: //",
+        "s/ Total.+//"
+      ]
+    }
+  },
+  "bthaha/item": {
+    "name": "BT哈哈(item)",
+    "url": "https://bthaha.men/api/json_info?hashes={{item}}",
+    "result": {
+      "infohash": "result.0.info_hash"
+    }
+  },
+  "idope": {
+    "name": "iDope",
+    "url": "https://idope.se/torrent-list/{{query}}/?p={{page:1}}",
+    "list": "div#div2child .resultdiv",
+    "result": {
+      "name": [
+        ".resultdivtop a div.resultdivtopname",
+        "s/[\n\t]+//g"
+      ],
+      "url": [
+        "div.resultdivtop a",
+        "@href"
+      ],
+      "size": ".resultlength .resultdivbottonlength",
+      "seeds": ".resultseed .resultdivbottonseed"
+    }
+  },
+  "idope/item": {
+    "name": "iDope(Item)",
+    "url": "https://idope.se/torrent/{{item}}",
+    "result": {
+      "magnet": "a#mangetinfo"
+    }
+  },
+  "eztv": {
+    "name": "EZTV",
+    "url": "https://eztv.ag/search/{{query}}",
+    "list": "table tr.forum_header_border",
+    "result": {
+      "name": "td:nth-child(2) a",
+      "url": [
+        "td:nth-child(2) a",
+        "@href"
+      ],
+      "magnet": [
+        "td:nth-child(3) a:nth-child(1)",
+        "@href"
+      ],
+      "size": "td:nth-child(4)",
+      "seeds": "td:nth-child(6)"
+    }
+  },
+  "1337x": {
+    "name": "1337X",
+    "url": "http://1337x.to/sort-search/{{query}}/seeders/desc/{{page:1}}/",
+    "list": ".box-info-detail table.table tr",
+    "result": {
+      "name": [
+        ".coll-1 a:nth-child(2)"
+      ],
+      "url": [
+        ".coll-1 a:nth-child(2)",
+        "@href"
+      ],
+      "seeds": ".coll-2",
+      "peers": ".coll-3",
+      "size": [
+        ".coll-4",
+        "/([\\d\\.]+ [KMGT]?B)/"
+      ]
+    }
+  },
+  "1337x/item": {
+    "name": "1337X (Item)",
+    "url": "http://1337x.to{{item}}",
+    "result": {
+      "magnet": [
+        "a[href^='magnet:']",
+        "@href"
+      ]
+    }
+  },
+  "abb": {
+    "name": "The Audiobook Bay",
+    "url": "http://audiobookbay.nl/page/{{page:1}}?s={{query}}",
+    "list": "#content > .post",
+    "result": {
+      "name": [
+        "div.postTitle > h2 > a"
+      ],
+      "url": [
+        "div.postTitle > h2 > a",
+        "@href"
+      ],
+      "size": [
+        "div.postContent",
+        "/File Size: ([\\d\\.]+ [KMGT]?B)/"
+      ]
+    }
+  },
+  "abb/item": {
+    "name": "The Audiobook Bay (Item)",
+    "url": "http://audiobookbay.nl{{item}}",
+    "result": {
+      "infohash": "/td>([a-f0-9]+)</",
+      "tracker": "table.torrent_info tr:nth-child(1) td:nth-child(2)"
+    }
+  },
+  "lt": {
+    "name": "limetorrents",
+    "url": "https://www.limetorrents.cc/search/all/{{query}}/seeds/{{page:1}}/",
+    "list": ".table2 tbody tr",
+    "result": {
+      "name": [
+        ".tt-name a:nth-child(2)"
+      ],
+      "url": [
+        ".tt-name a:nth-child(2)",
+        "@href"
+      ],
+      "size": "td:nth-child(3)",
+      "seeds": "td:nth-child(4)",
+      "peers": "td:nth-child(5)"
+    }
+  },
+  "lt/item": {
+    "name": "limetorrents (Item)",
+    "url": "https://www.limetorrents.cc{{item}}",
+    "result": {
+      "magnet": [
+        "a.csprite_dltorrent[href^=\"magnet:\"]",
+        "@href"
+      ]
+    }
+  },
+  "tpb": {
+    "name": "The Pirate Bay",
+    "url": "https://thepiratebay.org/search/{{query}}/{{page:0}}/7//",
+    "list": "#searchResult > tbody > tr",
+    "result": {
+      "name": "a.detLink",
+      "path": [
+        "a.detLink",
+        "@href"
+      ],
+      "magnet": [
+        "a[title=Download\\ this\\ torrent\\ using\\ magnet]",
+        "@href"
+      ],
+      "size": "/Size (\\d+(\\.\\d+).[KMG]iB)/",
+      "seeds": "td:nth-child(3)",
+      "peers": "td:nth-child(4)"
+    }
+  },
+  "nyaa": {
+    "name": "Nyaa",
+    "url": "https://nyaa.si/?f=0&c=0_0&s=seeders&o=desc&q={{query}}&p={{page:1}}",
+    "list": "table.torrent-list > tbody > tr",
+    "result": {
+      "name": [
+        "td:nth-child(2) a:nth-child(2)",
+        "@title"
+      ],
+      "path": [
+        "td:nth-child(2) a:nth-child(2)",
+        "@href"
+      ],
+      "magnet": [
+        "a[href^='magnet:']",
+        "@href"
+      ],
+      "size": "td:nth-child(4)",
+      "seeds": "td:nth-child(6)",
+      "peers": "td:nth-child(7)"
+    }
+  }
+}
+

@@ -73,6 +73,7 @@ app.factory("apiget", function ($rootScope, $http, reqerr) {
   var actions = [
     "configure",
     "enginedebug",
+    "searchproviders",
     "files"
   ];
   actions.forEach(function (action) {

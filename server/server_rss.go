@@ -45,7 +45,7 @@ func (s *Server) updateRSS() {
 			log.Printf("retrived feed %s from %s", feed.Title, rss)
 		}
 
-		if oldmark, ok := s.state.rssMark[rss]; ok {
+		if oldmark, ok := s.rssMark[rss]; ok {
 			var lastIdx int
 			for i, item := range feed.Items {
 				if item.GUID == oldmark {
@@ -55,29 +55,29 @@ func (s *Server) updateRSS() {
 			}
 			if lastIdx > 0 {
 				log.Printf("feed updated with %d new items", lastIdx)
-				s.state.rssMark[rss] = feed.Items[0].GUID
-				s.state.rssCache = append(feed.Items[:lastIdx], s.state.rssCache...)
+				s.rssMark[rss] = feed.Items[0].GUID
+				s.rssCache = append(feed.Items[:lastIdx], s.rssCache...)
 			}
 		} else if len(feed.Items) > 0 {
 			if s.Debug {
 				log.Printf("retrive %d new items, first record", len(feed.Items))
 			}
-			s.state.rssMark[rss] = feed.Items[0].GUID
-			s.state.rssCache = append(feed.Items, s.state.rssCache...)
+			s.rssMark[rss] = feed.Items[0].GUID
+			s.rssCache = append(feed.Items, s.rssCache...)
 		}
 
-		if len(s.state.rssCache) > 200 {
-			s.state.rssCache = s.state.rssCache[:200]
+		if len(s.rssCache) > 200 {
+			s.rssCache = s.rssCache[:200]
 		}
 	}
 
 	// sort the retrived feed by Published attr
 	// make sure the first is the latest
-	sort.Slice(s.state.rssCache, func(i, j int) bool {
-		return s.state.rssCache[i].PublishedParsed.After(*(s.state.rssCache[j].PublishedParsed))
+	sort.Slice(s.rssCache, func(i, j int) bool {
+		return s.rssCache[i].PublishedParsed.After(*(s.rssCache[j].PublishedParsed))
 	})
-	if len(s.state.rssCache) > 0 {
-		s.state.LatestRSSGuid = s.state.rssCache[0].GUID
+	if len(s.rssCache) > 0 {
+		s.state.LatestRSSGuid = s.rssCache[0].GUID
 		s.state.Push()
 	}
 }
@@ -89,7 +89,7 @@ func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var results []rssJSONItem
-	for _, i := range s.state.rssCache {
+	for _, i := range s.rssCache {
 		ritem := rssJSONItem{
 			Name:            i.Title,
 			Published:       i.Published,

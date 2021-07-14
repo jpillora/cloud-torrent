@@ -73,9 +73,6 @@ func (e *Engine) Configure(c *Config) error {
 	if c.IncomingPort <= 0 {
 		return fmt.Errorf("Invalid incoming port (%d)", c.IncomingPort)
 	}
-	if c.ScraperURL == "" {
-		c.ScraperURL = defaultScraperURL
-	}
 	if c.TrackerList == "" {
 		c.TrackerList = "remote:" + defaultTrackerListURL
 	}

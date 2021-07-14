@@ -22,7 +22,6 @@ const (
 
 const (
 	defaultTrackerListURL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
-	defaultScraperURL     = "https://raw.githubusercontent.com/boypt/simple-torrent/master/scraper-config.json"
 )
 
 type Config struct {
@@ -75,7 +74,6 @@ func InitConf(specPath string) (*Config, error) {
 	viper.SetDefault("ObfsPreferred", true)
 	viper.SetDefault("ObfsRequirePreferred", false)
 	viper.SetDefault("IncomingPort", 50007)
-	viper.SetDefault("ScraperURL", defaultScraperURL)
 	viper.SetDefault("MaxConcurrentTask", 0)
 	viper.SetDefault("AllowRuntimeConfigure", true)
 
