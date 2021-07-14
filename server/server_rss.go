@@ -78,6 +78,7 @@ func (s *Server) updateRSS() {
 	})
 	if len(s.state.rssCache) > 0 {
 		s.state.LatestRSSGuid = s.state.rssCache[0].GUID
+		s.state.Push()
 	}
 }
 

@@ -31,10 +31,11 @@ func (s *Server) backgroundRoutines() {
 	// rss updater
 	go func() {
 		// skip if not configured
-		if !strings.HasPrefix(s.engineConfig.RssURL, "http") {
+		if strings.TrimSpace(s.engineConfig.RssURL) == "" {
 			return
 		}
 
+		s.updateRSS()
 		for range time.Tick(30 * time.Minute) {
 			s.updateRSS()
 		}
