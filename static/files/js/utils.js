@@ -3,7 +3,11 @@
 app.factory("reqerr", function ($rootScope) {
   return function (xhr) {
     if ("data" in xhr) {
-      $rootScope.err = `${xhr.statusText} - (${xhr.data})`
+      $rootScope.err = `${xhr.status} - ${xhr.statusText}`
+      if ("error" in xhr.data) {
+        $rootScope.err += ` :${xhr.data.error}`;
+      }
+      $log.error(xhr.data);
       $rootScope.$applyAsync();
     }
     return xhr;
