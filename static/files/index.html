@@ -78,9 +78,7 @@
 			</div>
 			<div>
 				<span>Up {{ ago([[.Uptime]]*1000) }}</span>
-			</div>
-			<div ng-if="numKeys(state.Users) > 1">
-				<span>,{{ numKeys(state.Users) }} users connected</span>
+				<span ng-if="numKeys(state.Users) > 1">,{{ numKeys(state.Users) }} users connected</span>
 			</div>
 		</footer>
 		<div ng-if="$root.showEnineStatus" class="ui attached mini message">
@@ -96,13 +94,14 @@
 				<span> mem {{ state.Stats.System.memUsedPercent | round }}%, </span>
 				<span> disk {{ state.Stats.System.diskUsedPercent | round }}% </span>
 			</p>
-			<div class="header">
-				Torrent Trackers
-			</div>
+			<div class="header"> Online Users </div>
+			<ul ng-repeat="(key, value) in state.Users ">
+				<li>ID:{{key}} - IP:{{value}}</li>
+			</ul>
+
+			<div class="header"> Torrent Trackers </div>
 			<pre>{{ Trackers }}</pre>
-			<div class="header">
-				Torrent Engine Status
-			</div>
+			<div class="header"> Torrent Engine Status </div>
 			<pre>{{ EngineStatus }}</pre>
 		</div>
 	</div>

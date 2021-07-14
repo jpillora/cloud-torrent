@@ -144,7 +144,7 @@ app.run(function ($rootScope, $window, $location, $log, search, api, apiget, sto
       case "enginedebug":
         $rootScope.showEnineStatus = !$rootScope.showEnineStatus;
         if ($rootScope.showEnineStatus) {
-          $rootScope.EngineStatus = "loading...";
+          $rootScope.EngineStatus = $scope.Trackers = "loading...";
           apiget.enginedebug().then(function (xhr) {
             $scope.EngineStatus = xhr.data.EngineStatus;
             $scope.Trackers = xhr.data.Trackers.join("\n");
