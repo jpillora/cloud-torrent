@@ -4,8 +4,14 @@
     "url": "https://torrentgalaxy.to/torrents.php?search={{query}}&sort=id&order=desc&page={{page:0}}",
     "list": "div.tgxtablerow",
     "result": {
-      "name": ["div:nth-of-type(4) div a", "@title"],
-      "url": ["div:nth-of-type(4) div a", "@href"],
+      "name": [
+        "div:nth-of-type(4) div a",
+        "@title"
+      ],
+      "url": [
+        "div:nth-of-type(4) div a",
+        "@href"
+      ],
       "size": "div:nth-of-type(8)",
       "seeds": "div:nth-of-type(10)"
     }
@@ -14,7 +20,9 @@
     "name": "TorrentGalaxy/item",
     "url": "https://torrentgalaxy.to{{item}}",
     "result": {
-      "infohash": [ "div.torrentpagetable div.tprow:nth-of-type(7) div:nth-of-type(2)" ]
+      "infohash": [
+        "div.torrentpagetable div.tprow:nth-of-type(7) div:nth-of-type(2)"
+      ]
     }
   },
   "yourbittorrent2": {
@@ -79,46 +87,6 @@
       "seeds": "td:nth-child(5)"
     }
   },
-  "btspread": {
-    "name": "BTSOW",
-    "url": "https://btos.pw/search/{{query}}/page/{{page:1}}",
-    "list": "div.data-list div.row",
-    "result": {
-      "name": [
-        "a:first-child",
-        "@title"
-      ],
-      "infohash": [
-        "a:first-child",
-        "@href",
-        "s#^.+/##"
-      ],
-      "size": "div:nth-child(2)"
-    }
-  },
-  "monova": {
-    "name": "MONOVA_ORG",
-    "url": "https://monova.org/search?term={{query}}&page={{page:1}}",
-    "list": "section.main-container table.main-table tr.desktop",
-    "result": {
-      "name": [
-        "td.torrent_name a",
-        "s/\n//g",
-        "s/ $//"
-      ],
-      "url": [
-        "td.torrent_name a",
-        "@href",
-        "s/^/https:/"
-      ],
-      "infohash": [
-        "td.torrent_name a",
-        "@href",
-        "s#^//monova.org/##"
-      ],
-      "size": "td:last-child"
-    }
-  },
   "zhima998": {
     "name": "大白菜",
     "url": "https://zhima998.com/infolist.php?q={{query}}&f=_all&s=&p={{page:1}}",
@@ -130,62 +98,6 @@
       ],
       "magnet": [
         "a:last-child",
-        "@href"
-      ]
-    }
-  },
-  "torrentz2": {
-    "name": "Torrentz2",
-    "url": "https://torrentz2.eu/search?f={{query}}&p={{page:0}}",
-    "list": "div.results dl",
-    "result": {
-      "name": "dt a",
-      "url": [
-        "dt a",
-        "@href"
-      ],
-      "path": [
-        "dt a",
-        "@href"
-      ],
-      "size": "dd span:nth-child(3)",
-      "seeds": "dd span:nth-child(4)",
-      "peers": "dd span:nth-child(5)"
-    }
-  },
-  "torrentz2/item": {
-    "name": "Torrentz2/item",
-    "url": "https://torrentz2.eu{{item}}",
-    "result": {
-      "infohash": [
-        "div.trackers div:first-child",
-        "s/info_hash: //g"
-      ],
-      "tracker": "div.trackers dl dt"
-    }
-  },
-  "yiso": {
-    "name": "一搜",
-    "url": "https://www.yscili.com/search/",
-    "headers": {
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
-    "method": "POST",
-    "body": "keyword={{query}}",
-    "list": "div.list-area dl.item",
-    "result": {
-      "name": "dt a",
-      "url": [
-        "dt a",
-        "@href"
-      ],
-      "size": [
-        "dd.attr span:nth-child(2)",
-        "s/^.+: //"
-      ],
-      "seeds": "dd.attr span:nth-child(4)",
-      "magnet": [
-        "dd.attr span:nth-child(5) a",
         "@href"
       ]
     }
@@ -391,4 +303,3 @@
     }
   }
 }
-
