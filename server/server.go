@@ -2,7 +2,6 @@ package server
 
 import (
 	"compress/gzip"
-	"crypto/tls"
 	"fmt"
 	stdlog "log"
 	"net"
@@ -251,10 +250,6 @@ func (s *Server) Run(version string) error {
 	server := http.Server{
 		//handler stack
 		Handler: h,
-	}
-	if isTLS {
-		//disable http2 due to velox bug
-		server.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){}
 	}
 
 	//serve!
