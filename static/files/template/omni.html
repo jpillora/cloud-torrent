@@ -1,7 +1,10 @@
 <!-- MAGNET EDITOR -->
 <div class="ui segment" ng-show="edit">
   <form class="ui edit form">
-    <h4 class="ui dividing header">Magnet URI Editor</h4>
+    <h4 class="ui dividing header">
+      <i class="sticky note outline icon"></i>
+      Magnet URI Editor
+    </h4>
     <div class="field">
       <label>Name</label>
       <div class="field">
@@ -71,6 +74,8 @@
 <div id="omni_search_results" class="ui raised segments" ng-show="mode.search && results && results.length > 0">
   <div class="ui attached segment result_header">
     <span class="ui secondary header">
+      <i ng-if="mode.rss" class="rss square icon"></i>
+      <i ng-if="!mode.rss" class="search icon"></i>
       {{ mode.rss == true ? "RSS":"Search Results" }} ({{ results.length }})
     </span>
     <div class="ui right floated grey tiny header">
