@@ -109,12 +109,10 @@ func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
 		} else {
 			// some sites put it under enclosures
 			for _, e := range i.Enclosures {
-				if e.Type == "application/x-bittorrent" {
-					ritem.Torrent = e.URL
-					continue
-				}
 				if strings.HasPrefix(e.URL, "magnet:") {
 					ritem.Magnet = e.URL
+				} else if e.Type == "application/x-bittorrent" {
+					ritem.Torrent = e.URL
 				}
 			}
 
