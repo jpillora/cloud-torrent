@@ -36,7 +36,8 @@ const (
 )
 
 var (
-	log *stdlog.Logger
+	isListenOnUnix bool
+	log            *stdlog.Logger
 	//ErrDiskSpace raised if disk space not enough
 	ErrDiskSpace = errors.New("not enough disk space")
 )
@@ -45,8 +46,9 @@ var (
 type Server struct {
 	//config
 	Title          string `opts:"help=Title of this instance,env=TITLE"`
-	Port           int    `opts:"help=Listening port,env=PORT"`
-	Host           string `opts:"help=Listening interface (default all),env=HOST"`
+	Port           int    `opts:"help=Listening port(depreciated. use --listen),env=PORT"`
+	Host           string `opts:"help=Listening interface (depreciated. use --listen),env=HOST"`
+	Listen         string `opts:"help=Listening Address:Port or unix socket (default all),env=LISTEN"`
 	UnixPerm       string `opts:"help=DomainSocket file permission (default 0666),env=UNIXPERM"`
 	Auth           string `opts:"help=Optional basic auth in form 'user:password',env=AUTH"`
 	ProxyURL       string `opts:"help=Proxy url,env=PROXY_URL"`
@@ -99,9 +101,18 @@ func (s *Server) Run(version string) error {
 		log.SetFlags(stdlog.Lmsgprefix)
 	}
 
+	if s.Host != "" || s.Port != 3000 {
+		log.Println("WARNING: --host --port arguments are depreciated, use --linsten instead, eg:`--listen :3000`")
+		s.Listen = fmt.Sprintf("%s:%d", s.Host, s.Port)
+		if strings.HasPrefix(s.Host, "unix:") {
+			s.Listen = s.Host
+		}
+	}
+	isListenOnUnix = strings.HasPrefix(s.Listen, "unix:")
+
 	isTLS := s.CertPath != "" || s.KeyPath != "" //poor man's XOR
 	if isTLS && (s.CertPath == "" || s.KeyPath == "") {
-		return fmt.Errorf("You must provide both key and cert paths")
+		return fmt.Errorf("ERROR: You must provide both key and cert paths")
 	}
 	s.baseInfo = &BaseInfo{
 		Title:   s.Title,
@@ -181,7 +192,7 @@ func (s *Server) Run(version string) error {
 	}
 	s.backgroundRoutines()
 
-	if s.Open && !strings.HasPrefix(s.Host, "unix:") {
+	if s.Open && !isListenOnUnix {
 		go func() {
 			proto := "http"
 			if isTLS {
@@ -217,7 +228,7 @@ func (s *Server) Run(version string) error {
 	h = httpmiddleware.Liveness(h)
 
 	// dont enable gzip handler if certantlly we are behind a web server
-	if !strings.HasPrefix(s.Host, "unix:") {
+	if !isListenOnUnix {
 		gzipWrap, _ := gziphandler.NewGzipLevelAndMinSize(gzip.DefaultCompression, 1024)
 		h = gzipWrap(h)
 	}
@@ -236,39 +247,45 @@ func (s *Server) Run(version string) error {
 	if s.Log {
 		h = requestlog.Wrap(h)
 	}
+
 	server := http.Server{
-		//disable http2 due to velox bug
-		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){},
 		//handler stack
 		Handler: h,
 	}
+	if isTLS {
+		//disable http2 due to velox bug
+		server.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){}
+	}
 
 	//serve!
-	if strings.HasPrefix(s.Host, "unix:") {
-		sockPath := s.Host[5:]
+	var listener net.Listener
+	if isListenOnUnix {
+		sockPath := s.Listen[5:]
 		if _, err := os.Stat(sockPath); !errors.Is(err, os.ErrNotExist) {
 			log.Println("Listening sock exists, removing", sockPath)
 			os.Remove(sockPath)
 		}
-		lc, err := net.Listen("unix", sockPath)
+		log.Println("Listening at", s.Listen)
+		listener, err = net.Listen("unix", sockPath)
 		if err != nil {
 			log.Fatalln("Failed listening", err)
 		}
-		log.Println("Listening at", s.Host)
 		if um, err := strconv.ParseInt(s.UnixPerm, 8, 0); err == nil {
 			uxmod := os.FileMode(um)
 			log.Println("Listening DomainSocket mode change to:", uxmod.String(), s.UnixPerm)
 			os.Chmod(sockPath, uxmod)
 		}
-		return server.Serve(lc)
 	} else {
-		server.Addr = fmt.Sprintf("%s:%d", s.Host, s.Port)
-		log.Println("Listening at", server.Addr)
-		if isTLS {
-			return server.ListenAndServeTLS(s.CertPath, s.KeyPath)
+		log.Println("Listening at", s.Listen)
+		listener, err = net.Listen("tcp", s.Listen)
+		if err != nil {
+			log.Fatalln("Failed listening", err)
 		}
-		return server.ListenAndServe()
+		if isTLS {
+			return server.ServeTLS(listener, s.CertPath, s.KeyPath)
+		}
 	}
+	return server.Serve(listener)
 }
 
 func init() {
