@@ -72,14 +72,22 @@ func (e *Engine) ParseTrackerList() error {
 			if lst, err := fetchTxtList(line[7:]); err == nil {
 				trackers = append(trackers, lst...)
 			} else {
-				log.Println("[ParseTrackerList] ignored", err)
+				log.Println("[ParseTrackerList] ignored", err, line)
 			}
 		} else {
 			trackers = append(trackers, line)
 		}
 	}
 
-	e.Trackers = trackers
+	// remove duplicated entries
+	dupMap := make(map[string]struct{})
+	for _, t := range trackers {
+		dupMap[t] = struct{}{}
+	}
+	for t := range dupMap {
+		e.Trackers = append(e.Trackers, t)
+	}
+
 	log.Printf("[ParseTrackerList] got %d trackers", len(e.Trackers))
 	return nil
 }
