@@ -37,12 +37,12 @@ func (s *Server) updateRSS() {
 		rss = strings.TrimSpace(rss)
 		feed, err := fp.ParseURL(rss)
 		if err != nil {
-			log.Printf("parse feed err %s", err.Error())
+			log.Printf("RSS: parse feed err %s", err.Error())
 			continue
 		}
 
 		if s.Debug {
-			log.Printf("retrived feed %s from %s", feed.Title, rss)
+			log.Printf("RSS: retrived feed %s from %s", feed.Title, rss)
 		}
 
 		if oldmark, ok := s.rssMark[rss]; ok {
@@ -54,13 +54,13 @@ func (s *Server) updateRSS() {
 				}
 			}
 			if lastIdx > 0 {
-				log.Printf("feed updated with %d new items", lastIdx)
+				log.Printf("RSS: feed updated with %d new items", lastIdx)
 				s.rssMark[rss] = feed.Items[0].GUID
 				s.rssCache = append(feed.Items[:lastIdx], s.rssCache...)
 			}
 		} else if len(feed.Items) > 0 {
 			if s.Debug {
-				log.Printf("retrive %d new items, first record", len(feed.Items))
+				log.Printf("RSS: retrive %d new items, first record", len(feed.Items))
 			}
 			s.rssMark[rss] = feed.Items[0].GUID
 			s.rssCache = append(feed.Items, s.rssCache...)
