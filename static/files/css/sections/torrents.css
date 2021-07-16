@@ -20,26 +20,38 @@ section.torrents {
 
 .torrent .info .name {
 	font-size: 1.2rem;
+	margin-bottom: 2rem;
 }
 
-.torrent .info .hash {
+.torrent .info .starttime {
 	font-size: 0.75rem;
 }
 
-.torrent .info .progress {
-	margin: 0;
+.torrent .info .speed {
+	margin-top: 0.5rem;
+	font-size: 0.75rem;
 }
-.torrent .info .progress .bar {
-	height: 10px;
+
+.torrent .info .speed span.label {
+	margin-bottom: 0.5em;
+}
+
+.torrent .info .progress {
+    margin-top: 0.25rem;
+    margin-bottom: 0;
 }
 
 .torrent .status {
-	padding: 5px;
-	display: inline-block;
+	margin-top: 1.3rem;
 }
 
 .torrent .status .muted {
 	color: lightgray;
+}
+
+.torrent .torrentinfobar .label {
+	margin-left: 0.1em;
+	margin-bottom: 0.5em;
 }
 
 .torrent .controls.column {
@@ -53,11 +65,14 @@ section.torrents {
 	font-size: 0.75rem;
 }
 
+.torrent .download.file td.name > div.progress {
+	font-weight: bold;
+	font-size: small;
+	margin: 0;
+}
 
-
-.torrent .download.file .name span {
-	position: relative;
-	z-index: 1;
+.torrent .download.file td.name > div.progress div.bar {
+	height: 0.8em;
 }
 
 .torrent .download.file .name .percent {
@@ -65,27 +80,8 @@ section.torrents {
 	width: 60px;
 }
 
-
-.torrent .download.file .name,
-.torrent .download.file .percent {
-	position: relative;
+.torrent .download.file span.name {
 	overflow: hidden;
-}
-
-.torrent .downloads .progress {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	opacity: 0.55;
-	z-index: 0;
-	padding: 4px;
-	margin: 0;
-	height: 100%;
-	background: none;
-}
-.torrent .download.file .progress .bar {
-	height: 100%;
 }
 
 .torrent .downloads thead tr th.size {

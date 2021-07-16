@@ -3,21 +3,46 @@
 package ctstatic
 
 import (
+	"embed"
+	"io/fs"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/elazarl/go-bindata-assetfs"
+	"path"
 )
 
-// all static/ files embedded as a Go library
+//go:embed files
+var staticFS embed.FS
+
+// FileSystemHandler all static/ files embedded as a Go library
 func FileSystemHandler() http.Handler {
-	var h http.Handler
 	if info, err := os.Stat("static/files/"); err == nil && info.IsDir() {
-		log.Println("Using local static files")
-		h = http.FileServer(http.Dir("static/files/"))
-	} else {
-		h = http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "files"})
+		log.Println("Using filesystem static files (dev mode)")
+		return http.FileServer(http.Dir("static/files/"))
 	}
-	return h
+	if fsys, err := fs.Sub(staticFS, "files"); err == nil {
+		return http.FileServer(http.FS(fsys))
+	} else {
+		log.Println("FileSystemHandler", err)
+	}
+	return http.NotFoundHandler()
+}
+
+// ReadAll return local file if exists
+func ReadAll(name string) ([]byte, error) {
+	f, err := Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return ioutil.ReadAll(f)
+}
+
+func Open(name string) (fs.File, error) {
+	if info, err := os.Stat("static/files/"); err == nil && info.IsDir() {
+		diskPath := "static/files/" + name
+		return os.Open(diskPath)
+	}
+	return staticFS.Open(path.Join("files", name))
 }

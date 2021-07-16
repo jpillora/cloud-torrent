@@ -1,69 +1,63 @@
 package server
 
 import (
+	"os"
 	"runtime"
 
-	velox "github.com/jpillora/velox/go"
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/disk"
-	"github.com/shirou/gopsutil/mem"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
-type stats struct {
-	Set         bool    `json:"set"`
-	CPU         float64 `json:"cpu"`
-	DiskUsed    int64   `json:"diskUsed"`
-	DiskTotal   int64   `json:"diskTotal"`
-	MemoryUsed  int64   `json:"memoryUsed"`
-	MemoryTotal int64   `json:"memoryTotal"`
-	GoMemory    int64   `json:"goMemory"`
-	GoRoutines  int     `json:"goRoutines"`
+type osStats struct {
+	CPU             float64 `json:"cpu"`
+	DiskFree        uint64  `json:"diskFree"`
+	DiskUsedPercent float64 `json:"diskUsedPercent"`
+	MemUsedPercent  float64 `json:"memUsedPercent"`
+	GoMemory        int64   `json:"goMemory"`
+	GoRoutines      int     `json:"goRoutines"`
 	//internal
-	lastCPUStat *cpu.CPUTimesStat
-	pusher      velox.Pusher
+	diskDirPath string
 }
 
-func (s *stats) loadStats(diskDir string) {
+func (s *osStats) loadStats() {
 	//count cpu cycles between last count
-	if stats, err := cpu.CPUTimes(false); err == nil {
-		stat := stats[0]
-		total := totalCPUTime(stat)
-		last := s.lastCPUStat
-		if last != nil {
-			lastTotal := totalCPUTime(*last)
-			if lastTotal != 0 {
-				totalDelta := total - lastTotal
-				if totalDelta > 0 {
-					idleDelta := (stat.Iowait + stat.Idle) - (last.Iowait + last.Idle)
-					usedDelta := (totalDelta - idleDelta)
-					s.CPU = 100 * usedDelta / totalDelta
-				}
-			}
-		}
-		s.lastCPUStat = &stat
-	}
 	//count disk usage
-	if stat, err := disk.DiskUsage(diskDir); err == nil {
-		s.DiskUsed = int64(stat.Used)
-		s.DiskTotal = int64(stat.Total)
+	if cpu, err := cpu.Percent(0, false); err == nil {
+		s.CPU = cpu[0]
+	}
+	if stat, err := disk.Usage(s.diskDirPath); err == nil {
+		s.DiskUsedPercent = stat.UsedPercent
+		s.DiskFree = stat.Free
 	}
 	//count memory usage
 	if stat, err := mem.VirtualMemory(); err == nil {
-		s.MemoryUsed = int64(stat.Used)
-		s.MemoryTotal = int64(stat.Total)
+		s.MemUsedPercent = stat.UsedPercent
 	}
 	//count total bytes allocated by the go runtime
 	memStats := runtime.MemStats{}
 	runtime.ReadMemStats(&memStats)
-	s.GoMemory = int64(memStats.Alloc)
+	s.GoMemory = int64(memStats.Sys)
 	//count current number of goroutines
 	s.GoRoutines = runtime.NumGoroutine()
-	//done
-	s.Set = true
-	s.pusher.Push()
 }
 
-func totalCPUTime(t cpu.CPUTimesStat) float64 {
-	total := t.User + t.System + t.Nice + t.Iowait + t.Irq + t.Softirq + t.Steal + t.Guest + t.GuestNice + t.Idle
-	return total
+func detectDiskStat(dir string) error {
+
+	if err := os.Mkdir(dir, os.ModePerm); err != nil {
+		if !os.IsExist(err) {
+			return err
+		}
+	}
+
+	stat, err := disk.Usage(dir)
+	if err != nil {
+		return err
+	}
+
+	if stat.Free < 10*1024*1024 {
+		return ErrDiskSpace
+	}
+
+	return nil
 }

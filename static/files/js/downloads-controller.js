@@ -1,21 +1,40 @@
 /* globals app */
 
-app.controller("DownloadsController", function($scope, $rootScope) {
-  $rootScope.downloads = $scope;
+app.controller("DownloadsController", function ($scope, $rootScope, apiget) {
 
-  $scope.numDownloads = function() {
-    if ($scope.state.Downloads && $scope.state.Downloads.Children)
-      return $scope.state.Downloads.Children.length;
-    return 0;
+  $scope.$isLoadingFiles = false;
+  $scope.$DownloadedFiles = [];
+  apiget.files().then(function (xhr) {
+    if (xhr.data.Children) {
+      $scope.$DownloadedFiles = xhr.data.Children;
+    }
+  });
+
+  $scope.$expanded = false;
+  $scope.section_expanded_toggle = function () {
+    $scope.$expanded = !$scope.$expanded;
+    if ($scope.$expanded) {
+      $scope.$isLoadingFiles = true;
+      apiget.files().then(function (xhr) {
+        if (xhr.data.Children) {
+          $scope.$DownloadedFiles = xhr.data.Children;
+        } else {
+          $scope.$DownloadedFiles = [];
+        }
+      }).finally(function () {
+        $scope.$isLoadingFiles = false;
+        $scope.$applyAsync();
+      });
+    }
   };
 });
 
-app.controller("NodeController", function($scope, $rootScope, $http, $timeout) {
+app.controller("NodeController", function ($scope, $rootScope, $http, $timeout, reqerr) {
   var n = $scope.node;
-  $scope.isfile = function() {
+  $scope.isfile = function () {
     return !n.Children;
   };
-  $scope.isdir = function() {
+  $scope.isdir = function () {
     return !$scope.isfile();
   };
 
@@ -29,57 +48,34 @@ app.controller("NodeController", function($scope, $rootScope, $http, $timeout) {
   }
   var path = (n.$path = pathArray.join("/"));
   n.$closed = $scope.agoHrs(n.Modified) > 24;
-  $scope.audioPreview = /\.(mp3|m4a)$/.test(path);
-  $scope.imagePreview = /\.(jpe?g|png|gif)$/.test(path);
-  $scope.videoPreview = /\.(mp4|mkv|mov)$/.test(path);
+  $scope.audioPreview = /\.(mp3|m4a)$/i.test(path);
+  $scope.imagePreview = /\.(jpe?g|png|gif)$/i.test(path);
+  $scope.videoPreview = /\.(mp4|mkv|mov)$/i.test(path);
 
-  //search for this file
-  var torrents = $rootScope.state.Torrents;
-  if ($scope.isfile() && torrents) {
-    for (var ih in torrents) {
-      var torrent = torrents[ih];
-      var files = torrent.Files;
-      if (files) {
-        for (var i = 0; i < files.length; i++) {
-          var f = files[i];
-          if (f.Path === path) {
-            n.$torrent = torrent;
-            n.$file = f;
-            break;
-          }
-        }
-      }
-      if (n.$file) break;
+  $scope.isdownloading = function (fileName) {
+    if ($scope.isfile() && (fileName in $rootScope.DownloadingFiles)) {
+      return true
     }
+    return false
   }
 
-  $scope.isdownloading = function() {
-    return (
-      n.$torrent &&
-      n.$torrent.Loaded &&
-      n.$torrent.Started &&
-      n.$file &&
-      n.$file.Percent < 100
-    );
-  };
-
-  $scope.preremove = function() {
+  $scope.preremove = function () {
     $scope.confirm = true;
-    $timeout(function() {
+    $timeout(function () {
       $scope.confirm = false;
     }, 3000);
   };
 
   //defaults
-  $scope.closed = function() {
+  $scope.closed = function () {
     return n.$closed;
   };
-  $scope.toggle = function() {
+  $scope.toggle = function () {
     n.$closed = !n.$closed;
   };
-  $scope.icon = function() {
+  $scope.icon = function () {
     var c = [];
-    if ($scope.isdownloading()) {
+    if ($scope.isdownloading(n.Name)) {
       c.push("spinner", "loading");
     } else {
       c.push("outline");
@@ -97,11 +93,20 @@ app.controller("NodeController", function($scope, $rootScope, $http, $timeout) {
     return c.join(" ");
   };
 
-  $scope.remove = function() {
-    $http.delete("download/" + n.$path);
+  $scope.remove = function (node) {
+    $scope.deleting = true;
+    $http.delete("download/" + encodeURIComponent(node.$path))
+      .then(function () {
+        node.$Deleted = true;
+        $scope.$applyAsync();
+      })
+      .catch(reqerr)
+      .finally(function () {
+        $scope.deleting = false;
+      });
   };
 
-  $scope.togglePreview = function() {
+  $scope.togglePreview = function () {
     $scope.showPreview = !$scope.showPreview;
   };
 });
