@@ -17,8 +17,8 @@ import (
 
 var (
 	errInvalidReq = errors.New("INVALID REQUEST")
-	errUnknowAct  = errors.New("Unkown Action")
-	errUnknowPath = errors.New("Unkown Path")
+	errUnknowAct  = errors.New("UNKOWN ACTION")
+	errUnknowPath = errors.New("UNKOWN PATH")
 )
 
 func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
@@ -95,12 +95,12 @@ func (s *Server) apiPOST(r *http.Request) error {
 
 	action := strings.TrimPrefix(r.URL.Path, "/api/")
 	if r.Method != "POST" {
-		return fmt.Errorf("Invalid request method (expecting POST)")
+		return fmt.Errorf("ERROR: Invalid request method (expecting POST)")
 	}
 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return fmt.Errorf("Failed to download request body: %w", err)
+		return fmt.Errorf("ERROR: Failed to download request body: %w", err)
 	}
 
 	//convert url into torrent bytes
@@ -108,16 +108,16 @@ func (s *Server) apiPOST(r *http.Request) error {
 		url := string(data)
 		remote, err := http.Get(url)
 		if err != nil {
-			return fmt.Errorf("Invalid remote torrent URL: %s %w", url, err)
+			return fmt.Errorf("ERROR: Invalid remote torrent URL: %s %w", url, err)
 		}
 		defer remote.Body.Close()
 		if remote.ContentLength > 512*1024 {
 			//enforce max body size (512k)
-			return fmt.Errorf("Remote torrent too large")
+			return fmt.Errorf("ERROR: Remote torrent too large")
 		}
 		data, err = ioutil.ReadAll(remote.Body)
 		if err != nil {
-			return fmt.Errorf("Failed to download remote torrent: %w", err)
+			return fmt.Errorf("ERROR: Failed to download remote torrent: %w", err)
 		}
 		action = "torrentfile"
 	}
@@ -144,7 +144,7 @@ func (s *Server) apiPOST(r *http.Request) error {
 			if errors.Is(err, engine.ErrMaxConnTasks) {
 				return nil
 			}
-			return fmt.Errorf("Magnet error: %w", err)
+			return fmt.Errorf("ERROR: Magnet error: %w", err)
 		}
 	case "torrent":
 		cmd := strings.SplitN(string(data), ":", 2)
@@ -173,7 +173,7 @@ func (s *Server) apiPOST(r *http.Request) error {
 			}
 			s.engine.PushWaitTask(infohash)
 		default:
-			return fmt.Errorf("Invalid state: %s", state)
+			return fmt.Errorf("ERROR: Invalid state: %s", state)
 		}
 	case "file":
 		cmd := strings.SplitN(string(data), ":", 3)
@@ -193,10 +193,10 @@ func (s *Server) apiPOST(r *http.Request) error {
 				return err
 			}
 		default:
-			return fmt.Errorf("Invalid state: %s", state)
+			return fmt.Errorf("ERROR: Invalid state: %s", state)
 		}
 	default:
-		return fmt.Errorf("Invalid action: %s", action)
+		return fmt.Errorf("ERROR: Invalid action: %s", action)
 	}
 	return nil
 }
@@ -220,7 +220,7 @@ func (s *Server) apiConfigure(data []byte) error {
 
 		if status&engine.ForbidRuntimeChange > 0 {
 			log.Printf("[api] warnning! someone tried to change DoneCmd config")
-			return errors.New("Nice Try! But this is NOT allowed being changed on runtime")
+			return errors.New("ERROR: This item is NOT allowed being changed on runtime")
 		}
 		if status&engine.NeedRestartWatch > 0 {
 			s.engine.StartTorrentWatcher()

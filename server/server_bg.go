@@ -34,7 +34,9 @@ func (s *Server) backgroundRoutines() {
 		}
 
 		s.updateRSS()
-		for range time.Tick(30 * time.Minute) {
+		tk := time.NewTicker(30 * time.Minute)
+		defer tk.Stop()
+		for range tk.C {
 			s.updateRSS()
 		}
 	}()

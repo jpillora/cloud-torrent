@@ -77,11 +77,11 @@ func (s *Server) serveDownloadFiles(w http.ResponseWriter, r *http.Request) {
 
 func list(path string, info os.FileInfo, node *fsNode, n *uint) error {
 	if (!info.IsDir() && !info.Mode().IsRegular()) || strings.HasPrefix(info.Name(), ".") {
-		return errors.New("Non-regular file")
+		return errors.New("ERROR: Non-regular file")
 	}
 	(*n)++
 	if (*n) > fileNumberLimit {
-		return errors.New("Over file limit") //limit number of files walked
+		return errors.New("ERROR: Over file limit") //limit number of files walked
 	}
 	node.Name = info.Name()
 	node.Size = info.Size()
@@ -91,7 +91,7 @@ func list(path string, info os.FileInfo, node *fsNode, n *uint) error {
 	}
 	children, err := ioutil.ReadDir(path)
 	if err != nil {
-		return fmt.Errorf("Failed to list files: %w", err)
+		return fmt.Errorf("ERROR: Failed to list files: %w", err)
 	}
 	node.Size = 0
 	for _, i := range children {

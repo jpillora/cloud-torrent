@@ -164,7 +164,7 @@ func (s *Server) Run(version string) error {
 		if err := viper.WriteConfigAs(ymlcf); err != nil {
 			return err
 		}
-		return fmt.Errorf("Config file converted and written to: %s", ymlcf)
+		return fmt.Errorf("ERROR: Config file converted and written to: %s", ymlcf)
 	}
 
 	if err := detectDiskStat(c.DownloadDirectory); err != nil {
