@@ -18,6 +18,7 @@ const (
 	NeedRestartWatch
 	NeedUpdateTracker
 	NeedLoadWaitList
+	NeedUpdateRSS
 )
 
 const (
@@ -124,7 +125,7 @@ func (c *Config) NormlizeConfigDir() (bool, error) {
 	if c.DownloadDirectory != "" {
 		dldir, err := filepath.Abs(c.DownloadDirectory)
 		if err != nil {
-			return false, fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
+			return false, fmt.Errorf("ERROR: Invalid path %s, %w", c.WatchDirectory, err)
 		}
 		if c.DownloadDirectory != dldir {
 			changed = true
@@ -135,7 +136,7 @@ func (c *Config) NormlizeConfigDir() (bool, error) {
 	if c.WatchDirectory != "" {
 		wdir, err := filepath.Abs(c.WatchDirectory)
 		if err != nil {
-			return false, fmt.Errorf("Invalid path %s, %w", c.WatchDirectory, err)
+			return false, fmt.Errorf("ERROR: Invalid path %s, %w", c.WatchDirectory, err)
 		}
 		if c.WatchDirectory != wdir {
 			changed = true
@@ -181,6 +182,9 @@ func (c *Config) Validate(nc *Config) uint8 {
 	}
 	if c.MaxConcurrentTask < nc.MaxConcurrentTask {
 		status |= NeedLoadWaitList
+	}
+	if c.RssURL != nc.RssURL {
+		status |= NeedUpdateRSS
 	}
 
 	rfc := reflect.ValueOf(c)

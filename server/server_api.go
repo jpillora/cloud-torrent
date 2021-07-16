@@ -255,6 +255,9 @@ func (s *Server) apiConfigure(data []byte) error {
 		if status&engine.NeedUpdateTracker > 0 {
 			go s.engine.ParseTrackerList()
 		}
+		if status&engine.NeedUpdateRSS > 0 {
+			go s.updateRSS()
+		}
 		s.state.Push()
 
 		// do after config synced
