@@ -53,7 +53,7 @@ if [[ x${NEEDAUTH^^} == x"Y" ]]; then
 fi
 
 systemctl stop cloud-torrent || true
-BINURL=$(wget -qO- $GHAPI | grep browser_download_url | grep "$BINTAG" | cut -d '"' -f 4 | head -n1|| true)
+BINURL=$(wget -qO- $GHAPI | grep browser_download_url | grep "$BINTAG" | grep static | cut -d '"' -f 4 || true)
 if [[ -z $BINURL ]]; then
     echo "It's seems that $VERSION is not a valid version, check release page:"
     echo "https://github.com/boypt/simple-torrent/releases"
