@@ -42,7 +42,7 @@ bash <(wget -qO- https://raw.githubusercontent.com/boypt/simple-torrent/master/s
 
 The script install a systemd unit (under `scripts/cloud-torrent.service`) as service. Read further intructions: [Auth And Security](https://github.com/boypt/simple-torrent/wiki/AuthSecurity)
 
-## Docker [![Docker Pulls](https://img.shields.io/docker/pulls/boypt/cloud-torrent.svg)][dockerhub] [![Image Size](https://images.microbadger.com/badges/image/boypt/cloud-torrent.svg)][dockerhub]
+## Docker [![Docker Pulls](https://img.shields.io/docker/pulls/boypt/cloud-torrent.svg)][dockerhub]
 
 [dockerhub]: https://hub.docker.com/r/boypt/cloud-torrent/
 
@@ -53,6 +53,7 @@ When running as a container, keep in mind:
 * You need also to expose your torrent incoming port (50007 by default) if you want to seed (`-p 50007:50007`). Also, you'll have to forward the port on your router.
 * Automatic port forwarding on your router via UPnP IGD will not work unless run in `host` mode (`--net=host`).
 
+It's more practical to run docker-compose, see Wiki Page: [DockerCompose](https://github.com/boypt/simple-torrent/wiki/DockerCompose)
 ## Source
 
 **Requirement**
