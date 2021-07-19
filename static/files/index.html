@@ -14,7 +14,7 @@
 
 <body class="app">
 	<div ng-cloak class="cage" ondropfile="uploadTorrent($event)" placeholder="Drop torrent files here">
-		<div ng-if="!connected" class="connect-warning ui inverted vertical masthead center aligned segment">
+		<div ng-if="!connected" class="connect-warning ui inverted masthead center aligned segment">
 			<div class="ui text container">
 				<h1 class="ui inverted header">
 					{{ hasConnected ? 'Disconnected' : 'Connecting' }}

@@ -14,10 +14,19 @@ body {
   margin: 0 auto;
 }
 
+@media (min-width: 740px) {
+  .app .connect-warning {
+    margin-top: 4.5rem;
+  }
+}
+
 @media (max-width: 740px) {
   .cage {
     margin: 0 10px;
     padding-top: 10px;
+  }
+  .app .connect-warning {
+    margin-top: 3rem;
   }
 }
 
