@@ -36,17 +36,23 @@ Also:
 
 See [the latest release](https://github.com/boypt/cloud-torrent/releases/latest) or use the oneline script to do a quick install on modern Linux.
 
-```
+``` bash
 bash <(wget -qO- https://raw.githubusercontent.com/boypt/simple-torrent/master/scripts/quickinstall.sh)
 ```
 
 The script install a systemd unit (under `scripts/cloud-torrent.service`) as service. Read further intructions: [Auth And Security](https://github.com/boypt/simple-torrent/wiki/AuthSecurity)
 
+If hope to install certent version, just append a version number to the command.
+
+``` bash
+bash <(wget -qO- https://raw.githubusercontent.com/boypt/simple-torrent/master/scripts/quickinstall.sh) 1.3.2
+```
+
 ## Docker [![Docker Pulls](https://img.shields.io/docker/pulls/boypt/cloud-torrent.svg)][dockerhub]
 
 [dockerhub]: https://hub.docker.com/r/boypt/cloud-torrent/
 
-``` sh
+``` bash
 $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads -v /path/to/my/torrents:/torrents boypt/cloud-torrent
 ```
 When running as a container, keep in mind:
@@ -57,7 +63,7 @@ It's more practical to run docker-compose, see Wiki Page: [DockerCompose](https:
 ## Source
 
 **Requirement**
-- Latest [Golang](https://golang.org/dl/) (Go 1.13+)
+- Latest [Golang](https://golang.org/dl/) (Go 1.16+)
 
 ``` sh
 $ git clone https://github.com/boypt/simple-torrent.git
