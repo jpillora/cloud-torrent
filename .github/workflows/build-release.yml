@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    if: github.owner == boypt
+    if: ${{ github.owner }} == "boypt"
     name: Build
     runs-on: ubuntu-latest
     steps:

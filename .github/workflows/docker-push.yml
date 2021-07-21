@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    if: github.owner == boypt
+    if: ${{ github.owner }} == "boypt"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout codebase
