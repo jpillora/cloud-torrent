@@ -1,5 +1,3 @@
-//go:generate go-bindata -pkg ctstatic -ignore .../.DS_Store -o files.go files/...
-
 package ctstatic
 
 import (
@@ -9,40 +7,33 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 )
 
 //go:embed files
 var staticFS embed.FS
 
-// FileSystemHandler all static/ files embedded as a Go library
-func FileSystemHandler() http.Handler {
-	if info, err := os.Stat("static/files/"); err == nil && info.IsDir() {
-		log.Println("Using filesystem static files (dev mode)")
-		return http.FileServer(http.Dir("static/files/"))
-	}
-	if fsys, err := fs.Sub(staticFS, "files"); err == nil {
-		return http.FileServer(http.FS(fsys))
+var curFS fs.FS
+
+const resourcePath = "static/files"
+
+func init() {
+	if info, err := os.Stat(resourcePath); err == nil && info.IsDir() {
+		log.Printf("[static] found %s, using external resources.", resourcePath)
+		curFS = os.DirFS(resourcePath)
 	} else {
-		log.Println("FileSystemHandler", err)
+		curFS, _ = fs.Sub(staticFS, "files")
 	}
-	return http.NotFoundHandler()
 }
 
-// ReadAll return local file if exists
+func FileSystemHandler() http.Handler {
+	return http.FileServer(http.FS(curFS))
+}
+
 func ReadAll(name string) ([]byte, error) {
-	f, err := Open(name)
+	f, err := curFS.Open(name)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 	return ioutil.ReadAll(f)
-}
-
-func Open(name string) (fs.File, error) {
-	if info, err := os.Stat("static/files/"); err == nil && info.IsDir() {
-		diskPath := "static/files/" + name
-		return os.Open(diskPath)
-	}
-	return staticFS.Open(path.Join("files", name))
 }
