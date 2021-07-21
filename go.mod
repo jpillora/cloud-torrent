@@ -7,7 +7,7 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20210224194228-fe8f1750fd46 // indirect
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/anacrolix/log v0.9.0
-	github.com/anacrolix/torrent v1.28.0
+	github.com/anacrolix/torrent v1.29.1
 	github.com/andrew-d/go-termutil v0.0.0-20150726205930-009166a695a2 // indirect
 	github.com/boypt/scraper v1.0.3
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
@@ -39,7 +39,7 @@ require (
 )
 
 replace (
-	github.com/anacrolix/dht/v2 => github.com/anacrolix/dht/v2 v2.9.2-0.20210527235055-9013a10a0c7d
+	github.com/anacrolix/dht/v2 => github.com/anacrolix/dht/v2 v2.10.1
 	github.com/boltdb/bolt => github.com/boypt/bolt v1.3.2
 	github.com/jpillora/velox => github.com/boypt/velox v0.0.0-20210702064309-321adb7223d6
 	github.com/willf/bitset => github.com/bits-and-blooms/bitset v1.2.0
