@@ -52,7 +52,12 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	case "search":
 		s.scraperh.ServeHTTP(w, r)
 	case "api":
-		w.Header().Set("Access-Control-Allow-Headers", "authorization")
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			origin = "*"
+		}
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		s.restAPIhandle(w, r)
 	case "download":
 		s.dlfilesh.ServeHTTP(w, r)
@@ -67,7 +72,6 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 
 // restAPIhandle is used both by main webserver and restapi server
 func (s *Server) restAPIhandle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	switch r.Method {
 	case "POST":
 		if err := s.apiPOST(r); err != nil {
