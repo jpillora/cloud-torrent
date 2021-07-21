@@ -2,8 +2,11 @@
 
 app.factory("reqerr", function ($rootScope, $log) {
   return function (xhr) {
-    if ("data" in xhr) {
-      $rootScope.err = `${xhr.status} - ${xhr.statusText}`
+    $rootScope.err = `${xhr.xhrStatus}: ${xhr.statusText}/${xhr.status}`
+    if (!xhr.data) {
+      // data is null, xhr error
+      $log.error(JSON.stringify(xhr));
+    } else {
       switch (typeof xhr.data) {
         case "string":
           $rootScope.err += ` :${xhr.data}`;
@@ -12,13 +15,12 @@ app.factory("reqerr", function ($rootScope, $log) {
           if ("error" in xhr.data) {
             $rootScope.err += ` :${xhr.data.error}`;
           } else {
-            $rootScope.err += JSON.stringify(xhr.data);
+            $rootScope.err += JSON.stringify(xhr);
           }
-          break
+          break;
       }
-      $log.error(xhr.data);
-      $rootScope.$applyAsync();
     }
+    $rootScope.$applyAsync();
     return xhr;
   };
 });

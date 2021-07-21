@@ -78,7 +78,7 @@
 			</div>
 			<div>
 				<span>Up {{ ago([[.Uptime]]*1000) }}</span>
-				<span ng-if="numKeys(state.Users) > 1">,{{ numKeys(state.Users) }} users connected</span>
+				<span ng-if="numKeys(state.Users) > 1">, {{ numKeys(state.Users) }} users connected</span>
 			</div>
 		</footer>
 		<div ng-if="$root.showEnineStatus" class="ui attached mini message">
