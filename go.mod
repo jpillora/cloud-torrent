@@ -39,7 +39,7 @@ require (
 )
 
 replace (
-	github.com/anacrolix/dht/v2 => github.com/anacrolix/dht/v2 v2.10.1
+	github.com/anacrolix/dht/v2 => github.com/boypt/dht/v2 v2.9.2
 	github.com/boltdb/bolt => github.com/boypt/bolt v1.3.2
 	github.com/jpillora/velox => github.com/boypt/velox v0.0.0-20210702064309-321adb7223d6
 	github.com/willf/bitset => github.com/bits-and-blooms/bitset v1.2.0

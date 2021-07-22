@@ -210,6 +210,8 @@ github.com/bits-and-blooms/bitset v1.2.0 h1:Kn4yilvwNtMACtf1eYDlG8H77R07mZSPbMjL
 github.com/bits-and-blooms/bitset v1.2.0/go.mod h1:gIdJ4wp64HaoK2YrL1Q5/N7Y16edYb8uY+O0FJTyyDA=
 github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c/go.mod h1:MKsuJmJgSg28kpZDP6UIiPt0e0Oz0kqKNGyRaWEPv84=
 github.com/boypt/bolt v1.3.2/go.mod h1:r14Dd2KjxVj/kWf2QiNLPnVunAfIH/LVh021UFsli5Q=
+github.com/boypt/dht/v2 v2.9.2 h1:mBpusucF24qbhsHgq/7B7JGPwQiZtONEYKlbZ3eKlL4=
+github.com/boypt/dht/v2 v2.9.2/go.mod h1:ZyYcIQinN/TE3oKONCchQOLjhYR786Jaxz3jsBtih4A=
 github.com/boypt/scraper v1.0.3 h1:ajUtvUdrzjBbEQ0v6wxF+Llz3r+nUpuvqmuAgsejbLI=
 github.com/boypt/scraper v1.0.3/go.mod h1:BjrhbQpRoYzjoeCFVL0kLoqswBK1KP1cFu0qOE2banE=
 github.com/boypt/velox v0.0.0-20210702064309-321adb7223d6 h1:wmCSxYsi6QNgybvjxMukfqtCcrDKyhV4RPQZrrOH47A=
