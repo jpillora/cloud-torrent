@@ -5,7 +5,7 @@ FROM golang:alpine AS builder
 RUN apk update && apk add --no-cache git make build-base
 WORKDIR /root/cloud-torrent
 ENV PATH=$HOME/go/bin:$PATH 
-ENV GO111MODULE=on CGO_ENABLED=1
+ENV CGO_ENABLED=1
 RUN git clone https://github.com/boypt/simple-torrent.git . && \
     go get -v -t -d .
 
