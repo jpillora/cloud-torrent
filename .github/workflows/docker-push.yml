@@ -37,11 +37,6 @@ jobs:
           echo "Use the latest release tag: ${latest_tag}"
           echo ::set-output name=tag::${latest_tag}
 
-      - name: Determine whether to push to DockerHub
-        # if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "PUSH=true" >> $GITHUB_ENV
-
       - name: Prepare environment variables
         id: prepare
         run: |
@@ -53,7 +48,7 @@ jobs:
       - name: Build tag & latest release
         run: |
           docker buildx build --platform ${{ steps.prepare.outputs.docker_platforms }} \
-          --output "type=image,push=${{ steps.prepare.outputs.docker_is_push }}" \
+          --output "type=image,push=true" \
           --tag "${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.docker_tag }}" \
           --tag "${{ steps.prepare.outputs.docker_image }}:latest" \
           --build-arg TAG=${{ steps.prepare.outputs.docker_tag }} \
