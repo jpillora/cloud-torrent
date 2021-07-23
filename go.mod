@@ -7,7 +7,7 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20210224194228-fe8f1750fd46 // indirect
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/anacrolix/log v0.9.0
-	github.com/anacrolix/torrent v1.29.1
+	github.com/anacrolix/torrent v1.28.0
 	github.com/andrew-d/go-termutil v0.0.0-20150726205930-009166a695a2 // indirect
 	github.com/boypt/scraper v1.0.3
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
