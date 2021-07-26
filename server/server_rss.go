@@ -12,17 +12,79 @@ import (
 )
 
 var (
-	magnetExp = regexp.MustCompile(`magnet:[^< ]+`)
+	magnetExp   = regexp.MustCompile(`magnet:[^< ]+`)
+	hashinfoExp = regexp.MustCompile(`[0-9a-zA-Z]{40}`)
+	torrentExp  = regexp.MustCompile(`\.torrent`)
 )
 
 type rssJSONItem struct {
 	Name            string `json:"name"`
 	Magnet          string `json:"magnet"`
-	InfoHash        string `json:"hashinfo"`
+	InfoHash        string `json:"infohash"`
 	Published       string `json:"published"`
 	URL             string `json:"url"`
 	Torrent         string `json:"torrent"`
 	publishedParsed *time.Time
+}
+
+func (ritem *rssJSONItem) findFromFeedItem(i *gofeed.Item) (found bool) {
+
+	for _, ex := range []string{"torrent", "nyaa"} {
+		if ok := ritem.readExtention(i, ex); ok {
+			break
+		}
+	}
+
+	// some sites put it under enclosures
+	for _, e := range i.Enclosures {
+		if strings.HasPrefix(e.URL, "magnet:") {
+			ritem.Magnet = e.URL
+		} else if e.Type == "application/x-bittorrent" {
+			ritem.Torrent = e.URL
+		}
+	}
+
+	// maybe the Link is a torrent file
+	if torrentExp.MatchString(i.Link) {
+		ritem.Torrent = i.Link
+	}
+
+	// not found magnet/torrent, try to find them in the description
+	if ritem.Magnet == "" && ritem.InfoHash == "" && ritem.Torrent == "" {
+
+		// try to find magnet in description
+		if s := magnetExp.FindString(i.Description); s != "" {
+			ritem.Magnet = s
+		}
+
+		// try to find hashinfo in description
+		if s := hashinfoExp.FindString(i.Description); s != "" {
+			ritem.InfoHash = s
+		}
+
+		//still not found?, well... whatever
+	}
+
+	return (ritem.Magnet != "" || ritem.InfoHash != "" || ritem.Torrent != "")
+}
+
+func (r *rssJSONItem) readExtention(i *gofeed.Item, ext string) (found bool) {
+
+	// There are no starndards for rss feeds contains torrents or magnets
+	// Heres some sites putting info in the extentions
+	if etor, ok := i.Extensions[ext]; ok {
+		if e, ok := etor["magnetURI"]; ok && len(e) > 0 {
+			r.Magnet = e[0].Value
+			found = true
+		}
+
+		if e, ok := etor["infoHash"]; ok && len(e) > 0 {
+			r.InfoHash = e[0].Value
+			found = true
+		}
+	}
+
+	return
 }
 
 func (s *Server) updateRSS() {
@@ -97,37 +159,7 @@ func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
 			publishedParsed: i.PublishedParsed,
 		}
 
-		// not sure which is the the torrent feed standard
-		// here is how to get magnet from struct of https://eztv.io/ezrss.xml
-		if etor, ok := i.Extensions["torrent"]; ok {
-			if e, ok := etor["magnetURI"]; ok && len(e) > 0 {
-				ritem.Magnet = e[0].Value
-			}
-			if e, ok := etor["infoHash"]; ok && len(e) > 0 {
-				ritem.InfoHash = e[0].Value
-			}
-		} else {
-			// some sites put it under enclosures
-			for _, e := range i.Enclosures {
-				if strings.HasPrefix(e.URL, "magnet:") {
-					ritem.Magnet = e.URL
-				} else if e.Type == "application/x-bittorrent" {
-					ritem.Torrent = e.URL
-				}
-			}
-
-			// not found magnet/torrent,
-			if ritem.Magnet == "" && ritem.InfoHash == "" && ritem.Torrent == "" {
-
-				// find magnet in description
-				if s := magnetExp.FindString(i.Description); s != "" {
-					ritem.Magnet = s
-				} else {
-					//fallback to the link (likely not a magnet feed)
-					ritem.Magnet = i.Link
-				}
-			}
-		}
+		ritem.findFromFeedItem(i)
 		results = append(results, ritem)
 	}
 
