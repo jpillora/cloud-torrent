@@ -34,18 +34,18 @@ Also:
 
 ## Binary
 
-See [the latest release](https://github.com/boypt/cloud-torrent/releases/latest) or use the oneline script to do a quick install on modern Linux.
+See [the latest release](https://github.com/boypt/cloud-torrent/releases/latest) or use the oneline script to do a quick install on a modern Linux machines.
 
 ``` bash
-bash <(wget -qO- https://raw.githubusercontent.com/boypt/simple-torrent/master/scripts/quickinstall.sh)
+bash <(wget -qO- https://git.io/simpletorrentqs)
 ```
 
-The script install a systemd unit (under `scripts/cloud-torrent.service`) as service. Read further intructions: [Auth And Security](https://github.com/boypt/simple-torrent/wiki/AuthSecurity)
+The script installs a systemd unit (under `scripts/cloud-torrent.service`) as service. Read further intructions: [Auth And Security](https://github.com/boypt/simple-torrent/wiki/AuthSecurity)
 
-If hope to install certent version, just append a version number to the command.
+If hope to specify a version, just append the version number to the command.
 
 ``` bash
-bash <(wget -qO- https://raw.githubusercontent.com/boypt/simple-torrent/master/scripts/quickinstall.sh) 1.3.2
+bash <(wget -qO- https://git.io/simpletorrentqs) 1.3.3
 ```
 
 ## Docker [![Docker Pulls](https://img.shields.io/docker/pulls/boypt/cloud-torrent.svg)][dockerhub]
