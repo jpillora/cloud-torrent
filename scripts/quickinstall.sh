@@ -81,7 +81,7 @@ cat <<EOF
 Open browser to http://${HOSTIP}:3000/ now!
 
 * Default DownloadDirectory: /root/downloads
-* Default Config file: /root/cloud-torrent.json
+* Default Config file: /root/cloud-torrent.yaml
 * Default Username: ${USERNAME}
 * Default Password: ${PASSWORD}
 

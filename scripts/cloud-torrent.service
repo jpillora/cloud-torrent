@@ -9,9 +9,11 @@ WorkingDirectory=~
 Environment=AUTH=user:ctorrent
 Environment=PORT=3000
 #Environment=HOST=unix:/run/cloud-torrent/cloud.sock
+#RuntimeDirectory=cloud-torrent
+#RuntimeDirectoryMode=0777
 #Environment=UNIXPERM=0666
 #Environment=RESTAPI=localhost:3001
-ExecStart=/usr/local/bin/cloud-torrent -c ./cloud-torrent.json --disable-log-time
+ExecStart=/usr/local/bin/cloud-torrent -c ./cloud-torrent.yaml --disable-log-time
 Restart=always
 RestartPreventExitStatus=42
 RestartSec=3
