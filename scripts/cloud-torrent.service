@@ -7,8 +7,8 @@ Type=simple
 User=root
 WorkingDirectory=~
 Environment=AUTH=user:ctorrent
-Environment=PORT=3000
-#Environment=HOST=unix:/run/cloud-torrent/cloud.sock
+Environment=LISTEN=:3000
+#Environment=LISTEN=unix:/run/cloud-torrent/cloud.sock
 #RuntimeDirectory=cloud-torrent
 #RuntimeDirectoryMode=0777
 #Environment=UNIXPERM=0666
