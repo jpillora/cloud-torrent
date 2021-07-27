@@ -177,12 +177,6 @@ func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
 		results = append(results, ritem)
 	}
 
-	b, err := json.Marshal(results)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(b)
+	json.NewEncoder(w).Encode(results)
 }
