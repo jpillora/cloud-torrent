@@ -24,6 +24,7 @@ type rssJSONItem struct {
 	Published       string `json:"published"`
 	URL             string `json:"url"`
 	Torrent         string `json:"torrent"`
+	Size            string `json:"size"`
 	publishedParsed *time.Time
 }
 
@@ -73,6 +74,11 @@ func (r *rssJSONItem) readExtention(i *gofeed.Item, ext string) (found bool) {
 	// There are no starndards for rss feeds contains torrents or magnets
 	// Heres some sites putting info in the extentions
 	if etor, ok := i.Extensions[ext]; ok {
+
+		if e, ok := etor["size"]; ok && len(e) > 0 {
+			r.Size = e[0].Value
+		}
+
 		if e, ok := etor["magnetURI"]; ok && len(e) > 0 {
 			r.Magnet = e[0].Value
 			found = true

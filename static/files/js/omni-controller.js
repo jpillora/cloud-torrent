@@ -213,6 +213,12 @@ app.controller("OmniController", function (
       });
   };
 
+  $scope.submitTorrentItem = function (result) {
+    if (result.torrent) {
+      api.url(result.torrent).then(reqinfo);
+    }
+  }
+
   $scope.submitSearchItem = function (result) {
     //if search item has magnet/torrent, download now!
     if (result.magnet) {

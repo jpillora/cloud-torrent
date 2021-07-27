@@ -98,7 +98,11 @@
           <span class="peers"> {{ r.peers }}</span>
         </td>
         <td class="controls">
-          <i ng-click="submitSearchItem(r)" class="ui green download icon"></i>
+          <i ng-click="submitSearchItem(r)" class="ui green magnet icon" title="load the magnet link"></i>
+        </td>
+        <td ng-if="r.torrent" class="controls">
+          <i ng-click="submitTorrentItem(r)" class="cloud green download alternate icon"
+            title="load the .torrent file"></i>
         </td>
       </tr>
     </table>
