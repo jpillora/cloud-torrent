@@ -5,9 +5,11 @@ import (
 	"net/http"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/mmcdole/gofeed"
 )
 
@@ -40,7 +42,7 @@ func (ritem *rssJSONItem) findFromFeedItem(i *gofeed.Item) (found bool) {
 	for _, e := range i.Enclosures {
 		if strings.HasPrefix(e.URL, "magnet:") {
 			ritem.Magnet = e.URL
-		} else if e.Type == "application/x-bittorrent" {
+		} else if torrentExp.Match([]byte(e.URL)) {
 			ritem.Torrent = e.URL
 		}
 	}
@@ -77,6 +79,12 @@ func (r *rssJSONItem) readExtention(i *gofeed.Item, ext string) (found bool) {
 
 		if e, ok := etor["size"]; ok && len(e) > 0 {
 			r.Size = e[0].Value
+		}
+
+		if e, ok := etor["contentLength"]; ok && len(e) > 0 {
+			if size, err := strconv.ParseUint(e[0].Value, 10, 64); err == nil {
+				r.Size = humanize.Bytes(size)
+			}
 		}
 
 		if e, ok := etor["magnetURI"]; ok && len(e) > 0 {
