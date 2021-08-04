@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -84,7 +85,7 @@ func InitConf(specPath *string) (*Config, error) {
 
 	configExists := true
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+		if errors.Is(err, os.ErrNotExist) {
 			// user set a config that is not exists, will write to it later
 			configExists = false
 		} else {
@@ -108,7 +109,9 @@ func InitConf(specPath *string) (*Config, error) {
 	}
 
 	if !configExists || dirChanged {
-		c.WriteDefault()
+		if err := c.WriteDefault(); err != nil {
+			return nil, err
+		}
 		log.Println("[config] config file updated: ", *specPath, "exists:", configExists, "dirchanged", dirChanged)
 	}
 
