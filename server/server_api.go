@@ -230,7 +230,7 @@ func (s *Server) apiConfigure(data []byte) error {
 		// now it's safe to save the configure
 		s.engineConfig.SyncViper(c)
 		s.engineConfig = &c
-		if err := s.engineConfig.WriteYaml(); err != nil {
+		if err := s.engineConfig.WriteDefault(); err != nil {
 			return err
 		}
 		log.Printf("[api] config saved")

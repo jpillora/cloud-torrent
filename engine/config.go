@@ -112,8 +112,8 @@ func InitConf(specPath string) (*Config, error) {
 	cf := viper.ConfigFileUsed()
 	log.Println("[config] selected config file: ", cf)
 	if !configExists || dirChanged {
-		c.WriteYaml()
-		log.Println("[config] config file written: ", cf, "exists:", configExists, "dirchanged", dirChanged)
+		c.WriteDefault()
+		log.Println("[config] config file updated: ", cf, "exists:", configExists, "dirchanged", dirChanged)
 	}
 
 	return c, nil
@@ -221,8 +221,12 @@ func (c *Config) SyncViper(nc Config) {
 	}
 }
 
-func (c *Config) WriteYaml() error {
+func (c *Config) WriteDefault() error {
 	cf := viper.ConfigFileUsed()
+	return c.WriteYaml(cf)
+}
+
+func (c *Config) WriteYaml(cf string) error {
 	d, err := yaml.Marshal(c)
 	if err != nil {
 		return err
