@@ -11,7 +11,7 @@ require (
 	github.com/andrew-d/go-termutil v0.0.0-20150726205930-009166a695a2 // indirect
 	github.com/boypt/scraper v1.0.3
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
-	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/dustin/go-humanize v1.0.0
 	github.com/elithrar/simple-scrypt v1.3.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9
@@ -37,12 +37,10 @@ require (
 	github.com/yudai/gojsondiff v1.0.0 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
-	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 replace (
 	github.com/anacrolix/dht/v2 => github.com/boypt/dht/v2 v2.9.2
-	github.com/boltdb/bolt => github.com/boypt/bolt v1.3.2
 	github.com/jpillora/velox => github.com/boypt/velox v0.0.0-20210702064309-321adb7223d6
-	github.com/willf/bitset => github.com/bits-and-blooms/bitset v1.2.0
 )
