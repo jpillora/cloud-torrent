@@ -51,7 +51,7 @@ type Server struct {
 	UnixPerm       string `opts:"help=DomainSocket file permission (default 0666),env=UNIXPERM"`
 	Auth           string `opts:"help=Optional basic auth in form 'user:password',env=AUTH"`
 	ProxyURL       string `opts:"help=Proxy url,env=PROXY_URL"`
-	ConfigPath     string `opts:"help=Configuration file path (default /etc/cloud-torrent.yaml)"`
+	ConfigPath     string `opts:"help=Configuration file path (default ./cloud-torrent.yaml)"`
 	KeyPath        string `opts:"help=TLS Key file path"`
 	CertPath       string `opts:"help=TLS Certicate file path,short=r"`
 	RestAPI        string `opts:"help=Listen on a trusted port accepts /api/ requests (eg. localhost:3001),env=RESTAPI"`

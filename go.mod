@@ -37,6 +37,7 @@ require (
 	github.com/yudai/gojsondiff v1.0.0 // indirect
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 replace (

@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/viper"
 	"golang.org/x/time/rate"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -26,32 +27,32 @@ const (
 )
 
 type Config struct {
-	AutoStart               bool
-	EngineDebug             bool
-	MuteEngineLog           bool
-	ObfsPreferred           bool
-	ObfsRequirePreferred    bool
-	DisableTrackers         bool
-	DisableIPv6             bool
-	NoDefaultPortForwarding bool
-	DisableUTP              bool
-	DownloadDirectory       string
-	WatchDirectory          string
-	EnableUpload            bool
-	EnableSeeding           bool
-	IncomingPort            int
-	DoneCmd                 string
-	SeedRatio               float32
-	SeedTime                time.Duration
-	UploadRate              string
-	DownloadRate            string
-	TrackerList             string
-	AlwaysAddTrackers       bool
-	ProxyURL                string
-	RssURL                  string
-	ScraperURL              string
-	MaxConcurrentTask       int
-	AllowRuntimeConfigure   bool
+	AutoStart               bool          `yaml:"AutoStart"`
+	EngineDebug             bool          `yaml:"EngineDebug"`
+	MuteEngineLog           bool          `yaml:"MuteEngineLog"`
+	ObfsPreferred           bool          `yaml:"ObfsPreferred"`
+	ObfsRequirePreferred    bool          `yaml:"ObfsRequirePreferred"`
+	DisableTrackers         bool          `yaml:"DisableTrackers"`
+	DisableIPv6             bool          `yaml:"DisableIPv6"`
+	NoDefaultPortForwarding bool          `yaml:"NoDefaultPortForwarding"`
+	DisableUTP              bool          `yaml:"DisableUTP"`
+	DownloadDirectory       string        `yaml:"DownloadDirectory"`
+	WatchDirectory          string        `yaml:"WatchDirectory"`
+	EnableUpload            bool          `yaml:"EnableUpload"`
+	EnableSeeding           bool          `yaml:"EnableSeeding"`
+	IncomingPort            int           `yaml:"IncomingPort"`
+	DoneCmd                 string        `yaml:"DoneCmd"`
+	SeedRatio               float32       `yaml:"SeedRatio"`
+	SeedTime                time.Duration `yaml:"SeedTime"`
+	UploadRate              string        `yaml:"UploadRate"`
+	DownloadRate            string        `yaml:"DownloadRate"`
+	TrackerList             string        `yaml:"TrackerList"`
+	AlwaysAddTrackers       bool          `yaml:"AlwaysAddTrackers"`
+	ProxyURL                string        `yaml:"ProxyURL"`
+	RssURL                  string        `yaml:"RssURL"`
+	ScraperURL              string        `yaml:"ScraperURL"`
+	MaxConcurrentTask       int           `yaml:"MaxConcurrentTask"`
+	AllowRuntimeConfigure   bool          `yaml:"AllowRuntimeConfigure"`
 }
 
 func InitConf(specPath string) (*Config, error) {
@@ -111,9 +112,7 @@ func InitConf(specPath string) (*Config, error) {
 	cf := viper.ConfigFileUsed()
 	log.Println("[config] selected config file: ", cf)
 	if !configExists || dirChanged {
-		if err := viper.WriteConfig(); err != nil {
-			return nil, err
-		}
+		c.WriteYaml()
 		log.Println("[config] config file written: ", cf, "exists:", configExists, "dirchanged", dirChanged)
 	}
 
@@ -207,7 +206,7 @@ func (c *Config) Validate(nc *Config) uint8 {
 	return status
 }
 
-func (c *Config) SyncViper(nc Config) error {
+func (c *Config) SyncViper(nc Config) {
 	cv := reflect.ValueOf(*c)
 	nv := reflect.ValueOf(nc)
 	typeOfC := cv.Type()
@@ -220,8 +219,15 @@ func (c *Config) SyncViper(nc Config) error {
 			log.Println("config updated ", name, ": ", oval, " -> ", val)
 		}
 	}
+}
 
-	return viper.WriteConfig()
+func (c *Config) WriteYaml() error {
+	cf := viper.ConfigFileUsed()
+	d, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(cf, d, 0666)
 }
 
 func (c *Config) GetCmdConfig() (string, []string, error) {
