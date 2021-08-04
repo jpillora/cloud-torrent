@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -55,13 +54,17 @@ type Config struct {
 	AllowRuntimeConfigure   bool          `yaml:"AllowRuntimeConfigure"`
 }
 
-func InitConf(specPath string) (*Config, error) {
-
-	viper.SetConfigName("cloud-torrent")
-	viper.AddConfigPath("/etc/cloud-torrent/")
-	viper.AddConfigPath("/etc/")
-	viper.AddConfigPath("$HOME/.cloud-torrent")
-	viper.AddConfigPath(".")
+func InitConf(specPath *string) (*Config, error) {
+	if *specPath != "" {
+		// user specific config path
+		viper.SetConfigFile(*specPath)
+	} else {
+		viper.SetConfigName("cloud-torrent")
+		viper.AddConfigPath("/etc/cloud-torrent/")
+		viper.AddConfigPath("/etc/")
+		viper.AddConfigPath("$HOME/.cloud-torrent")
+		viper.AddConfigPath(".")
+	}
 
 	viper.SetDefault("DownloadDirectory", "./downloads")
 	viper.SetDefault("WatchDirectory", "./torrents")
@@ -79,23 +82,18 @@ func InitConf(specPath string) (*Config, error) {
 	viper.SetDefault("MaxConcurrentTask", 0)
 	viper.SetDefault("AllowRuntimeConfigure", true)
 
-	// user specific config path
-	if stat, err := os.Stat(specPath); stat != nil && err == nil {
-		viper.SetConfigFile(specPath)
-	}
-
 	configExists := true
 	if err := viper.ReadInConfig(); err != nil {
-		if strings.Contains(err.Error(), "Not Found") {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// user set a config that is not exists, will write to it later
 			configExists = false
-			if specPath == "" {
-				specPath = "./cloud-torrent.yaml"
-			}
-			viper.SetConfigFile(specPath)
 		} else {
 			return nil, err
 		}
 	}
+
+	*specPath = viper.ConfigFileUsed()
+	log.Println("[config] using config file: ", *specPath)
 
 	c := &Config{}
 	viper.Unmarshal(c)
@@ -109,11 +107,9 @@ func InitConf(specPath string) (*Config, error) {
 		viper.Set("WatchDirectory", c.WatchDirectory)
 	}
 
-	cf := viper.ConfigFileUsed()
-	log.Println("[config] selected config file: ", cf)
 	if !configExists || dirChanged {
 		c.WriteDefault()
-		log.Println("[config] config file updated: ", cf, "exists:", configExists, "dirchanged", dirChanged)
+		log.Println("[config] config file updated: ", *specPath, "exists:", configExists, "dirchanged", dirChanged)
 	}
 
 	return c, nil

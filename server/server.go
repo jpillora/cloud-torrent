@@ -150,7 +150,7 @@ func (s *Server) Run(version string) error {
 
 	//torrent engine
 	s.engine = engine.New(s)
-	c, err := engine.InitConf(s.ConfigPath)
+	c, err := engine.InitConf(&s.ConfigPath)
 	if err != nil {
 		return err
 	}
