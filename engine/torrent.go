@@ -85,10 +85,11 @@ func (torrent *Torrent) updateOnGotInfo(t *torrent.Torrent) {
 }
 
 func (torrent *Torrent) updateConnStat() {
+	lastStat := torrent.Stats
 	torrent.Stats = torrent.t.Stats()
 
 	// calculate ratio
-	bRead := torrent.Stats.BytesReadData.Int64()
+	bRead := torrent.Stats.BytesReadUsefulData.Int64()
 	bWrite := torrent.Stats.BytesWrittenData.Int64()
 	if bRead > 0 {
 		torrent.SeedRatio = float32(bWrite) / float32(bRead)
@@ -97,22 +98,19 @@ func (torrent *Torrent) updateConnStat() {
 	}
 
 	now := time.Now()
-	bytes := torrent.t.BytesCompleted()
-	ulbytes := torrent.Stats.BytesWrittenData.Int64()
-
 	if !torrent.updatedAt.IsZero() {
 		// calculate rate
 		dtinv := float32(time.Second) / float32(now.Sub(torrent.updatedAt))
 
-		dldb := float32(bytes - torrent.Downloaded)
+		dldb := float32(bRead - lastStat.BytesReadUsefulData.Int64())
 		torrent.DownloadRate = dldb * dtinv
 
-		uldb := float32(ulbytes - torrent.Uploaded)
+		uldb := float32(bWrite - lastStat.BytesWrittenData.Int64())
 		torrent.UploadRate = uldb * dtinv
 	}
 
-	torrent.Downloaded = bytes
-	torrent.Uploaded = ulbytes
+	torrent.Downloaded = torrent.t.BytesCompleted()
+	torrent.Uploaded = bWrite
 	torrent.updatedAt = now
 }
 

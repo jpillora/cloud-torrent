@@ -355,7 +355,7 @@ func (e *Engine) StartTorrent(infohash string) error {
 	defer t.Unlock()
 
 	if t.Started {
-		return fmt.Errorf("Already started")
+		return fmt.Errorf("already started")
 	}
 	t.Started = true
 	t.StartedAt = time.Now()
@@ -365,12 +365,7 @@ func (e *Engine) StartTorrent(infohash string) error {
 		}
 	}
 	if t.t.Info() != nil {
-		t.t.AllowDataUpload()
-		// start all files by setting the priority to normal
-		for _, f := range t.t.Files() {
-			f.SetPriority(torrent.PiecePriorityNormal)
-		}
-		t.t.AllowDataDownload()
+		t.t.DownloadAll()
 	}
 	return nil
 }
@@ -387,24 +382,17 @@ func (e *Engine) StopTorrent(infohash string) error {
 	defer t.Unlock()
 
 	if !t.Started {
-		return fmt.Errorf("Already stopped")
+		return fmt.Errorf("already stopped")
 	}
 
 	if t.t.Info() != nil {
-		t.t.DisallowDataDownload()
-		// stop all files by setting the priority to None
-		for _, f := range t.t.Files() {
-			f.SetPriority(torrent.PiecePriorityNone)
-		}
-		t.t.DisallowDataUpload()
+		t.t.CancelPieces(0, t.t.NumPieces())
 	}
 
 	t.Started = false
 	t.StoppedAt = time.Now()
 	for _, f := range t.Files {
-		if f != nil {
-			f.Started = false
-		}
+		f.Started = false
 	}
 
 	return nil
@@ -445,7 +433,9 @@ func (e *Engine) StartFile(infohash, filepath string) error {
 	if f.Started {
 		return fmt.Errorf("already started")
 	}
-	t.Started = true
+	if !t.Started {
+		t.Started = true
+	}
 	f.Started = true
 	f.f.SetPriority(torrent.PiecePriorityNormal)
 	return nil
@@ -466,7 +456,7 @@ func (e *Engine) StopFile(infohash, filepath string) error {
 		}
 	}
 	if f == nil {
-		return fmt.Errorf("Missing file %s", filepath)
+		return fmt.Errorf("missing file %s", filepath)
 	}
 	if !f.Started {
 		return fmt.Errorf("already stopped")
@@ -483,7 +473,8 @@ func (e *Engine) StopFile(infohash, filepath string) error {
 	}
 
 	if allStopped {
-		go e.StopTorrent(infohash)
+		t.Started = false
+		t.StoppedAt = time.Now()
 	}
 
 	return nil

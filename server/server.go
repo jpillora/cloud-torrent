@@ -154,6 +154,7 @@ func (s *Server) Run(version string) error {
 	if err != nil {
 		return err
 	}
+	c.EngineDebug = s.DebugTorrent
 
 	// write cloud-torrent.yaml at the same dir with -c conf and exit
 	if s.ConvYAML {
