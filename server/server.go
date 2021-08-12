@@ -45,21 +45,21 @@ var (
 type Server struct {
 	//config
 	Title          string `opts:"help=Title of this instance,env=TITLE"`
-	Port           int    `opts:"help=Listening port(depreciated. use --listen),env=PORT"`
-	Host           string `opts:"help=Listening interface (depreciated. use --listen),env=HOST"`
+	Port           int    `opts:"help=Depreciated. use --listen. Listening port(),env=PORT"`
+	Host           string `opts:"help=Depreciated. use --listen. Listening interface,env=HOST"`
 	Listen         string `opts:"help=Listening Address:Port or unix socket (default all),env=LISTEN"`
 	UnixPerm       string `opts:"help=DomainSocket file permission (default 0666),env=UNIXPERM"`
 	Auth           string `opts:"help=Optional basic auth in form 'user:password',env=AUTH"`
 	ProxyURL       string `opts:"help=Proxy url,env=PROXY_URL"`
-	ConfigPath     string `opts:"help=Configuration file path (default ./cloud-torrent.yaml)"`
+	ConfigPath     string `opts:"help=Configuration file path (default ./cloud-torrent.yaml),short=c,env=CONFIGPATH"`
 	KeyPath        string `opts:"help=TLS Key file path"`
 	CertPath       string `opts:"help=TLS Certicate file path,short=r"`
 	RestAPI        string `opts:"help=Listen on a trusted port accepts /api/ requests (eg. localhost:3001),env=RESTAPI"`
-	Log            bool   `opts:"help=Enable request logging"`
+	ReqLog         bool   `opts:"help=Enable request logging,env=REQLOG"`
 	Open           bool   `opts:"help=Open now with your default browser"`
-	DisableLogTime bool   `opts:"help=Don't print timestamp in log"`
-	Debug          bool   `opts:"help=Debug app"`
-	DebugTorrent   bool   `opts:"help=Debug torrent engine"`
+	DisableLogTime bool   `opts:"help=Don't print timestamp in log,env=DISABLELOGTIME"`
+	Debug          bool   `opts:"help=Debug app,env=DEBUG"`
+	DebugTorrent   bool   `opts:"help=Debug torrent engine,env=DEBUGTORRENT"`
 	ConvYAML       bool   `opts:"help=Convert old json config to yaml format."`
 
 	//http handlers
@@ -248,7 +248,7 @@ func (s *Server) Run(version string) error {
 		h = cookieauth.New().SetUserPass(user, pass).Wrap(h)
 		log.Printf("Enabled HTTP authentication")
 	}
-	if s.Log {
+	if s.ReqLog {
 		h = requestlog.Wrap(h)
 	}
 
