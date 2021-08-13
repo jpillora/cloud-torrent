@@ -10,8 +10,7 @@ import (
 )
 
 type Torrent struct {
-	// put at first postition to prevent memorty align issues.
-	Stats torrent.TorrentStats
+	sync.Mutex
 
 	//anacrolix/torrent
 	InfoHash   string
@@ -24,6 +23,7 @@ type Torrent struct {
 	Files      []*File
 
 	//cloud torrent
+	Stats          *torrent.TorrentStats
 	Started        bool
 	Done           bool
 	DoneCmdCalled  bool
@@ -44,7 +44,6 @@ type Torrent struct {
 	e              *Engine
 	dropWait       chan struct{}
 	cld            Server
-	sync.Mutex
 }
 
 type File struct {
@@ -86,19 +85,19 @@ func (torrent *Torrent) updateOnGotInfo(t *torrent.Torrent) {
 
 func (torrent *Torrent) updateConnStat() {
 	lastStat := torrent.Stats
-	torrent.Stats = torrent.t.Stats()
+	curStat := torrent.t.Stats()
+	now := time.Now()
 
 	// calculate ratio
-	bRead := torrent.Stats.BytesReadUsefulData.Int64()
-	bWrite := torrent.Stats.BytesWrittenData.Int64()
+	bRead := curStat.BytesReadUsefulData.Int64()
+	bWrite := curStat.BytesWrittenData.Int64()
 	if bRead > 0 {
 		torrent.SeedRatio = float32(bWrite) / float32(bRead)
 	} else if torrent.Done {
 		torrent.SeedRatio = float32(bWrite) / float32(torrent.Size)
 	}
 
-	now := time.Now()
-	if !torrent.updatedAt.IsZero() {
+	if lastStat != nil {
 		// calculate rate
 		dtinv := float32(time.Second) / float32(now.Sub(torrent.updatedAt))
 
@@ -112,6 +111,7 @@ func (torrent *Torrent) updateConnStat() {
 	torrent.Downloaded = torrent.t.BytesCompleted()
 	torrent.Uploaded = bWrite
 	torrent.updatedAt = now
+	torrent.Stats = &curStat
 }
 
 func (torrent *Torrent) updateFileStatus() {
