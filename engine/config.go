@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -222,7 +223,10 @@ func (c *Config) SyncViper(nc Config) {
 
 func (c *Config) WriteDefault() error {
 	cf := viper.ConfigFileUsed()
-	return c.WriteYaml(cf)
+	if strings.HasSuffix(cf, ".yml") || strings.HasSuffix(cf, ".yaml") {
+		return c.WriteYaml(cf)
+	}
+	return viper.WriteConfig()
 }
 
 func (c *Config) WriteYaml(cf string) error {
