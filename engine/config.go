@@ -223,9 +223,12 @@ func (c *Config) SyncViper(nc Config) {
 
 func (c *Config) WriteDefault() error {
 	cf := viper.ConfigFileUsed()
-	if strings.HasSuffix(cf, ".yml") || strings.HasSuffix(cf, ".yaml") {
+	cfext := strings.ToLower(filepath.Ext(cf))
+	if cfext == "yml" || cfext == "yaml" {
+		// keeps keys cases
 		return c.WriteYaml(cf)
 	}
+	// viper's write make all keys lowercased
 	return viper.WriteConfig()
 }
 
