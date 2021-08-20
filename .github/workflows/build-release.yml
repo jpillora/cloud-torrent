@@ -11,29 +11,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.16.x
-
     - name: Check out code
       uses: actions/checkout@v2
       with:
         ref: 'master'
         fetch-depth: '0'
 
-    - name: Generate Git log
-      run: |
-        git fetch origin +refs/tags/*:refs/tags/*
-        echo "Current Tag: ${GITHUB_REF}"
-        git checkout ${GITHUB_REF} -b compile
-        GITVER=$(git describe --tags)
-        PREVVER=$(git describe --tags --abbrev=0 ${GITVER}~1)
-        git log --oneline ${PREVVER}..${GITVER} | tee gittaglogs.txt
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: "^1.17"
 
     - name: Get dependencies
       run: |
-        go get -v -t -d ./...
+        go mod download -x
 
     - name: Build
       run: |
@@ -42,7 +33,17 @@ jobs:
         bash scripts/make_release.sh gzip 386 purego
         bash scripts/make_release.sh gzip arm64 purego
         bash scripts/make_release.sh gzip darwin purego
-        
+
+    - name: Generate Git Log
+      run: |
+        go version
+        git fetch origin +refs/tags/*:refs/tags/*
+        echo "Current Tag: ${GITHUB_REF}"
+        git checkout ${GITHUB_REF} -b compile
+        GITVER=$(git describe --tags)
+        PREVVER=$(git describe --tags --abbrev=0 ${GITVER}~1)
+        git log --oneline ${PREVVER}..${GITVER} | tee gittaglogs.txt
+
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
@@ -53,8 +54,8 @@ jobs:
           cloud-torrent_linux_386_static.gz
           cloud-torrent_linux_arm64_static.gz
           cloud-torrent_darwin_amd64_static.gz
-        prerelease: true
-        draft: false
+        prerelease: false
+        draft: true
         body_path: gittaglogs.txt
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
