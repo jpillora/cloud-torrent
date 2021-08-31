@@ -2,7 +2,7 @@ name: release build
 on:
   create:
     tags:
-      - '*'
+      - '[0-9.]'
 
 jobs:
   build:
