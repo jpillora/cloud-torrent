@@ -2,11 +2,11 @@ name: docker build
 on:
   create:
     tags:
-      - '[0-9.]'
+      - '1.*'
   push:
     paths:
       - "Dockerfile"
-      - ".github/workflows/docker-push.yml"
+#      - ".github/workflows/docker-push.yml"
 
 jobs:
   build:
