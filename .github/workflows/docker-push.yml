@@ -3,10 +3,6 @@ on:
   create:
     tags:
       - '1.*'
-  push:
-    paths:
-      - "Dockerfile"
-#      - ".github/workflows/docker-push.yml"
 
 jobs:
   build:
