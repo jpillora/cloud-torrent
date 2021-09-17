@@ -25,6 +25,7 @@ const (
 
 const (
 	defaultTrackerListURL = "https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt"
+	defaultConfigFile     = "cloud-torrent"
 )
 
 type Config struct {
@@ -61,10 +62,8 @@ func InitConf(specPath *string) (*Config, error) {
 		// user specific config path
 		viper.SetConfigFile(*specPath)
 	} else {
-		viper.SetConfigName("cloud-torrent")
-		viper.AddConfigPath("/etc/cloud-torrent/")
+		viper.SetConfigName(defaultConfigFile)
 		viper.AddConfigPath("/etc/")
-		viper.AddConfigPath("$HOME/.cloud-torrent")
 		viper.AddConfigPath(".")
 	}
 
@@ -93,9 +92,10 @@ func InitConf(specPath *string) (*Config, error) {
 			// write a default config file if not exists and not provided
 			c := &Config{}
 			viper.Unmarshal(c)
-			c.WriteYaml("cloud-torrent.yaml")
-			log.Println("saved default config cloud-torrent.yaml")
-			viper.SetConfigFile("cloud-torrent.yaml")
+			cn := defaultConfigFile + ".yaml"
+			c.WriteYaml(cn)
+			viper.SetConfigFile(cn)
+			log.Println("saved default config", cn)
 		}
 	}
 
