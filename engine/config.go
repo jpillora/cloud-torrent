@@ -90,7 +90,12 @@ func InitConf(specPath *string) (*Config, error) {
 			// user set a config that is not exists, will write to it later
 			configExists = false
 		} else {
-			return nil, err
+			// write a default config file if not exists and not provided
+			c := &Config{}
+			viper.Unmarshal(c)
+			c.WriteYaml("cloud-torrent.yaml")
+			log.Println("saved default config cloud-torrent.yaml")
+			viper.SetConfigFile("cloud-torrent.yaml")
 		}
 	}
 
