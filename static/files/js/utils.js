@@ -198,6 +198,9 @@ app.filter("round", function () {
   };
 });
 
+app.filter("escape", function () {
+  return window.encodeURIComponent;
+});
 
 app.filter("ratioRound", function () {
   return function (n) {
