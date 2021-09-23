@@ -62,9 +62,11 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	case "download":
 		s.dlfilesh.ServeHTTP(w, r)
 	case s.baseInfo.Version:
+		w.Header().Set("Cache-Control", "max-age:290304000, public")
 		s.verStatich.ServeHTTP(w, r)
 	default:
 		//no match, assume static file
+		w.Header().Set("Cache-Control", "max-age:290304000, public")
 		s.statich.ServeHTTP(w, r)
 	}
 
