@@ -48,10 +48,6 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uptime := time.Unix(s.baseInfo.Uptime, 0)
-	cacheSince := uptime.Format(http.TimeFormat)
-	cacheExpire := uptime.AddDate(0, 1, 0).Format(http.TimeFormat) // 1 month expire date
-
 	pathDir := strings.SplitN(r.URL.Path[1:], "/", 2)
 	switch pathDir[0] {
 	case "search":
@@ -67,14 +63,12 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	case "download":
 		s.dlfilesh.ServeHTTP(w, r)
 	case s.baseInfo.Version:
-		w.Header().Set("Last-Modified", cacheSince)
-		w.Header().Set("Expires", cacheExpire)
+		w.Header().Set("Expires", time.Now().UTC().AddDate(0, 6, 0).Format(http.TimeFormat))
 		w.Header().Set("Cache-Control", "max-age:290304000, public")
 		s.verStatich.ServeHTTP(w, r)
 	default:
 		//no match, assume static file
-		w.Header().Set("Last-Modified", cacheSince)
-		w.Header().Set("Expires", cacheExpire)
+		w.Header().Set("Expires", time.Now().UTC().AddDate(0, 6, 0).Format(http.TimeFormat))
 		w.Header().Set("Cache-Control", "max-age:290304000, public")
 		s.statich.ServeHTTP(w, r)
 	}
