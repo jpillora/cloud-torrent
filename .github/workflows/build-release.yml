@@ -42,7 +42,8 @@ jobs:
         git checkout ${GITHUB_REF} -b compile
         GITVER=$(git describe --tags)
         PREVVER=$(git describe --tags --abbrev=0 ${GITVER}~1)
-        git log --oneline ${PREVVER}..${GITVER} | tee gittaglogs.txt
+        echo git log --oneline ${PREVVER}..${GITVER} | tee -a gittaglogs.txt
+        git log --oneline ${PREVVER}..${GITVER} | tee -a gittaglogs.txt
 
     - name: Release
       uses: softprops/action-gh-release@v1
