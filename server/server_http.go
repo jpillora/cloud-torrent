@@ -20,7 +20,7 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 
 	case "/", "index.html":
-		htmlTPL["index.html"].Execute(w, s.baseInfo)
+		htmlTPL["index.html"].Execute(w, s.tpl)
 		return
 	case "/rss":
 		s.rssh.ServeHTTP(w, r)
@@ -62,7 +62,7 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 		s.restAPIhandle(w, r)
 	case "download":
 		s.dlfilesh.ServeHTTP(w, r)
-	case s.baseInfo.Version:
+	case s.tpl.Version:
 		w.Header().Set("Expires", time.Now().UTC().AddDate(0, 6, 0).Format(http.TimeFormat))
 		w.Header().Set("Cache-Control", "max-age:290304000, public")
 		s.verStatich.ServeHTTP(w, r)
@@ -95,7 +95,7 @@ func (s *Server) restAPIhandle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type BaseInfo struct {
+type TPLInfo struct {
 	Uptime                int64
 	Title                 string
 	Version               string
@@ -103,7 +103,7 @@ type BaseInfo struct {
 	AllowRuntimeConfigure bool
 }
 
-func (BaseInfo) GetTemplate(n string) (template.HTML, error) {
+func (TPLInfo) GetTemplate(n string) (template.HTML, error) {
 	b, err := ctstatic.ReadAll(n)
 	if err != nil {
 		return "", err

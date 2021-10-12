@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -88,12 +87,14 @@ type Server struct {
 	rssMark         map[string]string
 	rssCache        []*gofeed.Item
 	searchProviders *scraper.Config
-	baseInfo        *BaseInfo
 	engineConfig    *engine.Config
+	tpl             *TPLInfo
 }
 
 // Run the server
-func (s *Server) Run(version string) error {
+func (s *Server) Run(tpl *TPLInfo) error {
+
+	s.tpl = tpl
 
 	if s.DisableLogTime {
 		engine.SetLoggerFlag(stdlog.Lmsgprefix)
@@ -113,12 +114,6 @@ func (s *Server) Run(version string) error {
 	if isTLS && (s.CertPath == "" || s.KeyPath == "") {
 		return fmt.Errorf("ERROR: You must provide both key and cert paths")
 	}
-	s.baseInfo = &BaseInfo{
-		Title:   s.Title,
-		Version: version,
-		Runtime: strings.TrimPrefix(runtime.Version(), "go"),
-		Uptime:  time.Now().Unix(),
-	}
 
 	s.syncConnected = make(chan struct{})
 	//init maps
@@ -127,7 +122,7 @@ func (s *Server) Run(version string) error {
 
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
 	s.statich = ctstatic.FileSystemHandler()
-	s.verStatich = http.StripPrefix("/"+version, s.statich)
+	s.verStatich = http.StripPrefix("/"+s.tpl.Version, s.statich)
 	s.dlfilesh = http.StripPrefix("/download/", http.HandlerFunc(s.serveDownloadFiles))
 	s.rssh = http.HandlerFunc(s.serveRSS)
 
@@ -180,7 +175,7 @@ func (s *Server) Run(version string) error {
 	s.state.Stats.System.diskDirPath = c.DownloadDirectory
 	s.state.UseQueue = (c.MaxConcurrentTask > 0)
 	s.engineConfig = c
-	s.baseInfo.AllowRuntimeConfigure = c.AllowRuntimeConfigure
+	s.tpl.AllowRuntimeConfigure = c.AllowRuntimeConfigure
 	if err := s.engine.Configure(c); err != nil {
 		return err
 	}

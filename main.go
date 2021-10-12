@@ -4,6 +4,9 @@ import (
 	"errors"
 	"log"
 	"os"
+	"runtime"
+	"strings"
+	"time"
 
 	"github.com/boypt/simple-torrent/server"
 	"github.com/jpillora/opts"
@@ -25,12 +28,19 @@ func main() {
 	o.SetLineWidth(96)
 	o.Parse()
 
+	t := &server.TPLInfo{
+		Title:   s.Title,
+		Version: VERSION,
+		Runtime: strings.TrimPrefix(runtime.Version(), "go"),
+		Uptime:  time.Now().Unix(),
+	}
+
 	if s.DisableLogTime {
 		log.SetFlags(0)
 	}
 
 	log.Printf("############# SimpleTorrent ver[%s] #############\n", VERSION)
-	if err := s.Run(VERSION); err != nil {
+	if err := s.Run(t); err != nil {
 		if errors.Is(err, server.ErrDiskSpace) {
 			log.Println(err)
 			os.Exit(42)
