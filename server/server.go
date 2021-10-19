@@ -10,6 +10,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/boypt/simple-torrent/server/httpmiddleware"
@@ -70,6 +71,7 @@ type Server struct {
 
 	//sync req
 	syncConnected chan struct{}
+	syncWg        sync.WaitGroup
 	syncSemphor   int32
 
 	state struct {
@@ -77,7 +79,7 @@ type Server struct {
 		UseQueue      bool
 		LatestRSSGuid string
 		Torrents      *map[string]*engine.Torrent
-		Users         map[string]string
+		Users         map[string]struct{}
 		Stats         struct {
 			System   osStats
 			ConnStat torrent.ConnStats
@@ -117,7 +119,7 @@ func (s *Server) Run(tpl *TPLInfo) error {
 
 	s.syncConnected = make(chan struct{})
 	//init maps
-	s.state.Users = make(map[string]string)
+	s.state.Users = make(map[string]struct{})
 	s.rssMark = make(map[string]string)
 
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries

@@ -97,8 +97,8 @@
 				<span> disk {{ state.Stats.System.diskUsedPercent | round }}% </span>
 			</p>
 			<div class="header"> Online Users </div>
-			<ul ng-repeat="(key, value) in state.Users ">
-				<li>ID:{{key}} - IP:{{value}}</li>
+			<ul ng-repeat="(k,_) in state.Users ">
+				<li>{{ k }}</li>
 			</ul>
 
 			<div class="header"> Torrent Trackers </div>

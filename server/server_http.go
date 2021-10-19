@@ -36,12 +36,14 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 			log.Printf("sync failed: %s", err)
 			return
 		}
+		ukey := conn.ID() + "|" + r.RemoteAddr
+		s.state.Users[ukey] = struct{}{}
 		s.syncConnected <- struct{}{}
-		s.state.Users[conn.ID()] = r.RemoteAddr
+		s.syncWg.Add(1)
+		defer s.syncWg.Done()
 		s.state.Push()
 		conn.Wait()
-		delete(s.state.Users, conn.ID())
-		s.state.Push()
+		delete(s.state.Users, ukey)
 		return
 	case "/js/velox.js":
 		velox.JS.ServeHTTP(w, r)

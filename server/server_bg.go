@@ -49,28 +49,28 @@ func (s *Server) backgroundRoutines() {
 
 // stateRoutines watches the tasks / sys states
 func (s *Server) tickerRoutine() {
-	tick := 2 * time.Second
+	defer atomic.StoreInt32(&(s.syncSemphor), 0)
+
+	tick := 5 * time.Second
+	log.Println("[tickerRoutine] sync connected, ticking for", tick)
 	tk := time.NewTicker(tick)
 	defer tk.Stop()
 
-	log.Println("[tickerRoutine] sync connected, ticking for", tick)
-	var iterCount, noConnCount uint
-	for range tk.C {
-		iterCount++
-		if s.state.NumConnections() == 0 {
-			noConnCount++
-		}
+	done := make(chan struct{})
+	go func() {
+		s.syncWg.Wait()
+		close(done)
+	}()
 
-		if noConnCount > 30 { // 1mins
-			atomic.StoreInt32(&(s.syncSemphor), 0)
-			log.Println("[tickerRoutine] sync exit for no web connections")
-			return
-		}
-
-		if iterCount%4 == 0 {
+	for {
+		select {
+		case <-tk.C:
 			s.state.Stats.System.loadStats()
 			s.state.Stats.ConnStat = s.engine.ConnStat()
+			s.state.Push()
+		case <-done:
+			log.Println("[tickerRoutine] sync exit")
+			return
 		}
-		s.state.Push()
 	}
 }
