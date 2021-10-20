@@ -51,7 +51,7 @@ func (s *Server) backgroundRoutines() {
 func (s *Server) tickerRoutine() {
 	defer atomic.StoreInt32(&(s.syncSemphor), 0)
 
-	tick := 5 * time.Second
+	tick := time.Duration(s.IntevalSec) * time.Second
 	log.Println("[tickerRoutine] sync connected, ticking for", tick)
 	tk := time.NewTicker(tick)
 	defer tk.Stop()

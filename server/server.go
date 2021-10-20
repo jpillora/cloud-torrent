@@ -61,6 +61,7 @@ type Server struct {
 	Debug          bool   `opts:"help=Debug app,env=DEBUG"`
 	DebugTorrent   bool   `opts:"help=Debug torrent engine,env=DEBUGTORRENT"`
 	ConvYAML       bool   `opts:"help=Convert old json config to yaml format."`
+	IntevalSec     int    `opts:"help=Inteval seconds to push data to clients (default 3),env=INTEVALSEC"`
 
 	//http handlers
 	scraperh, dlfilesh, statich, verStatich, rssh http.Handler
@@ -97,6 +98,10 @@ type Server struct {
 func (s *Server) Run(tpl *TPLInfo) error {
 
 	s.tpl = tpl
+
+	if s.IntevalSec <= 0 {
+		s.IntevalSec = 3
+	}
 
 	if s.DisableLogTime {
 		engine.SetLoggerFlag(stdlog.Lmsgprefix)
