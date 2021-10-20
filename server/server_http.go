@@ -113,6 +113,15 @@ func (TPLInfo) GetTemplate(n string) (template.HTML, error) {
 	return template.HTML(b), nil
 }
 
+func (t TPLInfo) GetInfo() string {
+	return fmt.Sprintf(`
+########################################
+# %s ver [%s]
+# Golang Runtime: %s  
+########################################
+`, t.Title, t.Version, t.Runtime)
+}
+
 func init() {
 	htmlTPL = make(map[string]*template.Template)
 	for _, fsn := range []string{"index.html", "magadded.html"} {

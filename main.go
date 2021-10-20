@@ -2,10 +2,11 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"runtime"
-	"strings"
+	"strconv"
 	"time"
 
 	"github.com/boypt/simple-torrent/server"
@@ -31,7 +32,7 @@ func main() {
 	t := &server.TPLInfo{
 		Title:   s.Title,
 		Version: VERSION,
-		Runtime: strings.TrimPrefix(runtime.Version(), "go"),
+		Runtime: fmt.Sprintf("%s %d bit", runtime.Version(), strconv.IntSize),
 		Uptime:  time.Now().Unix(),
 	}
 
@@ -39,7 +40,7 @@ func main() {
 		log.SetFlags(0)
 	}
 
-	log.Printf("############# SimpleTorrent ver[%s] #############\n", VERSION)
+	log.Print(t.GetInfo())
 	if err := s.Run(t); err != nil {
 		if errors.Is(err, server.ErrDiskSpace) {
 			log.Println(err)
