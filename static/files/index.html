@@ -88,14 +88,14 @@
 			<div class="header">
 				System Info
 			</div>
-			<p>
-				<span> Go [[.Runtime]], </span>
-				<span> goroutines {{ state.Stats.System.goRoutines }}, </span>
-				<span> gomem {{ state.Stats.System.goMemory | bytes }}, </span>
-				<span> cpu {{ state.Stats.System.cpu | round }}%, </span>
-				<span> mem {{ state.Stats.System.memUsedPercent | round }}%, </span>
-				<span> disk {{ state.Stats.System.diskUsedPercent | round }}% </span>
-			</p>
+			<ul>
+				<li> Build: <b>{{ "[[.Runtime]]" }} </b></li>
+				<li> GoRoutines: <b>{{ state.Stats.System.goRoutines }}</b></li>
+				<li> GoMEM: <b>{{ state.Stats.System.goMemory | bytes }}</b></li>
+				<li> CPU Usage: <b>{{ state.Stats.System.cpu | round }}%</b></li>
+				<li> Sys Memory: <b>{{ state.Stats.System.memUsedPercent | round }}%</b></li>
+				<li> Disk Used: <b>{{ state.Stats.System.diskUsedPercent | round }}%</b></li>
+			</ul>
 			<div class="header"> Online Users </div>
 			<ul ng-repeat="(k,_) in state.Users ">
 				<li>{{ k }}</li>
