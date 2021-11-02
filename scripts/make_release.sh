@@ -18,9 +18,9 @@ ARCH=""
 SUFFIX=""
 OSSUFFIX=""
 PKGCMD=
-NOSTATIC=
 CGO=1
-STASHED=0
+GO_LDFLAGS="-s -w -X main.VERSION=$GITVER"
+GO_TAGS=""
 
 for arg in "$@"; do
 case $arg in
@@ -44,15 +44,18 @@ case $arg in
 	xz)
 		PKGCMD=xz
     	;;
-	nostat)
-		NOSTATIC=1
-    	;;
 	gzip)
 		PKGCMD=gzip
 		;;
 	purego)
 		CGO=0
+		SUFFIX=_purego
+		;;
+	static)
+		CGO=1
 		SUFFIX=_static
+		GO_LDFLAGS="${GO_LDFLAGS} -extldflags=-static"
+		GO_TAGS='netgo osusergo sqlite_omit_load_extension'
 		;;
 esac
 done
@@ -68,7 +71,11 @@ fi
 
 pushd $__dir/..
 BINFILE=${BINPREFIX}${BIN}_${OS}_${ARCH}${SUFFIX}${OSSUFFIX}
-CGO_ENABLED=$CGO GOARCH=$ARCH GOOS=$OS go build -o ${BINFILE} -trimpath -ldflags "-s -w -X main.VERSION=$GITVER"
+CGO_ENABLED=$CGO GOARCH=$ARCH GOOS=$OS \
+	go build -o ${BINFILE} \
+		-trimpath \
+		-ldflags "${GO_LDFLAGS}" \
+		-tags "${GO_TAGS}"
 if [[ ! -f ${BINFILE} ]]; then
   echo "Build failed. Check with error message above."
   exit 1

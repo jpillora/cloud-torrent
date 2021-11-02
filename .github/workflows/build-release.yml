@@ -29,7 +29,7 @@ jobs:
     - name: Build
       run: |
         bash scripts/make_release.sh gzip amd64
-        bash scripts/make_release.sh gzip amd64 purego
+        bash scripts/make_release.sh gzip amd64 static
         bash scripts/make_release.sh gzip 386 purego
         bash scripts/make_release.sh gzip arm64 purego
         bash scripts/make_release.sh gzip darwin purego
