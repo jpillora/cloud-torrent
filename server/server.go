@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/boypt/simple-torrent/common"
 	"github.com/boypt/simple-torrent/server/httpmiddleware"
 
 	"errors"
@@ -205,7 +206,7 @@ func (s *Server) Run(tpl *TPLInfo) error {
 				proto += "s"
 			}
 			time.Sleep(1 * time.Second)
-			open.Run(fmt.Sprintf("%s://localhost:%d", proto, s.Port))
+			common.FancyHandleError(open.Run(fmt.Sprintf("%s://localhost:%d", proto, s.Port)))
 		}()
 	}
 
@@ -275,7 +276,7 @@ func (s *Server) Run(tpl *TPLInfo) error {
 		if um, err := strconv.ParseInt(s.UnixPerm, 8, 0); err == nil {
 			uxmod := os.FileMode(um)
 			log.Println("Listening DomainSocket mode change to:", uxmod.String(), s.UnixPerm)
-			os.Chmod(sockPath, uxmod)
+			common.HandleError(os.Chmod(sockPath, uxmod))
 		}
 	} else {
 		log.Println("Listening at", s.Listen)

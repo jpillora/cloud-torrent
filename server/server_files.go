@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/boypt/simple-torrent/common"
 	"github.com/jpillora/archive"
 )
 
@@ -59,7 +60,7 @@ func (s *Server) serveDownloadFiles(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			//write .zip archive directly into response
 			a := archive.NewZipWriter(w)
-			a.AddDir(file)
+			common.HandleError(a.AddDir(file))
 			a.Close()
 		} else {
 			http.ServeFile(w, r, file)

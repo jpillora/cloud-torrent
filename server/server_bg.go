@@ -8,7 +8,7 @@ import (
 
 func (s *Server) backgroundRoutines() {
 
-	go s.fetchSearchConfig(s.engineConfig.ScraperURL)
+	go s.fetchSearchConfig(s.engineConfig.ScraperURL) // nolint: errcheck
 
 	// initial state
 	s.state.Stats.System.loadStats()

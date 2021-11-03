@@ -2,6 +2,8 @@ package httpmiddleware
 
 import (
 	"net/http"
+
+	"github.com/boypt/simple-torrent/common"
 )
 
 func Liveness(h http.Handler) http.Handler {
@@ -9,7 +11,8 @@ func Liveness(h http.Handler) http.Handler {
 		// liveness response
 		if r.URL.Path == "/healthz" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
+			_, err := w.Write([]byte("OK"))
+			common.HandleError(err)
 			return
 		}
 		h.ServeHTTP(w, r)

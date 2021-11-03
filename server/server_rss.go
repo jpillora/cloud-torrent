@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/boypt/simple-torrent/common"
 	"github.com/dustin/go-humanize"
 	"github.com/mmcdole/gofeed"
 )
@@ -178,5 +179,5 @@ func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(results)
+	common.HandleError(json.NewEncoder(w).Encode(results))
 }

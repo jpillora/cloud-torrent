@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/boypt/simple-torrent/common"
 	ctstatic "github.com/boypt/simple-torrent/static"
 	"github.com/jpillora/velox"
 )
@@ -20,7 +21,7 @@ func (s *Server) webHandle(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 
 	case "/", "index.html":
-		htmlTPL["index.html"].Execute(w, s.tpl)
+		common.HandleError(htmlTPL["index.html"].Execute(w, s.tpl))
 		return
 	case "/rss":
 		s.rssh.ServeHTTP(w, r)
@@ -86,7 +87,8 @@ func (s *Server) restAPIhandle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		_, err := w.Write([]byte("OK"))
+		common.HandleError(err)
 	case "GET":
 		if err := s.apiGET(w, r); err != nil {
 			http.Error(w, fmt.Sprintf("%s:%s:%v", r.Method, r.URL, err.Error()), http.StatusBadRequest)

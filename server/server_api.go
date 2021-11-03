@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/boypt/simple-torrent/common"
 	"github.com/boypt/simple-torrent/engine"
 )
 
@@ -48,13 +49,13 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 		}
 		tdata.Magnet = m
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		htmlTPL["magadded.html"].Execute(w, tdata)
+		common.HandleError(htmlTPL["magadded.html"].Execute(w, tdata))
 	case "configure":
-		json.NewEncoder(w).Encode(*(s.engineConfig))
+		common.HandleError(json.NewEncoder(w).Encode(*(s.engineConfig)))
 	case "torrents":
-		json.NewEncoder(w).Encode(s.engine.GetTorrents())
+		common.HandleError(json.NewEncoder(w).Encode(s.engine.GetTorrents()))
 	case "files":
-		json.NewEncoder(w).Encode(s.listFiles())
+		common.HandleError(json.NewEncoder(w).Encode(s.listFiles()))
 	case "torrent":
 		if len(routeDirs) != 2 {
 			return errUnknowAct
@@ -65,24 +66,24 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 		}
 		m := s.engine.GetTorrents()
 		if t, ok := (*m)[hash]; ok {
-			json.NewEncoder(w).Encode(t)
+			common.HandleError(json.NewEncoder(w).Encode(t))
 		} else {
 			return errUnknowPath
 		}
 	case "stat":
 		s.state.Stats.System.loadStats()
 		s.state.Stats.ConnStat = s.engine.ConnStat()
-		json.NewEncoder(w).Encode(s.state.Stats)
+		common.HandleError(json.NewEncoder(w).Encode(s.state.Stats))
 	case "searchproviders":
-		json.NewEncoder(w).Encode(s.searchProviders)
+		common.HandleError(json.NewEncoder(w).Encode(s.searchProviders))
 	case "enginedebug":
 		w.Header().Set("Content-Type", "application/json")
 		var buf bytes.Buffer
 		s.engine.WriteStauts(bufio.NewWriter(&buf))
-		json.NewEncoder(w).Encode(struct {
+		common.HandleError(json.NewEncoder(w).Encode(struct {
 			EngineStatus string
 			Trackers     []string
-		}{buf.String(), s.engine.Trackers})
+		}{buf.String(), s.engine.Trackers}))
 	default:
 		return errUnknowAct
 	}
@@ -171,7 +172,9 @@ func (s *Server) apiPOST(r *http.Request) error {
 			if err := s.engine.DeleteTorrent(infohash); err != nil {
 				return err
 			}
-			s.engine.PushWaitTask(infohash)
+			if err := s.engine.PushWaitTask(infohash); err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("ERROR: Invalid state: %s", state)
 		}
@@ -223,7 +226,7 @@ func (s *Server) apiConfigure(data []byte) error {
 			return errors.New("ERROR: This item is NOT allowed being changed on runtime")
 		}
 		if status&engine.NeedRestartWatch > 0 {
-			s.engine.StartTorrentWatcher()
+			common.FancyHandleError(s.engine.StartTorrentWatcher())
 			log.Printf("[api] file watcher restartd")
 		}
 
@@ -254,7 +257,7 @@ func (s *Server) apiConfigure(data []byte) error {
 		}
 
 		if status&engine.NeedUpdateTracker > 0 {
-			go s.engine.ParseTrackerList()
+			go s.engine.ParseTrackerList() // nolint: errcheck
 		}
 		if status&engine.NeedUpdateRSS > 0 {
 			go s.updateRSS()
@@ -279,7 +282,7 @@ func (s *Server) apiConfigure(data []byte) error {
 	}
 
 	// update search config anyway
-	go s.fetchSearchConfig(s.engineConfig.ScraperURL)
+	go s.fetchSearchConfig(s.engineConfig.ScraperURL) // nolint: errcheck
 	return nil
 }
 
