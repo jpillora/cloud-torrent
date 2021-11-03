@@ -49,7 +49,7 @@ case $arg in
 		;;
 	purego)
 		CGO=0
-		SUFFIX=_purego
+		SUFFIX=_static
 		;;
 	static)
 		CGO=1
