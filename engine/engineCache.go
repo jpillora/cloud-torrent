@@ -11,6 +11,7 @@ import (
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
+	"github.com/boypt/simple-torrent/common"
 )
 
 const (
@@ -26,7 +27,8 @@ func (e *Engine) newMagnetCacheFile(magnetURI, infohash string) {
 			cf, err := os.Create(cacheInfoPath)
 			if err == nil {
 				defer cf.Close()
-				cf.WriteString(magnetURI)
+				_, err := cf.WriteString(magnetURI)
+				common.HandleError(err)
 				log.Println("created magnet cache info file", infohash)
 			}
 		}
@@ -45,7 +47,7 @@ func (e *Engine) newTorrentCacheFile(meta *metainfo.MetaInfo) {
 			cf, err := os.Create(cacheFilePath)
 			if err == nil {
 				defer cf.Close()
-				meta.Write(cf)
+				common.FancyHandleError(meta.Write(cf))
 				log.Println("created torrent cache file", infohash)
 			} else {
 				log.Println("failed to create torrent file", err)
@@ -150,7 +152,7 @@ func (e *Engine) RestoreCacheDir() {
 		if i.IsDir() {
 			continue
 		}
-		e.RestoreTask(path.Join(e.cacheDir, i.Name()))
+		common.FancyHandleError(e.RestoreTask(path.Join(e.cacheDir, i.Name())))
 	}
 }
 

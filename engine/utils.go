@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/boypt/simple-torrent/common"
 	"github.com/c2h5oh/datasize"
 	"golang.org/x/time/rate"
 )
@@ -58,13 +59,12 @@ func cmdScanLine(p io.ReadCloser, wg *sync.WaitGroup, logprefix string) {
 	wg.Done()
 }
 
-func mkdir(dirpath string) error {
+func mkdir(dirpath string) {
 	if st, err := os.Stat(dirpath); errors.Is(err, os.ErrNotExist) {
-		os.MkdirAll(dirpath, os.ModePerm)
+		common.HandleError(os.MkdirAll(dirpath, os.ModePerm))
 	} else if !st.IsDir() {
 		log.Panic("[FATAL] path exists but is not a directory, please remove it:", dirpath)
 	}
-	return nil
 }
 
 func fetchTxtList(url string) ([]string, error) {

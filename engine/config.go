@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/boypt/simple-torrent/common"
 	"github.com/spf13/viper"
 	"golang.org/x/time/rate"
 	"gopkg.in/yaml.v2"
@@ -91,9 +92,9 @@ func InitConf(specPath *string) (*Config, error) {
 		} else {
 			// write a default config file if not exists and not provided
 			c := &Config{}
-			viper.Unmarshal(c)
+			common.HandleError(viper.Unmarshal(c))
 			cn := defaultConfigFile + ".yaml"
-			c.WriteYaml(cn)
+			common.HandleError(c.WriteYaml(cn))
 			viper.SetConfigFile(cn)
 			log.Println("saved default config", cn)
 		}
@@ -103,7 +104,7 @@ func InitConf(specPath *string) (*Config, error) {
 	log.Println("[config] using config file: ", *specPath)
 
 	c := &Config{}
-	viper.Unmarshal(c)
+	common.HandleError(viper.Unmarshal(c))
 
 	dirChanged, err := c.NormlizeConfigDir()
 	if err != nil {
