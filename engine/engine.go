@@ -21,6 +21,7 @@ import (
 
 type Server interface {
 	GetStrAttribute(name string) string
+	GetBoolAttribute(name string) bool
 }
 
 const (
@@ -86,11 +87,16 @@ func (e *Engine) Configure(c *Config) error {
 	tc.ListenPort = c.IncomingPort
 	tc.DataDir = c.DownloadDirectory
 
-	// enable MMap on 64bit machines
-	if strconv.IntSize == 64 {
-		log.Println("[Configure] 64bit arch detected, using MMap for storage")
-		tc.DefaultStorage = storage.NewMMap(tc.DataDir)
+	if !(e.cld.GetBoolAttribute("DisableMmap")) {
+		// enable MMap on 64bit machines
+		if strconv.IntSize == 64 {
+			log.Println("[Configure] 64bit arch detected, using MMap for storage")
+			tc.DefaultStorage = storage.NewMMap(tc.DataDir)
+		}
+	} else {
+		log.Println("[Configure] mmap disabled")
 	}
+
 	if c.MuteEngineLog {
 		tc.Logger = eglog.Discard
 	}

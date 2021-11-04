@@ -59,6 +59,7 @@ type Server struct {
 	ReqLog         bool   `opts:"help=Enable request logging,env=REQLOG"`
 	Open           bool   `opts:"help=Open now with your default browser"`
 	DisableLogTime bool   `opts:"help=Don't print timestamp in log,env=DISABLELOGTIME"`
+	DisableMmap    bool   `opts:"help=Don't use mmap,env=DISABLEMMAP"`
 	Debug          bool   `opts:"help=Debug app,env=DEBUG"`
 	DebugTorrent   bool   `opts:"help=Debug torrent engine,env=DEBUGTORRENT"`
 	ConvYAML       bool   `opts:"help=Convert old json config to yaml format."`

@@ -290,3 +290,8 @@ func (s *Server) GetStrAttribute(name string) string {
 	cval := reflect.Indirect(reflect.ValueOf(s)).FieldByName(name)
 	return cval.String()
 }
+
+func (s *Server) GetBoolAttribute(name string) bool {
+	cval := reflect.Indirect(reflect.ValueOf(s)).FieldByName(name)
+	return cval.Bool()
+}
