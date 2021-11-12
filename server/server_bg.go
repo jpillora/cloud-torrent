@@ -21,7 +21,9 @@ func (s *Server) backgroundRoutines() {
 					go s.tickerRoutine()
 				}
 			case <-s.engine.TsChanged: // task added/deleted
+				s.engine.RLock()
 				s.state.Push()
+				s.engine.RUnlock()
 			}
 		}
 	}()
@@ -67,7 +69,9 @@ func (s *Server) tickerRoutine() {
 		case <-tk.C:
 			s.state.Stats.System.loadStats()
 			s.state.Stats.ConnStat = s.engine.ConnStat()
+			s.engine.RLock()
 			s.state.Push()
+			s.engine.RUnlock()
 		case <-done:
 			log.Println("[tickerRoutine] sync exit")
 			return
