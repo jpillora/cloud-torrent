@@ -7,7 +7,8 @@
 
 <div class="content">
   <div class="header">
-    <a ng-if="!isdownloading(node.Name)" ng-href="download/{{ node.$path | escape }}">{{ node.Name }}</a>
+    <a ng-if="isfile() && !isdownloading(node.Name)" ng-href="download/{{ node.$path | escape }}">{{ node.Name }}</a>
+    <a ng-if="!isfile() && !isdownloading(node.Name)" ng-click="toggle()">{{ node.Name }}</a>
     <span ng-if="isfile() && isdownloading(node.Name)">{{ node.Name }}</span>
     <span ng-if="!isdownloading(node.Name)" class="controls">
       <i ng-show="!confirm" ng-click="preremove()" class="red trash icon"></i>
@@ -15,6 +16,10 @@
       <i ng-show="deleting" class="grey notched circle loading icon"></i>
       <i ng-show="imagePreview || videoPreview || audioPreview" ng-click="togglePreview()"
         class="blue {{ showPreview ? 'circle outline' : 'video play outline' }} icon"></i>
+      <a ng-if="!isfile() && !isdownloading(node.Name)" ng-href="download/{{ node.$path | escape }}"
+        title="Download folder as zip">
+        <i class="file archive icon"></i>
+      </a>
     </span>
   </div>
   <div class="description">{{ node.Size | bytes }} - {{ ago(node.Modified) }}</div>
