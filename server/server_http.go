@@ -116,11 +116,12 @@ func (TPLInfo) GetTemplate(n string) (template.HTML, error) {
 }
 
 func (t TPLInfo) GetInfo() string {
-	return fmt.Sprintf(`
-########################################
-# %s ver [%s]
-# Golang Runtime: %s  
-########################################
+	return fmt.Sprintf(`# %s ver [%s] Go Runtime: %s  
+____ _ _  _ ___  _    ____    ___ ____ ____ ____ ____ _  _ ___ 
+[__  | |\/| |__] |    |___     |  |  | |__/ |__/ |___ |\ |  |  
+___] | |  | |    |___ |___     |  |__| |  \ |  \ |___ | \|  |  
+                                                               
+
 `, t.Title, t.Version, t.Runtime)
 }
 
