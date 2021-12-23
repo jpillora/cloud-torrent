@@ -100,7 +100,8 @@ func (torrent *Torrent) updateConnStat() {
 	lRead := lastStat.BytesReadUsefulData.Int64()
 	lWrite := lastStat.BytesWrittenData.Int64()
 
-	if bRead > lRead || bWrite > lWrite {
+	// download will stop if torrent is done (bRead equals)
+	if bRead >= lRead || bWrite > lWrite {
 
 		// calculate ratio
 		if bRead > 0 {
