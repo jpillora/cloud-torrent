@@ -1,23 +1,39 @@
-//go:generate go-bindata -pkg ctstatic -ignore .../.DS_Store -o files.go files/...
-
 package ctstatic
 
 import (
+	"embed"
+	"io/fs"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/elazarl/go-bindata-assetfs"
 )
 
-// all static/ files embedded as a Go library
-func FileSystemHandler() http.Handler {
-	var h http.Handler
-	if info, err := os.Stat("static/files/"); err == nil && info.IsDir() {
-		log.Println("Using local static files")
-		h = http.FileServer(http.Dir("static/files/"))
+//go:embed files
+var staticFS embed.FS
+
+var curFS fs.FS
+
+const resourcePath = "static/files"
+
+func init() {
+	if info, err := os.Stat(resourcePath); err == nil && info.IsDir() {
+		log.Printf("[static] found %s, using external resources.", resourcePath)
+		curFS = os.DirFS(resourcePath)
 	} else {
-		h = http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "files"})
+		curFS, _ = fs.Sub(staticFS, "files")
 	}
-	return h
+}
+
+func FileSystemHandler() http.Handler {
+	return http.FileServer(http.FS(curFS))
+}
+
+func ReadAll(name string) ([]byte, error) {
+	f, err := curFS.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return ioutil.ReadAll(f)
 }

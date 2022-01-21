@@ -1,0 +1,25 @@
+[Unit]
+Description=Cloud torrent download manager
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=~
+Environment=AUTH=user:ctorrent
+Environment=LISTEN=:3000
+#Environment=LISTEN=unix:/run/cloud-torrent/cloud.sock
+#RuntimeDirectory=cloud-torrent
+#RuntimeDirectoryMode=0777
+#Environment=UNIXPERM=0666
+#Environment=RESTAPI=localhost:3001
+ExecStart=/usr/local/bin/cloud-torrent -c ./cloud-torrent.yaml --disable-log-time
+Restart=always
+RestartPreventExitStatus=42
+RestartSec=3
+
+#adjust file limit if using non-root user.
+#LimitNOFILE=50000
+
+[Install]
+WantedBy=multi-user.target

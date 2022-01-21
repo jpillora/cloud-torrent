@@ -3,16 +3,15 @@
 }
 
 .omni .buttons {
-  margin-top: 5px;
+  margin-top: 0.5rem;
   text-align: center;
 }
 
 .omni .results {
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  margin-top: 5px;
-  border-radius: 4px;
+  overflow-x: hidden;
+  padding-bottom: 2rem;
 }
 
 .omni .results .name {
@@ -33,24 +32,31 @@
 }
 
 .omni .results .loadmore {
-  text-align: right;
+  margin-top: 1rem;
+}
+
+#omni_search_results .result_header {
+  padding: 10px 14px;
+}
+
+#omni_search_results .result_header .close_icon .icon {
+  margin-top: 3px;
+  margin-right: 0;
 }
 
 .omni .search select {
   padding: 0 10px;
   margin-top: 0px;
   border-radius: 4px;
-  background: #d58686;
-  color: #888;
-  border: none;
-  outline: none;
-  height: 31px;
-  display: inline-block;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
+  height: 32px;
   cursor: pointer;
 }
+
+.omni .search div.button {
+  height: 32px;
+  padding-top: 11px;
+}
+
 .omni .form {
   margin-top: 5px;
 }

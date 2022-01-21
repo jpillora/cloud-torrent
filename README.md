@@ -1,145 +1,87 @@
-<img src="https://user-images.githubusercontent.com/633843/32198822-e59a0fc4-be1d-11e7-9b92-03ce17ba05ba.png" alt="screenshot"/>
+![screenshot](https://user-images.githubusercontent.com/1033514/64239393-bdbb6480-cf32-11e9-9269-d8d10e7c0dc7.png)
 
-**Cloud torrent** is a a self-hosted remote torrent client, written in Go (golang). You start torrents remotely, which are downloaded as sets of files on the local disk of the server, which are then retrievable or streamable via HTTP.
+![Build Status](https://github.com/boypt/simple-torrent/workflows/Go/badge.svg) 
 
-### Features
+**SimpleTorrent** is a a self-hosted remote torrent client, written in Go (golang). Started torrents remotely, download sets of files on the local disk of the server, which are then retrievable or streamable via HTTP.
 
+This project is a re-branded fork of [cloud-torrent](https://github.com/jpillora/cloud-torrent) by `jpillora`.
+
+# Features
+
+* Individual file download control (1.1.3+)
+* Run external program on tasks completion: `DoneCmd`
+* Stops task when seeding ratio reached: `SeedRatio`
+* Download/Upload speed limiter: `UploadRate`/`DownloadRate`
+* Detailed transfer stats in web UI.
+* [Torrent Watcher](https://github.com/boypt/simple-torrent/wiki/Torrent-Watcher)
+* K8s/docker health-check endpoint `/healthz`
+* Extra trackers from external source
+* Protocol Handler to `magnet:`
+* Magnet RSS subscribing supported
+* Flexible config file accepts multiple formats (.json/.yaml/.toml) ([by spf13/Viper](https://github.com/spf13/viper/)) (1.2.0+)
+
+Also:
 * Single binary
 * Cross platform
 * Embedded torrent search
 * Real-time updates
 * Mobile-friendly
 * Fast [content server](http://golang.org/pkg/net/http/#ServeContent)
+* IPv6 out of the box
+* Updated torrent engine from [anacrolix/torrent](https://github.com/anacrolix/torrent)
 
-See [Future Features here](#future-features)
+# Install
 
-### Install
+## Binary
 
-**Binaries**
+See [the latest release](https://github.com/boypt/cloud-torrent/releases/latest) or use the oneline script to do a quick install on a modern Linux machines.
 
-[![Releases](https://img.shields.io/github/release/jpillora/cloud-torrent.svg)](https://github.com/jpillora/cloud-torrent/releases) [![Releases](https://img.shields.io/github/downloads/jpillora/cloud-torrent/total.svg)](https://github.com/jpillora/cloud-torrent/releases)
-
-See [the latest release](https://github.com/jpillora/cloud-torrent/releases/latest) or download and install it now with
-
-```
-curl https://i.jpillora.com/cloud-torrent! | bash
+``` bash
+bash <(wget -qO- https://git.io/simpletorrentqs)
 ```
 
-*Tip*: [Auto-run `cloud-torrent` on boot](https://github.com/jpillora/cloud-torrent/wiki/Auto-Run-on-Reboot)
+The script installs a systemd unit (under `scripts/cloud-torrent.service`) as service. Read further intructions: [Auth And Security](https://github.com/boypt/simple-torrent/wiki/AuthSecurity)
 
-**Docker**
+If hope to specify a version, just append the version number to the command.
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/jpillora/cloud-torrent.svg)][dockerhub] [![Image Size](https://images.microbadger.com/badges/image/jpillora/cloud-torrent.svg)][dockerhub]
+``` bash
+bash <(wget -qO- https://git.io/simpletorrentqs) 1.3.3
+```
 
-[dockerhub]: https://hub.docker.com/r/jpillora/cloud-torrent/
+## Docker [![Docker Pulls](https://img.shields.io/docker/pulls/boypt/cloud-torrent.svg)][dockerhub]
+
+[dockerhub]: https://hub.docker.com/r/boypt/cloud-torrent/
+
+``` bash
+$ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads -v /path/to/my/torrents:/torrents boypt/cloud-torrent
+```
+When running as a container, keep in mind:
+* You need also to expose your torrent incoming port (50007 by default) if you want to seed (`-p 50007:50007`). Also, you'll have to forward the port on your router.
+* Automatic port forwarding on your router via UPnP IGD will not work unless run in `host` mode (`--net=host`).
+
+It's more practical to run docker-compose, see Wiki Page: [DockerCompose](https://github.com/boypt/simple-torrent/wiki/DockerCompose)
+## Source
+
+**Requirement**
+- Latest [Golang](https://golang.org/dl/) (Go 1.16+)
 
 ``` sh
-$ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-torrent
+$ git clone https://github.com/boypt/simple-torrent.git
+$ cd simple-torrent
+$ ./scripts/make_release.sh
 ```
 
-**Source**
+# Usage
 
-*[Go](https://golang.org/dl/) is required to install from source*
+## Commandline Options
+See Wiki [Command line Options](https://github.com/boypt/simple-torrent/wiki/Command-line-Options)
 
-``` sh
-$ go get -v github.com/jpillora/cloud-torrent
-```
+## Configuration file
+See Wiki [Config File](https://github.com/boypt/simple-torrent/wiki/Config-File)
 
-**VPS**
+## Use with WEB servers (nginx/caddy)
+See Wiki [Behind WebServer (reverse proxying)](https://github.com/boypt/simple-torrent/wiki/ReverseProxy)
 
-[Digital Ocean](https://m.do.co/c/011fa87fde07)
-
-  1. [Sign up with free $10 credit](https://m.do.co/c/011fa87fde07)
-  2. "Create Droplet"
-  3. "One-Click Apps"
-  4. "Docker X.X.X on X.X"
-  5. Choose server size ("$5/month" is enough)
-  6. Choose server location
-  7. **OPTIONAL** Add your SSH key
-  8. "Create"
-  9. You will be emailed the server details (`IP Address: ..., Username: root, Password: ...`)
-  10. SSH into the server using these details (Windows: [Putty](https://the.earth.li/~sgtatham/putty/latest/x86/putty.exe), Mac: Terminal)
-  11. Follow the prompts to set a new password
-  12. Run `cloud-torrent` with:
-
-    docker run --name ct -d -p 63000:63000 \
-      --restart always \
-      -v /root/downloads:/downloads \
-      jpillora/cloud-torrent --port 63000
-
-  13. Visit `http://<IP Address from email>:63000/`
-  14. **OPTIONAL** In addition to `--port` you can specify the options below
-
-[Vultr](http://www.vultr.com/?ref=6947403-3B)
-
-* [Sign up with free $10 credit here](http://www.vultr.com/?ref=6947403-3B)
-* Follow the DO tutorial above, very similar steps ("Applications" instead of "One-Click Apps")
-* Offers different server locations
-
-[AWS](https://aws.amazon.com)
-
-**Heroku**
-
-Heroku is no longer supported
-
-### Usage
-
-```
-$ cloud-torrent --help
-
-  Usage: cloud-torrent [options]
-
-  Options:
-  --title, -t        Title of this instance (default Cloud Torrent, env TITLE)
-  --port, -p         Listening port (default 3000, env PORT)
-  --host, -h         Listening interface (default all)
-  --auth, -a         Optional basic auth in form 'user:password' (env AUTH)
-  --config-path, -c  Configuration file path (default cloud-torrent.json)
-  --key-path, -k     TLS Key file path
-  --cert-path, -r    TLS Certicate file path
-  --log, -l          Enable request logging
-  --open, -o         Open now with your default browser
-  --help
-  --version, -v
-
-  Version:
-    0.X.Y
-
-  Read more:
-    https://github.com/jpillora/cloud-torrent
-
-```
-
-### Future features
-
-The next set of [core features can be tracked here](https://github.com/jpillora/cloud-torrent/issues?q=is%3Aopen+is%3Aissue+label%3Acore-feature). This feature set requires large structural changes and therefore requires a complete rewrite for best results. This rewrite is in progress in the `0.9` branch though it will take quite some time.
-
-In summary, the core features will be:
-
-* **Remote backends**
-
-  It's looking like `0.9` will be more of a general purpose cloud transfer engine. It will be capable of transfering files from and source file-system to any destination file-system. A torrent can be viewed a folder with files, just like your local disk, and Dropbox. As long as it has a concept of files and folders, it could potentially be a cloud-torrent file-system backend. Track this issue https://github.com/jpillora/cloud-torrent/issues/24 for the list of proposed backends.
-
-* **File Transforms**
-
-  During a file tranfer, one could apply different transforms against the byte stream for various effect. For example, supported transforms might include: video transcoding (using ffmpeg), encryption and decryption, [media sorting](https://github.com/jpillora/cloud-torrent/issues/4) (file renaming), and writing multiple files as a single zip file.
-  
-* **Automatic updates** Binary will upgrade itself, adding new features as they get released.
-  
-* **RSS** Automatically add torrents, with smart episode filter.
-
-Once completed, cloud-torrent will no longer be a simple torrent client and most likely project be renamed.
-
-#### Donate
-
-If you'd like to buy me a coffee or more, you can donate via [PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=dev%40jpillora%2ecom&lc=AU&item_name=Open%20Source%20Donation&button_subtype=services&currency_code=USD&bn=PP%2dBuyNowBF%3abtn_buynowCC_LG%2egif%3aNonHosted) or BitCoin `1AxEWoz121JSC3rV8e9MkaN9GAc5Jxvs4`.
-
-### Notes
-
-This project is the rewrite of the original [Node version](https://github.com/jpillora/node-torrent-cloud).
-
-![overview](https://docs.google.com/drawings/d/1ekyeGiehwQRyi6YfFA4_tQaaEpUaS8qihwJ-s3FT_VU/pub?w=606&h=305)
-
-Credits to @anacrolix for https://github.com/anacrolix/torrent
-
-Copyright (c) 2017 Jaime Pillora
+# Credits 
+* Credits to @jpillora for [Cloud Torrent](https://github.com/jpillora/cloud-torrent).
+* Credits to @anacrolix for https://github.com/anacrolix/torrent

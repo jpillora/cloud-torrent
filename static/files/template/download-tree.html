@@ -7,27 +7,33 @@
 
 <div class="content">
   <div class="header">
-    <a ng-if="!isdownloading()" ng-href="download/{{ node.$path }}">{{ node.Name }}</a>
-    <span ng-if="isfile() && isdownloading()">{{ node.Name }}</span>
-    <span ng-if="!isdownloading()" class="controls">
+    <a ng-if="isfile() && !isdownloading(node.Name)" ng-href="download/{{ node.$path | escape }}">{{ node.Name }}</a>
+    <a ng-if="!isfile() && !isdownloading(node.Name)" ng-click="toggle()">{{ node.Name }}</a>
+    <span ng-if="isfile() && isdownloading(node.Name)">{{ node.Name }}</span>
+    <span ng-if="!isdownloading(node.Name)" class="controls">
       <i ng-show="!confirm" ng-click="preremove()" class="red trash icon"></i>
-      <i ng-show="!deleting && confirm" ng-click="deleting = true; remove();" class="red check icon"></i>
+      <i ng-show="!deleting && confirm" ng-click="remove(node);" class="red check icon"></i>
       <i ng-show="deleting" class="grey notched circle loading icon"></i>
-      <i ng-show="imagePreview || videoPreview || audioPreview" ng-click="togglePreview()" class="blue {{ showPreview ? 'circle outline' : 'video play outline' }} icon"></i>
+      <i ng-show="imagePreview || videoPreview || audioPreview" ng-click="togglePreview()"
+        class="blue {{ showPreview ? 'circle outline' : 'video play outline' }} icon"></i>
+      <a ng-if="!isfile() && !isdownloading(node.Name)" ng-href="download/{{ node.$path | escape }}"
+        title="Download folder as zip">
+        <i class="file archive icon"></i>
+      </a>
     </span>
   </div>
-  <div class="description">{{ node.Size | bytes }} updated {{ ago(node.Modified) }}</div>
+  <div class="description">{{ node.Size | bytes }} - {{ ago(node.Modified) }}</div>
   <div class="preview" ng-if="showPreview">
     <audio ng-if="audioPreview" controls>
       <source ng-src="{{ showPreview ? ('download/'+node.$path) : '' }}">
     </audio>
-    <img ng-if="imagePreview" ng-src="{{ showPreview ? ('download/'+node.$path) : '' }}">
+    <img ng-if="imagePreview" ng-src="{{ showPreview ? ('download/'+(node.$path | escape)) : '' }}">
     <video controls autoplay ng-if="videoPreview">
-      <source ng-src="{{ showPreview ? ('download/'+node.$path) : '' }}">
+      <source ng-src="{{ showPreview ? ('download/'+(node.$path|escape)) : '' }}">
     </video>
   </div>
   <div class="list" ng-if="isdir() && !closed()">
-    <div class="item" ng-repeat="node in node.Children" ng-controller="NodeController" ng-include
-      src="'template/download-tree.html'"></div>
+    <div class="item" ng-repeat="node in node.Children | orderBy:'Modified':false" ng-controller="NodeController"
+      ng-hide="node.$Deleted" ng-include src="'template/download-tree.html'"></div>
   </div>
 </div>

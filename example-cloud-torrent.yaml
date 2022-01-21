@@ -1,0 +1,81 @@
+DownloadDirectory: /srv/downloads
+# DisableEncryption A switch disables [BitTorrent protocol encryption](https:#en.wikipedia.org/wiki/BitTorrent_protocol_encryption)
+
+WatchDirectory: /home/ubuntu/Workdir/cloud-torrent/torrents
+# DownloadDirectory The directory where downloaded file saves.
+
+AutoStart: true 
+# AutoStart Whether start torrent task on added Magnet/Torrent.
+
+AllowRuntimeConfigure: true
+#AllowRuntimeConfigure is the switch whether to offer the WEB UI configuration to users.
+
+EngineDebug: false
+# EngineDebug Print debug log from anacrolix/torrent engine (lots of them)
+
+MuteEngineLog: true
+# MuteEngineLog anacrolix/torrent engine prints chunks exchanging logs, normal user can just mute them.
+
+ObfsPreferred: true
+# ObfsPreferred Whether torrent header obfuscation is preferred.
+
+ObfsRequirePreferred: false
+# ObfsRequirePreferred Whether the value of ObfsPreferred is a strict requirement. This hides torrent traffic from being censored.
+
+DisableTrackers: false
+# DisableTrackers Don't announce to trackers. This only leaves DHT to discover peers.
+
+DisableIPv6: false
+# DisableIPv6 Don't connect to IPv6 peers.
+
+DisableUTP: false
+# Disable UTP in the torrent protocol.
+# In recent versions, the UTP process cause quite high CPU usage. Set to true can ease the situation.
+
+NoDefaultPortForwarding: true
+# Don't broadcast the UPNP request for gateway port forwarding, which is unnecessary in machines that has public IP (of which this program is mean for?)
+
+EnableUpload: true
+# EnableUpload Whether send chunks to peers
+
+EnableSeeding: true
+# EnableSeeding Whether upload even after there's nothing further for us. By default uploading is not altruistic, we'll only upload to encourage the peer to reciprocate.
+
+IncomingPort: 50007
+# IncomingPort The port SimpleTorrent listens to.
+
+DoneCmd: ""
+# DoneCmd is An external program to call on task finished. See [DoneCmd Usage](https:#github.com/boypt/simple-torrent/wiki/DoneCmdUsage).
+
+SeedRatio: 1.5
+# SeedRatio The ratio of task Upload/Download data when reached, the task will be stop.
+
+SeedTime: "60m"
+# SeedTime is the time to seed after a task is done downloading, during which if `SeedRatio` is reached, the tasks will stop and deleted; after the duration, the tasks will also stop and removed. But if the waiting queue is empty, will not remove.
+
+UploadRate: High
+DownloadRate: Unlimited
+# UploadRate/DownloadRate The global speed limiter, 
+# a fixed level amoung Low(~50k/s), Medium(~500k/s) and High(~1500k/s) is accepted , Unlimited / 0 
+# or empty result in unlimited rate, or a customed value eg: 850k/720kb/2.85MB.
+
+TrackerListURL: https:#raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt
+# TrackerListURL A https URL to a trackers list, this option is design to retrive public trackers from https:#github.com/ngosang/trackerslist.
+
+AlwaysAddTrackers: true
+# Always add tracers from TrackerListURL wheather the torrent/magnet link has it's own trackers already
+
+MaxConcurrentTask: 0
+#MaxConcurrentTask the the maximum tasks concurrently running. Too many task consumes CPU a lot, use this option to limit and queue up download task.
+
+ProxyURL: ""
+# ProxyURL Socks5 Proxy to torrent engine. Authentication should be included in the url if needed.
+# Eg. socks5:#demo:demo@192.168.99.100:1080
+
+# ScraperURL: "https:#raw.githubusercontent.com/boypt/simple-torrent/master/scraper-config.json"
+# The magnet search engine configuration file. Don't set this option (leave it commented) if not intended to.
+
+RSSUrl: |-
+  # http://domian./rss.xml
+  # http://some-other-site/rss.xml
+# The RSS superscription list.

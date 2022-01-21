@@ -1,0 +1,28 @@
+<div class="ui grid section-header" ng-click="section_expanded_toggle()">
+	<div class="column">
+		<i class="square outline icon" ng-class="{minus: !$expanded, plus: $expanded}"></i>
+		<span class="ui header">
+			Downloads
+			<i ng-show="$isLoadingFiles" class="sync mini icon loading"></i>
+			<span class="ui label">
+				<i class="hdd icon"></i>
+				{{ state.Stats.System.diskFree | bytes }} free
+			</span>
+		</span>
+	</div>
+</div>
+<div ng-if="$DownloadedFiles.length == 0 && $expanded" class="ui message nodownloads">
+	<p>DownloadDirectory empty</p>
+</div>
+
+<div ng-show="$DownloadedFiles.length > 0 && $expanded" class="ui raised segment">
+	<div class="ui list">
+		<div class="item" ng-repeat="node in $DownloadedFiles | orderBy:'Modified':false" ng-hide="node.$Deleted"
+			ng-controller="NodeController" ng-include src="'template/download-tree.html'"></div>
+	</div>
+</div>
+
+<h5 ng-show="!$expanded" class="ui horizontal divider header" ng-click="section_expanded_toggle()">
+	<i class="angle double down icon"></i>
+	Click To Expand
+</h5>

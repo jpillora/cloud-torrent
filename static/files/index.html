@@ -1,22 +1,20 @@
 <html ng-app="app">
 
 <head>
-	<title ng-bind="state.Stats.Title">Cloud Torrent</title>
+	<title>[[.Title]]</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 	<link rel="stylesheet" type="text/css" href="css/Lato/Lato.css">
 	<link rel="stylesheet" type="text/css" href="css/semantic.min.css">
-	<link rel="stylesheet" type="text/css" href="css/app.css">
+	<link rel="stylesheet" type="text/css" href="[[.Version]]/css/sections/omni.css">
+	<link rel="stylesheet" type="text/css" href="[[.Version]]/css/sections/torrents.css">
+	<link rel="stylesheet" type="text/css" href="[[.Version]]/css/sections/downloads.css">
+	<link rel="stylesheet" type="text/css" href="[[.Version]]/css/app.css">
 	<link rel="icon" href="cloud-favicon.png" type="image/x-icon" />
-	<style type="text/css">
-		[ng-cloak] {
-			display: none;
-		}
-	</style>
 </head>
 
 <body class="app">
 	<div ng-cloak class="cage" ondropfile="uploadTorrent($event)" placeholder="Drop torrent files here">
-		<div ng-if="!connected" class="connect-warning ui inverted vertical masthead center aligned segment">
+		<div ng-if="!connected" class="connect-warning ui inverted masthead center aligned segment">
 			<div class="ui text container">
 				<h1 class="ui inverted header">
 					{{ hasConnected ? 'Disconnected' : 'Connecting' }}
@@ -29,80 +27,116 @@
 		<!-- TITLE ===================== -->
 		<div class="title">
 			<h2>
-				<a href="https://github.com/jpillora/cloud-torrent" target="_blank" ng-init="logoHover = false"
-				 ng-mouseover="logoHover = true" ng-mouseleave="logoHover = false">
-					<i class="blue icon" ng-class="{cloud:!logoHover, github: logoHover}"></i> {{ state.Stats.Title }}
+				<a rel="noreferrer" href="https://github.com/boypt/simple-torrent" target="_blank"
+					ng-init="logoHover = false" ng-mouseover="logoHover = true" ng-mouseleave="logoHover = false">
+					<i class="blue icon" ng-class="{cloud:!logoHover, github: logoHover}"></i> [[.Title]]
 				</a>
 			</h2>
 			<div class="status">
-				<i ng-show="request.count > 0" class="ui circular loading repeat icon"></i>
-				<i ng-click="$root.config.edit = !$root.config.edit;" ng-class="{green: $root.config.edit}"
-				 class="ui circular server icon" style="font-size: 14px;"></i>
-				<i ng-click="$root.omni.edit = !$root.omni.edit;" ng-class="{green: $root.omni.edit}" class="ui circular magnet icon"
-				 style="font-size: 14px;"></i>
-				<i class="ui circular lightning icon" ng-class="{ green: connected, red: !connected }"></i>
+				<i ng-show="apiing" class="ui circular loading repeat icon"></i>
+				<i ng-if="state.LatestRSSGuid != ''" ng-click="toggleSections('rss')"
+					class="ui circular rss square icon"
+					ng-class="{orange: state.LatestRSSGuid != storage.tcRSSGUID, green: $root.omni.mode.rss }"
+					title="RSS List"></i>
+				[[ if .AllowRuntimeConfigure ]]
+				<i ng-click="toggleSections('config')" ng-class="{green: $root.config.edit}" title="Edit Config"
+					class="ui circular server icon"></i>
+				[[ end ]]
+				<i ng-click="toggleSections('omni')" ng-class="{green: $root.omni.edit}" title="Edit Magnet/Torrent"
+					class="ui circular magnet icon"></i>
+				<i class="ui circular icon" title="Connecting Status" ng-click="toggleWebsocket()"
+					ng-class="{ green: connected, red: !connected, retweet: storage.veloxCON=='ws', lightning: storage.veloxCON!='ws' }"></i>
 			</div>
 		</div>
 		<!-- GLOBAL ERROR MESSAGE ===================== -->
-		<div ng-if="err" class="ui error message">
+		<div ng-if="$root.err" class="ui error message">
 			<i class="close icon" ng-click="$root.err = null"></i>
 			<div class="header">Error</div>
-			<p>{{err}}</p>
+			<p>{{$root.err}}</p>
+		</div>
+		<div ng-if="$root.info" class="ui info message">
+			<i class="close icon" ng-click="$root.info = null"></i>
+			<div class="header">Info</div>
+			<p>{{$root.info}}</p>
 		</div>
 
-		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html'"></section>
-		<section class="omni" ng-controller="OmniController" ng-include src="'template/omni.html'"></section>
-		<section class="torrents" ng-controller="TorrentsController" ng-include src="'template/torrents.html'"></section>
-		<section class="downloads" ng-controller="DownloadsController" ng-include src="'template/downloads.html'"></section>
+		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html'">
+		</section>
+		<section class="omni" ng-controller="OmniController" ng-include src="'template/omni.html'">
+		</section>
+		<section class="torrents" ng-controller="TorrentsController" ng-include src="'template/torrents.html'">
+		</section>
+		<section class="downloads" ng-controller="DownloadsController" ng-include src="'template/download.html'">
+		</section>
 
 		<footer>
 			<div>
-				<span>github.com/
-					<a href="https://github.com/jpillora" target="_blank">jpillora</a>/
-					<a href="https://github.com/jpillora/cloud-torrent" target="_blank">cloud-torrent</a> version {{ state.Stats.Version }} - </span>
-				<span ng-if="numKeys(state.Users) > 1">{{ numKeys(state.Users) }} users connected - </span>
 				<span>
-					<a href="https://golang.org" target="_blank">Go</a> {{ state.Stats.Runtime }}
-				</span>
+					<a rel="noreferrer" href="https://github.com/boypt/simple-torrent" target="_blank">SimpleTorrent</a>
+					<span>(based on <a rel="noreferrer" href="https://github.com/anacrolix/torrent"
+							target="_blank">anacrolix/torrent</a>)
+						ver [[.Version]]</span>
+					<span ng-click="toggleSections('enginedebug')">Debug</span>
 			</div>
 			<div>
-				<span ng-if="state.Stats.System.set">
-					<span class="extra">
-						goroutines {{ state.Stats.System.goRoutines }},
-					</span>
-					<span class="extra">
-						gomem {{ state.Stats.System.goMemory | bytes }},
-					</span>
-					<span>
-						cpu {{ state.Stats.System.cpu | round }}%,
-					</span>
-					<span>
-						mem {{ (100*state.Stats.System.memoryUsed/state.Stats.System.memoryTotal) | round }}%,
-					</span>
-					<span>
-						disk {{ (100*state.Stats.System.diskUsed/state.Stats.System.diskTotal) | round }}%,
-					</span>
-				</span>
-				<span ng-if="state.Stats.Uptime">up {{ ago(state.Stats.Uptime) }}</span>
+				<span>Up {{ ago([[.Uptime]]*1000) }}</span>
+				<span ng-if="numKeys(state.Users) > 1">, {{ numKeys(state.Users) }} users connected</span>
 			</div>
-
 		</footer>
+		<div ng-if="$root.showEnineStatus" class="ui attached mini message">
+			<i ng-click="$root.showEnineStatus = false" class="close icon"></i>
+			<div class="header">
+				System Info
+			</div>
+			<ul>
+				<li> Build: <b>{{ "[[.Runtime]]" }} </b></li>
+				<li> GoRoutines: <b>{{ state.Stats.System.goRoutines }}</b></li>
+				<li> GoMEM: <b>{{ state.Stats.System.goMemory | bytes }}</b></li>
+				<li> CPU Usage: <b>{{ state.Stats.System.cpu | round }}%</b></li>
+				<li> Sys Memory: <b>{{ state.Stats.System.memUsedPercent | round }}%</b></li>
+				<li> Disk Used: <b>{{ state.Stats.System.diskUsedPercent | round }}%</b></li>
+			</ul>
+			<div class="header"> Online Users </div>
+			<ul ng-repeat="(k,_) in state.Users ">
+				<li>{{ k }}</li>
+			</ul>
 
-		<script src="js/vendor/query-string.js"></script>
-		<script src="js/vendor/angular.min.js"></script>
-		<script src="js/vendor/moment.min.js"></script>
-		<script src="js/velox.js"></script>
-		<script>
-			window.app = window.angular.module('app', []);
-		</script>
-		<script src="js/config-controller.js"></script>
-		<script src="js/omni-controller.js"></script>
-		<script src="js/torrents-controller.js"></script>
-		<script src="js/downloads-controller.js"></script>
-		<script src="js/utils.js"></script>
-		<script src="js/semantic-checkbox.js"></script>
-		<script src="js/run.js"></script>
+			<div class="header"> Torrent Trackers </div>
+			<pre>{{ Trackers }}</pre>
+			<div class="header"> Torrent Engine Status </div>
+			<pre>{{ EngineStatus }}</pre>
+		</div>
 	</div>
+	<script src="js/vendor/query-string.js"></script>
+	<script src="js/vendor/angular.min.js"></script>
+	<script src="js/vendor/moment.min.js"></script>
+	<script src="js/velox.js"></script>
+	<script type="text/javascript">
+		window.app = window.angular.module('app', []);
+	</script>
+	<script src="[[.Version]]/js/config-controller.js"></script>
+	<script src="[[.Version]]/js/omni-controller.js"></script>
+	<script src="[[.Version]]/js/torrents-controller.js"></script>
+	<script src="[[.Version]]/js/downloads-controller.js"></script>
+	<script src="[[.Version]]/js/utils.js"></script>
+	<script src="[[.Version]]/js/semantic-checkbox.js"></script>
+	<script src="[[.Version]]/js/run.js"></script>
 </body>
+
+<script type="text/ng-template" id="template/config.html">
+[[.GetTemplate "template/config.html"]]
+</script>
+<script type="text/ng-template" id="template/omni.html">
+[[.GetTemplate "template/omni.html"]]
+</script>
+<script type="text/ng-template" id="template/torrents.html">
+[[.GetTemplate "template/torrents.html"]]
+</script>
+<script type="text/ng-template" id="template/download.html">
+[[.GetTemplate "template/download.html"]]
+</script>
+<script type="text/ng-template" id="template/download-tree.html">
+[[.GetTemplate "template/download-tree.html"]]
+</script>
 
 </html>

@@ -1,0 +1,51 @@
+<html ng-app="app">
+
+<head>
+	<title>SimpleTorrent</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<!-- this page is loaded under /api/ path -->
+	<link rel="stylesheet" type="text/css" href="../css/Lato/Lato.css">
+	<link rel="stylesheet" type="text/css" href="../css/semantic.min.css">
+	<link rel="stylesheet" type="text/css" href="../css/app.css">
+	<link rel="icon" href="../cloud-favicon.png" type="image/x-icon" />
+	<style type="text/css">
+		.magnetlink {
+			word-break: break-all;
+		}
+	</style>
+</head>
+
+<body class="app">
+	<div class="cage">
+		[[if .HasError]]
+		<div class="ui icon error message">
+			<i class="ban icon"></i>
+			<div class="content">
+				<div class="header">Error</div>
+				<p>[[.Error]]</p>
+				<p class="magnetlink">[[.Magnet]]</p>
+				<p><a href="../">Go to Homepage</a></p>
+			</div>
+		</div>
+		[[else]]
+		<div class="ui icon info message">
+			<i class="cloud download icon"></i>
+			<div class="content">
+				<div class="header"> Magnet link has been added! </div>
+				<p class="magnetlink">[[.Magnet]]</p>
+				<p><a href="../">Go to Homepage</a></p>
+			</div>
+		</div>
+		[[end]]
+		<a class="ui tiny primary button" href="javascript:window.history.back()">
+			<i class="angle left icon"></i>
+			Back
+		</a>
+		<a style="float: right;" class="ui tiny primary button" href="../">
+			<i class="angle right icon"></i>
+			SimpleTorrent
+		</a>
+	</div>
+</body>
+
+</html>

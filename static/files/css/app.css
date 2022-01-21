@@ -1,7 +1,3 @@
-@import url("./sections/omni.css");
-@import url("./sections/torrents.css");
-@import url("./sections/downloads.css");
-
 /* global styles  */
 
 html,
@@ -18,10 +14,19 @@ body {
   margin: 0 auto;
 }
 
+@media (min-width: 740px) {
+  .app .connect-warning {
+    margin-top: 4.5rem;
+  }
+}
+
 @media (max-width: 740px) {
   .cage {
     margin: 0 10px;
     padding-top: 10px;
+  }
+  .app .connect-warning {
+    margin-top: 3rem;
   }
 }
 
@@ -36,24 +41,17 @@ html body .muted {
 }
 
 footer {
+  margin-top: 2rem;
   text-align: right;
   color: grey;
   font-style: italic;
   font-size: 0.8em;
-  opacity: 0.25;
+  opacity: 0.5;
   transition: opacity 0.3s ease-in-out;
 }
 
 footer:hover {
   opacity: 1;
-}
-
-footer:hover .extra {
-  display: inline;
-}
-
-footer .extra {
-  display: none;
 }
 
 .ellipsis {
@@ -69,10 +67,6 @@ footer .extra {
 
 .disabled {
   cursor: default !important;
-}
-
-.icon[ng-click] {
-  font-size: 1.2em;
 }
 
 .app .connect-warning {
@@ -102,8 +96,8 @@ footer .extra {
 
 .title .status {
   position: absolute;
-  top: 2px;
-  right: 10px;
+  top: 0.1rem;
+  right: -0.2rem;
 }
 
 .app .config form.edit {
@@ -119,17 +113,11 @@ footer .extra {
 }
 
 .section-header {
-  margin-top: 20px;
-  position: relative;
+  margin-top: 20px !important;
 }
 
-.section-header .right {
-  position: absolute;
-  right: 0px;
-  top: 1px;
-  margin: 9px;
-  font-size: 0.75rem;
-  color: grey;
+.section-header div[class*="right floated"] {
+  float: right !important;
 }
 
 table.tcld .name {
@@ -182,4 +170,8 @@ table.tcld .name {
   left: 0;
   top: 30px;
   width: 100%;
+}
+
+[ng-cloak] {
+  display: none;
 }

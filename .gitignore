@@ -1,4 +1,9 @@
+vendor
 downloads
-cloud-torrent.json
+torrents
+cloud-torrent*
+simple-torrent*
 tmp/
-dev.sh
+play*.yml
+.vscode
+.torrent.bolt.db

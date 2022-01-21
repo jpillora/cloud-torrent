@@ -1,20 +1,57 @@
 /* globals app,window */
 
-app.factory("api", function($rootScope, $http, reqerr) {
-  window.http = $http;
-  var request = function(action, data) {
+app.factory("reqerr", function ($rootScope, $log) {
+  return function (xhr) {
+    $rootScope.err = `${xhr.xhrStatus}: ${xhr.statusText}/${xhr.status}`
+    if (!xhr.data) {
+      // data is null, xhr error
+      $log.error(JSON.stringify(xhr));
+    } else {
+      switch (typeof xhr.data) {
+        case "string":
+          $rootScope.err += ` :${xhr.data}`;
+          break;
+        case "object":
+          if ("error" in xhr.data) {
+            $rootScope.err += ` :${xhr.data.error}`;
+          } else {
+            $rootScope.err += JSON.stringify(xhr);
+          }
+          break;
+      }
+    }
+    $rootScope.$applyAsync();
+    return xhr;
+  };
+});
+
+app.factory("reqinfo", function ($rootScope) {
+  return function (xhr) {
+    if ("data" in xhr) {
+      $rootScope.info = `${xhr.data}`
+      $rootScope.$applyAsync();
+    }
+    return xhr;
+  };
+});
+
+app.factory("api", function ($rootScope, $http, reqerr) {
+  var request = function (action, data) {
     var url = "api/" + action;
     $rootScope.apiing = true;
-    return $http({
-      method: "POST",
-      url: url,
-      data: data,
+    $rootScope.$applyAsync();
+    var req = $http.post(url, data, {
       transformRequest: []
     })
-      .error(reqerr)
-      .finally(function() {
+      .then(function (xhr) {
+        console.log(`API ${url}->${xhr.data}`);
+        return xhr;
+      })
+      .catch(reqerr)
+      .finally(function () {
         $rootScope.apiing = false;
       });
+    return req;
   };
   var api = {};
   var actions = [
@@ -25,31 +62,76 @@ app.factory("api", function($rootScope, $http, reqerr) {
     "file",
     "torrentfile"
   ];
-  actions.forEach(function(action) {
+  actions.forEach(function (action) {
     api[action] = request.bind(null, action);
   });
   return api;
 });
 
-app.factory("search", function($rootScope, $http, reqerr) {
+
+app.factory("apiget", function ($rootScope, $http, reqerr) {
+  var request = function (action, data) {
+    var url = "api/" + action;
+    $rootScope.apiing = true;
+    $rootScope.$applyAsync();
+    var req = $http.get(url)
+      .then(function (xhr) {
+        console.log(`APIGET ${url}`);
+        return xhr
+      }, reqerr)
+      .finally(function () {
+        $rootScope.apiing = false;
+      });
+    return req;
+  };
+  var api = {};
+  var actions = [
+    "configure",
+    "enginedebug",
+    "searchproviders",
+    "files"
+  ];
+  actions.forEach(function (action) {
+    api[action] = request.bind(null, action);
+  });
+  return api;
+});
+
+app.factory("search", function ($rootScope, $http, reqerr) {
   return {
-    all: function(provider, query, page) {
+    all: function (provider, query, page) {
       var params = { query: query };
       if (page !== undefined) params.page = page;
       $rootScope.searching = true;
-      var req = $http.get("search/" + provider, { params: params });
-      req.error(reqerr);
-      req.finally(function() {
-        $rootScope.searching = false;
-      });
+      var req = $http.get("search/" + provider, { params: params })
+        .catch(reqerr)
+        .finally(function () {
+          $rootScope.searching = false;
+        });
       return req;
     },
-    one: function(provider, path) {
+    one: function (provider, path) {
       var opts = { params: { item: path } };
       $rootScope.searching = true;
-      var req = $http.get("search/" + provider + "/item", opts);
-      req.error(reqerr);
-      req.finally(function() {
+      var req = $http.get("search/" + provider + "/item", opts)
+        .catch(reqerr)
+        .finally(function () {
+          $rootScope.searching = false;
+        });
+      return req;
+    }
+  };
+});
+
+app.factory("rss", function ($rootScope, $http, reqerr) {
+  return {
+    getrss: function (update) {
+      $rootScope.searching = true;
+      var config = { "params": { _: Date.now() }, cache: false };
+      if (update) {
+        config["params"]["update"] = 1;
+      }
+      var req = $http.get("rss", config).catch(reqerr).finally(function () {
         $rootScope.searching = false;
       });
       return req;
@@ -57,67 +139,58 @@ app.factory("search", function($rootScope, $http, reqerr) {
   };
 });
 
-app.factory("storage", function() {
+app.factory("storage", function () {
   return window.localStorage || {};
 });
 
-app.factory("reqerr", function() {
-  return function(err, status) {
-    alert(err.error || err);
-    console.error("request error '%s' (%s)", err, status);
-  };
-});
-
-app.filter("keys", function() {
+app.filter("keys", function () {
   return Object.keys;
 });
 
-app.filter("addspaces", function() {
-  return function(s) {
+app.filter("addspaces", function () {
+  return function (s) {
     return typeof s !== "string"
       ? s
       : s
-          .replace(/([A-Z]+[a-z]*)/g, function(_, word) {
-            return " " + word;
-          })
-          .replace(/^\ /, "");
+        .replace(/([A-Z]+[a-z]*)/g, function (_, word) {
+          return " " + word;
+        })
+        .replace(/^\ /, "");
   };
 });
 
-app.filter("filename", function() {
-  return function(path) {
+app.filter("filename", function () {
+  return function (path) {
     return /\/([^\/]+)$/.test(path) ? RegExp.$1 : path;
   };
 });
 
-app.filter("bytes", function(bytes) {
+app.filter("bytes", function (bytes) {
   return bytes;
 });
 
 //scale a number  and add a metric prefix
-app.factory("bytes", function() {
-  return function(n, d) {
-    // set defaults
-    if (typeof n !== "number" || isNaN(n) || n == 0) return "0 B";
-    if (!d || typeof d !== "number") d = 1;
-    // set scale index 1000,100000,... becomes 1,2,...
-    var i = Math.floor(Math.floor(Math.log(n) * Math.LOG10E) / 3);
-    // set rounding factor
-    var f = Math.pow(10, d);
-    // scale n down and round
-    var s = Math.round(n / Math.pow(10, i * 3) * f) / f;
-    // concat (no trailing 0s) and choose scale letter
-    return (
-      s.toString().replace(/\.0+$/, "") +
-      " " +
-      ["", "K", "M", "G", "T", "P", "Z"][i] +
-      "B"
-    );
+app.factory("bytes", function () {
+  return function (bytes) {
+    if (bytes == 0) return '0 B';
+    var k = 1024,
+      dm = 0,
+      sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+      i = Math.floor(Math.log(bytes) / Math.log(k)),
+      dg = (bytes / Math.pow(k, i));
+
+    if (dg < 10) {
+      dm = 2
+    } else if (dg < 100) {
+      dm = 1
+    }
+
+    return parseFloat(dg.toFixed(dm)) + ' ' + sizes[i];
   };
 });
 
-app.filter("round", function() {
-  return function(n) {
+app.filter("round", function () {
+  return function (n) {
     if (typeof n !== "number") {
       return n;
     }
@@ -125,11 +198,39 @@ app.filter("round", function() {
   };
 });
 
-app.directive("ngEnter", function() {
-  return function(scope, element, attrs) {
-    element.bind("keydown keypress", function(event) {
+app.filter("escape", function () {
+  return window.encodeURIComponent;
+});
+
+app.filter("ratioRound", function () {
+  return function (n) {
+    if (typeof n !== "number" || n == 0) {
+      return n;
+    }
+    if (n < 10) {
+      return n.toFixed(2);
+    }
+    return Math.round(n * 10) / 10;
+  };
+});
+
+app.filter('dictValuesArray', function () {
+  return function (obj) {
+    if (!(obj instanceof Object)) return obj;
+
+    var arr = [];
+    for (var key in obj) {
+      arr.push(obj[key]);
+    }
+    return arr;
+  }
+})
+
+app.directive("ngEnter", function () {
+  return function (scope, element, attrs) {
+    element.bind("keydown keypress", function (event) {
       if (event.which === 13) {
-        scope.$apply(function() {
+        scope.$apply(function () {
           scope.$eval(attrs.ngEnter);
         });
         event.preventDefault();
@@ -138,19 +239,10 @@ app.directive("ngEnter", function() {
   };
 });
 
-//TODO remove this hack
-app.directive("jpSrc", function() {
-  return function(scope, element, attrs) {
-    scope.$watch(attrs.jpSrc, function(src) {
-      element.attr("src", src);
-    });
-  };
-});
-
-app.directive("ondropfile", function() {
+app.directive("ondropfile", function () {
   return {
     restrict: "A",
-    link: function(scope, elem, attrs) {
+    link: function (scope, elem, attrs) {
       if (!window.FileReader) {
         return console.info("File API not available");
       }
@@ -167,7 +259,7 @@ app.directive("ondropfile", function() {
       dots.append(msg);
       elem.prepend(cover);
       //bind to events
-      elem.on("dragenter", function(e) {
+      elem.on("dragenter", function (e) {
         cover.addClass("shown");
         e.preventDefault();
         e.dataTransfer.dropEffect = "copy";
@@ -175,14 +267,14 @@ app.directive("ondropfile", function() {
       function remove() {
         cover.removeClass("shown");
       }
-      elem.on("drop", function(event) {
+      elem.on("drop", function (event) {
         event.preventDefault();
         scope.$eval(attrs.ondropfile, {
           $event: event
         });
         remove();
       });
-      elem.on("dragover", function(e) {
+      elem.on("dragover", function (e) {
         //move "drop here"
         var y = e.pageY - elem[0].offsetTop - 60;
         msg.css({ top: y + "px" });
@@ -195,10 +287,10 @@ app.directive("ondropfile", function() {
   };
 });
 
-app.directive("onfileclick", function() {
+app.directive("onfileclick", function () {
   return {
     restrict: "A",
-    link: function(scope, elem, attrs) {
+    link: function (scope, elem, attrs) {
       if (!window.FileReader) {
         console.info("File API not available");
         return;
@@ -212,7 +304,7 @@ app.directive("onfileclick", function() {
         file.attr("accept", attrs.accept);
       }
       file.css("display", "none");
-      file.on("change", function(event) {
+      file.on("change", function (event) {
         event.preventDefault();
         scope.$eval(attrs.onfileclick, {
           $event: event
@@ -221,7 +313,7 @@ app.directive("onfileclick", function() {
       });
       elem.append(file);
       //proxy click from elem to file
-      elem.on("click", function() {
+      elem.on("click", function () {
         file[0].click();
       });
     }
