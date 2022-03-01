@@ -74,7 +74,7 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 		}
 		file.Completed = completed
 		file.Percent = percent(int64(file.Completed), int64(file.Chunks))
-		file.f = f
+		file.f = *f
 
 		totalChunks += file.Chunks
 		totalCompleted += file.Completed

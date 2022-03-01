@@ -19,13 +19,13 @@ type stats struct {
 	GoMemory    int64   `json:"goMemory"`
 	GoRoutines  int     `json:"goRoutines"`
 	//internal
-	lastCPUStat *cpu.CPUTimesStat
+	lastCPUStat *cpu.TimesStat
 	pusher      velox.Pusher
 }
 
 func (s *stats) loadStats(diskDir string) {
 	//count cpu cycles between last count
-	if stats, err := cpu.CPUTimes(false); err == nil {
+	if stats, err := cpu.Times(false); err == nil {
 		stat := stats[0]
 		total := totalCPUTime(stat)
 		last := s.lastCPUStat
@@ -43,7 +43,7 @@ func (s *stats) loadStats(diskDir string) {
 		s.lastCPUStat = &stat
 	}
 	//count disk usage
-	if stat, err := disk.DiskUsage(diskDir); err == nil {
+	if stat, err := disk.Usage(diskDir); err == nil {
 		s.DiskUsed = int64(stat.Used)
 		s.DiskTotal = int64(stat.Total)
 	}
@@ -63,7 +63,7 @@ func (s *stats) loadStats(diskDir string) {
 	s.pusher.Push()
 }
 
-func totalCPUTime(t cpu.CPUTimesStat) float64 {
+func totalCPUTime(t cpu.TimesStat) float64 {
 	total := t.User + t.System + t.Nice + t.Iowait + t.Irq + t.Softirq + t.Steal + t.Guest + t.GuestNice + t.Idle
 	return total
 }
