@@ -22,7 +22,6 @@ require (
 	github.com/RoaringBitmap/roaring v0.9.4 // indirect
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/anacrolix/chansync v0.3.0 // indirect
-	github.com/anacrolix/confluence v1.11.0 // indirect
 	github.com/anacrolix/dht/v2 v2.16.1 // indirect
 	github.com/anacrolix/envpprof v1.2.1 // indirect
 	github.com/anacrolix/go-libutp v1.2.0 // indirect
