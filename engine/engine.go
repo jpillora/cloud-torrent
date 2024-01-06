@@ -5,16 +5,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"sync"
 	"time"
 
-	"github.com/anacrolix/dht"
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
 )
 
-//the Engine Cloud Torrent engine, backed by anacrolix/torrent
+// the Engine Cloud Torrent engine, backed by anacrolix/torrent
 type Engine struct {
 	mut      sync.Mutex
 	cacheDir string
@@ -40,16 +38,13 @@ func (e *Engine) Configure(c Config) error {
 	if c.IncomingPort <= 0 {
 		return fmt.Errorf("Invalid incoming port (%d)", c.IncomingPort)
 	}
-	tc := torrent.Config{
-		DHTConfig: dht.ServerConfig{
-			StartingNodes: dht.GlobalBootstrapAddrs,
-		},
+	tc := torrent.ClientConfig{
 		DataDir:    c.DownloadDirectory,
-		ListenAddr: "0.0.0.0:" + strconv.Itoa(c.IncomingPort),
 		NoUpload:   !c.EnableUpload,
 		Seed:       c.EnableSeeding,
+		ListenHost: func(network string) string { return "0.0.0.0" },
+		ListenPort: c.IncomingPort,
 	}
-	tc.DisableEncryption = c.DisableEncryption
 
 	client, err := torrent.NewClient(&tc)
 	if err != nil {
@@ -91,8 +86,8 @@ func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 	return nil
 }
 
-//GetTorrents moves torrents out of the anacrolix/torrent
-//and into the local cache
+// GetTorrents moves torrents out of the anacrolix/torrent
+// and into the local cache
 func (e *Engine) GetTorrents() map[string]*Torrent {
 	e.mut.Lock()
 	defer e.mut.Unlock()
@@ -218,7 +213,7 @@ func (e *Engine) StartFile(infohash, filepath string) error {
 	}
 	t.Started = true
 	f.Started = true
-	f.f.PrioritizeRegion(0, f.Size)
+	// f.f.PrioritizeRegion(0, f.Size)
 	return nil
 }
 
