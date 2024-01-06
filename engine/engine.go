@@ -38,15 +38,13 @@ func (e *Engine) Configure(c Config) error {
 	if c.IncomingPort <= 0 {
 		return fmt.Errorf("Invalid incoming port (%d)", c.IncomingPort)
 	}
-	tc := torrent.ClientConfig{
-		DataDir:    c.DownloadDirectory,
-		NoUpload:   !c.EnableUpload,
-		Seed:       c.EnableSeeding,
-		ListenHost: func(network string) string { return "0.0.0.0" },
-		ListenPort: c.IncomingPort,
-	}
 
-	client, err := torrent.NewClient(&tc)
+	config := torrent.NewDefaultClientConfig()
+	config.DataDir = c.DownloadDirectory
+	config.NoUpload = !c.EnableUpload
+	config.Seed = c.EnableSeeding
+	config.ListenPort = c.IncomingPort
+	client, err := torrent.NewClient(config)
 	if err != nil {
 		return err
 	}
