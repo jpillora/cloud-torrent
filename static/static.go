@@ -1,5 +1,3 @@
-//go:generate go-bindata -pkg ctstatic -ignore .../.DS_Store -o files.go files/...
-
 package ctstatic
 
 import (

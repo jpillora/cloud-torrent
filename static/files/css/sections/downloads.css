@@ -6,6 +6,10 @@
 	width: 100%;
 }
 
+.downloads .ui.list .content .header a {
+	word-break: break-all;
+}
+
 .downloads .ui.list .item .controls {
 	opacity: 0;
 	transition: opacity .3s ease-in-out;

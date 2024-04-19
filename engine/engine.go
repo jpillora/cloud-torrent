@@ -77,9 +77,7 @@ func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 	t := e.upsertTorrent(tt)
 	go func() {
 		<-t.t.GotInfo()
-		// if e.config.AutoStart && !loaded && torrent.Loaded && !torrent.Started {
 		e.StartTorrent(t.InfoHash)
-		// }
 	}()
 	return nil
 }
@@ -128,13 +126,6 @@ func (e *Engine) getOpenTorrent(infohash string) (*Torrent, error) {
 	if err != nil {
 		return nil, err
 	}
-	// if t.t == nil {
-	// 	newt, err := e.client.AddTorrentFromFile(filepath.Join(e.cacheDir, infohash+".torrent"))
-	// 	if err != nil {
-	// 		return t, fmt.Errorf("Failed to open torrent %s", err)
-	// 	}
-	// 	t.t = &newt
-	// }
 	return t, nil
 }
 
@@ -211,7 +202,6 @@ func (e *Engine) StartFile(infohash, filepath string) error {
 	}
 	t.Started = true
 	f.Started = true
-	// f.f.PrioritizeRegion(0, f.Size)
 	return nil
 }
 
