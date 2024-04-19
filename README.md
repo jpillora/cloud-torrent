@@ -29,7 +29,7 @@ curl https://i.jpillora.com/cloud-torrent! | bash
 
 **Docker**
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/jpillora/cloud-torrent.svg)][dockerhub] [![Image Size](https://images.microbadger.com/badges/image/jpillora/cloud-torrent.svg)][dockerhub]
+[![Docker Pulls](https://img.shields.io/docker/pulls/jpillora/cloud-torrent.svg)][dockerhub]
 
 [dockerhub]: https://hub.docker.com/r/jpillora/cloud-torrent/
 
@@ -78,9 +78,7 @@ $ go get -v github.com/jpillora/cloud-torrent
 
 [AWS](https://aws.amazon.com)
 
-**Heroku**
-
-Heroku is no longer supported
+**Heroku** (Heroku is no longer supported)
 
 ### Usage
 
