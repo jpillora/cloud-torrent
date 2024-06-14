@@ -94,7 +94,7 @@ $ cloud-torrent --help
   --auth, -a         Optional basic auth in form 'user:password' (env AUTH)
   --config-path, -c  Configuration file path (default cloud-torrent.json)
   --key-path, -k     TLS Key file path
-  --cert-path, -r    TLS Certicate file path
+  --cert-path, -r    TLS Certificate file path
   --log, -l          Enable request logging
   --open, -o         Open now with your default browser
   --help
@@ -120,7 +120,7 @@ In summary, the core features will be:
 
 * **File Transforms**
 
-  During a file tranfer, one could apply different transforms against the byte stream for various effect. For example, supported transforms might include: video transcoding (using ffmpeg), encryption and decryption, [media sorting](https://github.com/jpillora/cloud-torrent/issues/4) (file renaming), and writing multiple files as a single zip file.
+  During a file transfer, one could apply different transforms against the byte stream for various effect. For example, supported transforms might include: video transcoding (using ffmpeg), encryption and decryption, [media sorting](https://github.com/jpillora/cloud-torrent/issues/4) (file renaming), and writing multiple files as a single zip file.
   
 * **Automatic updates** Binary will upgrade itself, adding new features as they get released.
   
