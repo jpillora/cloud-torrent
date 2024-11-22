@@ -71,6 +71,8 @@ func (s *Server) serveFiles(w http.ResponseWriter, r *http.Request) {
 		case "DELETE":
 			if err := os.RemoveAll(file); err != nil {
 				http.Error(w, "Delete failed: "+err.Error(), http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(204)
 			}
 		default:
 			http.Error(w, "Not allowed", http.StatusMethodNotAllowed)
