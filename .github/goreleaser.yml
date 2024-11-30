@@ -1,5 +1,6 @@
 # test this file with
-#   goreleaser --skip-publish --rm-dist --config goreleaser.yml
+#   goreleaser build --snapshot --config .github/goreleaser.yml
+version: 2
 builds:
   - env:
       - CGO_ENABLED=0
@@ -30,7 +31,6 @@ archives:
   - format: gz
     files:
       - none*
-    rlcp: true
 changelog:
   sort: asc
   filters:
