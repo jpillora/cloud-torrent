@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         # optionally test/build across multiple platforms/Go-versions
-        go-version: ['1.22']
+        go-version: ["1.23"]
         platform: [ubuntu-latest]
     runs-on: ${{ matrix.platform }}
     steps:
@@ -87,4 +87,3 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
