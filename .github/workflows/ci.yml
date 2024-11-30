@@ -41,12 +41,14 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
       - name: goreleaser
-        uses: docker://goreleaser/goreleaser:latest
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser # or 'goreleaser-pro'
+          version: "~> v2" # or 'latest', 'nightly', semver
+          args: release --config .github/goreleaser.yml
         env:
           GITHUB_USER: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: release --config .github/goreleaser.yml
   # ================
   # RELEASE DOCKER IMAGES (on push "v*" tag)
   # ================
