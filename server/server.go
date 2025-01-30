@@ -33,6 +33,7 @@ type Server struct {
 	Host       string `help:"Listening interface (default all)"`
 	Auth       string `help:"Optional basic auth in form 'user:password'" env:"AUTH"`
 	ConfigPath string `help:"Configuration file path"`
+	Config     string `help:"Search config file path"`
 	KeyPath    string `help:"TLS Key file path"`
 	CertPath   string `help:"TLS Certicate file path" short:"r"`
 	Log        bool   `help:"Enable request logging"`
@@ -89,7 +90,9 @@ func (s *Server) Run(version string) error {
 	}
 	//scraper
 	s.state.SearchProviders = s.scraper.Config //share scraper config
-	go s.fetchSearchConfigLoop()
+	if err:=s.fetchSearchConfigOffFile(); err!=nil {
+		go s.fetchSearchConfigLoop()
+	}
 	s.scraperh = http.StripPrefix("/search", s.scraper)
 	//torrent engine
 	s.engine = engine.New()

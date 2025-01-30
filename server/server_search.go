@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jpillora/backoff"
+	"os"
 )
 
 const searchConfigURL = "https://gist.githubusercontent.com/jpillora/4d945b46b3025843b066adf3d685be6b/raw/scraper-config.json"
@@ -29,6 +30,34 @@ func (s *Server) fetchSearchConfigLoop() {
 
 var fetches = 0
 var currentConfig, _ = normalize(defaultSearchConfig)
+
+func (s *Server) fetchSearchConfigOffFile() error {
+	f,err := os.Open(s.Config)
+	defer f.Close()
+	if err != nil {
+		return err
+	}
+	newConfig,err := ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
+	newConfig, err = normalize(newConfig)
+	if err != nil {
+		return err
+	}
+	fetches++
+	if bytes.Equal(currentConfig, newConfig) {
+		return nil //skip
+	}
+	if err := s.scraper.LoadConfig(newConfig); err != nil {
+		return err
+	}
+	s.state.SearchProviders = s.scraper.Config
+	s.state.Push()
+	currentConfig = newConfig
+	log.Printf("Loaded new search providers")
+	return nil
+}
 
 func (s *Server) fetchSearchConfig() error {
 	resp, err := http.Get(searchConfigURL)
