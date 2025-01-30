@@ -2,19 +2,22 @@
 
 app.factory("api", function($rootScope, $http, reqerr) {
   window.http = $http;
-  var request = function(action, data) {
+  var request = async function(action, data) {
     var url = "api/" + action;
     $rootScope.apiing = true;
-    return $http({
+    let req; // should be resp
+    try { req = await $http({
       method: "POST",
       url: url,
       data: data,
       transformRequest: []
-    })
-      .error(reqerr)
-      .finally(function() {
-        $rootScope.apiing = false;
-      });
+    }); } catch (e) {
+      console.error(`Failed to request ${action}`, e);
+      if (req.error) req.error(reqerr);
+    } finally {
+      $rootScope.apiing = false;
+    }
+    return req;
   };
   var api = {};
   var actions = [
@@ -33,25 +36,30 @@ app.factory("api", function($rootScope, $http, reqerr) {
 
 app.factory("search", function($rootScope, $http, reqerr) {
   return {
-    all: function(provider, query, page) {
+    all: async function(provider, query, page) {
       var params = { query: query };
       if (page !== undefined) params.page = page;
       $rootScope.searching = true;
-      var req = $http.get("search/" + provider, { params: params });
-      req.error(reqerr);
-      req.finally(function() {
+      let req;
+      try { req = await $http.get("search/" + provider, { params: params }); } catch (e) {
+        console.error(`Failed to search ${provider} for ${query}`, e);
+        if (req.error) req.error(reqerr);
+      } finally {
         $rootScope.searching = false;
-      });
+      }
       return req;
     },
-    one: function(provider, path) {
+    one: async function(provider, path) {
       var opts = { params: { item: path } };
       $rootScope.searching = true;
-      var req = $http.get("search/" + provider + "/item", opts);
-      req.error(reqerr);
-      req.finally(function() {
+      
+      let req;
+      try { req = await $http.get("search/" + provider + "/item", opts); } catch (e) {
+        console.error(`Failed to search ${provider} for ${query}`, e);
+        if (req.error) req.error(reqerr);
+      } finally {
         $rootScope.searching = false;
-      });
+      }
       return req;
     }
   };

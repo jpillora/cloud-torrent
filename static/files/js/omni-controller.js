@@ -152,7 +152,8 @@ app.controller("OmniController", function(
 
     search
       .all($scope.inputs.provider, $scope.inputs.omni, $scope.page)
-      .success(function(results) {
+      .then(function (resp) {
+        let results = resp.data;
         if (!results || results.length === 0) {
           $scope.noResults = true;
           $scope.hasMore = false;
