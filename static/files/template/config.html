@@ -12,6 +12,10 @@
       <input type="{{type}}" ng-model="state.Config[k]"></input>
     </div>
   </div>
+  <div class="field">
+    <label>Peer ID</label>
+    <input type="text" ng-model="state.Config.PeerID"></input>
+  </div>
   <div class="buttons">
     <div class="ui blue button"
       ng-class="{loading: apiing}"

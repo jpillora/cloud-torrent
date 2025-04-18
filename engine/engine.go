@@ -44,6 +44,9 @@ func (e *Engine) Configure(c Config) error {
 	config.NoUpload = !c.EnableUpload
 	config.Seed = c.EnableSeeding
 	config.ListenPort = c.IncomingPort
+	if c.PeerID != "" {
+		config.PeerID = c.PeerID
+	}
 	client, err := torrent.NewClient(config)
 	if err != nil {
 		return err
