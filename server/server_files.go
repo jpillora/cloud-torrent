@@ -3,7 +3,6 @@ package server
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -96,7 +95,8 @@ func list(path string, info os.FileInfo, node *fsNode, n *int) error {
 	if !info.IsDir() {
 		return nil
 	}
-	children, err := ioutil.ReadDir(path)
+	children, err := os.ReadDir(path)
+
 	if err != nil {
 		return fmt.Errorf("Failed to list files")
 	}
@@ -104,7 +104,11 @@ func list(path string, info os.FileInfo, node *fsNode, n *int) error {
 	for _, i := range children {
 		c := &fsNode{}
 		p := filepath.Join(path, i.Name())
-		if err := list(p, i, c, n); err != nil {
+		info, err := i.Info()
+		if err != nil {
+			continue
+		}
+		if err := list(p, info, c, n); err != nil {
 			continue
 		}
 		node.Size += c.Size

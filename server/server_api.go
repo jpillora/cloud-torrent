@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -16,13 +16,14 @@ import (
 
 func (s *Server) api(r *http.Request) error {
 	defer r.Body.Close()
+	// Why does this need to be post?
 	if r.Method != "POST" {
 		return fmt.Errorf("Invalid request method (expecting POST)")
 	}
 
 	action := strings.TrimPrefix(r.URL.Path, "/api/")
 
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		return fmt.Errorf("Failed to download request body")
 	}
@@ -35,7 +36,7 @@ func (s *Server) api(r *http.Request) error {
 			return fmt.Errorf("Invalid remote torrent URL: %s (%s)", err, url)
 		}
 		//TODO enforce max body size (32k?)
-		data, err = ioutil.ReadAll(remote.Body)
+		data, err = io.ReadAll(remote.Body)
 		if err != nil {
 			return fmt.Errorf("Failed to download remote torrent: %s", err)
 		}
@@ -50,6 +51,7 @@ func (s *Server) api(r *http.Request) error {
 			return err
 		}
 		spec := torrent.TorrentSpecFromMetaInfo(info)
+		// One of the two entries to start a torrent
 		if err := s.engine.NewTorrent(spec); err != nil {
 			return fmt.Errorf("Torrent error: %s", err)
 		}
@@ -71,9 +73,35 @@ func (s *Server) api(r *http.Request) error {
 		}
 	case "magnet":
 		uri := string(data)
-		if err := s.engine.NewMagnet(uri); err != nil {
+		if err := s.engine.NewMagnetNoStart(uri); err != nil {
 			return fmt.Errorf("Magnet error: %s", err)
 		}
+	case "torrentWithFiles":
+		// Moves a pending torrent to the torrents list
+		cmd := strings.SplitN(string(data), ":", 3)
+		state := cmd[0]
+		infohash := cmd[1]
+		if _, ok := s.state.PendingTorrents[infohash]; !ok {
+			return fmt.Errorf("Torrent not found")
+		}
+
+		switch state {
+		case "start":
+			filePositions := strings.Split(cmd[2], ",")
+
+			// First update the files to download
+			if err := s.engine.UpdateTorrentFilesToDownload(infohash, filePositions); err != nil {
+				return fmt.Errorf("Torrent error: %s", err)
+			}
+			if err := s.engine.StartTorrentFromPending(infohash); err != nil {
+				return fmt.Errorf("Torrent error: %s", err)
+			}
+		case "delete":
+			if err := s.engine.DeletePendingTorrent(infohash); err != nil {
+				return fmt.Errorf("Torrent error: %s", err)
+			}
+		}
+		return nil
 	case "torrent":
 		cmd := strings.SplitN(string(data), ":", 2)
 		if len(cmd) != 2 {
@@ -82,6 +110,7 @@ func (s *Server) api(r *http.Request) error {
 		state := cmd[0]
 		infohash := cmd[1]
 		if state == "start" {
+			// One of the two entries to start a torrent
 			if err := s.engine.StartTorrent(infohash); err != nil {
 				return err
 			}
