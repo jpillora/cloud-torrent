@@ -3,7 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -36,7 +36,7 @@ func (s *Server) fetchSearchConfig() error {
 		return err
 	}
 	defer resp.Body.Close()
-	newConfig, err := ioutil.ReadAll(resp.Body)
+	newConfig, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -66,8 +66,8 @@ func normalize(input []byte) ([]byte, error) {
 	return output.Bytes(), nil
 }
 
-//see github.com/jpillora/scraper for config specification
-//cloud-torrent uses "<id>-item" handlers
+// see github.com/jpillora/scraper for config specification
+// cloud-torrent uses "<id>-item" handlers
 var defaultSearchConfig = []byte(`{
 	"zq": {
 		"name": "Zooqle",

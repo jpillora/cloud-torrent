@@ -23,7 +23,8 @@ app.factory("api", function($rootScope, $http, reqerr) {
     "url",
     "torrent",
     "file",
-    "torrentfile"
+    "torrentfile",
+    "torrentWithFiles"
   ];
   actions.forEach(function(action) {
     api[action] = request.bind(null, action);
