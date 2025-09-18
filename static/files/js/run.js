@@ -15,8 +15,8 @@ createApp({
       omni: { 
         edit: false,
         inputs: {
-          omni: window.localStorage.tcOmni || "",
-          provider: window.localStorage.tcProvider || "tpb"
+          omni: window.localStorage.getItem('tcOmni') || "",
+          provider: window.localStorage.getItem('tcProvider') || "tpb"
         },
         magnet: { trackers: [{ v: "" }] },
         providers: {},
@@ -327,7 +327,7 @@ createApp({
 
     parseOmniInput() {
       // Parse the omni input on component load
-      window.localStorage.tcOmni = this.omni.inputs.omni;
+      window.localStorage.setItem('tcOmni', this.omni.inputs.omni);
       this.omni.omnierr = null;
       this.omni.mode = { torrent: false, magnet: false, search: false };
       this.omni.page = 1;
@@ -518,7 +518,7 @@ createApp({
       props: ['state', 'omni', 'apiing', 'searching'],
       watch: {
         'omni.inputs.provider'(p) {
-          if (p) localStorage.tcProvider = p;
+          if (p) window.localStorage.setItem('tcProvider', p);
           this.$emit('parse-omni');
         }
       },
@@ -715,7 +715,7 @@ createApp({
 
           <div v-if="numDownloads() > 0" class="ui segment">
             <div class="ui list">
-              <download-node v-for="node in state.Downloads.Children" :key="node.Name" :node="node" :state="state"></download-node>
+              <download-node v-for="node in state.Downloads.Children" :key="node.Name" :node="node" :state="state" :parent-path="''"></download-node>
             </div>
           </div>
         </section>
