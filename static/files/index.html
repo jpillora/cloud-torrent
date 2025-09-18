@@ -52,7 +52,7 @@
 			</div>
 
 				<config-section :state="state" :config="config" :apiing="apiing" @submit-config="submitConfig"></config-section>
-			<omni-section :state="state" :omni="omni" :apiing="apiing" :searching="searching" @submit-omni="submitOmni" @submit-search="submitSearch" @submit-search-item="submitSearchItem"></omni-section>
+			<omni-section :state="state" :omni="omni" :apiing="apiing" :searching="searching" @submit-omni="submitOmni" @submit-search="submitSearch" @submit-search-item="submitSearchItem" @parse-omni="parseOmniInput"></omni-section>
 			<torrents-section :state="state" :torrents="torrents" @submit-torrent="submitTorrent" @submit-file="submitFile"></torrents-section>
 			<downloads-section :state="state" :downloads="downloads"></downloads-section>
 
@@ -92,14 +92,7 @@
 		<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 		<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-		<script src="js/vendor/query-string.js"></script>
 		<script src="js/velox.js"></script>
-		<script src="js/utils.js"></script>
-		<script src="js/config-controller.js"></script>
-		<script src="js/omni-controller.js"></script>
-		<script src="js/torrents-controller.js"></script>
-		<script src="js/downloads-controller.js"></script>
-		<script src="js/semantic-checkbox.js"></script>
 		<script src="js/run.js"></script>
 	</div>
 </body>
