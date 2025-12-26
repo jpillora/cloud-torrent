@@ -93,6 +93,7 @@ $ cloud-torrent --help
   --host, -h         Listening interface (default all)
   --auth, -a         Optional basic auth in form 'user:password' (env AUTH)
   --config-path, -c  Configuration file path (default cloud-torrent.json)
+  --config           Search config file path
   --key-path, -k     TLS Key file path
   --cert-path, -r    TLS Certicate file path
   --log, -l          Enable request logging
