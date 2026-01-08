@@ -3,7 +3,7 @@ package engine
 import (
 	"time"
 
-	"github.com/anacrolix/torrent"
+	atorrent "github.com/anacrolix/torrent"
 )
 
 type Torrent struct {
@@ -15,12 +15,13 @@ type Torrent struct {
 	Size       int64
 	Files      []*File
 	//cloud torrent
-	Started      bool
-	Dropped      bool
-	Percent      float32
-	DownloadRate float32
-	t            *torrent.Torrent
-	updatedAt    time.Time
+	Started         bool
+	Dropped         bool
+	Percent         float32
+	DownloadRate    float32
+	t               *atorrent.Torrent
+	updatedAt       time.Time
+	FilesToDownload []int
 }
 
 type File struct {
@@ -30,12 +31,13 @@ type File struct {
 	Chunks    int
 	Completed int
 	//cloud torrent
-	Started bool
-	Percent float32
-	f       *torrent.File
+	Started      bool
+	Percent      float32
+	FilePosition int
+	f            *atorrent.File
 }
 
-func (torrent *Torrent) Update(t *torrent.Torrent) {
+func (torrent *Torrent) Update(t *atorrent.Torrent) {
 	torrent.Name = t.Name()
 	torrent.Loaded = t.Info() != nil
 	if torrent.Loaded {
@@ -44,9 +46,9 @@ func (torrent *Torrent) Update(t *torrent.Torrent) {
 	torrent.t = t
 }
 
-func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
-
-	torrent.Size = t.Length()
+// Updates our torrent struct with the latest information from the anacrolix/torrent struct
+func (torrent *Torrent) updateLoaded(t *atorrent.Torrent) {
+	// Currently this is the total size of torrent in bytes
 	totalChunks := 0
 	totalCompleted := 0
 
@@ -59,7 +61,7 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 		path := f.Path()
 		file := torrent.Files[i]
 		if file == nil {
-			file = &File{Path: path}
+			file = &File{Path: path, FilePosition: i}
 			torrent.Files[i] = file
 		}
 		chunks := f.State()
@@ -80,10 +82,17 @@ func (torrent *Torrent) updateLoaded(t *torrent.Torrent) {
 		totalCompleted += file.Completed
 	}
 
+	// Calculate the size of the files we are downloading
+	torrentSize := int64(0)
+	for _, filePosition := range torrent.FilesToDownload {
+		torrentSize += int64(torrent.Files[filePosition].Size)
+	}
+	torrent.Size = torrentSize
+
 	//cacluate rate
 	now := time.Now()
 	bytes := t.BytesCompleted()
-	torrent.Percent = percent(bytes, torrent.Size)
+	torrent.Percent = percent(bytes, torrentSize)
 	if !torrent.updatedAt.IsZero() {
 		dt := float32(now.Sub(torrent.updatedAt))
 		db := float32(bytes - torrent.Downloaded)

@@ -50,8 +50,10 @@
 			<p>{{err}}</p>
 		</div>
 
+		<!--Angular Templates -->
 		<section class="config" ng-controller="ConfigController" ng-include src="'template/config.html'"></section>
 		<section class="omni" ng-controller="OmniController" ng-include src="'template/omni.html'"></section>
+		<section class="pending-torrents" ng-controller="PendingTorrentsController" ng-include src="'template/pending-torrents.html'"></section>
 		<section class="torrents" ng-controller="TorrentsController" ng-include src="'template/torrents.html'"></section>
 		<section class="downloads" ng-controller="DownloadsController" ng-include src="'template/downloads.html'"></section>
 
@@ -98,6 +100,7 @@
 		<script src="js/config-controller.js"></script>
 		<script src="js/omni-controller.js"></script>
 		<script src="js/torrents-controller.js"></script>
+		<script src="js/pending-torrents-controller.js"></script>
 		<script src="js/downloads-controller.js"></script>
 		<script src="js/utils.js"></script>
 		<script src="js/semantic-checkbox.js"></script>

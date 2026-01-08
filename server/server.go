@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -17,7 +16,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/jpillora/cloud-torrent/engine"
-	"github.com/jpillora/cloud-torrent/static"
+	ctstatic "github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/cookieauth"
 	"github.com/jpillora/requestlog"
 	"github.com/jpillora/scraper/scraper"
@@ -25,7 +24,7 @@ import (
 	"github.com/skratchdot/open-golang/open"
 )
 
-//Server is the "State" portion of the diagram
+// Server is the "State" portion of the diagram
 type Server struct {
 	//config
 	Title      string `help:"Title of this instance" env:"TITLE"`
@@ -50,6 +49,7 @@ type Server struct {
 		SearchProviders scraper.Config
 		Downloads       *fsNode
 		Torrents        map[string]*engine.Torrent
+		PendingTorrents map[string]*engine.Torrent
 		Users           map[string]string
 		Stats           struct {
 			Title   string
@@ -91,16 +91,19 @@ func (s *Server) Run(version string) error {
 	s.state.SearchProviders = s.scraper.Config //share scraper config
 	go s.fetchSearchConfigLoop()
 	s.scraperh = http.StripPrefix("/search", s.scraper)
+
 	//torrent engine
 	s.engine = engine.New()
+
 	//configure engine
 	c := engine.Config{
 		DownloadDirectory: "./downloads",
 		EnableUpload:      true,
 		AutoStart:         true,
 	}
+
 	if _, err := os.Stat(s.ConfigPath); err == nil {
-		if b, err := ioutil.ReadFile(s.ConfigPath); err != nil {
+		if b, err := os.ReadFile(s.ConfigPath); err != nil {
 			return fmt.Errorf("Read configuration error: %s", err)
 		} else if len(b) == 0 {
 			//ignore empty file
@@ -119,6 +122,7 @@ func (s *Server) Run(version string) error {
 		for {
 			s.state.Lock()
 			s.state.Torrents = s.engine.GetTorrents()
+			s.state.PendingTorrents = s.engine.GetPendingTorrents()
 			s.state.Downloads = s.listFiles()
 			s.state.Unlock()
 			s.state.Push()
@@ -190,6 +194,7 @@ func (s *Server) Run(version string) error {
 	return server.ListenAndServe()
 }
 
+// Called when we want to change config such as download directory
 func (s *Server) reconfigure(c engine.Config) error {
 	dldir, err := filepath.Abs(c.DownloadDirectory)
 	if err != nil {
@@ -200,7 +205,7 @@ func (s *Server) reconfigure(c engine.Config) error {
 		return err
 	}
 	b, _ := json.MarshalIndent(&c, "", "  ")
-	ioutil.WriteFile(s.ConfigPath, b, 0755)
+	os.WriteFile(s.ConfigPath, b, 0755)
 	s.state.Config = c
 	s.state.Push()
 	return nil
@@ -208,12 +213,11 @@ func (s *Server) reconfigure(c engine.Config) error {
 
 func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	//handle realtime client library
-	if r.URL.Path == "/js/velox.js" {
+	switch r.URL.Path {
+	case "/js/velox.js":
 		velox.JS.ServeHTTP(w, r)
 		return
-	}
-	//handle realtime client connections
-	if r.URL.Path == "/sync" {
+	case "/sync":
 		conn, err := velox.Sync(&s.state, w, r)
 		if err != nil {
 			log.Printf("sync failed: %s", err)
@@ -226,11 +230,13 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		s.state.Push()
 		return
 	}
+
 	//search
 	if strings.HasPrefix(r.URL.Path, "/search") {
 		s.scraperh.ServeHTTP(w, r)
 		return
 	}
+
 	//api call
 	if strings.HasPrefix(r.URL.Path, "/api/") {
 		//only pass request in, expect error out

@@ -12,7 +12,6 @@
 </div>
 
 <div ng-repeat="(hash, t) in state.Torrents" ng-class="{open: t.open}" class="ui torrent segment">
-
   <div ng-if="!t.Loaded" class="ui active inverted dimmer">
     <div class="ui text loader">Loading</div>
   </div>
@@ -83,7 +82,7 @@
             <tr ng-if="!t.Files || t.Files.length == 0">
               <td colspan="2" class="muted">No files</td>
             </tr>
-            <tr class="download file" ng-repeat="f in t.Files | orderBy:'Path'">
+            <tr class="download file" ng-repeat="f in t.Files" ng-if="fileIsSelected(t, f.FilePosition)">
               <td class="name">
                 <div>
                   <span>{{ f.Path | filename }}</span>

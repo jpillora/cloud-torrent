@@ -1,0 +1,120 @@
+<div class="section-header">
+    <h3 class="ui header">
+      Pending Torrents
+    </h3>
+    <h5 class="right">
+      {{ numKeys(state.PendingTorrents) }} torrent{{ numKeys(state.PendingTorrents) == 1 ? '' : 's' }}
+    </h5>
+  </div>
+  
+  <div ng-if="isEmpty(state.PendingTorrents)" class="ui message nodownloads">
+    <p>Add torrents above</p>
+  </div>
+  
+  <div ng-repeat="(hash, t) in state.PendingTorrents" ng-class="{open: t.open}" class="ui torrent segment">
+    <div ng-if="!t.Loaded" class="ui active inverted dimmer">
+      <div class="ui text loader">Loading</div>
+    </div>
+  
+    <div class="ui stackable grid">
+      <div class="two column row">
+        <div class="info column">
+          <div class="name">
+            <span ng-show="!ready(t.Name+'.zip')">
+              {{ t.Name }}
+            </span>
+            <a ng-show="ready(t.Name+'.zip')" ng-href="{{ ready(t.Name+'.zip').url }}">
+              {{ t.Name }}
+            </a>
+          </div>
+          <div class="hash">#{{ t.InfoHash }}</div>
+        </div>
+        <div class="controls column">
+          <div>
+            <div class="ui mini buttons">
+              <a ng-if="!t.Started" class="ui red button" style="z-index: 99999;" ng-click="deleteTorrent(t)">
+                <span ng-if="!t.Loaded">
+                  <i class="ban icon"></i> Cancel</span>
+                <span ng-if="t.Loaded">
+                  <i class="trash icon"></i> Remove</span>
+              </a>
+            </div>
+          </div>
+  
+          <div ng-if="t.Started" class="status download">
+            <span ng-class="{muted:t.Downloaded == 0}">{{t.Downloaded | bytes}}</span>
+            <span> / {{t.Size | bytes}}</span>
+            <span> - {{t.Percent }}% </span>
+            <span style="font-weight:bold" ng-class="{muted:t.DownloadRate == 0}"> - {{t.DownloadRate | bytes}}/s</span>
+          </div>
+        </div>
+      </div>
+      <!--
+      <div ng-if="!t.open" class="row stopped"><div class="column">
+        This torrent is inactive. Press the green power button to reactivate or the red trash can to remove it.
+      </div></div>
+       -->
+      <div class="row" ng-show="t.Loaded">
+        <div class="column">
+          <table class="ui unstackable compact striped downloads tcld table">
+            <thead>
+              <tr>
+                <th class="name">File</th>
+                <th class="size">Size</th>
+                <th class="select">
+                  <div class="ui checkbox">
+                    <input type="checkbox" ng-model="t.$selectAll" ng-change="toggleSelectAll(t)">
+                    <label>Select All</label>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-if="!t.Files || t.Files.length == 0">
+                <td colspan="3" class="muted">No files</td>
+              </tr>
+              <tr class="download file" ng-repeat="f in t.Files | orderBy:'Path'">
+                <td class="name">
+                  <div>
+                    <span>{{ f.Path | filename }}</span>
+                    <span class="percent" ng-if="f.Percent > 0 && f.Percent < 100">{{ f.Percent }}% </span>
+                  </div>
+                  <div ng-if="f.downloadError" class="ui error message">
+                    <i class="close icon" ng-click="f.downloadError = null"></i>
+                    <p>{{f.downloadError}}</p>
+                  </div>
+                </td>
+                <td class="size">
+                  {{ f.Size | bytes }}
+                  <i ng-if="f.Percent == 100" class="green check icon"></i>
+                </td>
+                <td class="select">
+                  <div class="ui checkbox">
+                    <input type="checkbox" ng-model="f.selected" ng-disabled="f.Percent == 100">
+                    <label></label>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot ng-if="numKeys(t.Files) > 1">
+              <tr>
+                <th class="name">
+                  {{ numberFilesSelected(t) }} Files Selected
+                </th>
+                <th>
+                  {{ totalSizeSelected(t)  | bytes}} Total
+                </th>
+                <th>
+                  <div class="ui mini buttons">
+                    <button class="ui blue button" ng-click="startTorrentWithFiles(t)" ng-disabled="!hasSelectedFiles(t)">
+                      <i class="check icon"></i> Submit Selected
+                    </button>
+                  </div>
+                </th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>

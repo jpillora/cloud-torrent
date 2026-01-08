@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
@@ -19,10 +20,11 @@ type Engine struct {
 	client   *torrent.Client
 	config   Config
 	ts       map[string]*Torrent
+	pts      map[string]*Torrent
 }
 
 func New() *Engine {
-	return &Engine{ts: map[string]*Torrent{}}
+	return &Engine{ts: map[string]*Torrent{}, pts: map[string]*Torrent{}}
 }
 
 func (e *Engine) Config() Config {
@@ -54,11 +56,22 @@ func (e *Engine) Configure(c Config) error {
 	e.mut.Unlock()
 	//reset
 	e.GetTorrents()
+	e.GetPendingTorrents()
 	return nil
 }
 
+func (e *Engine) NewMagnetNoStart(magnetURI string) error {
+	tt, err := e.client.AddMagnet(magnetURI)
+	if err != nil {
+		return err
+	}
+	return e.newTorrentNoStart(tt)
+}
+
+// Torrents can either be added by magnet link or by torrent file, each one will call the newTorrent function
 func (e *Engine) NewMagnet(magnetURI string) error {
 	tt, err := e.client.AddMagnet(magnetURI)
+
 	if err != nil {
 		return err
 	}
@@ -73,12 +86,32 @@ func (e *Engine) NewTorrent(spec *torrent.TorrentSpec) error {
 	return e.newTorrent(tt)
 }
 
+func (e *Engine) StartTorrentFromPending(infohash string) error {
+	t, err := e.transferPendingTorrent(infohash)
+	if err != nil {
+		return err
+	}
+	go func() {
+		<-t.t.GotInfo()
+		e.StartTorrent(t.InfoHash)
+	}()
+
+	return nil
+}
+
+// private function to add a torrent to the engine
 func (e *Engine) newTorrent(tt *torrent.Torrent) error {
 	t := e.upsertTorrent(tt)
 	go func() {
 		<-t.t.GotInfo()
 		e.StartTorrent(t.InfoHash)
 	}()
+	return nil
+}
+
+func (e *Engine) newTorrentNoStart(tt *torrent.Torrent) error {
+	// Do we need to block here?
+	e.upsertPendingTorrent(tt)
 	return nil
 }
 
@@ -92,9 +125,39 @@ func (e *Engine) GetTorrents() map[string]*Torrent {
 		return nil
 	}
 	for _, tt := range e.client.Torrents() {
-		e.upsertTorrent(tt)
+		// Check if the torrent is in the pending list
+		if _, ok := e.pts[tt.InfoHash().HexString()]; !ok {
+			e.upsertTorrent(tt)
+		}
 	}
 	return e.ts
+}
+
+// Return torrents that are queued but not processed yet
+func (e *Engine) GetPendingTorrents() map[string]*Torrent {
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	if e.client == nil {
+		return nil
+	}
+	for _, tt := range e.client.Torrents() {
+		if _, ok := e.pts[tt.InfoHash().HexString()]; ok {
+			e.upsertPendingTorrent(tt)
+		}
+	}
+	return e.pts
+}
+
+func (e *Engine) upsertPendingTorrent(tt *torrent.Torrent) *Torrent {
+	ih := tt.InfoHash().HexString()
+	torrent, ok := e.pts[ih]
+	if !ok {
+		torrent = &Torrent{InfoHash: ih}
+		e.pts[ih] = torrent
+	}
+
+	torrent.Update(tt)
+	return torrent
 }
 
 func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
@@ -109,6 +172,19 @@ func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
 	return torrent
 }
 
+// Moves the pending torrent into the active list
+func (e *Engine) transferPendingTorrent(infohash string) (*Torrent, error) {
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	tt, ok := e.pts[infohash]
+	if !ok {
+		return nil, fmt.Errorf("Missing pending torrent %x", infohash)
+	}
+	delete(e.pts, infohash)
+	e.ts[infohash] = tt
+	return e.ts[infohash], nil
+}
+
 func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
 	ih, err := str2ih(infohash)
 	if err != nil {
@@ -121,6 +197,18 @@ func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
 	return t, nil
 }
 
+func (e *Engine) getPendingTorrent(infohash string) (*Torrent, error) {
+	ih, err := str2ih(infohash)
+	if err != nil {
+		return nil, err
+	}
+	t, ok := e.pts[ih.HexString()]
+	if !ok {
+		return nil, fmt.Errorf("Missing pending torrent %x", ih)
+	}
+	return t, nil
+}
+
 func (e *Engine) getOpenTorrent(infohash string) (*Torrent, error) {
 	t, err := e.getTorrent(infohash)
 	if err != nil {
@@ -129,6 +217,24 @@ func (e *Engine) getOpenTorrent(infohash string) (*Torrent, error) {
 	return t, nil
 }
 
+func (e *Engine) UpdateTorrentFilesToDownload(infohash string, filePositions []string) error {
+	t, err := e.getPendingTorrent(infohash)
+	if err != nil {
+		return err
+	}
+	filePositionsInt := make([]int, len(filePositions))
+	for i, filePosition := range filePositions {
+		filePositionInt, err := strconv.Atoi(filePosition)
+		if err != nil {
+			return err
+		}
+		filePositionsInt[i] = filePositionInt
+	}
+	t.FilesToDownload = filePositionsInt
+	return nil
+}
+
+// Note: StartTorrent can only be called on torrents that are in the open list
 func (e *Engine) StartTorrent(infohash string) error {
 	t, err := e.getOpenTorrent(infohash)
 	if err != nil {
@@ -138,13 +244,18 @@ func (e *Engine) StartTorrent(infohash string) error {
 		return fmt.Errorf("Already started")
 	}
 	t.Started = true
-	for _, f := range t.Files {
-		if f != nil {
-			f.Started = true
-		}
+
+	// Condition to check if the torrent has specific files to download
+	if len(t.FilesToDownload) == 0 {
+		return fmt.Errorf("No files to download")
+	}
+	for _, filePosition := range t.FilesToDownload {
+		t.Files[filePosition].Started = true
 	}
 	if t.t.Info() != nil {
-		t.t.DownloadAll()
+		for _, filePosition := range t.FilesToDownload {
+			t.t.Files()[filePosition].Download()
+		}
 	}
 	return nil
 }
@@ -164,6 +275,19 @@ func (e *Engine) StopTorrent(infohash string) error {
 		if f != nil {
 			f.Started = false
 		}
+	}
+	return nil
+}
+
+func (e *Engine) DeletePendingTorrent(infohash string) error {
+	t, err := e.getPendingTorrent(infohash)
+	if err != nil {
+		return err
+	}
+	delete(e.pts, t.InfoHash)
+	ih, _ := str2ih(infohash)
+	if tt, ok := e.client.Torrent(ih); ok {
+		tt.Drop()
 	}
 	return nil
 }
