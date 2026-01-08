@@ -134,6 +134,11 @@ app.controller("OmniController", function(
     }
   };
 
+  $scope.resetOmni = function() {
+    $scope.inputs.omni = '';
+    $scope.parse();
+  };
+
   $scope.submitTorrent = function() {
     if ($scope.mode.torrent) {
       api.url($scope.inputs.omni);
