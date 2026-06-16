@@ -1,10 +1,24 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import dayjs from 'dayjs'
+import {
+  mdiLoading,
+  mdiFolder,
+  mdiFolderOpen,
+  mdiMusic,
+  mdiImage,
+  mdiMovie,
+  mdiFileOutline,
+  mdiEye,
+  mdiEyeOff,
+  mdiDelete,
+  mdiCheck,
+} from '@mdi/js'
 import type { FsNode } from '../types/generated'
 import { state } from '../state'
 import { ui } from '../ui'
 import { bytes, ago } from '../format'
+import Icon from './Icon.vue'
 
 const props = defineProps<{ node: FsNode; basePath?: string }>()
 
@@ -42,17 +56,17 @@ const mediaType = computed<Media | null>(() => {
 })
 
 const icon = computed(() => {
-  if (downloading.value) return '\u{23F3}' // hourglass
-  if (!isFile.value) return open.value ? '\u{1F4C2}' : '\u{1F4C1}' // open/closed folder
+  if (downloading.value) return mdiLoading
+  if (!isFile.value) return open.value ? mdiFolderOpen : mdiFolder
   switch (mediaType.value) {
     case 'audio':
-      return '\u{1F3B5}'
+      return mdiMusic
     case 'image':
-      return '\u{1F5BC}'
+      return mdiImage
     case 'video':
-      return '\u{1F3AC}'
+      return mdiMovie
   }
-  return '\u{1F4C4}' // file
+  return mdiFileOutline
 })
 
 // inline media preview, rendered (and so sourced from download/<path>) only
@@ -97,7 +111,7 @@ async function remove() {
 <template>
   <div class="node" :class="{ dir: !isFile, file: isFile }" data-testid="fs-node">
     <div class="node-row">
-      <span class="icon" @click="toggle">{{ icon }}</span>
+      <span class="icon" @click="toggle"><Icon :path="icon" :spin="downloading" /></span>
       <a v-if="isFile && !downloading" :href="href" class="name" data-testid="fs-file-link">{{
         node.Name
       }}</a>
@@ -111,7 +125,7 @@ async function remove() {
         data-testid="fs-preview-toggle"
         @click="togglePreview"
       >
-        {{ showPreview ? '▾' : '▶' }}
+        <Icon :path="showPreview ? mdiEyeOff : mdiEye" />
       </button>
       <button
         v-if="!downloading && !confirming && !deleting"
@@ -120,7 +134,7 @@ async function remove() {
         data-testid="fs-delete"
         @click="preremove"
       >
-        🗑
+        <Icon :path="mdiDelete" />
       </button>
       <button
         v-if="confirming && !deleting"
@@ -129,9 +143,9 @@ async function remove() {
         data-testid="fs-delete-confirm"
         @click="remove"
       >
-        ✓
+        <Icon :path="mdiCheck" />
       </button>
-      <span v-if="deleting" class="del deleting" title="Deleting…">⏳</span>
+      <span v-if="deleting" class="del deleting" title="Deleting…"><Icon :path="mdiLoading" spin /></span>
     </div>
     <div v-if="showPreview && mediaType" class="preview" data-testid="fs-preview">
       <audio v-if="mediaType === 'audio'" controls :src="href"></audio>

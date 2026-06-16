@@ -43,6 +43,23 @@ a:hover {
   color: var(--muted);
 }
 
+/* ---- MDI icons (inline SVG, inherit currentColor) ---------------------- */
+.mdi {
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.15em;
+  fill: currentColor;
+  flex: none;
+}
+.mdi.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ---- buttons (Semantic "mini" button language) ------------------------- */
 button {
   font-family: inherit;
@@ -149,34 +166,34 @@ select:focus {
   text-decoration: none;
 }
 .title .logo {
-  margin-right: 0.2rem;
+  width: 0.85em;
+  height: 0.85em;
+  vertical-align: -0.06em;
+  margin-right: 0.15rem;
+  color: var(--blue);
 }
 .status {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.5rem;
 }
 .status .icon {
   cursor: pointer;
-  font-style: normal;
-  font-size: 1.2rem;
-  line-height: 1;
-  user-select: none;
-  opacity: 0.85;
+  font-size: 1.3rem;
+  color: #9aa0a6;
+  transition: color 0.15s ease;
 }
 .status .icon:hover {
-  opacity: 1;
+  color: #5f6368;
+}
+.status .icon.green {
+  color: var(--green);
+}
+.status .icon.red {
+  color: var(--red);
 }
 .status .lightning {
   cursor: default;
-}
-.status .spinner {
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* green/red as colour utilities (icons, seeds/peers, inline text) */
@@ -284,6 +301,7 @@ select:focus {
   align-items: center;
   padding: 0 0.75em;
   font-size: 1.2rem;
+  color: #9aa0a6;
   cursor: pointer;
   user-select: none;
 }
@@ -564,6 +582,7 @@ select:focus {
 .del {
   background: none;
   padding: 0 0.25em;
+  font-size: 1.05rem;
   color: var(--blue);
   opacity: 0;
   transition: opacity 0.2s ease;
