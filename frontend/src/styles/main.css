@@ -1,6 +1,24 @@
+/* Visual parity with the original Semantic-UI build, recreated with plain CSS
+   (no Semantic UI / jQuery). Palette, segments, progress bars, mini buttons,
+   toggles and Lato typography mirror the original look. */
+
 :root {
+  --blue: #2185d0;
+  --blue-hover: #1678c2;
+  --green: #21ba45;
+  --green-hover: #16ab39;
+  --red: #db2828;
+  --red-hover: #d01919;
+  --grey-btn: #e0e1e2;
+  --grey-btn-hover: #cacbcd;
+  --text: rgba(0, 0, 0, 0.87);
+  --muted: #8c8c8c;
+  --border: rgba(34, 36, 38, 0.15);
+  --card-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15);
+  --radius: 0.28rem;
+
   font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #333;
+  color: var(--text);
   line-height: 1.4;
 }
 
@@ -10,27 +28,589 @@
 
 body {
   margin: 0;
-  background: #f7f8fa;
+  background: #fff;
 }
 
-/* The app is a single vertical column: Header -> Omni -> Torrents -> Downloads -> Footer.
-   Visual parity with the original Semantic-UI look is handled in the CSS parity task. */
+a {
+  color: var(--blue);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* ---- buttons (Semantic "mini" button language) ------------------------- */
+button {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.6);
+  background: var(--grey-btn);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.55em 0.9em;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+button:hover {
+  background: var(--grey-btn-hover);
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+button.green {
+  background: var(--green);
+  color: #fff;
+}
+button.green:hover {
+  background: var(--green-hover);
+}
+button.red {
+  background: var(--red);
+  color: #fff;
+}
+button.red:hover {
+  background: var(--red-hover);
+}
+button.blue,
+button.active {
+  background: var(--blue);
+  color: #fff;
+}
+button.blue:hover,
+button.active:hover {
+  background: var(--blue-hover);
+}
+
+input[type='text'],
+input[type='number'],
+select {
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.55em 0.7em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text);
+}
+input:focus,
+select:focus {
+  border-color: #85b7d9;
+  outline: none;
+}
+
+/* ---- layout ------------------------------------------------------------ */
 .app {
-  max-width: 760px;
+  max-width: 700px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.5rem 1rem 2.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.muted {
-  color: #999;
+/* shared section header: title left, muted count/free right */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 0 0.4rem;
+}
+.section-header h3 {
+  margin: 0;
+  font-weight: 700;
+}
+.section-header .count,
+.section-header .free {
+  color: var(--muted);
+  font-size: 0.8rem;
 }
 
-/* Full-page cover shown while dragging .torrent files onto the window.
-   pointer-events:none lets drag events keep reaching the underlying elements
-   (and window). Full Semantic-UI styling lands in the CSS parity task. */
+/* ---- header / title bar ------------------------------------------------ */
+.title {
+  align-items: center;
+  margin-bottom: 0;
+}
+.title h2 {
+  margin: 0;
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+.title h2 a {
+  color: var(--text);
+}
+.title h2 a:hover {
+  text-decoration: none;
+}
+.title .logo {
+  margin-right: 0.2rem;
+}
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.status .icon {
+  cursor: pointer;
+  font-style: normal;
+  font-size: 1.2rem;
+  line-height: 1;
+  user-select: none;
+  opacity: 0.85;
+}
+.status .icon:hover {
+  opacity: 1;
+}
+.status .lightning {
+  cursor: default;
+}
+.status .spinner {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* green/red as colour utilities (icons, seeds/peers, inline text) */
+.green {
+  color: var(--green);
+}
+.red {
+  color: var(--red);
+}
+
+/* ---- config editor (a segment card) ------------------------------------ */
+.section-config {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  padding: 1em;
+}
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.config-form h4 {
+  margin: 0 0 0.4rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+}
+.config-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.config-form .field span {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.config-form .field-toggle {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.6rem;
+}
+.config-form input {
+  font-family: monospace;
+}
+.config-form .buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+/* pill toggle for boolean config fields */
+.field-toggle input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 3rem;
+  height: 1.5rem;
+  border-radius: 1rem;
+  background: #d0d0d0;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.field-toggle input[type='checkbox']::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: left 0.2s ease;
+}
+.field-toggle input[type='checkbox']:checked {
+  background: var(--blue);
+}
+.field-toggle input[type='checkbox']:checked::after {
+  left: calc(100% - 1.1rem - 2px);
+}
+.config-error {
+  color: var(--red);
+  margin: 0;
+}
+
+/* ---- omni bar ---------------------------------------------------------- */
+.omni-input-wrap {
+  position: relative;
+}
+.omni-input {
+  width: 100%;
+  padding: 0.75em 2.6em 0.75em 0.9em;
+  font-size: 1rem;
+}
+.omni-icon {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 0.75em;
+  font-size: 1.2rem;
+  cursor: pointer;
+  user-select: none;
+}
+.omni-error {
+  color: var(--red);
+  margin: 0.4rem 0 0;
+}
+.omni-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.omni-actions button {
+  background: var(--blue);
+  color: #fff;
+}
+.omni-actions button:hover {
+  background: var(--blue-hover);
+}
+.omni-actions button.active {
+  background: var(--green);
+}
+.omni-actions select {
+  cursor: pointer;
+}
+
+/* magnet editor */
+.magnet-editor {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  padding: 1em;
+  margin-bottom: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.magnet-editor h4 {
+  margin: 0 0 0.4rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+.magnet-editor .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.magnet-editor .field > span {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.magnet-editor input {
+  width: 100%;
+  margin-bottom: 0.2rem;
+}
+
+/* search results */
+.search-results {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  max-height: 320px;
+  display: block;
+  overflow-y: auto;
+}
+.search-results td {
+  padding: 0.4rem 0.5rem;
+  border-top: 1px solid #eee;
+  vertical-align: middle;
+}
+.search-results tr:first-child td {
+  border-top: none;
+}
+.search-results .name {
+  width: 100%;
+  word-break: break-word;
+}
+.search-results .size {
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 0.85em;
+}
+.search-results .users {
+  white-space: nowrap;
+  text-align: right;
+  font-size: 0.85em;
+}
+.search-results .users .seeds {
+  color: var(--green);
+}
+.search-results .users .peers {
+  color: var(--red);
+  margin-left: 0.4rem;
+}
+.search-results .controls {
+  text-align: right;
+}
+.search-results .download {
+  background: none;
+  padding: 0 0.3em;
+  font-size: 1.1rem;
+  color: var(--green);
+}
+.search-results .download:hover {
+  background: none;
+}
+.search-results .loadmore {
+  text-align: center;
+}
+
+/* ---- torrents ---------------------------------------------------------- */
+.torrent {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  padding: 1em;
+  margin-bottom: 0.7rem;
+}
+.torrent .dimmer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius);
+  color: var(--muted);
+  z-index: 2;
+}
+.torrent .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.torrent .info {
+  flex: 1;
+  min-width: 0;
+}
+.torrent .info .name {
+  font-size: 1.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.torrent .info .hash {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.torrent .controls {
+  display: flex;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+.torrent .status {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+.torrent .status .muted {
+  color: lightgray;
+}
+
+/* progress bar */
+.progress {
+  background: #ededed;
+  border-radius: var(--radius);
+  overflow: hidden;
+  height: 10px;
+  margin: 0.45rem 0 0;
+}
+.progress .bar {
+  height: 100%;
+  background: var(--blue);
+  transition: width 0.3s ease;
+}
+.progress.active .bar {
+  background-image: linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.2) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.2) 75%,
+    transparent 75%
+  );
+  background-size: 28px 28px;
+  animation: progress-stripes 1s linear infinite;
+}
+@keyframes progress-stripes {
+  to {
+    background-position: 28px 0;
+  }
+}
+
+/* files table */
+.files {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.7rem;
+  font-size: 0.9rem;
+}
+.files th,
+.files td {
+  padding: 0.3rem 0.4rem;
+  border-top: 1px solid #eee;
+  text-align: left;
+}
+.files thead th {
+  border-top: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.files .size {
+  white-space: nowrap;
+  width: 110px;
+}
+.files .percent {
+  display: inline-block;
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-left: 0.3rem;
+}
+.files .check {
+  color: var(--green);
+}
+.files .file-controls {
+  text-align: right;
+  white-space: nowrap;
+  width: 1px;
+}
+.files tfoot th {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+.file-error {
+  color: var(--red);
+  margin: 0.2rem 0 0;
+  font-size: 0.85em;
+}
+
+/* ---- downloads tree ---------------------------------------------------- */
+.tree {
+  font-size: 0.95rem;
+}
+.node-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.18rem 0;
+}
+.node .icon {
+  cursor: pointer;
+  user-select: none;
+}
+.node .name {
+  word-break: break-word;
+}
+.node .meta {
+  margin-left: auto;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.preview-toggle {
+  background: none;
+  padding: 0 0.25em;
+  color: var(--blue);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.preview-toggle:hover {
+  background: none;
+}
+.node-row:hover .preview-toggle,
+.preview-toggle.active {
+  opacity: 1;
+}
+.children {
+  margin-left: 1.2rem;
+  border-left: 1px solid #eee;
+  padding-left: 0.4rem;
+}
+.preview {
+  margin: 0.4rem 0 0.6rem 1.6rem;
+}
+.preview img,
+.preview video {
+  display: block;
+  max-width: 90%;
+  max-height: 360px;
+  border-radius: var(--radius);
+}
+.preview audio {
+  width: 90%;
+}
+
+/* ---- footer (faded, reveals on hover) ---------------------------------- */
+.section-footer {
+  margin-top: 0.5rem;
+  text-align: right;
+  color: grey;
+  font-style: italic;
+  font-size: 0.8rem;
+  opacity: 0.3;
+  transition: opacity 0.3s ease-in-out;
+}
+.section-footer:hover {
+  opacity: 1;
+}
+.section-footer .right {
+  margin-top: 0.2rem;
+}
+
+/* ---- overlays ---------------------------------------------------------- */
 .file-drop-cover {
   position: fixed;
   inset: 0;
@@ -38,13 +618,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-size: 1.6rem;
+  background: rgba(173, 216, 230, 0.55);
+  color: #1b1c1d;
   pointer-events: none;
 }
-
-/* Connection overlay: masthead covering the page while the sync is down. */
+.file-drop-cover .msg {
+  border: 2px dashed #2185d0;
+  border-radius: 8px;
+  padding: 1.5rem 3rem;
+  font-size: 1.6rem;
+  background: rgba(255, 255, 255, 0.7);
+}
 .connect-overlay {
   position: fixed;
   inset: 0;
@@ -61,15 +645,13 @@ body {
   font-weight: 400;
 }
 .connect-overlay .lightning.red {
-  color: #db2828;
+  color: var(--red);
 }
-
-/* Global dismissible error banner. */
 .error-banner {
   position: relative;
   padding: 0.8rem 2.2rem 0.8rem 0.9rem;
-  border: 1px solid #db2828;
-  border-radius: 4px;
+  border: 1px solid var(--red);
+  border-radius: var(--radius);
   background: #fff6f6;
   color: #9f3a38;
 }
@@ -84,168 +666,23 @@ body {
   position: absolute;
   top: 0.3rem;
   right: 0.45rem;
+  padding: 0;
   border: none;
   background: none;
   font-size: 1.3rem;
   line-height: 1;
   color: inherit;
-  cursor: pointer;
+}
+.error-banner .close:hover {
+  background: none;
 }
 
-/* visually-hidden file input behind the Omni upload icon */
 .hidden-file {
   display: none;
 }
 
-/* Omni search results table. */
-.search-results {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 0.5rem;
-}
-.search-results td {
-  padding: 0.3rem 0.4rem;
-  border-top: 1px solid #eee;
-  vertical-align: top;
-}
-.search-results .name {
-  width: 100%;
-}
-.search-results .size {
-  white-space: nowrap;
-  color: #666;
-}
-.search-results .users {
-  white-space: nowrap;
-  text-align: right;
-  font-size: 0.85em;
-}
-.search-results .users .seeds {
-  color: #21ba45;
-}
-.search-results .users .peers {
-  color: #db2828;
-  margin-left: 0.4rem;
-}
-.search-results .controls {
-  text-align: right;
-}
-.search-results .download {
-  color: #21ba45;
-  cursor: pointer;
-}
-.search-results .loadmore {
-  text-align: center;
-}
-.omni-icon {
-  cursor: pointer;
-  user-select: none;
-}
-
-.omni-input {
-  width: 100%;
-  padding: 0.6rem 0.8rem;
-  font-size: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-/* Header: title on the left, status icons on the right.
-   (Functional layout only; Semantic-UI parity is handled in the CSS task.) */
-.section-header.title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.title h2 {
-  margin: 0;
-}
-.title h2 a {
-  color: inherit;
-  text-decoration: none;
-}
-.status {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.status .icon {
-  cursor: pointer;
-  font-style: normal;
-  line-height: 1;
-  user-select: none;
-}
-.status .lightning {
-  cursor: default;
-}
-.green {
-  filter: none;
-  color: #21ba45;
-}
-.red {
-  color: #db2828;
-}
-
-/* Config editor: simple stacked fields. */
-.config-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-.config-form h4 {
-  margin: 0 0 0.2rem;
-}
-.config-form .field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-.config-form .field-toggle {
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
-}
-.config-form input[type='text'],
-.config-form input[type='number'] {
-  padding: 0.4rem 0.6rem;
-  font-size: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-.config-form .buttons {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.4rem;
-}
-.config-error {
-  color: #db2828;
-  margin: 0;
-}
-
-/* Per-file start/stop controls in the torrent files table. */
-.files .file-controls {
-  text-align: right;
-  white-space: nowrap;
-}
-.file-error {
-  color: #db2828;
-  margin: 0.2rem 0 0;
-  font-size: 0.85em;
-}
-
-/* Inline media previews in the downloads tree. */
-.preview-toggle {
-  cursor: pointer;
-}
-.preview {
-  margin: 0.4rem 0 0.6rem 1.4rem;
-}
-.preview img,
-.preview video {
-  display: block;
-  max-width: 100%;
-  max-height: 360px;
-}
-.preview audio {
-  width: 100%;
+@media (max-width: 480px) {
+  .title h2 {
+    font-size: 1.65rem;
+  }
 }
