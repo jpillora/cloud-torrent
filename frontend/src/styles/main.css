@@ -560,18 +560,29 @@ select:focus {
   color: var(--muted);
   font-size: 0.78rem;
 }
-.preview-toggle {
+.preview-toggle,
+.del {
   background: none;
   padding: 0 0.25em;
   color: var(--blue);
   opacity: 0;
   transition: opacity 0.2s ease;
 }
-.preview-toggle:hover {
+.preview-toggle:hover,
+.del:hover {
   background: none;
 }
+.del {
+  color: var(--red);
+}
+.del.deleting {
+  cursor: default;
+}
 .node-row:hover .preview-toggle,
-.preview-toggle.active {
+.node-row:hover .del,
+.preview-toggle.active,
+.del.confirm,
+.del.deleting {
   opacity: 1;
 }
 .children {

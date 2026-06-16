@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import dayjs from 'dayjs'
 import type { FsNode } from '../types/generated'
 import { state } from '../state'
+import { ui } from '../ui'
 import { bytes, ago } from '../format'
 
 const props = defineProps<{ node: FsNode; basePath?: string }>()
@@ -68,6 +69,29 @@ const open = ref(
 function toggle() {
   if (!isFile.value) open.value = !open.value
 }
+
+// confirm-to-delete (master parity): trash -> confirm check -> DELETE the file
+// or directory under /download. The node disappears on the next synced tree.
+const confirming = ref(false)
+const deleting = ref(false)
+function preremove() {
+  confirming.value = true
+  // auto-cancel the confirmation after 3s, as master does
+  setTimeout(() => {
+    confirming.value = false
+  }, 3000)
+}
+async function remove() {
+  deleting.value = true
+  try {
+    const res = await fetch(href.value, { method: 'DELETE' })
+    if (!res.ok) throw new Error((await res.text()) || res.statusText)
+  } catch (e) {
+    ui.error = e instanceof Error ? e.message : String(e)
+    deleting.value = false
+    confirming.value = false
+  }
+}
 </script>
 
 <template>
@@ -89,6 +113,25 @@ function toggle() {
       >
         {{ showPreview ? '▾' : '▶' }}
       </button>
+      <button
+        v-if="!downloading && !confirming && !deleting"
+        class="del"
+        title="Delete"
+        data-testid="fs-delete"
+        @click="preremove"
+      >
+        🗑
+      </button>
+      <button
+        v-if="confirming && !deleting"
+        class="del confirm"
+        title="Confirm delete"
+        data-testid="fs-delete-confirm"
+        @click="remove"
+      >
+        ✓
+      </button>
+      <span v-if="deleting" class="del deleting" title="Deleting…">⏳</span>
     </div>
     <div v-if="showPreview && mediaType" class="preview" data-testid="fs-preview">
       <audio v-if="mediaType === 'audio'" controls :src="href"></audio>
