@@ -1,0 +1,47 @@
+# test this file with
+#   goreleaser build --snapshot --clean --config .github/goreleaser.yml
+version: 2
+project_name: cloud-torrent
+before:
+  hooks:
+    - go mod download
+    # build the Vue SPA so it is embedded into every binary (static/dist)
+    - npm --prefix frontend ci
+    - npm --prefix frontend run build
+builds:
+  - env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    # openbsd is omitted: anacrolix/torrent's storage layer uses unix.SEEK_DATA,
+    # which golang.org/x/sys/unix does not define on openbsd.
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - '386'
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - '6'
+      - '7'
+nfpms:
+  - maintainer: "https://github.com/{{ .Env.GITHUB_USER }}"
+    formats:
+      - deb
+      - rpm
+      - apk
+archives:
+  - format: gz
+    files:
+      - none*
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"

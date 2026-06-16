@@ -1,0 +1,97 @@
+<img src="./.github/screenshot.png" alt="screenshot" width="600"/>
+
+# Cloud Torrent
+
+**Cloud Torrent** is a self-hosted remote torrent client: you add torrents
+remotely, they download to the server's disk as sets of files, and you browse
+or stream those files over HTTP.
+
+This is a ground-up rewrite of the original
+[cloud-torrent](https://github.com/jpillora/cloud-torrent) — a **Go** backend
+([anacrolix/torrent](https://github.com/anacrolix/torrent) engine,
+[jpillora/velox](https://github.com/jpillora/velox) realtime sync) with a
+**Vue 3 + Vite + TypeScript** frontend, all compiled into a single binary.
+
+### Features
+
+* Single binary, cross-platform
+* Add torrents by magnet, `.torrent` URL, or drag-and-drop upload
+* Embedded torrent search ([jpillora/scraper](https://github.com/jpillora/scraper))
+* Real-time updates (no refresh)
+* Inline media previews (audio / image / video) with spacebar play/pause
+* Mobile-friendly
+* Fast [content server](https://pkg.go.dev/net/http#ServeContent) (stream while downloading)
+
+### Install
+
+**Binaries**
+
+[![Releases](https://img.shields.io/github/release/jpillora/cloud-torrent.svg)](https://github.com/jpillora/cloud-torrent/releases)
+
+See [the latest release](https://github.com/jpillora/cloud-torrent/releases/latest),
+or download and install it now with:
+
+```sh
+curl https://i.jpillora.com/cloud-torrent! | bash
+```
+
+**Docker**
+
+```sh
+docker run -d -p 3000:3000 -v /path/to/downloads:/downloads \
+  ghcr.io/jpillora/cloud-torrent
+```
+
+**Source**
+
+*[Go](https://go.dev/dl/) 1.24+ and [Node](https://nodejs.org) 20+ are required.*
+
+```sh
+git clone https://github.com/jpillora/cloud-torrent
+cd cloud-torrent
+npm --prefix frontend ci
+npm --prefix frontend run build   # builds the SPA into static/dist
+go build -o cloud-torrent .       # embeds static/dist into the binary
+./cloud-torrent --port 3000
+```
+
+### Usage
+
+```
+$ cloud-torrent --help
+
+  Usage: cloud-torrent [options]
+
+  Options:
+  --title, -t        Title of this instance (default Cloud Torrent)
+  --port, -p         Listening port (default 3000)
+  --host, -h         Listening interface (default all)
+  --auth, -a         Optional basic auth in form 'user:password'
+  --config-path, -c  Configuration file path (default cloud-torrent.json)
+  --key-path, -k     TLS Key file path
+  --cert-path        TLS Certificate file path
+  --log, -l          Enable request logging
+  --open, -o         Open now with your default browser
+  --version, -v      display version
+  --help             display help
+```
+
+The download directory and engine options are configured in the UI (gear icon)
+and persisted to `cloud-torrent.json`.
+
+### Development
+
+The Go structs are the single source of truth for data shapes; the TypeScript
+types are generated from them with [tygo](https://github.com/gzuidhof/tygo).
+
+```sh
+make gen-types                    # regenerate frontend/src/types/*.gen.ts
+make check-types                  # CI guard: regenerate + fail if stale
+npm --prefix frontend run dev     # Vite dev server (proxies /sync /api -> :3000)
+go test ./...                     # backend unit tests
+```
+
+### Credits
+
+Powered by [anacrolix/torrent](https://github.com/anacrolix/torrent). A rewrite
+of the original [Node version](https://github.com/jpillora/node-torrent-cloud).
