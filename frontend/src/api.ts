@@ -35,3 +35,47 @@ export const api = {
   file: (action: 'start' | 'stop', infohash: string, path: string) =>
     post('file', { action, infohash, path }),
 }
+
+// SearchResult is one row from a scraper provider (scraper.Result =
+// map[string]string). Known fields are typed; the index signature keeps the
+// raw, provider-defined shape accessible.
+export interface SearchResult {
+  name?: string
+  url?: string
+  path?: string
+  magnet?: string
+  torrent?: string
+  infohash?: string
+  tracker?: string
+  size?: string
+  seeds?: string
+  peers?: string
+  [k: string]: string | undefined
+}
+
+// get issues a GET to /search/* and parses the JSON body, throwing the server's
+// error text (the scraper returns {"error": ...} with a non-2xx status).
+async function get<T>(path: string, params: Record<string, string>): Promise<T> {
+  const res = await fetch(`${path}?${new URLSearchParams(params)}`)
+  if (!res.ok) {
+    let msg = res.statusText
+    try {
+      const body = await res.json()
+      msg = body?.error || msg
+    } catch {
+      // non-JSON error body; keep statusText
+    }
+    throw new Error(msg)
+  }
+  return res.json() as Promise<T>
+}
+
+// search queries the scraper backend (see server/search.go).
+export const search = {
+  // all runs a provider's list query for a page of results.
+  all: (provider: string, query: string, page: number) =>
+    get<SearchResult[]>(`/search/${encodeURIComponent(provider)}`, { query, page: String(page) }),
+  // one resolves a single result's detail page (magnet/infohash/etc.).
+  one: (provider: string, item: string) =>
+    get<SearchResult>(`/search/${encodeURIComponent(provider)}/item`, { item }),
+}

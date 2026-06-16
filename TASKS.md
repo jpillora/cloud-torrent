@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T11:42:42Z
+* updated: 2026-06-16T11:51:29Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -489,11 +489,12 @@ SPEC: §8, §9 §B
 
 ## 22. M3: Omni search mode UI (results + item resolution)
 
-* status: open
+* status: closed
 * priority: P2
 * type: feature
 * depends-on: 11,21
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T11:51:29Z
 
 **Objective:** The Omni bar's search mode UI (third mode) — find torrents and add them.
 
