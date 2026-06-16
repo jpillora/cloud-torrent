@@ -99,6 +99,9 @@ func (s *Server) Run(version string) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/sync", s.handleSync)
 	mux.HandleFunc("/api/", s.handleAPI)
+	mux.Handle("/download/", http.StripPrefix("/download/", downloadHandler(func() string {
+		return s.engine.Config().DownloadDirectory
+	})))
 	mux.Handle("/js/velox.js", velox.JS)
 	mux.Handle("/", gziphandler.GzipHandler(static.Handler()))
 

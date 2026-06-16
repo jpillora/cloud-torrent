@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T09:19:58Z
+* updated: 2026-06-16T09:25:22Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -285,11 +285,12 @@ SPEC: §9 §C, §10
 
 ## 13. M1: Downloads tree UI + file streaming
 
-* status: open
+* status: closed
 * priority: P1
 * type: feature
 * depends-on: 10,8,3
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T09:25:22Z
 
 **Objective:** The Downloads section — browse and stream what's on disk.
 
