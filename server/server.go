@@ -95,7 +95,13 @@ func (s *Server) Run(version string) error {
 		host = "0.0.0.0"
 	}
 	addr := fmt.Sprintf("%s:%d", host, s.Port)
+	log.Printf("Listening at http://%s", addr)
+	return http.ListenAndServe(addr, s.handler())
+}
 
+// handler builds the HTTP handler chain: realtime sync, the action API, file
+// downloads, the velox client, and the embedded SPA.
+func (s *Server) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/sync", s.handleSync)
 	mux.HandleFunc("/api/", s.handleAPI)
@@ -104,9 +110,7 @@ func (s *Server) Run(version string) error {
 	})))
 	mux.Handle("/js/velox.js", velox.JS)
 	mux.Handle("/", gziphandler.GzipHandler(static.Handler()))
-
-	log.Printf("Listening at http://%s", addr)
-	return http.ListenAndServe(addr, mux)
+	return mux
 }
 
 // handleSync upgrades a velox connection on the embedded state and tracks the

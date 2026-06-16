@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-06-16T09:28:37Z
+* updated: 2026-06-16T09:45:34Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -334,11 +334,12 @@ SPEC: §9 §E
 
 ## 15. M1: Core-loop end-to-end test (webtorrent fixture)
 
-* status: open
+* status: closed
 * priority: P1
 * type: task
 * depends-on: 11,12,13,14
 * created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T09:45:34Z
 
 **Objective:** Prove the core loop (choose → track → download) against a real torrent.
 
