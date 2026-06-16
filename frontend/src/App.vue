@@ -9,11 +9,11 @@ import { state, connection } from './state'
 
 <template>
   <div class="app">
-    <!-- temporary realtime round-trip indicator; removed once real state lands -->
+    <!-- temporary realtime indicator; replaced by the real sections later -->
     <p class="sync-demo" data-testid="sync-demo">
       velox:
       {{ connection.connected ? 'connected' : connection.hasConnected ? 'disconnected' : 'connecting…' }}
-      — tick {{ state.Tick ?? 0 }}
+      — {{ Object.keys(state.Torrents ?? {}).length }} torrents
     </p>
     <Header />
     <Omni />
