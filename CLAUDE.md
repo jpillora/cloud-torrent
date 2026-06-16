@@ -62,3 +62,15 @@ md set-status <id> closed    # Mark task done
 - Task IDs are auto-assigned integers
 - Git handles versioning and history
 - The file uses optimistic locking for concurrent access
+
+# Front-end Testing
+
+Use the **Chrome DevTools MCP** for all front-end / UI testing. Drive the running
+app in a real browser to verify UI behaviour and end-to-end flows — e.g. add a
+torrent in the Omni bar → track progress in the Torrent engine → download a file
+— rather than asserting from code alone. Reach for the Chrome DevTools MCP
+whenever validating the Vue front-end or confirming a UI change works.
+
+When a screenshot successfully validates a task, send it to the user via the
+announce endpoint (`https://announce.jpillora.com`, with an `attachment` — see
+the global instructions for image attachments).

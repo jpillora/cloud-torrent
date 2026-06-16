@@ -11,5 +11,6 @@ cloud-torrent.json
 tmp/
 # local dev
 dev.sh
+.claude/settings.local.json
 # os cruft
 .DS_Store
