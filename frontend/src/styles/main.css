@@ -143,3 +143,20 @@ body {
   margin: 0.2rem 0 0;
   font-size: 0.85em;
 }
+
+/* Inline media previews in the downloads tree. */
+.preview-toggle {
+  cursor: pointer;
+}
+.preview {
+  margin: 0.4rem 0 0.6rem 1.4rem;
+}
+.preview img,
+.preview video {
+  display: block;
+  max-width: 100%;
+  max-height: 360px;
+}
+.preview audio {
+  width: 100%;
+}
