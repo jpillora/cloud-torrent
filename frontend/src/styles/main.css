@@ -44,6 +44,54 @@ body {
   pointer-events: none;
 }
 
+/* Connection overlay: masthead covering the page while the sync is down. */
+.connect-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #1b1c1d;
+  color: #fff;
+}
+.connect-overlay h1 {
+  margin: 0.3rem 0;
+  font-weight: 400;
+}
+.connect-overlay .lightning.red {
+  color: #db2828;
+}
+
+/* Global dismissible error banner. */
+.error-banner {
+  position: relative;
+  padding: 0.8rem 2.2rem 0.8rem 0.9rem;
+  border: 1px solid #db2828;
+  border-radius: 4px;
+  background: #fff6f6;
+  color: #9f3a38;
+}
+.error-banner .error-header {
+  font-weight: 700;
+}
+.error-banner p {
+  margin: 0.3rem 0 0;
+  word-break: break-word;
+}
+.error-banner .close {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.45rem;
+  border: none;
+  background: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+}
+
 /* visually-hidden file input behind the Omni upload icon */
 .hidden-file {
   display: none;

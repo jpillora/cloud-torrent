@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { uploadTorrentFiles } from './upload'
+import { connection } from './state'
+import { ui } from './ui'
 import Header from './components/Header.vue'
 import ConfigEditor from './components/ConfigEditor.vue'
 import Omni from './components/Omni.vue'
@@ -36,11 +38,11 @@ async function onDrop(e: DragEvent) {
   dragging.value = false
   const files = e.dataTransfer?.files
   if (!files) return
+  ui.error = ''
   try {
     await uploadTorrentFiles(files)
   } catch (err) {
-    // surfaced by the global error banner once that lands (#20)
-    console.error('torrent upload failed:', err)
+    ui.error = err instanceof Error ? err.message : String(err)
   }
 }
 
@@ -78,13 +80,34 @@ onBeforeUnmount(() => {
 <template>
   <div class="app">
     <Header />
+
+    <!-- global, dismissible error banner -->
+    <div v-if="ui.error" class="error-banner" data-testid="error-banner">
+      <button class="close" title="Dismiss" data-testid="error-dismiss" @click="ui.error = ''">
+        ×
+      </button>
+      <div class="error-header">Error</div>
+      <p>{{ ui.error }}</p>
+    </div>
+
     <ConfigEditor />
     <Omni />
     <Torrents />
     <Downloads />
     <Footer />
+
     <div v-show="dragging" class="file-drop-cover" data-testid="drop-cover">
       <div class="msg">Drop torrent files here</div>
+    </div>
+
+    <!-- connection overlay: covers the page whenever the realtime sync is down -->
+    <div v-if="!connection.connected" class="connect-overlay" data-testid="connect-overlay">
+      <div class="connect-inner">
+        <h1 data-testid="connect-status">
+          {{ connection.hasConnected ? 'Disconnected' : 'Connecting' }}
+        </h1>
+        <h1 class="lightning red">⚡</h1>
+      </div>
     </div>
   </div>
 </template>
