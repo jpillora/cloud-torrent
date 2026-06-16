@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-06-16T07:39:29Z
+* updated: 2026-06-16T07:46:33Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -79,11 +79,12 @@ SPEC: §5, §6
 
 ## 5. M0: Embed frontend build + Vite dev proxy
 
-* status: open
+* status: closed
 * priority: P1
 * type: task
 * depends-on: 2,3
 * created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T07:46:33Z
 
 **Objective:** One binary in production; a smooth proxied dev loop.
 
