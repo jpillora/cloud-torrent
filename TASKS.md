@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-06-16T07:54:56Z
+* updated: 2026-06-16T07:59:00Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -204,11 +204,12 @@ SPEC: §8
 
 ## 10. M1: File serving + download tree (FsNode)
 
-* status: open
+* status: closed
 * priority: P1
 * type: feature
 * depends-on: 2
 * created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T07:59:00Z
 
 **Objective:** List downloaded files as a tree and serve/delete them over HTTP.
 
