@@ -96,6 +96,47 @@ body {
 .hidden-file {
   display: none;
 }
+
+/* Omni search results table. */
+.search-results {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+.search-results td {
+  padding: 0.3rem 0.4rem;
+  border-top: 1px solid #eee;
+  vertical-align: top;
+}
+.search-results .name {
+  width: 100%;
+}
+.search-results .size {
+  white-space: nowrap;
+  color: #666;
+}
+.search-results .users {
+  white-space: nowrap;
+  text-align: right;
+  font-size: 0.85em;
+}
+.search-results .users .seeds {
+  color: #21ba45;
+}
+.search-results .users .peers {
+  color: #db2828;
+  margin-left: 0.4rem;
+}
+.search-results .controls {
+  text-align: right;
+}
+.search-results .download {
+  color: #21ba45;
+  cursor: pointer;
+}
+.search-results .loadmore {
+  text-align: center;
+}
 .omni-icon {
   cursor: pointer;
   user-select: none;
