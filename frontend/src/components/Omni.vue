@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { api } from '../api'
 import { ui } from '../ui'
+import { uploadTorrentFiles } from '../upload'
 import MagnetEditor from './MagnetEditor.vue'
 
 type Mode = 'url' | 'magnet' | 'search' | 'upload'
@@ -9,6 +10,7 @@ type Mode = 'url' | 'magnet' | 'search' | 'upload'
 const input = ref(localStorage.getItem('tcOmni') ?? '')
 const omnierr = ref('')
 const busy = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 // live mode detection from the input
 const mode = computed<Mode>(() => {
@@ -51,6 +53,26 @@ async function submit() {
     busy.value = false
   }
 }
+
+// clicking the Omni icon opens the hidden file picker; chosen .torrent files
+// take the same upload path as the full-page drop cover (master parity: the
+// icon triggers an upload in every mode).
+function pickFiles() {
+  fileInput.value?.click()
+}
+
+async function onFiles(e: Event) {
+  const el = e.target as HTMLInputElement
+  if (!el.files) return
+  omnierr.value = ''
+  try {
+    await uploadTorrentFiles(el.files)
+  } catch (err) {
+    omnierr.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    el.value = '' // allow re-selecting the same file
+  }
+}
 </script>
 
 <template>
@@ -65,7 +87,23 @@ async function submit() {
         @keyup.enter="submit"
         data-testid="omni-input"
       />
-      <span class="omni-icon" :title="mode">{{ icon }}</span>
+      <span
+        class="omni-icon"
+        :title="`Upload .torrent file (${mode})`"
+        role="button"
+        @click="pickFiles"
+        data-testid="omni-upload"
+        >{{ icon }}</span
+      >
+      <input
+        ref="fileInput"
+        type="file"
+        multiple
+        accept=".torrent"
+        class="hidden-file"
+        data-testid="omni-file-input"
+        @change="onFiles"
+      />
     </div>
 
     <p v-if="omnierr" class="omni-error" data-testid="omni-error">{{ omnierr }}</p>

@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T10:21:33Z
+* updated: 2026-06-16T10:31:31Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -379,11 +379,12 @@ SPEC: §9 §A
 
 ## 17. M2: .torrent upload (click + full-page drag-drop)
 
-* status: open
+* status: closed
 * priority: P2
 * type: feature
 * depends-on: 9,11
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T10:31:31Z
 
 **Objective:** Add torrents by uploading `.torrent` files — drag-drop anywhere or click the Omni upload icon.
 
