@@ -58,16 +58,25 @@ export interface SearchResult {
 async function get<T>(path: string, params: Record<string, string>): Promise<T> {
   const res = await fetch(`${path}?${new URLSearchParams(params)}`)
   if (!res.ok) {
-    let msg = res.statusText
-    try {
-      const body = await res.json()
-      msg = body?.error || msg
-    } catch {
-      // non-JSON error body; keep statusText
-    }
-    throw new Error(msg)
+    throw new Error(extractError(await res.text()) || res.statusText)
   }
   return res.json() as Promise<T>
+}
+
+// extractError pulls the message out of the scraper's {"error": "..."} body.
+// The scraper does not escape quotes in the message (Go quotes URLs in its
+// errors), so the body is frequently invalid JSON — parse leniently, falling
+// back to a regex over the raw text rather than surfacing a bare status code.
+function extractError(text: string): string {
+  if (!text) return ''
+  try {
+    const body = JSON.parse(text)
+    if (body?.error) return String(body.error)
+  } catch {
+    const m = /"error"\s*:\s*"(.*)"\s*}\s*$/s.exec(text)
+    if (m) return m[1]
+  }
+  return text
 }
 
 // search queries the scraper backend (see server/search.go).
