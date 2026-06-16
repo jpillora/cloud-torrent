@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T12:00:48Z
+* updated: 2026-06-16T12:06:05Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -536,11 +536,12 @@ SPEC: §1, §9
 
 ## 24. M4: Basic auth + TLS + request logging
 
-* status: open
+* status: closed
 * priority: P3
 * type: feature
 * depends-on: 6
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T12:06:05Z
 
 **Objective:** Port the server's auth, TLS, and logging wrappers.
 
