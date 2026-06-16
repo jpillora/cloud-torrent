@@ -18,5 +18,11 @@ packages:
     # frontend types.
     exclude_files:
       - "server.go"
+    # the server State references engine types; import them and map the
+    # qualified Go names to the imported TS names (tygo would otherwise emit any).
+    frontmatter: |
+      import type { Config, Torrent } from './engine.gen'
     type_mappings:
       time.Time: "string"
+      engine.Config: "Config"
+      engine.Torrent: "Torrent"
