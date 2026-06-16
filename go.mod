@@ -1,6 +1,8 @@
 module github.com/jpillora/cloud-torrent
 
-go 1.24
+go 1.24.2
+
+toolchain go1.24.3
 
 require (
 	github.com/anacrolix/torrent v1.59.1
@@ -9,6 +11,7 @@ require (
 )
 
 require (
+	github.com/NYTimes/gziphandler v1.1.1 // indirect
 	github.com/RoaringBitmap/roaring v1.2.3 // indirect
 	github.com/ajwerner/btree v0.0.0-20211221152037-f427b3e689c0 // indirect
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
@@ -35,6 +38,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
+	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/go-llsqlite/adapter v0.0.0-20230927005056-7f5ce7f0c916 // indirect
 	github.com/go-llsqlite/crawshaw v0.5.6-0.20250312230104-194977a03421 // indirect
@@ -42,12 +46,14 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/gzuidhof/tygo v0.2.21 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/jpillora/eventsource v1.1.0 // indirect
+	github.com/jpillora/velox v0.4.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect

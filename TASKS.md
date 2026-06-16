@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-06-16T08:05:04Z
+* updated: 2026-06-16T08:17:30Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -102,11 +102,12 @@ SPEC: §3, §12
 
 ## 6. M0: velox /sync realtime round-trip
 
-* status: open
+* status: closed
 * priority: P1
 * type: task
 * depends-on: 2,3,4,5
 * created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T08:17:30Z
 
 **Objective:** Prove the realtime stack end-to-end with a trivial synced value ("hello world" for velox).
 
