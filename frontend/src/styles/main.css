@@ -35,3 +35,75 @@ body {
   border: 1px solid #ddd;
   border-radius: 4px;
 }
+
+/* Header: title on the left, status icons on the right.
+   (Functional layout only; Semantic-UI parity is handled in the CSS task.) */
+.section-header.title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.title h2 {
+  margin: 0;
+}
+.title h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.status .icon {
+  cursor: pointer;
+  font-style: normal;
+  line-height: 1;
+  user-select: none;
+}
+.status .lightning {
+  cursor: default;
+}
+.green {
+  filter: none;
+  color: #21ba45;
+}
+.red {
+  color: #db2828;
+}
+
+/* Config editor: simple stacked fields. */
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.config-form h4 {
+  margin: 0 0 0.2rem;
+}
+.config-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.config-form .field-toggle {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+.config-form input[type='text'],
+.config-form input[type='number'] {
+  padding: 0.4rem 0.6rem;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.config-form .buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+.config-error {
+  color: #db2828;
+  margin: 0;
+}
