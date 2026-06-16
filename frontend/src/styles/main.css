@@ -132,3 +132,14 @@ body {
   color: #db2828;
   margin: 0;
 }
+
+/* Per-file start/stop controls in the torrent files table. */
+.files .file-controls {
+  text-align: right;
+  white-space: nowrap;
+}
+.file-error {
+  color: #db2828;
+  margin: 0.2rem 0 0;
+  font-size: 0.85em;
+}
