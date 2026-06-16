@@ -14,6 +14,7 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/jpillora/cloud-torrent/engine"
 	"github.com/jpillora/cloud-torrent/static"
+	"github.com/jpillora/scraper/scraper"
 	"github.com/jpillora/velox"
 )
 
@@ -30,8 +31,10 @@ type Server struct {
 	Log        bool   `help:"Enable request logging"`
 	Open       bool   `help:"Open now with your default browser"`
 
-	engine *engine.Engine
-	state  State
+	engine       *engine.Engine
+	state        State
+	scraper      *scraper.Handler
+	searchConfig []byte // last-loaded (normalized) provider config, for change detection
 }
 
 // Run wires the torrent engine and realtime state, starts the poll/stats loops,
@@ -50,6 +53,12 @@ func (s *Server) Run(version string) error {
 	// rather than a stale partial delta. Connections are driven via state.Handle
 	// (in handleSync) so we can track per-connection users.
 	_ = velox.SyncHandler(&s.state)
+
+	// search providers: load the embedded config, publish into the state, and
+	// start the background refresh of the remote config.
+	if err := s.startSearch(); err != nil {
+		return fmt.Errorf("search init failed: %w", err)
+	}
 
 	// torrent engine + persisted config
 	s.engine = engine.New()
@@ -105,6 +114,7 @@ func (s *Server) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/sync", s.handleSync)
 	mux.HandleFunc("/api/", s.handleAPI)
+	mux.Handle("/search/", http.StripPrefix("/search", s.scraper))
 	mux.Handle("/download/", http.StripPrefix("/download/", downloadHandler(func() string {
 		return s.engine.Config().DownloadDirectory
 	})))
