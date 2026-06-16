@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-06-16T10:38:14Z
+* updated: 2026-06-16T10:44:44Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -424,11 +424,12 @@ SPEC: §8, §9 §C
 
 ## 19. M2: Media previews + spacebar play/pause
 
-* status: open
+* status: closed
 * priority: P2
 * type: feature
 * depends-on: 13
 * created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T10:44:44Z
 
 **Objective:** Inline media previews + the page-wide spacebar play/pause.
 

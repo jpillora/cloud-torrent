@@ -29,14 +29,37 @@ const downloading = computed(() => {
 })
 
 const ext = computed(() => /\.([^.]+)$/.exec(props.node.Name)?.[1].toLowerCase() ?? '')
+
+// previewable media kind for files (drives both the icon and the inline preview)
+type Media = 'audio' | 'image' | 'video'
+const mediaType = computed<Media | null>(() => {
+  if (!isFile.value) return null
+  if (/^(mp3|m4a|flac|wav|ogg)$/.test(ext.value)) return 'audio'
+  if (/^(jpe?g|png|gif|webp)$/.test(ext.value)) return 'image'
+  if (/^(mp4|mkv|mov|avi|webm)$/.test(ext.value)) return 'video'
+  return null
+})
+
 const icon = computed(() => {
   if (downloading.value) return '\u{23F3}' // hourglass
   if (!isFile.value) return open.value ? '\u{1F4C2}' : '\u{1F4C1}' // open/closed folder
-  if (/^(mp3|m4a|flac|wav|ogg)$/.test(ext.value)) return '\u{1F3B5}' // audio
-  if (/^(jpe?g|png|gif|webp)$/.test(ext.value)) return '\u{1F5BC}' // image
-  if (/^(mp4|mkv|mov|avi|webm)$/.test(ext.value)) return '\u{1F3AC}' // video
+  switch (mediaType.value) {
+    case 'audio':
+      return '\u{1F3B5}'
+    case 'image':
+      return '\u{1F5BC}'
+    case 'video':
+      return '\u{1F3AC}'
+  }
   return '\u{1F4C4}' // file
 })
+
+// inline media preview, rendered (and so sourced from download/<path>) only
+// while toggled on
+const showPreview = ref(false)
+function togglePreview() {
+  showPreview.value = !showPreview.value
+}
 
 // folders auto-collapse when not touched in the last 24h
 const open = ref(
@@ -56,6 +79,21 @@ function toggle() {
       }}</a>
       <span v-else class="name" @click="toggle">{{ node.Name }}</span>
       <span class="meta">{{ bytes(node.Size) }} &middot; updated {{ ago(node.Modified) }}</span>
+      <button
+        v-if="mediaType && !downloading"
+        class="preview-toggle"
+        :class="{ active: showPreview }"
+        :title="showPreview ? 'Hide preview' : 'Preview'"
+        data-testid="fs-preview-toggle"
+        @click="togglePreview"
+      >
+        {{ showPreview ? '▾' : '▶' }}
+      </button>
+    </div>
+    <div v-if="showPreview && mediaType" class="preview" data-testid="fs-preview">
+      <audio v-if="mediaType === 'audio'" controls :src="href"></audio>
+      <img v-else-if="mediaType === 'image'" :src="href" :alt="node.Name" />
+      <video v-else-if="mediaType === 'video'" controls :src="href"></video>
     </div>
     <div v-if="!isFile && open" class="children">
       <FileNode v-for="c in children" :key="c.Name" :node="c" :base-path="path" />

@@ -44,13 +44,33 @@ async function onDrop(e: DragEvent) {
   }
 }
 
+// Page-wide spacebar: play/pause the first media player in the viewport (unless
+// the user is typing in a field). Mirrors master's run.js keydown handler.
+function onKeydown(e: KeyboardEvent) {
+  if (e.code !== 'Space') return
+  const el = document.activeElement as HTMLElement | null
+  if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
+  const h = window.innerHeight || document.documentElement.clientHeight
+  for (const m of document.querySelectorAll<HTMLMediaElement>('video, audio')) {
+    const r = m.getBoundingClientRect()
+    const inView = (r.top >= 0 && r.top <= h) || (r.bottom >= 0 && r.bottom <= h)
+    if (!inView) continue
+    if (m.paused) void m.play().catch(() => {})
+    else m.pause()
+    e.preventDefault()
+    break
+  }
+}
+
 onMounted(() => {
   window.addEventListener('dragover', onDragOver)
   window.addEventListener('drop', onDrop)
+  window.addEventListener('keydown', onKeydown)
 })
 onBeforeUnmount(() => {
   window.removeEventListener('dragover', onDragOver)
   window.removeEventListener('drop', onDrop)
+  window.removeEventListener('keydown', onKeydown)
   clearTimeout(hideTimer)
 })
 </script>
