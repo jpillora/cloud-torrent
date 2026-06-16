@@ -1,0 +1,12 @@
+# build output
+dist/
+# js dependencies
+node_modules/
+# runtime data
+downloads
+cloud-torrent.json
+tmp/
+# local dev
+dev.sh
+# os cruft
+.DS_Store
