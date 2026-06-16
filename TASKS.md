@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T14:14:49Z
+* updated: 2026-06-16T15:38:52Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -57,9 +57,9 @@ SPEC: §3
 * status: open
 * priority: P1
 * type: task
-* depends-on: 2,7
+* depends-on: 2,7,10
 * created: 2026-06-16T09:57:13Z
-* updated: 2026-06-16T14:14:49Z
+* updated: 2026-06-16T15:38:52Z
 
 **Objective:** Make Go structs the single source of truth for data shapes by generating TypeScript from them.
 
