@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T12:06:05Z
+* updated: 2026-06-16T12:15:52Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -582,11 +582,12 @@ SPEC: §12
 
 ## 26. M4: Full parity-checklist verification vs master
 
-* status: open
+* status: closed
 * priority: P2
 * type: task
 * depends-on: 15,16,17,18,19,20,22,23,24
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T12:15:52Z
 
 **Objective:** Final gate — verify behaviour is equal to `master`, item by item.
 
