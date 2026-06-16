@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T10:44:44Z
+* updated: 2026-06-16T10:50:27Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -446,11 +446,12 @@ SPEC: §9 §0, §9 §D
 
 ## 20. M2: Connect overlay + global error banner
 
-* status: open
+* status: closed
 * priority: P2
 * type: feature
 * depends-on: 6
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T10:50:27Z
 
 **Objective:** Connection overlay + global error banner — the app-shell feedback layer.
 

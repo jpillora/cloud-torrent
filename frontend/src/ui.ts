@@ -8,8 +8,12 @@ import { reactive } from 'vue'
 //                 settings icon; read by ConfigEditor).
 //   - omniEdit:   whether the Omni magnet editor is open (toggled by both the
 //                 header magnet icon and Omni's own Edit button).
+//   - error:      a shared, app-level error message shown in the dismissible
+//                 global error banner ('' = no banner). For errors with no
+//                 local inline home (e.g. a failed drag-drop upload).
 export const ui = reactive({
   requests: 0,
   configEdit: false,
   omniEdit: false,
+  error: '',
 })
