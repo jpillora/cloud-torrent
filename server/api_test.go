@@ -10,12 +10,6 @@ import (
 	"github.com/jpillora/cloud-torrent/engine"
 )
 
-// Sintel — a stable, WebSeed-backed free torrent (webtorrent.io/free-torrents).
-const (
-	sintelInfoHash = "08ada5a7a6183aae1e09d831df6748d566095a10"
-	sintelMagnet   = "magnet:?xt=urn:btih:" + sintelInfoHash + "&dn=Sintel"
-)
-
 func TestAPIRejectsNonPost(t *testing.T) {
 	s := &Server{}
 	rr := httptest.NewRecorder()
