@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T11:51:29Z
+* updated: 2026-06-16T12:00:48Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -513,11 +513,12 @@ SPEC: §9 §B
 
 ## 23. M4: CSS / visual parity pass vs master
 
-* status: open
+* status: closed
 * priority: P3
 * type: task
 * depends-on: 11,12,13,14,16
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T12:00:48Z
 
 **Objective:** Match the original look without Semantic UI / jQuery.
 
