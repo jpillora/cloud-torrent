@@ -36,6 +36,9 @@
 body {
   margin: 0;
   background: var(--bg);
+  /* with the viewport meta (maximum-scale=1, user-scalable=no) this disables
+     pinch- and double-tap-to-zoom on touch devices */
+  touch-action: manipulation;
 }
 
 a {
@@ -331,6 +334,20 @@ select:focus {
   width: 100%;
   padding: 0.85em 2.6em 0.85em 1em;
   font-size: 1.02rem;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.omni-input:focus {
+  border-color: var(--blue);
+  outline: none;
+  box-shadow: var(--ring);
 }
 .omni-icon {
   position: absolute;
@@ -610,6 +627,11 @@ select:focus {
 /* ---- downloads tree ---------------------------------------------------- */
 .tree {
   font-size: 0.95rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  padding: 0.5rem 0.8rem;
 }
 .node-row {
   display: flex;
