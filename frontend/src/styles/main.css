@@ -9,17 +9,24 @@
   --green-hover: #16ab39;
   --red: #db2828;
   --red-hover: #d01919;
-  --grey-btn: #e0e1e2;
-  --grey-btn-hover: #cacbcd;
-  --text: rgba(0, 0, 0, 0.87);
-  --muted: #8c8c8c;
-  --border: rgba(34, 36, 38, 0.15);
-  --card-shadow: 0 1px 2px 0 rgba(34, 36, 38, 0.15);
-  --radius: 0.28rem;
+  --grey-btn: #eceef1;
+  --grey-btn-hover: #e0e3e8;
+  --text: #1f2329;
+  --muted: #8a9099;
+  --bg: #f4f5f7;
+  --card: #ffffff;
+  --border: rgba(20, 24, 31, 0.1);
+  --card-shadow: 0 1px 2px rgba(20, 24, 31, 0.05), 0 1px 3px rgba(20, 24, 31, 0.04);
+  --card-shadow-hover: 0 2px 6px rgba(20, 24, 31, 0.08), 0 1px 3px rgba(20, 24, 31, 0.05);
+  --ring: 0 0 0 3px rgba(33, 133, 208, 0.18);
+  --radius: 10px;
+  --radius-sm: 7px;
 
   font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
-  line-height: 1.4;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
@@ -28,7 +35,7 @@
 
 body {
   margin: 0;
-  background: #fff;
+  background: var(--bg);
 }
 
 a {
@@ -64,15 +71,18 @@ a:hover {
 button {
   font-family: inherit;
   font-size: 0.85rem;
-  font-weight: 700;
-  color: rgba(0, 0, 0, 0.6);
+  font-weight: 600;
+  color: #4a5159;
   background: var(--grey-btn);
   border: none;
-  border-radius: var(--radius);
-  padding: 0.55em 0.9em;
+  border-radius: var(--radius-sm);
+  padding: 0.55em 0.95em;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.1s ease;
+  transition:
+    background 0.12s ease,
+    box-shadow 0.12s ease,
+    opacity 0.12s ease;
 }
 button:hover {
   background: var(--grey-btn-hover);
@@ -126,26 +136,30 @@ input[type='number'],
 select {
   font-family: inherit;
   font-size: 1rem;
-  padding: 0.55em 0.7em;
+  padding: 0.6em 0.75em;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: #fff;
+  border-radius: var(--radius-sm);
+  background: var(--card);
   color: var(--text);
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 input:focus,
 select:focus {
-  border-color: #85b7d9;
+  border-color: var(--blue);
   outline: none;
+  box-shadow: var(--ring);
 }
 
 /* ---- layout ------------------------------------------------------------ */
 .app {
-  max-width: 700px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 1.5rem 1rem 2.5rem;
+  padding: 2rem 1rem 3rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.35rem;
 }
 
 /* shared section header: title left, muted count/free right */
@@ -153,11 +167,15 @@ select:focus {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.55rem;
 }
 .section-header h3 {
   margin: 0;
+  font-size: 0.78rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #6b7280;
 }
 .section-header .count,
 .section-header .free {
@@ -172,35 +190,41 @@ select:focus {
 }
 .title h2 {
   margin: 0;
-  font-size: 2.2rem;
-  font-weight: 700;
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 .title h2 a {
   color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
 }
 .title h2 a:hover {
   text-decoration: none;
 }
 .title .logo {
-  width: 0.85em;
-  height: 0.85em;
-  vertical-align: -0.06em;
-  margin-right: 0.15rem;
+  width: 0.95em;
+  height: 0.95em;
+  vertical-align: middle;
   color: var(--blue);
 }
 .status {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.65rem;
 }
 .status .icon {
   cursor: pointer;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   color: #9aa0a6;
-  transition: color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    transform 0.12s ease;
 }
 .status .icon:hover {
   color: #5f6368;
+  transform: scale(1.12);
 }
 .status .icon.green {
   color: var(--green);
@@ -222,11 +246,11 @@ select:focus {
 
 /* ---- config editor (a segment card) ------------------------------------ */
 .section-config {
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--card-shadow);
-  padding: 1em;
+  padding: 1.1em 1.2em;
 }
 .config-form {
   display: flex;
@@ -305,8 +329,8 @@ select:focus {
 }
 .omni-input {
   width: 100%;
-  padding: 0.75em 2.6em 0.75em 0.9em;
-  font-size: 1rem;
+  padding: 0.85em 2.6em 0.85em 1em;
+  font-size: 1.02rem;
 }
 .omni-icon {
   position: absolute;
@@ -348,11 +372,11 @@ select:focus {
 
 /* magnet editor */
 .magnet-editor {
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--card-shadow);
-  padding: 1em;
+  padding: 1.1em 1.2em;
   margin-bottom: 0.6rem;
   display: flex;
   flex-direction: column;
@@ -437,12 +461,18 @@ select:focus {
 /* ---- torrents ---------------------------------------------------------- */
 .torrent {
   position: relative;
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--card-shadow);
-  padding: 1em;
+  padding: 1.1em 1.2em;
   margin-bottom: 0.7rem;
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+.torrent:hover {
+  box-shadow: var(--card-shadow-hover);
 }
 .torrent .dimmer {
   position: absolute;
@@ -466,13 +496,18 @@ select:focus {
   min-width: 0;
 }
 .torrent .info .name {
-  font-size: 1.2rem;
+  font-size: 1.05rem;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.torrent .info .name a {
+  color: var(--text);
+}
 .torrent .info .hash {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
@@ -494,15 +529,16 @@ select:focus {
 
 /* progress bar */
 .progress {
-  background: #ededed;
-  border-radius: var(--radius);
+  background: #eaecef;
+  border-radius: 999px;
   overflow: hidden;
-  height: 10px;
-  margin: 0.45rem 0 0;
+  height: 8px;
+  margin: 0.55rem 0 0;
 }
 .progress .bar {
   height: 100%;
   background: var(--blue);
+  border-radius: 999px;
   transition: width 0.3s ease;
 }
 .progress.active .bar {
@@ -727,8 +763,42 @@ select:focus {
   display: none;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
+  .app {
+    padding: 1.25rem 0.85rem 2.5rem;
+    gap: 1.1rem;
+  }
   .title h2 {
-    font-size: 1.65rem;
+    font-size: 1.45rem;
+  }
+
+  /* downloads tree: move the "size · updated" meta onto its own line under
+     the name so long filenames get the full row width instead of being
+     squeezed into a sliver beside the right-pinned meta. */
+  .node-row {
+    flex-wrap: wrap;
+  }
+  .node .name {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .node .meta {
+    order: 2;
+    flex-basis: 100%;
+    margin: 0.05rem 0 0 1.55rem;
+  }
+  /* touch devices have no hover, so keep the row controls visible */
+  .preview-toggle,
+  .del {
+    opacity: 0.55;
+  }
+
+  /* search results: tighter cells on narrow screens */
+  .search-results td {
+    padding: 0.4rem 0.35rem;
+  }
+  .search-results .users,
+  .search-results .size {
+    font-size: 0.78em;
   }
 }
