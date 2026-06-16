@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
+import { mdiCheck } from '@mdi/js'
 import type { Torrent, File } from '../types/generated'
 import { api } from '../api'
 import { bytes } from '../format'
+import Icon from './Icon.vue'
 
 const props = defineProps<{ torrent: Torrent }>()
 const showFiles = ref(false)
@@ -104,7 +106,7 @@ function filename(path: string): string {
           </td>
           <td class="size">
             {{ bytes(f.Size) }}
-            <span v-if="f.Percent === 100" class="check">✓</span>
+            <Icon v-if="f.Percent === 100" class="check" :path="mdiCheck" />
           </td>
           <td class="file-controls">
             <button v-if="!f.Started" class="green" @click="setFile('start', f)" data-testid="file-start">

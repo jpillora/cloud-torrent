@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@fontsource/lato": "^5.2.7",
+    "@mdi/js": "^7.4.47",
     "dayjs": "^1.11.0",
     "vue": "^3.5.0"
   },

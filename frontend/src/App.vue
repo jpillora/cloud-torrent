@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { mdiFlash, mdiClose } from '@mdi/js'
 import { uploadTorrentFiles } from './upload'
 import { connection } from './state'
 import { ui } from './ui'
+import Icon from './components/Icon.vue'
 import Header from './components/Header.vue'
 import ConfigEditor from './components/ConfigEditor.vue'
 import Omni from './components/Omni.vue'
@@ -84,7 +86,7 @@ onBeforeUnmount(() => {
     <!-- global, dismissible error banner -->
     <div v-if="ui.error" class="error-banner" data-testid="error-banner">
       <button class="close" title="Dismiss" data-testid="error-dismiss" @click="ui.error = ''">
-        ×
+        <Icon :path="mdiClose" />
       </button>
       <div class="error-header">Error</div>
       <p>{{ ui.error }}</p>
@@ -106,7 +108,7 @@ onBeforeUnmount(() => {
         <h1 data-testid="connect-status">
           {{ connection.hasConnected ? 'Disconnected' : 'Connecting' }}
         </h1>
-        <h1 class="lightning red">⚡</h1>
+        <h1 class="lightning red"><Icon :path="mdiFlash" /></h1>
       </div>
     </div>
   </div>

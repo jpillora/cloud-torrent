@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { mdiMagnify, mdiMagnet, mdiUpload, mdiDownload } from '@mdi/js'
 import { api, search, type SearchResult } from '../api'
 import { state } from '../state'
 import { ui } from '../ui'
 import { uploadTorrentFiles } from '../upload'
+import Icon from './Icon.vue'
 import MagnetEditor from './MagnetEditor.vue'
 
 type Mode = 'url' | 'magnet' | 'search' | 'upload'
@@ -134,16 +136,16 @@ async function submitSearchItem(r: SearchResult) {
   }
 }
 
-// trailing indicator reflecting the mode (proper icons land with the CSS pass)
-const icon = computed(() => {
+// trailing indicator reflecting the current mode
+const modeIcon = computed(() => {
   switch (mode.value) {
     case 'search':
-      return '\u{1F50D}' // magnifier
+      return mdiMagnify
     case 'magnet':
     case 'url':
-      return '\u{1F9F2}' // magnet
+      return mdiMagnet
     default:
-      return '\u{2B06}' // upload
+      return mdiUpload
   }
 })
 
@@ -207,8 +209,9 @@ async function onFiles(e: Event) {
         role="button"
         @click="pickFiles"
         data-testid="omni-upload"
-        >{{ icon }}</span
       >
+        <Icon :path="modeIcon" />
+      </span>
       <input
         ref="fileInput"
         type="file"
@@ -275,7 +278,7 @@ async function onFiles(e: Event) {
               data-testid="search-download"
               @click="submitSearchItem(r)"
             >
-              ⬇
+              <Icon :path="mdiDownload" />
             </button>
           </td>
         </tr>
