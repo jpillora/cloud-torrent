@@ -4,6 +4,7 @@ import { mdiCheck } from '@mdi/js'
 import type { Torrent, File } from '../types/generated'
 import { api } from '../api'
 import { bytes } from '../format'
+import AsyncButton from './AsyncButton.vue'
 import Icon from './Icon.vue'
 
 const props = defineProps<{ torrent: Torrent }>()
@@ -20,14 +21,16 @@ const zipUrl = computed(() =>
   props.torrent.Percent === 100 ? 'download/' + encodeURIComponent(props.torrent.Name) : '',
 )
 
+// return the promise so AsyncButton can show its loading state until the
+// request settles (failures surface in the global error banner)
 function start() {
-  api.torrent('start', props.torrent.InfoHash)
+  return api.torrent('start', props.torrent.InfoHash)
 }
 function stop() {
-  api.torrent('stop', props.torrent.InfoHash)
+  return api.torrent('stop', props.torrent.InfoHash)
 }
 function remove() {
-  api.torrent('delete', props.torrent.InfoHash)
+  return api.torrent('delete', props.torrent.InfoHash)
 }
 
 // per-file start/stop. StartFile is supported; StopFile returns "unsupported"
@@ -65,13 +68,13 @@ function filename(path: string): string {
 
       <div class="controls">
         <button :class="{ active: showFiles }" @click="showFiles = !showFiles">Files</button>
-        <button v-if="!torrent.Started" class="green" @click="start" data-testid="torrent-start">
+        <AsyncButton v-if="!torrent.Started" class="green" :action="start" data-testid="torrent-start">
           Start
-        </button>
-        <button v-else class="red" @click="stop" data-testid="torrent-stop">Stop</button>
-        <button v-if="!torrent.Started" class="red" @click="remove" data-testid="torrent-remove">
+        </AsyncButton>
+        <AsyncButton v-else class="red" :action="stop" data-testid="torrent-stop">Stop</AsyncButton>
+        <AsyncButton v-if="!torrent.Started" class="red" :action="remove" data-testid="torrent-remove">
           {{ torrent.Loaded ? 'Remove' : 'Cancel' }}
-        </button>
+        </AsyncButton>
       </div>
     </div>
 
@@ -109,10 +112,17 @@ function filename(path: string): string {
             <Icon v-if="f.Percent === 100" class="check" :path="mdiCheck" />
           </td>
           <td class="file-controls">
-            <button v-if="!f.Started" class="green" @click="setFile('start', f)" data-testid="file-start">
+            <AsyncButton
+              v-if="!f.Started"
+              class="green"
+              :action="() => setFile('start', f)"
+              data-testid="file-start"
+            >
               Start
-            </button>
-            <button v-else class="red" @click="setFile('stop', f)" data-testid="file-stop">Stop</button>
+            </AsyncButton>
+            <AsyncButton v-else class="red" :action="() => setFile('stop', f)" data-testid="file-stop">
+              Stop
+            </AsyncButton>
           </td>
         </tr>
       </tbody>
