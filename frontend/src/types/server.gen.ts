@@ -13,3 +13,19 @@ export interface FsNode {
   Modified: string;
   Children: (FsNode | undefined)[];
 }
+
+//////////
+// source: state.go
+
+/**
+ * State is the root object synced to every connected browser via velox. It
+ * currently carries only a demo counter; the engine config, torrents,
+ * downloads, connected users and system stats are added by the root-state task.
+ */
+export interface State {
+  /**
+   * Tick is a demo counter, incremented server-side, used to prove realtime
+   * sync end-to-end. It is removed once the real state lands.
+   */
+  Tick: number /* int */;
+}
