@@ -9,7 +9,9 @@ require (
 	github.com/anacrolix/torrent v1.59.1
 	github.com/jpillora/archive v0.0.0-20160301031048-e0b3681851f1
 	github.com/jpillora/backoff v1.0.0
+	github.com/jpillora/cookieauth v1.1.1
 	github.com/jpillora/opts v1.2.3
+	github.com/jpillora/requestlog v1.0.0
 	github.com/jpillora/scraper v0.3.0
 	github.com/jpillora/velox v0.4.2
 	github.com/shirou/gopsutil/v3 v3.24.5
@@ -35,6 +37,7 @@ require (
 	github.com/anacrolix/sync v0.5.4 // indirect
 	github.com/anacrolix/upnp v0.1.4 // indirect
 	github.com/anacrolix/utp v0.1.0 // indirect
+	github.com/andrew-d/go-termutil v0.0.0-20150726205930-009166a695a2 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/benbjohnson/immutable v0.4.1-0.20221220213129-8932b999621d // indirect
@@ -44,8 +47,10 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
+	github.com/elithrar/simple-scrypt v1.3.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
+	github.com/floatdrop/lru v1.3.0 // indirect
 	github.com/go-llsqlite/adapter v0.0.0-20230927005056-7f5ce7f0c916 // indirect
 	github.com/go-llsqlite/crawshaw v0.5.6-0.20250312230104-194977a03421 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -59,7 +64,9 @@ require (
 	github.com/hashicorp/go-multierror v1.1.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/jpillora/ansi v1.0.3 // indirect
 	github.com/jpillora/eventsource v1.1.0 // indirect
+	github.com/jpillora/sizestr v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/lufia/plan9stats v0.0.0-20220913051719-115f729f3c8c // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
@@ -97,6 +104,7 @@ require (
 	github.com/tidwall/btree v1.6.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
+	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce // indirect
 	github.com/wlynxg/anet v0.0.3 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect

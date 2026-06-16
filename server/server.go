@@ -1,6 +1,8 @@
 package server
 
 import (
+	"compress/gzip"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -14,6 +16,8 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/jpillora/cloud-torrent/engine"
 	"github.com/jpillora/cloud-torrent/static"
+	"github.com/jpillora/cookieauth"
+	"github.com/jpillora/requestlog"
 	"github.com/jpillora/scraper/scraper"
 	"github.com/jpillora/velox"
 )
@@ -104,12 +108,33 @@ func (s *Server) Run(version string) error {
 		host = "0.0.0.0"
 	}
 	addr := fmt.Sprintf("%s:%d", host, s.Port)
-	log.Printf("Listening at http://%s", addr)
-	return http.ListenAndServe(addr, s.handler())
+
+	// TLS is enabled when a cert/key pair is given; both are required.
+	isTLS := s.CertPath != "" || s.KeyPath != ""
+	if isTLS && (s.CertPath == "" || s.KeyPath == "") {
+		return fmt.Errorf("both --cert-path and --key-path are required for TLS")
+	}
+	proto := "http"
+	if isTLS {
+		proto = "https"
+	}
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: s.handler(),
+		// disable HTTP/2: velox's streaming sync is incompatible with it.
+		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){},
+	}
+	log.Printf("Listening at %s://%s", proto, addr)
+	if isTLS {
+		return srv.ListenAndServeTLS(s.CertPath, s.KeyPath)
+	}
+	return srv.ListenAndServe()
 }
 
-// handler builds the HTTP handler chain: realtime sync, the action API, file
-// downloads, the velox client, and the embedded SPA.
+// handler builds the HTTP handler chain: the route mux (realtime sync, action
+// API, search, file downloads, velox client, embedded SPA) wrapped — innermost
+// to outermost — by gzip, optional basic auth, and optional request logging,
+// composed exactly as the original server.
 func (s *Server) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/sync", s.handleSync)
@@ -119,8 +144,29 @@ func (s *Server) handler() http.Handler {
 		return s.engine.Config().DownloadDirectory
 	})))
 	mux.Handle("/js/velox.js", velox.JS)
-	mux.Handle("/", gziphandler.GzipHandler(static.Handler()))
-	return mux
+	mux.Handle("/", static.Handler())
+
+	// gzip everything. minSize 0 (gzip even small/streamed responses) keeps the
+	// velox sync stream flushing in realtime instead of buffering to a threshold.
+	h := http.Handler(mux)
+	gzipWrap, _ := gziphandler.NewGzipLevelAndMinSize(gzip.DefaultCompression, 0)
+	h = gzipWrap(h)
+
+	// basic auth (cookie-backed) when --auth user:pass is provided
+	if s.Auth != "" {
+		user, pass := s.Auth, ""
+		if parts := strings.SplitN(s.Auth, ":", 2); len(parts) == 2 {
+			user, pass = parts[0], parts[1]
+		}
+		h = cookieauth.New().SetUserPass(user, pass).Wrap(h)
+		log.Printf("Enabled HTTP authentication")
+	}
+
+	// request logging, outermost so it records every request
+	if s.Log {
+		h = requestlog.Wrap(h)
+	}
+	return h
 }
 
 // handleSync upgrades a velox connection on the embedded state and tracks the
