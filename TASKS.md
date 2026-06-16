@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-06-16T09:25:22Z
+* updated: 2026-06-16T09:28:37Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -311,11 +311,12 @@ SPEC: §9 §D, §10
 
 ## 14. M1: Footer (version + resources)
 
-* status: open
+* status: closed
 * priority: P2
 * type: feature
 * depends-on: 8,3
 * created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T09:28:37Z
 
 **Objective:** The Footer — version + live resource usage.
 
