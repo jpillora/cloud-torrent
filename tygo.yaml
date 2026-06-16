@@ -1,0 +1,22 @@
+# Generates TypeScript interfaces from the Go structs that make up the synced
+# application state + API payloads. tygo overwrites a shared output_path, so each
+# Go package emits its own *.gen.ts file; frontend/src/types/generated.ts is a
+# barrel that re-exports them (the stable import surface for the frontend).
+packages:
+  - path: "github.com/jpillora/cloud-torrent/engine"
+    output_path: "frontend/src/types/engine.gen.ts"
+    # engine.go holds the Engine struct (only unexported fields) + logic — not a
+    # synced data type.
+    exclude_files:
+      - "engine.go"
+    type_mappings:
+      time.Time: "string"
+
+  - path: "github.com/jpillora/cloud-torrent/server"
+    output_path: "frontend/src/types/server.gen.ts"
+    # server.go holds the CLI flag struct, not synced state — keep it out of the
+    # frontend types.
+    exclude_files:
+      - "server.go"
+    type_mappings:
+      time.Time: "string"
