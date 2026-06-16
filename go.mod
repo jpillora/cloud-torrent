@@ -8,12 +8,15 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/anacrolix/torrent v1.59.1
 	github.com/jpillora/archive v0.0.0-20160301031048-e0b3681851f1
+	github.com/jpillora/backoff v1.0.0
 	github.com/jpillora/opts v1.2.3
+	github.com/jpillora/scraper v0.3.0
 	github.com/jpillora/velox v0.4.2
 	github.com/shirou/gopsutil/v3 v3.24.5
 )
 
 require (
+	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/RoaringBitmap/roaring v1.2.3 // indirect
 	github.com/ajwerner/btree v0.0.0-20211221152037-f427b3e689c0 // indirect
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
@@ -32,6 +35,7 @@ require (
 	github.com/anacrolix/sync v0.5.4 // indirect
 	github.com/anacrolix/upnp v0.1.4 // indirect
 	github.com/anacrolix/utp v0.1.0 // indirect
+	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/benbjohnson/immutable v0.4.1-0.20221220213129-8932b999621d // indirect
 	github.com/bits-and-blooms/bitset v1.2.2 // indirect

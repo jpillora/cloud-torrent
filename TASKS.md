@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-06-16T10:50:27Z
+* updated: 2026-06-16T11:42:42Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -468,11 +468,12 @@ SPEC: §9 §0
 
 ## 21. M3: Scraper search backend (/search + provider refresh)
 
-* status: open
+* status: closed
 * priority: P2
 * type: feature
 * depends-on: 8
 * created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T11:42:42Z
 
 **Objective:** Backend torrent search via `jpillora/scraper` providers.
 

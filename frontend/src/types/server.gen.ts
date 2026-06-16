@@ -47,11 +47,14 @@ export interface FsNode {
 }
 
 //////////
+// source: search.go
+
+
+//////////
 // source: state.go
 
 /**
- * State is the root object synced to every connected browser via velox. Search
- * providers are added with the search backend task.
+ * State is the root object synced to every connected browser via velox.
  */
 export interface State {
   Config: Config;
@@ -59,6 +62,7 @@ export interface State {
   Torrents: { [key: string]: Torrent | undefined};
   Users: { [key: string]: string};
   Stats: Stats;
+  SearchProviders: any /* scraper.Config */;
 }
 
 //////////
