@@ -1,9 +1,22 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { mdiFlash, mdiClose } from '@mdi/js'
 import { uploadTorrentFiles } from './upload'
-import { connection } from './state'
+import { connection, retryNow } from './state'
 import { ui } from './ui'
+
+// connection overlay copy, driven by the reconnect loop's phase
+const connTitle = computed(() => (connection.hasConnected ? 'Connection lost' : 'Connecting'))
+const connDetail = computed(() => {
+  switch (connection.phase) {
+    case 'waiting':
+      return `Next attempt in ${connection.retryInSec}s · attempt ${connection.attempt}`
+    case 'retrying':
+      return `Reconnecting… · attempt ${connection.attempt}`
+    default:
+      return 'Reaching the server…'
+  }
+})
 import Icon from './components/Icon.vue'
 import Header from './components/Header.vue'
 import ConfigEditor from './components/ConfigEditor.vue'
@@ -102,13 +115,19 @@ onBeforeUnmount(() => {
       <div class="msg">Drop torrent files here</div>
     </div>
 
-    <!-- connection overlay: covers the page whenever the realtime sync is down -->
+    <!-- connection overlay: dims/blurs the app whenever the realtime sync is
+         down, and shows the reconnect loop's live status -->
     <div v-if="!connection.connected" class="connect-overlay" data-testid="connect-overlay">
-      <div class="connect-inner">
-        <h1 data-testid="connect-status">
-          {{ connection.hasConnected ? 'Disconnected' : 'Connecting' }}
-        </h1>
-        <h1 class="lightning red"><Icon :path="mdiFlash" /></h1>
+      <div class="connect-card">
+        <div class="connect-pulse" :class="connection.phase">
+          <Icon :path="mdiFlash" />
+        </div>
+        <h2 data-testid="connect-status">{{ connTitle }}</h2>
+        <p class="connect-detail" data-testid="connect-detail">{{ connDetail }}</p>
+        <p v-if="connection.error" class="connect-error" data-testid="connect-error">
+          {{ connection.error }}
+        </p>
+        <button class="blue" data-testid="connect-retry" @click="retryNow">Retry now</button>
       </div>
     </div>
   </div>

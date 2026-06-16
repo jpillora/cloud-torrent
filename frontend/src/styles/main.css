@@ -740,16 +740,100 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 17, 21, 0.5);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  animation: overlay-in 0.2s ease;
+}
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+.connect-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
   text-align: center;
-  background: #1b1c1d;
+  min-width: 260px;
+  max-width: min(90vw, 380px);
+  padding: 1.9rem 2rem 1.6rem;
+  border-radius: 16px;
   color: #fff;
+  background: rgba(28, 30, 36, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
+  animation: card-in 0.25s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
-.connect-overlay h1 {
-  margin: 0.3rem 0;
-  font-weight: 400;
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
 }
-.connect-overlay .lightning.red {
-  color: var(--red);
+.connect-pulse {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #f0b429; /* amber: actively trying */
+}
+.connect-pulse .mdi {
+  width: 26px;
+  height: 26px;
+  z-index: 1;
+}
+.connect-pulse::before,
+.connect-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  animation: connect-ring 1.8s ease-out infinite;
+}
+.connect-pulse::after {
+  animation-delay: 0.9s;
+}
+@keyframes connect-ring {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+/* waiting between attempts -> calmer red; connecting/retrying -> amber */
+.connect-pulse.waiting {
+  color: #e5484d;
+}
+.connect-card h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+.connect-detail {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+.connect-error {
+  margin: 0.25rem 0 0;
+  max-width: 320px;
+  font-size: 0.78rem;
+  color: #ff9b9b;
+  word-break: break-word;
+}
+.connect-card button {
+  margin-top: 0.7rem;
 }
 .error-banner {
   position: relative;
