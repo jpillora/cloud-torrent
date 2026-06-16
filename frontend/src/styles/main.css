@@ -28,6 +28,31 @@ body {
   color: #999;
 }
 
+/* Full-page cover shown while dragging .torrent files onto the window.
+   pointer-events:none lets drag events keep reaching the underlying elements
+   (and window). Full Semantic-UI styling lands in the CSS parity task. */
+.file-drop-cover {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.6rem;
+  pointer-events: none;
+}
+
+/* visually-hidden file input behind the Omni upload icon */
+.hidden-file {
+  display: none;
+}
+.omni-icon {
+  cursor: pointer;
+  user-select: none;
+}
+
 .omni-input {
   width: 100%;
   padding: 0.6rem 0.8rem;
