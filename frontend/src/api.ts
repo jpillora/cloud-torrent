@@ -1,8 +1,10 @@
 import type { Config } from './types/generated'
+import { ui } from './ui'
 
 // post sends a typed action to POST /api/<action>. JSON bodies are stringified;
 // a Uint8Array (a .torrent file) is sent as-is. Failures throw the server's
 // error text. State changes are observed via velox, not the response body.
+// ui.requests is bumped for the duration so the header shows a spinner.
 async function post(action: string, body?: unknown): Promise<void> {
   const init: RequestInit = { method: 'POST' }
   if (body instanceof Uint8Array) {
@@ -11,9 +13,14 @@ async function post(action: string, body?: unknown): Promise<void> {
   } else if (body != null) {
     init.body = JSON.stringify(body)
   }
-  const res = await fetch(`/api/${action}`, init)
-  if (!res.ok) {
-    throw new Error((await res.text()) || res.statusText)
+  ui.requests++
+  try {
+    const res = await fetch(`/api/${action}`, init)
+    if (!res.ok) {
+      throw new Error((await res.text()) || res.statusText)
+    }
+  } finally {
+    ui.requests--
   }
 }
 

@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T09:45:34Z
+* updated: 2026-06-16T10:21:33Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -357,11 +357,12 @@ SPEC: §10, §11
 
 ## 16. M2: Header titlebar + settings/config editor
 
-* status: open
+* status: closed
 * priority: P2
 * type: feature
 * depends-on: 9,8,3
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T10:21:33Z
 
 **Objective:** The Header section — title bar + the settings/config editor.
 

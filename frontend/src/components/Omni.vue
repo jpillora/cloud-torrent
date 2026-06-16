@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { api } from '../api'
+import { ui } from '../ui'
 import MagnetEditor from './MagnetEditor.vue'
 
 type Mode = 'url' | 'magnet' | 'search' | 'upload'
 
 const input = ref(localStorage.getItem('tcOmni') ?? '')
 const omnierr = ref('')
-const editing = ref(false)
 const busy = ref(false)
 
 // live mode detection from the input
@@ -55,7 +55,7 @@ async function submit() {
 
 <template>
   <section class="section section-omni">
-    <MagnetEditor v-if="editing" v-model="input" @error="omnierr = $event" />
+    <MagnetEditor v-if="ui.omniEdit" v-model="input" @error="omnierr = $event" />
 
     <div class="omni-input-wrap">
       <input
@@ -81,7 +81,7 @@ async function submit() {
       </button>
       <template v-else-if="mode === 'magnet'">
         <button :disabled="busy" @click="submit" data-testid="omni-load">Load Magnet</button>
-        <button :class="{ active: editing }" @click="editing = !editing">Edit</button>
+        <button :class="{ active: ui.omniEdit }" @click="ui.omniEdit = !ui.omniEdit">Edit</button>
       </template>
     </div>
   </section>
