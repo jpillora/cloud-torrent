@@ -2,6 +2,37 @@
 import type { Config, Torrent } from './engine.gen'
 
 //////////
+// source: api.go
+
+/**
+ * URLRequest fetches a remote .torrent file by URL.
+ */
+export interface URLRequest {
+  url: string;
+}
+/**
+ * MagnetRequest adds a torrent from a magnet URI.
+ */
+export interface MagnetRequest {
+  uri: string;
+}
+/**
+ * TorrentRequest controls a torrent; Action is "start", "stop" or "delete".
+ */
+export interface TorrentRequest {
+  action: string;
+  infohash: string;
+}
+/**
+ * FileRequest controls a single file; Action is "start" or "stop".
+ */
+export interface FileRequest {
+  action: string;
+  infohash: string;
+  path: string;
+}
+
+//////////
 // source: files.go
 
 /**
