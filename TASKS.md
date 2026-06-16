@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T09:08:15Z
+* updated: 2026-06-16T09:19:58Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -260,11 +260,12 @@ SPEC: §9 §B, §10
 
 ## 12. M1: Torrent engine UI (live progress + controls)
 
-* status: open
+* status: closed
 * priority: P1
 * type: feature
 * depends-on: 8,3,4
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T09:19:58Z
 
 **Objective:** The Torrent-engine section — live, controllable torrent cards.
 
