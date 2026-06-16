@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import type { Torrent, File } from '../types/generated'
 import { api } from '../api'
 import { bytes } from '../format'
 
 const props = defineProps<{ torrent: Torrent }>()
 const showFiles = ref(false)
+
+// per-file API errors, keyed by file path (e.g. Stop -> "unsupported").
+const fileErrors = reactive<Record<string, string>>({})
 
 const files = computed<File[]>(() =>
   (props.torrent.Files ?? []).filter((f): f is File => !!f),
@@ -23,6 +26,17 @@ function stop() {
 }
 function remove() {
   api.torrent('delete', props.torrent.InfoHash)
+}
+
+// per-file start/stop. StartFile is supported; StopFile returns "unsupported"
+// (master parity) — the resulting error is surfaced inline on the file row.
+async function setFile(action: 'start' | 'stop', f: File) {
+  delete fileErrors[f.Path]
+  try {
+    await api.file(action, props.torrent.InfoHash, f.Path)
+  } catch (e) {
+    fileErrors[f.Path] = e instanceof Error ? e.message : String(e)
+  }
 }
 
 function filename(path: string): string {
@@ -70,11 +84,12 @@ function filename(path: string): string {
         <tr>
           <th class="name">File</th>
           <th class="size">Size</th>
+          <th class="file-controls"></th>
         </tr>
       </thead>
       <tbody>
         <tr v-if="files.length === 0">
-          <td colspan="2" class="muted">No files</td>
+          <td colspan="3" class="muted">No files</td>
         </tr>
         <tr v-for="f in files" :key="f.Path">
           <td class="name">
@@ -83,10 +98,19 @@ function filename(path: string): string {
             <div v-if="f.Percent > 0 && f.Percent < 100" class="progress active">
               <div class="bar" :style="{ width: f.Percent + '%' }"></div>
             </div>
+            <p v-if="fileErrors[f.Path]" class="file-error" data-testid="file-error">
+              {{ fileErrors[f.Path] }}
+            </p>
           </td>
           <td class="size">
             {{ bytes(f.Size) }}
             <span v-if="f.Percent === 100" class="check">✓</span>
+          </td>
+          <td class="file-controls">
+            <button v-if="!f.Started" class="green" @click="setFile('start', f)" data-testid="file-start">
+              Start
+            </button>
+            <button v-else class="red" @click="setFile('stop', f)" data-testid="file-stop">Stop</button>
           </td>
         </tr>
       </tbody>
@@ -94,6 +118,7 @@ function filename(path: string): string {
         <tr>
           <th class="name">{{ files.length }} Files</th>
           <th class="size">{{ bytes(torrent.Size) }} Total</th>
+          <th class="file-controls"></th>
         </tr>
       </tfoot>
     </table>

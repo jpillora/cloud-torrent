@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T10:31:31Z
+* updated: 2026-06-16T10:38:14Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -401,11 +401,12 @@ SPEC: §9 §0, §9 §B
 
 ## 18. M2: Per-file start/stop controls
 
-* status: open
+* status: closed
 * priority: P2
 * type: feature
 * depends-on: 12,9
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T10:38:14Z
 
 **Objective:** Per-file start/stop within a torrent.
 
