@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T12:07:26Z
+* updated: 2026-06-16T13:39:25Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -30,10 +30,11 @@ SPEC: §3, §12
 
 ## 3. M0: Scaffold Vue 3 + Vite + TypeScript frontend
 
-* status: open
+* status: closed
 * priority: P1
 * type: task
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T13:39:25Z
 
 **Objective:** Create the Vue 3 + Vite + TypeScript frontend shell that the five sections will live in.
 
