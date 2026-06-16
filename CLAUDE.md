@@ -81,10 +81,9 @@ Ground-up rewrite of cloud-torrent preserving the original UX. **Go** backend
 (`anacrolix/torrent` engine, `jpillora/velox` realtime sync) + **Vue 3 + Vite +
 TypeScript** frontend, compiled to a **single binary** (the built SPA is
 `go:embed`-ed). Go structs are the single source of truth — TS types are
-**generated** from them with `tygo`. See `SPEC.md` (full spec) and `HANDOVER.md`
-(status + architecture map). The **`master` branch is the parity oracle** —
-`git show master:<path>` to compare; it's the original AngularJS + Semantic-UI
-build.
+**generated** from them with `tygo`. See `SPEC.md` for the full spec. The
+**`master` branch is the parity oracle** — `git show master:<path>` to compare;
+it's the original AngularJS + Semantic-UI build.
 
 Layout: `main.go` (CLI via jpillora/opts) → `server/` (state/server/api/files/
 stats/search) → `engine/` (anacrolix wrapper) → `static/` (embeds `dist/`) →
@@ -94,10 +93,13 @@ has `gen-types`/`check-types`.
 ## Build / run / test (and the CWD trap)
 
 ```
-npm --prefix frontend run build    # vue-tsc + vite -> static/dist (NOT frontend/dist)
-go build -o /tmp/ct .              # from REPO ROOT; embeds static/dist
-go test ./...                      # unit; -tags e2e for the live core-loop test
-make check-types                   # regen types + git diff --exit-code (CI guard)
+npm --prefix frontend install                  # first time
+npm --prefix frontend run build                # vue-tsc + vite -> static/dist (NOT frontend/dist)
+npm --prefix frontend run dev                  # vite :5173, proxies /sync /api /download /js/velox.js -> :3000
+go build -o /tmp/ct .                           # from REPO ROOT; embeds static/dist
+go test ./...                                   # unit (fast, hermetic)
+go test -tags e2e -run E2E ./server/...         # live core-loop E2E (downloads a real fixture, ~6s)
+make check-types                                # regen types + git diff --exit-code (CI guard)
 ```
 
 - **CWD trap:** the Bash tool's working dir persists. `cd frontend && npm build`
@@ -197,10 +199,18 @@ make check-types                   # regen types + git diff --exit-code (CI guar
 - An `<input>` with **no `type` attribute is not matched by `input[type='text']`
   selectors** — it'll silently use the browser-default border. Style by class or
   add the type.
+- **TS 5.7 typed arrays:** `Uint8Array<ArrayBufferLike>` isn't assignable to
+  `BodyInit`; `api.ts` casts via `as unknown as BodyInit` for the `.torrent`
+  upload body.
 
 ## Browser testing — Chrome DevTools MCP (techniques that work here)
 - MCP connects to a Chrome on `127.0.0.1:9223`; launch headless if none. Drive
-  the running binary, not a dev server, to test the embedded build.
+  the running binary, not a dev server, to test the embedded build. Launch with:
+  ```
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+    --remote-debugging-port=9223 --user-data-dir=/tmp/chrome-ct-debug --headless=new \
+    --no-first-run --no-default-browser-check about:blank &
+  ```
 - **SVG elements have no `.click()` method** — Vue's `@click` works for real
   clicks, but in `evaluate_script` use `el.dispatchEvent(new MouseEvent('click',
   {bubbles:true}))`.
