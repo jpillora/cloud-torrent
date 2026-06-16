@@ -1,5 +1,8 @@
-# build output
-dist/
+# build output (keep the embed placeholder so `go build` always compiles)
+/dist/
+/frontend/dist/
+/static/dist/*
+!/static/dist/.gitkeep
 # js dependencies
 node_modules/
 # runtime data
