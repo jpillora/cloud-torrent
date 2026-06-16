@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-06-16T08:32:34Z
+* updated: 2026-06-16T09:08:15Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -233,11 +233,12 @@ SPEC: §8, §9 §D
 
 ## 11. M1: Omni bar - magnet + torrent URL modes
 
-* status: open
+* status: closed
 * priority: P1
 * type: feature
 * depends-on: 9,3,4
 * created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T09:08:15Z
 
 **Objective:** The universal Omni input — first two modes (magnet + torrent URL), the heart of "choose a torrent".
 
