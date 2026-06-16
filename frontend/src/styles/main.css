@@ -81,6 +81,22 @@ button:disabled {
   opacity: 0.45;
   cursor: default;
 }
+/* async action buttons: dimmed + spinner while their request is in flight */
+button.loading {
+  opacity: 0.8;
+  cursor: default;
+}
+.btn-spinner {
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  margin-right: 0.4em;
+  vertical-align: -0.1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
 button.green {
   background: var(--green);
   color: #fff;

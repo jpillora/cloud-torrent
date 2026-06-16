@@ -4,6 +4,7 @@ import { state } from '../state'
 import { ui } from '../ui'
 import { api } from '../api'
 import type { Config } from '../types/generated'
+import AsyncButton from './AsyncButton.vue'
 
 // A local, editable copy of the synced Config. Editing a copy (rather than
 // state.Config directly) keeps an incoming velox push from clobbering an
@@ -68,7 +69,7 @@ function cancel() {
       <p v-if="error" class="config-error" data-testid="config-error">{{ error }}</p>
 
       <div class="buttons">
-        <button type="submit" data-testid="config-save">Save</button>
+        <AsyncButton class="blue" :action="save" data-testid="config-save">Save</AsyncButton>
         <button type="button" @click="cancel" data-testid="config-cancel">Cancel</button>
       </div>
     </form>

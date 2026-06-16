@@ -5,6 +5,7 @@ import { api, search, type SearchResult } from '../api'
 import { state } from '../state'
 import { ui } from '../ui'
 import { uploadTorrentFiles } from '../upload'
+import AsyncButton from './AsyncButton.vue'
 import Icon from './Icon.vue'
 import MagnetEditor from './MagnetEditor.vue'
 
@@ -226,16 +227,16 @@ async function onFiles(e: Event) {
     <p v-if="omnierr" class="omni-error" data-testid="omni-error">{{ omnierr }}</p>
 
     <div class="omni-actions">
-      <button
+      <AsyncButton
         v-if="mode === 'url'"
+        :action="submit"
         :disabled="busy"
-        @click="submit"
         data-testid="omni-start"
       >
         Start Torrent
-      </button>
+      </AsyncButton>
       <template v-else-if="mode === 'magnet'">
-        <button :disabled="busy" @click="submit" data-testid="omni-load">Load Magnet</button>
+        <AsyncButton :action="submit" :disabled="busy" data-testid="omni-load">Load Magnet</AsyncButton>
         <button :class="{ active: ui.omniEdit }" @click="ui.omniEdit = !ui.omniEdit">Edit</button>
       </template>
       <template v-else-if="mode === 'search'">
@@ -243,13 +244,13 @@ async function onFiles(e: Event) {
           <select v-model="provider" data-testid="search-provider">
             <option v-for="id in providerIds" :key="id" :value="id">{{ providers[id].name }}</option>
           </select>
-          <button
+          <AsyncButton
+            :action="submitSearch"
             :disabled="searching || noResults || (hasMore && results.length > 0)"
-            @click="submitSearch"
             data-testid="search-submit"
           >
             {{ noResults ? 'No results!' : 'Search' }}
-          </button>
+          </AsyncButton>
         </template>
         <span v-else class="muted" data-testid="search-no-providers">You have no search providers</span>
       </template>
@@ -272,21 +273,21 @@ async function onFiles(e: Event) {
             <span class="peers">{{ r.peers }}</span>
           </td>
           <td class="controls">
-            <button
+            <AsyncButton
               class="green download"
               title="Download"
               data-testid="search-download"
-              @click="submitSearchItem(r)"
+              :action="() => submitSearchItem(r)"
             >
               <Icon :path="mdiDownload" />
-            </button>
+            </AsyncButton>
           </td>
         </tr>
         <tr v-if="hasMore">
           <td colspan="10" class="loadmore">
-            <button :disabled="searching" @click="submitSearch" data-testid="search-loadmore">
+            <AsyncButton :disabled="searching" :action="submitSearch" data-testid="search-loadmore">
               Load more
-            </button>
+            </AsyncButton>
           </td>
         </tr>
       </tbody>
