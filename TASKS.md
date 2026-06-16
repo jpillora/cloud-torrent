@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T08:28:49Z
+* updated: 2026-06-16T08:32:34Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -178,11 +178,12 @@ SPEC: §4, §5, §7
 
 ## 9. M1: HTTP action API (POST /api/*)
 
-* status: open
+* status: closed
 * priority: P1
 * type: feature
 * depends-on: 8
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T08:32:34Z
 
 **Objective:** Typed JSON action API for every mutation the UI performs.
 
