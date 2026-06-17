@@ -381,11 +381,14 @@ select:focus {
 .omni-actions {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: stretch; /* the Search button stretches to the provider select's height */
   gap: 0.4rem;
   margin-top: 0.5rem;
 }
 .omni-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: var(--blue);
   color: #fff;
 }
