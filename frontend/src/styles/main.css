@@ -53,6 +53,18 @@ a:hover {
   color: var(--muted);
 }
 
+/* empty-state panel — same card treatment as the populated sections */
+.empty {
+  margin: 0;
+  padding: 1.6rem 1.2rem;
+  text-align: center;
+  color: var(--muted);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+}
+
 /* ---- MDI icons (inline SVG, inherit currentColor) ---------------------- */
 .mdi {
   width: 1.15em;

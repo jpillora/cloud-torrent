@@ -20,7 +20,7 @@ const free = computed(() => {
       <h3>Downloads</h3>
       <span v-if="free" class="free">{{ free }} free</span>
     </div>
-    <p v-if="children.length === 0" class="muted" data-testid="downloads-empty">
+    <p v-if="children.length === 0" class="empty" data-testid="downloads-empty">
       Download files above
     </p>
     <div v-else class="tree">
