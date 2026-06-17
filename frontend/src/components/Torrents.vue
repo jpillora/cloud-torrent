@@ -16,7 +16,7 @@ const count = computed(() => torrents.value.length)
       <h3>Torrents</h3>
       <span class="count">{{ count }} torrent{{ count === 1 ? '' : 's' }}</span>
     </div>
-    <p v-if="count === 0" class="muted" data-testid="torrents-empty">Add torrents above</p>
+    <p v-if="count === 0" class="empty" data-testid="torrents-empty">Add torrents above</p>
     <TorrentItem v-for="t in torrents" :key="t.InfoHash" :torrent="t" />
   </section>
 </template>
