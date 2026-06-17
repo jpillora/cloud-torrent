@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-06-16T21:28:05Z
+* updated: 2026-06-17T08:17:32Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -126,11 +126,12 @@ SPEC: §4, §7
 
 ## 7. M1: Torrent engine (anacrolix/torrent wrapper)
 
-* status: open
+* status: closed
 * priority: P1
 * type: feature
 * depends-on: 2
 * created: 2026-06-16T09:57:13Z
+* updated: 2026-06-17T08:17:32Z
 
 **Objective:** Wrap `anacrolix/torrent` behind a small engine that produces the synced view-models.
 
