@@ -2,16 +2,16 @@
 
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
-* created: 2026-06-16T09:52:49Z
-* updated: 2026-06-17T08:17:32Z
+* created: 2026-06-16T07:00:20Z
+* updated: 2026-06-16T07:59:00Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
 * status: closed
 * priority: P1
 * type: task
-* created: 2026-06-16T09:57:13Z
-* updated: 2026-06-16T12:07:26Z
+* created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T07:22:49Z
 
 **Objective:** Stand up the Go module and the binary entrypoint so everything else has a home.
 
@@ -33,8 +33,8 @@ SPEC: §3, §12
 * status: closed
 * priority: P1
 * type: task
-* created: 2026-06-16T09:57:13Z
-* updated: 2026-06-16T13:39:25Z
+* created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T07:28:22Z
 
 **Objective:** Create the Vue 3 + Vite + TypeScript frontend shell that the five sections will live in.
 
@@ -58,8 +58,8 @@ SPEC: §3
 * priority: P1
 * type: task
 * depends-on: 2,7,10
-* created: 2026-06-16T09:57:13Z
-* updated: 2026-06-16T15:38:52Z
+* created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T07:39:29Z
 
 **Objective:** Make Go structs the single source of truth for data shapes by generating TypeScript from them.
 
@@ -83,8 +83,8 @@ SPEC: §5, §6
 * priority: P1
 * type: task
 * depends-on: 2,3
-* created: 2026-06-16T09:57:13Z
-* updated: 2026-06-16T21:28:05Z
+* created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T07:46:33Z
 
 **Objective:** One binary in production; a smooth proxied dev loop.
 
@@ -106,7 +106,7 @@ SPEC: §3, §12
 * priority: P1
 * type: task
 * depends-on: 2,3,4,5
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Prove the realtime stack end-to-end with a trivial synced value ("hello world" for velox).
 
@@ -130,8 +130,8 @@ SPEC: §4, §7
 * priority: P1
 * type: feature
 * depends-on: 2
-* created: 2026-06-16T09:57:13Z
-* updated: 2026-06-17T08:17:32Z
+* created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T07:54:56Z
 
 **Objective:** Wrap `anacrolix/torrent` behind a small engine that produces the synced view-models.
 
@@ -155,7 +155,7 @@ SPEC: §5, §8
 * priority: P1
 * type: feature
 * depends-on: 6,7,10
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Assemble the full velox-synced `State` and the background loops that keep it fresh.
 
@@ -180,7 +180,7 @@ SPEC: §4, §5, §7
 * priority: P1
 * type: feature
 * depends-on: 8
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Typed JSON action API for every mutation the UI performs.
 
@@ -204,11 +204,12 @@ SPEC: §8
 
 ## 10. M1: File serving + download tree (FsNode)
 
-* status: open
+* status: closed
 * priority: P1
 * type: feature
 * depends-on: 2
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
+* updated: 2026-06-16T07:59:00Z
 
 **Objective:** List downloaded files as a tree and serve/delete them over HTTP.
 
@@ -233,7 +234,7 @@ SPEC: §8, §9 §D
 * priority: P1
 * type: feature
 * depends-on: 9,3,4
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** The universal Omni input — first two modes (magnet + torrent URL), the heart of "choose a torrent".
 
@@ -259,7 +260,7 @@ SPEC: §9 §B, §10
 * priority: P1
 * type: feature
 * depends-on: 8,3,4
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** The Torrent-engine section — live, controllable torrent cards.
 
@@ -283,7 +284,7 @@ SPEC: §9 §C, §10
 * priority: P1
 * type: feature
 * depends-on: 10,8,3
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** The Downloads section — browse and stream what's on disk.
 
@@ -308,7 +309,7 @@ SPEC: §9 §D, §10
 * priority: P2
 * type: feature
 * depends-on: 8,3
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** The Footer — version + live resource usage.
 
@@ -330,7 +331,7 @@ SPEC: §9 §E
 * priority: P1
 * type: task
 * depends-on: 11,12,13,14
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Prove the core loop (choose → track → download) against a real torrent.
 
@@ -352,7 +353,7 @@ SPEC: §10, §11
 * priority: P2
 * type: feature
 * depends-on: 9,8,3
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** The Header section — title bar + the settings/config editor.
 
@@ -373,7 +374,7 @@ SPEC: §9 §A
 * priority: P2
 * type: feature
 * depends-on: 9,11
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Add torrents by uploading `.torrent` files — drag-drop anywhere or click the Omni upload icon.
 
@@ -394,7 +395,7 @@ SPEC: §9 §0, §9 §B
 * priority: P2
 * type: feature
 * depends-on: 12,9
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Per-file start/stop within a torrent.
 
@@ -416,7 +417,7 @@ SPEC: §8, §9 §C
 * priority: P2
 * type: feature
 * depends-on: 13
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Inline media previews + the page-wide spacebar play/pause.
 
@@ -437,7 +438,7 @@ SPEC: §9 §0, §9 §D
 * priority: P2
 * type: feature
 * depends-on: 6
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Connection overlay + global error banner — the app-shell feedback layer.
 
@@ -458,7 +459,7 @@ SPEC: §9 §0
 * priority: P2
 * type: feature
 * depends-on: 8
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Backend torrent search via `jpillora/scraper` providers.
 
@@ -478,7 +479,7 @@ SPEC: §8, §9 §B
 * priority: P2
 * type: feature
 * depends-on: 11,21
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** The Omni bar's search mode UI (third mode) — find torrents and add them.
 
@@ -501,7 +502,7 @@ SPEC: §9 §B
 * priority: P3
 * type: task
 * depends-on: 11,12,13,14,16
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Match the original look without Semantic UI / jQuery.
 
@@ -523,7 +524,7 @@ SPEC: §1, §9
 * priority: P3
 * type: feature
 * depends-on: 6
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Port the server's auth, TLS, and logging wrappers.
 
@@ -546,7 +547,7 @@ SPEC: §8, §12
 * priority: P3
 * type: task
 * depends-on: 5,15
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Ship it — single-binary releases + Docker + docs.
 
@@ -568,7 +569,7 @@ SPEC: §12
 * priority: P2
 * type: task
 * depends-on: 15,16,17,18,19,20,22,23,24
-* created: 2026-06-16T09:57:13Z
+* created: 2026-06-16T07:04:44Z
 
 **Objective:** Final gate — verify behaviour is equal to `master`, item by item.
 
