@@ -44,7 +44,7 @@ docker run -d -p 3000:3000 -v /path/to/downloads:/downloads \
 
 **Source**
 
-*[Go](https://go.dev/dl/) 1.24+ and [Node](https://nodejs.org) 20+ are required.*
+*[Go](https://go.dev/dl/) 1.26+ and [Node](https://nodejs.org) 20+ are required.*
 
 ```sh
 git clone https://github.com/jpillora/cloud-torrent
