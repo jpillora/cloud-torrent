@@ -921,6 +921,13 @@ select:focus {
     font-size: 1.45rem;
   }
 
+  /* omni bar: shrink only the placeholder hint (the input text itself stays at
+     1.02rem to avoid iOS focus-zoom) so the full one-line string fits a phone
+     instead of being clipped mid-sentence. */
+  .omni-input::placeholder {
+    font-size: 0.675rem;
+  }
+
   /* downloads tree: move the "size · updated" meta onto its own line under
      the name so long filenames get the full row width instead of being
      squeezed into a sliver beside the right-pinned meta. */
