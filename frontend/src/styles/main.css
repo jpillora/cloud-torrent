@@ -175,6 +175,10 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 1.35rem;
+  /* fill the viewport so the footer can sit at the bottom on short pages; dvh
+     tracks the visible area on mobile (accounts for the browser URL bar). */
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* shared section header: title left, muted count/free right */
@@ -714,19 +718,43 @@ select:focus {
 
 /* ---- footer (faded, reveals on hover) ---------------------------------- */
 .section-footer {
-  margin-top: 0.5rem;
-  text-align: right;
+  /* auto top margin = the flexible gap: it grows to push the footer to the
+     bottom when the page is short, and collapses to nothing once content fills
+     the viewport (then only the .app `gap` separates it from the files). */
+  margin-top: auto;
   color: grey;
   font-style: italic;
   font-size: 0.8rem;
-  opacity: 0.3;
+  opacity: 0.35;
   transition: opacity 0.3s ease-in-out;
 }
 .section-footer:hover {
   opacity: 1;
 }
+.section-footer .left,
+.section-footer .right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+}
+.section-footer .left {
+  gap: 0.35rem;
+}
 .section-footer .right {
   margin-top: 0.2rem;
+  gap: 0 0.7rem;
+}
+.section-footer .sep {
+  font-style: normal;
+  opacity: 0.5;
+}
+/* dev metrics (goroutines, gomem) — hidden until the footer is hovered */
+.section-footer .dev {
+  display: none;
+}
+.section-footer:hover .dev {
+  display: inline;
 }
 
 /* ---- overlays ---------------------------------------------------------- */

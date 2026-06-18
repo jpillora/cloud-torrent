@@ -19,22 +19,23 @@ const diskPct = computed(() =>
 <template>
   <footer class="section section-footer" data-testid="footer">
     <div class="left">
-      github.com/<a href="https://github.com/jpillora" target="_blank">jpillora</a>/<a
-        href="https://github.com/jpillora/cloud-torrent"
-        target="_blank"
-        >cloud-torrent</a
-      >
-      version {{ stats?.Version }}
-      <span v-if="users > 1"> &middot; {{ users }} users connected</span>
-      &middot; <a href="https://go.dev" target="_blank">Go</a> {{ stats?.Runtime }}
+      <a href="https://github.com/jpillora/cloud-torrent" target="_blank">jpillora/cloud-torrent</a>
+      <span class="sep">·</span>
+      <span>v{{ stats?.Version }}</span>
+      <span class="sep">·</span>
+      <span><a href="https://go.dev" target="_blank">Go</a> {{ stats?.Runtime }}</span>
+      <template v-if="users > 1">
+        <span class="sep">·</span>
+        <span>{{ users }} users</span>
+      </template>
     </div>
     <div v-if="sys?.set" class="right" data-testid="footer-stats">
-      <span>goroutines {{ sys.goRoutines }},</span>
-      <span>gomem {{ bytes(sys.goMemory) }},</span>
-      <span>cpu {{ cpuPct }}%,</span>
-      <span>mem {{ memPct }}%,</span>
+      <span class="dev">goroutines {{ sys.goRoutines }}</span>
+      <span class="dev">gomem {{ bytes(sys.goMemory) }}</span>
+      <span>cpu {{ cpuPct }}%</span>
+      <span>mem {{ memPct }}%</span>
       <span>disk {{ diskPct }}%</span>
-      <span v-if="stats?.Uptime"> &middot; up {{ ago(stats.Uptime) }}</span>
+      <span v-if="stats?.Uptime">up {{ ago(stats.Uptime) }}</span>
     </div>
   </footer>
 </template>
