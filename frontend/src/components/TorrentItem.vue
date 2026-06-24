@@ -68,10 +68,17 @@ function filename(path: string): string {
 
       <div class="controls">
         <button :class="{ active: showFiles }" @click="showFiles = !showFiles">Files</button>
-        <AsyncButton v-if="!torrent.Started" class="green" :action="start" data-testid="torrent-start">
+        <AsyncButton
+          v-if="!torrent.Started && torrent.Loaded"
+          class="green"
+          :action="start"
+          data-testid="torrent-start"
+        >
           Start
         </AsyncButton>
-        <AsyncButton v-else class="red" :action="stop" data-testid="torrent-stop">Stop</AsyncButton>
+        <AsyncButton v-if="torrent.Started" class="red" :action="stop" data-testid="torrent-stop">
+          Stop
+        </AsyncButton>
         <AsyncButton v-if="!torrent.Started" class="red" :action="remove" data-testid="torrent-remove">
           {{ torrent.Loaded ? 'Remove' : 'Cancel' }}
         </AsyncButton>
