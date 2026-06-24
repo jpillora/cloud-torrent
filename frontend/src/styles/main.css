@@ -231,28 +231,53 @@ select:focus {
 .status {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.45rem;
 }
-.status .icon {
-  cursor: pointer;
-  font-size: 1.2rem;
+/* circular icon buttons: settings/magnet are <button>, spinner/connection are
+   <span>. The glyph sits at ~half its former size (0.6rem * 1.15em ≈ 0.69rem,
+   was 1.2rem * 1.15em ≈ 1.38rem) centred inside the circle. */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--grey-btn);
   color: #9aa0a6;
+  font-size: 0.6rem;
+  cursor: pointer;
   transition:
     color 0.15s ease,
+    background 0.12s ease,
+    box-shadow 0.12s ease,
     transform 0.12s ease;
 }
-.status .icon:hover {
+.icon-btn:hover {
   color: #5f6368;
-  transform: scale(1.12);
+  background: var(--grey-btn-hover);
+  box-shadow: var(--card-shadow);
+  transform: scale(1.08);
 }
-.status .icon.green {
+/* active/state colour wins over the hover colour (declared later, equal
+   specificity). NB: avoid .green/.red/.blue/.active here — those are reserved
+   button fill-variants (see button.green etc.) and would fill the circle. */
+.icon-btn.on {
   color: var(--green);
 }
-.status .icon.red {
+.icon-btn.off {
   color: var(--red);
 }
-.status .lightning {
+/* connection indicator isn't interactive — keep it static on hover */
+.icon-btn.lightning {
   cursor: default;
+}
+.icon-btn.lightning:hover {
+  background: var(--grey-btn);
+  box-shadow: none;
+  transform: none;
 }
 
 /* green/red as colour utilities (icons, seeds/peers, inline text) */

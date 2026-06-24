@@ -26,37 +26,42 @@ const logo = computed(() => (logoHover.value ? mdiGithub : mdiCloud))
       </a>
     </h2>
     <div class="status">
-      <Icon
+      <span
         v-show="ui.requests > 0"
-        class="icon spinner"
-        :path="mdiLoading"
-        spin
+        class="icon-btn"
         title="Working…"
         data-testid="status-spinner"
-      />
-      <Icon
-        class="icon settings"
-        :class="{ green: ui.configEdit }"
-        :path="mdiCog"
+      >
+        <Icon :path="mdiLoading" spin />
+      </span>
+      <button
+        type="button"
+        class="icon-btn"
+        :class="{ on: ui.configEdit }"
         title="Settings"
         data-testid="status-settings"
         @click="ui.configEdit = !ui.configEdit"
-      />
-      <Icon
-        class="icon magnet"
-        :class="{ green: ui.omniEdit }"
-        :path="mdiMagnet"
+      >
+        <Icon :path="mdiCog" />
+      </button>
+      <button
+        type="button"
+        class="icon-btn"
+        :class="{ on: ui.omniEdit }"
         title="Magnet editor"
         data-testid="status-magnet"
         @click="ui.omniEdit = !ui.omniEdit"
-      />
-      <Icon
-        class="icon lightning"
-        :class="{ green: connection.connected, red: !connection.connected }"
-        :path="mdiFlash"
+      >
+        <Icon :path="mdiMagnet" />
+      </button>
+      <span
+        class="icon-btn lightning"
+        :class="{ on: connection.connected, off: !connection.connected }"
         :title="connection.connected ? 'Connected' : 'Disconnected'"
         data-testid="status-connection"
-      />
+      >
+        <Icon :path="mdiFlash" />
+      </span>
     </div>
   </header>
 </template>
