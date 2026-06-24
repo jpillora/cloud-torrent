@@ -578,6 +578,10 @@ select:focus {
   display: flex;
   gap: 0.3rem;
   white-space: nowrap;
+  /* sit above the .dimmer (z-index 2) so a pending torrent stays cancellable
+     while its metadata loads */
+  position: relative;
+  z-index: 3;
 }
 .torrent .status {
   font-size: 0.85rem;

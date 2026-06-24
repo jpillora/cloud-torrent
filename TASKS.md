@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-06-16T12:37:56Z
+* updated: 2026-06-24T12:31:58Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -611,3 +611,43 @@ SPEC: §12
 - Every checklist item is verified equivalent to `master`.
 
 SPEC: §14
+
+## 27. Cancel button not visible
+
+* status: closed
+* priority: P2
+* type: bug
+* created: 2026-06-24T12:05:24Z
+* updated: 2026-06-24T12:31:58Z
+
+Cancel button not visible
+
+After adding torrent, pending, not started; it should be cancellable
+
+## 28. Slow torrent refresh speed
+
+* status: open
+* priority: P2
+* type: bug
+* created: 2026-06-24T12:06:47Z
+* updated: 2026-06-24T12:09:13Z
+
+Slow torrent refresh speed
+
+Should poll torrent state once a second while any torrent is downloading
+
+Also deleting a file takes 10 seconds, also slow polling?
+
+## 29. Stopping a torrent does nothing
+
+* status: open
+* priority: P2
+* type: bug
+* created: 2026-06-24T12:07:58Z
+* updated: 2026-06-24T12:08:24Z
+
+Stopping a torrent does nothing
+
+It should stop downloading, and show “remove”
+
+Maybe related to slow refresh
