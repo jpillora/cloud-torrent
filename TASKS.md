@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-06-24T12:31:58Z
+* updated: 2026-06-24T12:32:10Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -626,11 +626,11 @@ After adding torrent, pending, not started; it should be cancellable
 
 ## 28. Slow torrent refresh speed
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * created: 2026-06-24T12:06:47Z
-* updated: 2026-06-24T12:09:13Z
+* updated: 2026-06-24T12:32:10Z
 
 Slow torrent refresh speed
 
