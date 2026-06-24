@@ -83,9 +83,13 @@ func (s *Server) Run(version string) error {
 	// poll torrents + downloads every second
 	go func() {
 		for {
+			// compute outside the state lock so a slow GetTorrents/listFiles (e.g.
+			// under active download) doesn't block action-triggered pushes
+			torrents := s.engine.GetTorrents()
+			downloads := listFiles(s.engine.Config().DownloadDirectory)
 			s.state.Lock()
-			s.state.Torrents = s.engine.GetTorrents()
-			s.state.Downloads = listFiles(s.engine.Config().DownloadDirectory)
+			s.state.Torrents = torrents
+			s.state.Downloads = downloads
 			s.state.Unlock()
 			s.state.Push()
 			time.Sleep(time.Second)
@@ -142,7 +146,7 @@ func (s *Server) handler() http.Handler {
 	mux.Handle("/search/", http.StripPrefix("/search", s.scraper))
 	mux.Handle("/download/", http.StripPrefix("/download/", downloadHandler(func() string {
 		return s.engine.Config().DownloadDirectory
-	})))
+	}, s.refreshDownloads)))
 	mux.Handle("/js/velox.js", velox.JS)
 	mux.Handle("/", static.Handler())
 
@@ -213,4 +217,15 @@ func (s *Server) reconfigure(c engine.Config) error {
 	s.state.Unlock()
 	s.state.Push()
 	return nil
+}
+
+// refreshDownloads re-lists the download directory into the synced state and
+// pushes immediately, so a file deletion is reflected without waiting for the
+// one-second poll.
+func (s *Server) refreshDownloads() {
+	downloads := listFiles(s.engine.Config().DownloadDirectory)
+	s.state.Lock()
+	s.state.Downloads = downloads
+	s.state.Unlock()
+	s.state.Push()
 }

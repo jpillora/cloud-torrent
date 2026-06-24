@@ -117,7 +117,7 @@ func TestDownloadDelete(t *testing.T) {
 // helpers
 
 func mount(dir string) http.Handler {
-	return http.StripPrefix("/download/", downloadHandler(func() string { return dir }))
+	return http.StripPrefix("/download/", downloadHandler(func() string { return dir }, nil))
 }
 
 func do(h http.Handler, method, target string) *httptest.ResponseRecorder {

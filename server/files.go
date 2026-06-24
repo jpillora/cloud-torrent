@@ -77,11 +77,13 @@ func list(path string, info os.FileInfo, node *FsNode, n *int) error {
 // (read per-request, so it tracks config changes). Mount it stripped of its URL
 // prefix:
 //
-//	http.StripPrefix("/download/", downloadHandler(dir))
+//	http.StripPrefix("/download/", downloadHandler(dir, onChange))
 //
 // GET streams a file, or a zip of a directory; DELETE removes the target. Paths
 // that escape the download directory (or target the root itself) are rejected.
-func downloadHandler(dir func() string) http.Handler {
+// onChange (if non-nil) is invoked after a successful DELETE so the file tree
+// can be refreshed immediately rather than on the next poll.
+func downloadHandler(dir func() string, onChange func()) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		full, ok := safeJoin(dir(), r.URL.Path)
 		if !ok {
@@ -113,6 +115,11 @@ func downloadHandler(dir func() string) http.Handler {
 		case http.MethodDelete:
 			if err := os.RemoveAll(full); err != nil {
 				http.Error(w, "delete failed: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			// reflect the removal immediately instead of waiting for the poll
+			if onChange != nil {
+				onChange()
 			}
 		default:
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
