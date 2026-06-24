@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-06-24T12:32:10Z
+* updated: 2026-06-24T12:32:19Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -640,11 +640,11 @@ Also deleting a file takes 10 seconds, also slow polling?
 
 ## 29. Stopping a torrent does nothing
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * created: 2026-06-24T12:07:58Z
-* updated: 2026-06-24T12:08:24Z
+* updated: 2026-06-24T12:32:19Z
 
 Stopping a torrent does nothing
 

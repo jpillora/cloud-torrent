@@ -166,13 +166,16 @@ func (e *Engine) StopTorrent(infohash string) error {
 	if !t.Started {
 		return fmt.Errorf("already stopped")
 	}
-	t.t.Drop()
 	t.Started = false
 	for _, f := range t.Files {
 		if f != nil {
 			f.Started = false
 		}
 	}
+	// Drop can block until the torrent's goroutines unwind (notably under active
+	// download). Run it in the background so the API call returns immediately and
+	// the UI flips to stopped/"Remove" without a multi-second hang.
+	go t.t.Drop()
 	return nil
 }
 
