@@ -1,4 +1,14 @@
 {
+  "ia": {
+    "name": "Internet Archive",
+    "url": "https://archive.org/advancedsearch.php?q=title%3A%28{{query}}%29+AND+-mediatype%3A%28web+OR+collection%29+AND+-access-restricted-item%3Atrue&sort%5B%5D=downloads+desc&rows=50&page={{page:1}}&output=rss",
+    "list": "item",
+    "result": {
+      "name": "title",
+      "url": "guid",
+      "torrent": ["guid", "s|/details/|/download/|", "s|$|/format=Archive+BitTorrent|"]
+    }
+  },
   "abb": {
     "name": "The Audiobook Bay",
     "url": "https://audiobookbay.lu/page/{{page:1}}/?s=%22{{query}}%22",

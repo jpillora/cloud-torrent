@@ -3,6 +3,7 @@
 package server
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"net/url"
@@ -20,6 +21,7 @@ var liveQueries = map[string]string{
 	"nyaa": "naruto",
 	"lt":   "ubuntu",
 	"abb":  "sherlock holmes",
+	"ia":   "night of the living dead",
 }
 
 var infohashRe = regexp.MustCompile(`^([0-9a-fA-F]{40}|[A-Z2-7]{32})$`)
@@ -55,7 +57,11 @@ func TestLiveSearchProviders(t *testing.T) {
 			if first["name"] == "" {
 				t.Fatalf("first result has no name: %v", first)
 			}
-			if strings.HasPrefix(first["magnet"], "magnet:?") || strings.HasPrefix(first["torrent"], "http") {
+			if strings.HasPrefix(first["magnet"], "magnet:?") {
+				return
+			}
+			if strings.HasPrefix(first["torrent"], "http") {
+				checkTorrentURL(t, first["torrent"])
 				return
 			}
 			path := first["path"]
@@ -72,7 +78,9 @@ func TestLiveSearchProviders(t *testing.T) {
 			}
 			got := found[0]
 			switch {
-			case strings.HasPrefix(got["magnet"], "magnet:?"), strings.HasPrefix(got["torrent"], "http"):
+			case strings.HasPrefix(got["magnet"], "magnet:?"):
+			case strings.HasPrefix(got["torrent"], "http"):
+				checkTorrentURL(t, got["torrent"])
 			case infohashRe.MatchString(strings.TrimSpace(got["infohash"])):
 				// a trackerless magnet only finds peers through DHT
 				if !regexp.MustCompile(`^(http|udp)://`).MatchString(strings.TrimSpace(got["tracker"])) {
@@ -90,7 +98,12 @@ var titleRe = regexp.MustCompile(`(?is)<title>\s*(.*?)\s*</title>`)
 // whatCameBack refetches a search page to tell a block (a Cloudflare
 // challenge, a 403) apart from a changed page layout.
 func whatCameBack(e *scraper.Endpoint, query string) string {
-	u := strings.NewReplacer("{{query}}", url.PathEscape(query), "{{page:1}}", "1").Replace(e.URL)
+	// the scraper query-escapes values after the "?" and leaves the rest as is
+	q := query
+	if strings.Contains(e.URL, "?") && strings.Index(e.URL, "{{query}}") > strings.Index(e.URL, "?") {
+		q = url.QueryEscape(query)
+	}
+	u := strings.NewReplacer("{{query}}", q, "{{page:1}}", "1").Replace(e.URL)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return err.Error()
@@ -109,4 +122,19 @@ func whatCameBack(e *scraper.Endpoint, query string) string {
 		title = string(m[1])
 	}
 	return "GET " + resp.Request.URL.String() + ": " + resp.Status + ", title " + strconv.Quote(title)
+}
+
+// checkTorrentURL fetches a result's .torrent the way the engine would and
+// checks it's a bencoded dictionary, not an error page.
+func checkTorrentURL(t *testing.T, u string) {
+	t.Helper()
+	resp, err := http.Get(u)
+	if err != nil {
+		t.Fatalf("torrent %s: %v", u, err)
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if resp.StatusCode != http.StatusOK || !bytes.HasPrefix(b, []byte("d")) {
+		t.Fatalf("torrent %s: %s, not a .torrent file", u, resp.Status)
+	}
 }
