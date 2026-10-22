@@ -652,6 +652,9 @@ select:focus {
   color: var(--muted);
   font-size: 0.8rem;
 }
+.files .name {
+  overflow-wrap: anywhere;
+}
 .files .size {
   white-space: nowrap;
   width: 110px;
@@ -1009,6 +1012,10 @@ select:focus {
   .preview-toggle,
   .del {
     opacity: 0.55;
+  }
+
+  .files .size {
+    width: auto;
   }
 
   /* search results: tighter cells on narrow screens */

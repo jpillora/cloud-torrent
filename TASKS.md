@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:39:22Z
+* updated: 2026-10-22T13:40:35Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1884,11 +1884,12 @@ Magnet editor watches external model changes and skips its own emitted values to
 
 ## 58. Keep torrent file tables within narrow viewports for long filenames
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:06:16Z
+* updated: 2026-10-22T13:40:35Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -1917,6 +1918,10 @@ Long valid basenames must wrap or truncate with an accessible way to inspect the
 ### Confidence
 
 High; browser layout measurements verified.
+
+### Completion evidence
+
+File name cells use overflow-wrap:anywhere, preserving full readable text, and mobile size columns use content width. Actual rebuilt Chrome SPA with a 180-character basename: at 320px document scrollWidth 305 and action right 264.8; at 390px scrollWidth 390 and action right 349.8. Table stayed inside viewport in both; long name wrapped. Browser fixture discarded by reload. Frontend type-check/build, embedded Go build and diff check passed.
 
 ## 59. Show enough relative path to distinguish duplicate torrent filenames
 
