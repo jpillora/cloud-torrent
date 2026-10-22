@@ -6,9 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -33,7 +36,7 @@ type Server struct {
 	KeyPath    string `help:"TLS Key file path"`
 	CertPath   string `help:"TLS Certificate file path" short:"r"`
 	Log        bool   `help:"Enable request logging"`
-	Open       bool   `help:"Open now with your default browser"`
+	Open       bool   `help:"Open browser after the server starts"`
 
 	engine       *engine.Engine
 	state        State
@@ -112,16 +115,12 @@ func (s *Server) Run(version string) error {
 	if host == "" {
 		host = "0.0.0.0"
 	}
-	addr := fmt.Sprintf("%s:%d", host, s.Port)
+	addr := net.JoinHostPort(host, strconv.Itoa(s.Port))
 
 	// TLS is enabled when a cert/key pair is given; both are required.
 	isTLS := s.CertPath != "" || s.KeyPath != ""
 	if isTLS && (s.CertPath == "" || s.KeyPath == "") {
 		return fmt.Errorf("both --cert-path and --key-path are required for TLS")
-	}
-	proto := "http"
-	if isTLS {
-		proto = "https"
 	}
 	srv := &http.Server{
 		Addr:    addr,
@@ -129,11 +128,55 @@ func (s *Server) Run(version string) error {
 		// disable HTTP/2: velox's streaming sync is incompatible with it.
 		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){},
 	}
-	log.Printf("Listening at %s://%s", proto, addr)
-	if isTLS {
-		return srv.ListenAndServeTLS(s.CertPath, s.KeyPath)
+	return s.serveHTTP(srv, openBrowser)
+}
+
+func (s *Server) serveHTTP(srv *http.Server, launch func(string) error) error {
+	listener, err := net.Listen("tcp", srv.Addr)
+	if err != nil {
+		return err
 	}
-	return srv.ListenAndServe()
+	defer listener.Close()
+	secure := s.CertPath != "" && s.KeyPath != ""
+	url := browserURL(listener.Addr().String(), secure)
+	log.Printf("Listening at %s", url)
+	if s.Open {
+		go func() {
+			if err := launch(url); err != nil {
+				log.Printf("Could not open browser: %v", err)
+			}
+		}()
+	}
+	if secure {
+		return srv.ServeTLS(listener, s.CertPath, s.KeyPath)
+	}
+	return srv.Serve(listener)
+}
+
+func browserURL(address string, secure bool) string {
+	host, port, _ := net.SplitHostPort(address)
+	switch host {
+	case "", "0.0.0.0":
+		host = "127.0.0.1"
+	case "::":
+		host = "::1"
+	}
+	proto := "http"
+	if secure {
+		proto = "https"
+	}
+	return proto + "://" + net.JoinHostPort(host, port)
+}
+
+func openBrowser(url string) error {
+	switch runtime.GOOS {
+	case "darwin":
+		return exec.Command("open", url).Run()
+	case "windows":
+		return exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Run()
+	default:
+		return exec.Command("xdg-open", url).Run()
+	}
 }
 
 // handler builds the HTTP handler chain: the route mux (realtime sync, action

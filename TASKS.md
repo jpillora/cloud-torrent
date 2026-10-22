@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:03:16Z
+* updated: 2026-10-22T13:05:47Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1284,11 +1284,12 @@ Live browser after updated binary startup/remote refresh: all eight synced provi
 
 ## 44. Implement or remove the no-op --open CLI flag
 
-* status: open
+* status: closed
 * priority: P3
 * type: bug
 * tags: adversarial-review,simplicity
 * created: 2026-10-22T10:04:29Z
+* updated: 2026-10-22T13:05:47Z
 
 Review: Astra adversarial review — code simplicity and layout.
 
@@ -1317,6 +1318,14 @@ Implement browser opening after the listener is ready using a reachable host URL
 ### Confidence
 
 high; exhaustive field-use search
+
+### Completion evidence
+
+--open now launches the platform default browser after binding the listener, using open on macOS, rundll32 on Windows and xdg-open elsewhere. Wildcard listeners map to loopback URLs, explicit hosts retain their address, IPv6 addresses are bracketed, and TLS uses https. Bind failures do not launch; launch failures log without stopping the server. CLI help and README describe the implemented behavior.
+
+Full server race suite, embedded Go build, generated types and whitespace checks pass. Stubbed launcher test fetches the launched URL and receives ready from the bound server. Tests also cover failed binds and wildcard/IPv6/TLS URL selection.
+
+Actual CLI end-to-end: launched built binary with --open and an isolated PATH containing a recording xdg-open stub. It received http://127.0.0.1:3002 and verified HTTP 200 from that URL. Isolated process stopped and scratch download directory removed.
 
 ## 45. Index downloading paths once instead of scanning all torrent files per download row
 

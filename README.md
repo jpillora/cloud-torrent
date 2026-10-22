@@ -68,7 +68,7 @@ $ cloud-torrent --help
   --key-path, -k     TLS Key file path
   --cert-path        TLS Certificate file path
   --log, -l          Enable request logging
-  --open, -o         Open now with your default browser
+  --open, -o         Open browser after the server starts
   --version, -v      display version
   --help             display help
 ```
