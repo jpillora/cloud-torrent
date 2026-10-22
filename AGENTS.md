@@ -25,9 +25,12 @@ go run main.go
 goreleaser build --snapshot --config .github/goreleaser.yml
 ```
 
-**Run with Docker:**
+Docker image publishing is disabled. Tagged GitHub releases are always prereleases.
+
+**Build and run locally with Docker:**
 ```bash
-docker run -d -p 3000:3000 -v /path/to/downloads:/downloads jpillora/cloud-torrent
+docker build -f .github/Dockerfile -t cloud-torrent .
+docker run -d -p 3000:3000 -v /path/to/downloads:/downloads cloud-torrent
 ```
 
 ## Architecture
@@ -105,7 +108,7 @@ Configuration is auto-saved when changed via the API and auto-loaded on startup.
 ## Important Implementation Notes
 
 - No test files currently exist in the codebase
-- The project uses Go modules (`go.mod` requires Go 1.23.0+)
+- The project uses Go modules (`go.mod` requires Go 1.27.3+)
 - Static files must be placed in `static/files/` to be embedded
 - The engine polls torrents every 1 second to update state
 - System stats are collected every 5 seconds

@@ -1,6 +1,9 @@
 # test this file with
 #   goreleaser build --snapshot --config .github/goreleaser.yml
 version: 2
+release:
+  prerelease: true
+  make_latest: false
 builds:
   - env:
       - CGO_ENABLED=0
@@ -28,7 +31,7 @@ nfpms:
       - rpm
       - apk
 archives:
-  - format: gz
+  - formats: [gz]
     files:
       - none*
 changelog:

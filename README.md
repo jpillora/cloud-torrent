@@ -17,24 +17,19 @@ See [Future Features here](#future-features)
 
 **Binaries**
 
-[![Releases](https://img.shields.io/github/release/jpillora/cloud-torrent.svg)](https://github.com/jpillora/cloud-torrent/releases) [![Releases](https://img.shields.io/github/downloads/jpillora/cloud-torrent/total.svg)](https://github.com/jpillora/cloud-torrent/releases)
+[![Releases](https://img.shields.io/github/v/release/jpillora/cloud-torrent?include_prereleases)](https://github.com/jpillora/cloud-torrent/releases) [![Releases](https://img.shields.io/github/downloads/jpillora/cloud-torrent/total.svg)](https://github.com/jpillora/cloud-torrent/releases)
 
-See [the latest release](https://github.com/jpillora/cloud-torrent/releases/latest) or download and install it now with
-
-```
-curl https://i.jpillora.com/cloud-torrent! | bash
-```
+Download binaries from [GitHub Releases](https://github.com/jpillora/cloud-torrent/releases). New releases are published as prereleases.
 
 *Tip*: [Auto-run `cloud-torrent` on boot](https://github.com/jpillora/cloud-torrent/wiki/Auto-Run-on-Reboot)
 
 **Docker**
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/jpillora/cloud-torrent.svg)][dockerhub]
-
-[dockerhub]: https://hub.docker.com/r/jpillora/cloud-torrent/
+Docker image publishing is disabled. Existing registry images are historical builds. To build the current source locally:
 
 ``` sh
-$ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-torrent
+docker build -f .github/Dockerfile -t cloud-torrent .
+docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads cloud-torrent
 ```
 
 **Source**
@@ -42,7 +37,7 @@ $ docker run -d -p 3000:3000 -v /path/to/my/downloads:/downloads jpillora/cloud-
 *[Go](https://golang.org/dl/) is required to install from source*
 
 ``` sh
-$ go get -v github.com/jpillora/cloud-torrent
+$ go install github.com/jpillora/cloud-torrent@main
 ```
 
 **VPS**
@@ -60,12 +55,12 @@ $ go get -v github.com/jpillora/cloud-torrent
   9. You will be emailed the server details (`IP Address: ..., Username: root, Password: ...`)
   10. SSH into the server using these details (Windows: [Putty](https://the.earth.li/~sgtatham/putty/latest/x86/putty.exe), Mac: Terminal)
   11. Follow the prompts to set a new password
-  12. Run `cloud-torrent` with:
+  12. Build the Docker image from source as described above, then run `cloud-torrent` with:
 
     docker run --name ct -d -p 63000:63000 \
       --restart always \
       -v /root/downloads:/downloads \
-      jpillora/cloud-torrent --port 63000
+      cloud-torrent --port 63000
 
   13. Visit `http://<IP Address from email>:63000/`
   14. **OPTIONAL** In addition to `--port` you can specify the options below
