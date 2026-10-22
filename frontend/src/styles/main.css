@@ -717,6 +717,16 @@ select:focus {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
 }
+.archive-download {
+  flex-shrink: 0;
+  padding: 0.2em 0.4em;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+.archive-download:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
 .node .icon {
   user-select: none;
 }

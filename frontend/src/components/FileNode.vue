@@ -121,6 +121,13 @@ async function remove() {
       }}</a>
       <span v-else-if="isFile" class="name">{{ node.Name }}</span>
       <span class="meta">{{ bytes(node.Size) }} &middot; updated {{ ago(node.Modified) }}</span>
+      <a
+        v-if="!isFile && !downloading"
+        :href="href"
+        class="archive-download"
+        :aria-label="`Download ${node.Name} as ZIP`"
+        data-testid="fs-folder-download"
+      >ZIP</a>
       <button
         v-if="mediaType && !downloading"
         class="preview-toggle"
