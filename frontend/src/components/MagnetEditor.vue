@@ -48,15 +48,16 @@ function onEdit() {
     <h4>Magnet URI Editor</h4>
     <label class="field">
       <span>Name</span>
-      <input v-model="name" @input="onEdit" placeholder="Name" />
+      <input type="text" v-model="name" @input="onEdit" placeholder="Name" />
     </label>
     <label class="field">
       <span>Info Hash</span>
-      <input v-model="infohash" @input="onEdit" placeholder="Info Hash" data-testid="magnet-infohash" />
+      <input type="text" v-model="infohash" @input="onEdit" placeholder="Info Hash" data-testid="magnet-infohash" />
     </label>
     <div class="field">
       <span>Trackers</span>
       <input
+        type="text"
         v-for="(_, i) in trackers"
         :key="i"
         v-model="trackers[i]"

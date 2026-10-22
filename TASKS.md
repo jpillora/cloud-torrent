@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:44:43Z
+* updated: 2026-10-22T13:45:31Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -2087,11 +2087,12 @@ Global failures appear as persistent fixed viewport notifications with role=aler
 
 ## 63. Apply consistent readable input sizing in the magnet editor
 
-* status: open
+* status: closed
 * priority: P3
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:06:16Z
+* updated: 2026-10-22T13:45:31Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -2122,6 +2123,10 @@ Ensure all magnet editor text inputs receive the standard text-input styles and 
 ### Confidence
 
 High for computed styling; iOS focus-zoom itself was not tested.
+
+### Completion evidence
+
+All magnet name/hash/tracker fields declare type=text and receive common input styling. Actual rebuilt Chrome at 320, 390 and 1000px: each input computed 16px font, 40.69px height, 9.6px/12px padding and 1px border. Focus transition checks confirmed common blue border and ring. Frontend type-check/build, embedded Go build and diff check passed; iOS-specific zoom was not directly exercised.
 
 ## 64. Protect active torrent files from deletion through their parent folders
 
