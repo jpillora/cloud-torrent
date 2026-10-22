@@ -119,7 +119,7 @@ onBeforeUnmount(() => {
     <Header />
 
     <!-- global, dismissible error banner -->
-    <div v-if="ui.error" class="error-banner" data-testid="error-banner">
+    <div v-if="ui.error" class="error-banner" data-testid="error-banner" role="alert" aria-atomic="true">
       <button class="close" title="Dismiss" data-testid="error-dismiss" @click="ui.error = ''">
         <Icon :path="mdiClose" />
       </button>

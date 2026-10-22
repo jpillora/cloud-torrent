@@ -66,7 +66,7 @@ function cancel() {
         </label>
       </template>
 
-      <p v-if="error" class="config-error" data-testid="config-error">{{ error }}</p>
+      <p v-if="error" class="config-error" data-testid="config-error" role="alert">{{ error }}</p>
 
       <div class="buttons">
         <AsyncButton class="blue" :action="save" data-testid="config-save">Save</AsyncButton>

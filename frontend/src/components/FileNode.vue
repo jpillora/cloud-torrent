@@ -88,12 +88,13 @@ function preremove() {
   }, 3000)
 }
 async function remove() {
+  ui.error = ''
   deleting.value = true
   try {
     const res = await fetch(href.value, { method: 'DELETE' })
     if (!res.ok) throw new Error((await res.text()) || res.statusText)
   } catch (e) {
-    ui.error = e instanceof Error ? e.message : String(e)
+    ui.error = `Could not delete ${path.value}: ${e instanceof Error ? e.message : String(e)}`
     deleting.value = false
     confirming.value = false
   }

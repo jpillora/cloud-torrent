@@ -106,7 +106,7 @@ async function setFile(action: 'start' | 'stop', f: File) {
             <div v-if="f.Percent > 0 && f.Percent < 100" class="progress active">
               <div class="bar" :style="{ width: f.Percent + '%' }"></div>
             </div>
-            <p v-if="fileErrors[f.Path]" class="file-error" data-testid="file-error">
+            <p v-if="fileErrors[f.Path]" class="file-error" data-testid="file-error" role="alert">
               {{ fileErrors[f.Path] }}
             </p>
           </td>

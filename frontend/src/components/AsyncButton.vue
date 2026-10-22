@@ -15,6 +15,7 @@ const running = ref(false)
 async function onClick() {
   if (running.value || props.disabled) return
   running.value = true
+  ui.error = ''
   try {
     await props.action()
   } catch (e) {

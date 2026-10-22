@@ -953,7 +953,14 @@ select:focus {
   margin-top: 0.7rem;
 }
 .error-banner {
-  position: relative;
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 1500;
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: 40vh;
+  overflow: auto;
+  box-shadow: var(--card-shadow-hover);
   padding: 0.8rem 2.2rem 0.8rem 0.9rem;
   border: 1px solid var(--red);
   border-radius: var(--radius);

@@ -239,7 +239,7 @@ async function onFiles(e: Event) {
       />
     </div>
 
-    <p v-if="omnierr" class="omni-error" data-testid="omni-error">{{ omnierr }}</p>
+    <p v-if="omnierr" class="omni-error" data-testid="omni-error" role="alert">{{ omnierr }}</p>
 
     <div class="omni-actions">
       <AsyncButton

@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:43:33Z
+* updated: 2026-10-22T13:44:43Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -2046,11 +2046,12 @@ Reconnect overlay is a native showModal dialog with labelled heading/description
 
 ## 62. Surface failed actions at the user's current location and announce errors
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:06:16Z
+* updated: 2026-10-22T13:44:43Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -2079,6 +2080,10 @@ Provide accessible error announcements and visible feedback where the action occ
 ### Confidence
 
 High; actual app browser fixture, mocked failure, scroll position and DOM semantics verified; no files deleted.
+
+### Completion evidence
+
+Global failures appear as persistent fixed viewport notifications with role=alert and aria-atomic, dismissed explicitly. Inline configuration/Omni/file errors also announce as alerts. Delete failures identify path; new actions clear prior global errors. Actual rebuilt Chrome long-list checks: failed DELETE at row 40 while scrollY 2306 displayed permission denial and filename within viewport, retained file; failed torrent Start near bottom also showed visible alert and preserved focused button. Dismiss removed notification. Mocked 500 responses only, no deletions. Frontend type-check/build, Go embedded build and diff check passed.
 
 ## 63. Apply consistent readable input sizing in the magnet editor
 
