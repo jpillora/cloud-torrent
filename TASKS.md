@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:37:53Z
+* updated: 2026-10-22T13:38:36Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1803,11 +1803,12 @@ Folder icon and name form one native disclosure button with accessible folder te
 
 ## 56. Reveal file action buttons when they receive keyboard focus
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:06:15Z
+* updated: 2026-10-22T13:38:36Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -1835,6 +1836,10 @@ Reveal row actions whenever the row contains keyboard focus and keep a visible f
 ### Confidence
 
 High; browser computed opacity and focus verified.
+
+### Completion evidence
+
+Download rows reveal actions with :focus-within and focused actions have explicit outlines. Rebuilt SPA verified through Chrome at 1000px width with pointer away: Tab to Preview and Delete, then Enter to reveal Confirm; each focused action had opacity 1, solid outline and row hover false. No deletion submitted; fixture discarded by reload. Frontend type-check/build, embedded Go build and diff check passed.
 
 ## 57. Keep the magnet editor synchronized with direct Omni edits
 

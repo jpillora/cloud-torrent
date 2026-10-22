@@ -745,12 +745,19 @@ select:focus {
 .del.deleting {
   cursor: default;
 }
+.node-row:focus-within .preview-toggle,
+.node-row:focus-within .del,
 .node-row:hover .preview-toggle,
 .node-row:hover .del,
 .preview-toggle.active,
 .del.confirm,
 .del.deleting {
   opacity: 1;
+}
+.preview-toggle:focus-visible,
+.del:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
 .children {
   margin-left: 1.2rem;
