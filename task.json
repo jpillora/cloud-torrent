@@ -1,0 +1,1 @@
+{"id":28,"title":"Slow torrent refresh speed","status":"closed","priority":"P2","type":"bug","description":"Slow torrent refresh speed\n\nShould poll torrent state once a second while any torrent is downloading\n\nAlso deleting a file takes 10 seconds, also slow polling?","meta":{"created":"2026-06-24T12:06:47Z","updated":"2026-06-24T12:32:10Z"}}
