@@ -44,10 +44,6 @@ async function setFile(action: 'start' | 'stop', f: File) {
   }
 }
 
-function filename(path: string): string {
-  const m = /\/([^/]+)$/.exec(path)
-  return m ? m[1] : path
-}
 </script>
 
 <template>
@@ -105,7 +101,7 @@ function filename(path: string): string {
         </tr>
         <tr v-for="f in files" :key="f.Path">
           <td class="name">
-            {{ filename(f.Path) }}
+            {{ f.Path }}
             <span v-if="f.Percent > 0 && f.Percent < 100" class="percent">{{ f.Percent }}%</span>
             <div v-if="f.Percent > 0 && f.Percent < 100" class="progress active">
               <div class="bar" :style="{ width: f.Percent + '%' }"></div>

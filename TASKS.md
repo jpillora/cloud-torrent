@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:40:35Z
+* updated: 2026-10-22T13:41:17Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1925,11 +1925,12 @@ File name cells use overflow-wrap:anywhere, preserving full readable text, and m
 
 ## 59. Show enough relative path to distinguish duplicate torrent filenames
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:06:16Z
+* updated: 2026-10-22T13:41:17Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -1957,6 +1958,10 @@ Expose distinct relative paths or directory grouping in the file list, including
 ### Confidence
 
 High; browser fixture rendered both identical rows.
+
+### Completion evidence
+
+File table displays the full relative File.Path, removing basename stripping. Actual rebuilt Chrome SPA at 1000, 320 and 390px shows distinct one/nested/duplicate.txt and two/nested/duplicate.txt with equal size/progress. Both mobile layouts remain within viewport. Intercepted Start actions retained their matching distinct full paths. Browser fixture discarded by reload. Frontend type-check/build, embedded Go build and diff check passed.
 
 ## 60. Do not let the global media Space shortcut override focused controls
 
