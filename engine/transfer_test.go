@@ -5,6 +5,8 @@ import (
 	"crypto/sha1"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -148,6 +150,44 @@ func TestStartBeforeMetadataTransfersWhenInfoArrives(t *testing.T) {
 				t.Fatalf("metadata revived cancelled start: %+v", tr)
 			}
 		})
+	}
+}
+
+func TestDeleteTorrentRetainsWorkingDirectoryAndDownloadedFiles(t *testing.T) {
+	t.Chdir(t.TempDir())
+	e, c, ih := newTransferFixture(t)
+	sentinel := []byte("user-supplied torrent file")
+	if err := os.WriteFile(ih+".torrent", sentinel, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.StartTorrent(ih); err != nil {
+		t.Fatal(err)
+	}
+	waitTransferProgress(t, e, ih, 0)
+	if err := e.StopTorrent(ih); err != nil {
+		t.Fatal(err)
+	}
+	downloadedPath := filepath.Join(c.DownloadDirectory, "fixture.bin.part")
+	if _, err := os.Stat(downloadedPath); os.IsNotExist(err) {
+		downloadedPath = filepath.Join(c.DownloadDirectory, "fixture.bin")
+	}
+	before, err := os.Stat(downloadedPath)
+	if err != nil || before.Size() == 0 {
+		t.Fatalf("fixture did not write data: %v", err)
+	}
+	if err := e.DeleteTorrent(ih); err != nil {
+		t.Fatal(err)
+	}
+	if len(e.GetTorrents()) != 0 {
+		t.Fatal("torrent remains in engine")
+	}
+	got, err := os.ReadFile(ih + ".torrent")
+	if err != nil || !bytes.Equal(got, sentinel) {
+		t.Fatalf("working-directory sentinel changed: %q, %v", got, err)
+	}
+	info, err := os.Stat(downloadedPath)
+	if err != nil || info.Size() < before.Size() {
+		t.Fatalf("downloaded data removed: %v", err)
 	}
 }
 

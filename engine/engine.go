@@ -7,7 +7,6 @@ import (
 	"maps"
 	"net"
 	"os"
-	"path/filepath"
 	"slices"
 	"sync"
 	"syscall"
@@ -23,7 +22,6 @@ import (
 type Engine struct {
 	mut       sync.Mutex
 	newClient func(*torrent.ClientConfig) (*torrent.Client, error)
-	cacheDir  string
 	client    *torrent.Client
 	config    Config
 	ts        map[string]*Torrent
@@ -410,7 +408,6 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	if err != nil {
 		return err
 	}
-	os.Remove(filepath.Join(e.cacheDir, infohash+".torrent"))
 	delete(e.ts, t.InfoHash)
 	ih, _ := str2ih(infohash)
 	if tt, ok := e.client.Torrent(ih); ok {
