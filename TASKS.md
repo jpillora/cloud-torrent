@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:41:17Z
+* updated: 2026-10-22T13:42:16Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1965,11 +1965,12 @@ File table displays the full relative File.Path, removing basename stripping. Ac
 
 ## 60. Do not let the global media Space shortcut override focused controls
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:06:16Z
+* updated: 2026-10-22T13:42:16Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -1998,6 +1999,10 @@ Respect Space on interactive controls, including buttons, selects, links with bu
 ### Confidence
 
 High for handler interception, demonstrated with a cancelable browser KeyboardEvent and a play spy; native trusted key default activation was not available through the exposed MCP.
+
+### Completion evidence
+
+Global Space shortcut ignores interactive ancestors, editable/focusable widgets, modified/repeated/prevented keys. Rebuilt SPA Chrome trusted CDP Space on focused Hide preview closed it without media play; Space with page focus played once. Focused select, link, role=button, contenteditable and native audio synthetic checks remained unprevented and did not increment play spy. Reload restored prototype and fixtures. Frontend type-check/build, embedded Go build and diff check passed.
 
 ## 61. Isolate keyboard focus while the connection overlay is shown
 

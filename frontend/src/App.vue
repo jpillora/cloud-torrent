@@ -62,11 +62,13 @@ async function onDrop(e: DragEvent) {
 }
 
 // Page-wide spacebar: play/pause the first media player in the viewport (unless
-// the user is typing in a field). Mirrors master's run.js keydown handler.
+// focus is on an interactive control).
 function onKeydown(e: KeyboardEvent) {
-  if (e.code !== 'Space') return
+  if (e.code !== 'Space' || e.defaultPrevented || e.repeat || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
   const el = document.activeElement as HTMLElement | null
-  if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
+  if (el && (el.isContentEditable || el.closest(
+    'input, textarea, select, button, a[href], summary, audio, video, [role="button"], [role="link"], [role="checkbox"], [role="switch"], [role="slider"], [role="textbox"], [role="combobox"], [tabindex]:not([tabindex="-1"])',
+  ))) return
   const h = window.innerHeight || document.documentElement.clientHeight
   for (const m of document.querySelectorAll<HTMLMediaElement>('video, audio')) {
     const r = m.getBoundingClientRect()
