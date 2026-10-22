@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-10-22T13:31:40Z
+* updated: 2026-10-22T13:34:48Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1639,11 +1639,12 @@ Full server race suite, embedded Go build, generated types and whitespace checks
 
 ## 52. Discard stale search responses when the query or provider changes
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:06:15Z
+* updated: 2026-10-22T13:34:48Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -1673,6 +1674,10 @@ Capture query/provider/page plus a generation ID per request; discard results/er
 ### Confidence
 
 High; browser reproduced with deterministic delayed responses; no server mutation.
+
+### Completion evidence
+
+Captured search generation, query, provider and page; superseded responses, errors and completion state are ignored. Results retain their originating provider for detail resolution. Reset remounts async search controls so pending old requests do not block a fresh query. Built frontend and embedded Go binary. Actual Chrome deferred-fetch checks confirmed A/1337x then B/abb both request page 1, stale A adds zero rows and does not clear B busy state; current row resolves through abb/item; stale query/detail failures stay hidden while current failures display. git diff --check passed.
 
 ## 53. Guard keyboard submissions against in-flight Omni requests
 

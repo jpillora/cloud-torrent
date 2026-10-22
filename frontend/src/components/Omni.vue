@@ -43,13 +43,18 @@ const providers = computed<Record<string, Provider>>(() => {
 const providerIds = computed(() => Object.keys(providers.value))
 
 const provider = ref(localStorage.getItem('tcProvider') ?? '')
-const results = ref<SearchResult[]>([])
+type ProviderResult = SearchResult & { providerId: string }
+const results = ref<ProviderResult[]>([])
+const generation = ref(0)
 const page = ref(1)
 const hasMore = ref(true)
 const noResults = ref(false)
 const searching = ref(false)
 
 function resetSearch() {
+  generation.value++
+  searching.value = false
+  omnierr.value = ''
   results.value = []
   page.value = 1
   hasMore.value = true
@@ -72,13 +77,19 @@ watch(provider, (p) => {
 
 // run (or page through) a provider search; results accumulate across pages.
 async function submitSearch() {
-  const prov = providers.value[provider.value]
+  if (searching.value) return
+  const providerId = provider.value
+  const query = input.value.trim()
+  const requestPage = page.value
+  const requestGeneration = generation.value
+  const prov = providers.value[providerId]
   if (!prov) return
   const origin = /(https?:\/\/[^/]+)/.exec(prov.url)?.[1] ?? ''
   omnierr.value = ''
   searching.value = true
   try {
-    const rows = await search.all(provider.value, input.value.trim(), page.value)
+    const rows = await search.all(providerId, query, requestPage)
+    if (requestGeneration !== generation.value) return
     if (!rows || rows.length === 0) {
       noResults.value = true
       hasMore.value = false
@@ -91,13 +102,13 @@ async function submitSearch() {
         r.url = origin + r.url
       }
       if (r.torrent && r.torrent.startsWith('/')) r.torrent = origin + r.torrent
-      results.value.push(r)
+      results.value.push({ ...r, providerId })
     }
-    page.value++
+    page.value = requestPage + 1
   } catch (e) {
-    omnierr.value = e instanceof Error ? e.message : String(e)
+    if (requestGeneration === generation.value) omnierr.value = e instanceof Error ? e.message : String(e)
   } finally {
-    searching.value = false
+    if (requestGeneration === generation.value) searching.value = false
   }
 }
 
@@ -111,7 +122,8 @@ function magnetURI(name: string, infohash: string, trackers: string[]): string {
 
 // add a result: use its magnet/torrent if present, else resolve via the
 // provider's "<id>/item" detail handler.
-async function submitSearchItem(r: SearchResult) {
+async function submitSearchItem(r: ProviderResult) {
+  const requestGeneration = generation.value
   omnierr.value = ''
   try {
     if (r.magnet) return await api.magnet(r.magnet)
@@ -120,7 +132,8 @@ async function submitSearchItem(r: SearchResult) {
       omnierr.value = 'No item URL found'
       return
     }
-    const data = await search.one(provider.value, r.path)
+    const data = await search.one(r.providerId, r.path)
+    if (requestGeneration !== generation.value) return
     if (!data) {
       omnierr.value = 'No response'
       return
@@ -133,7 +146,7 @@ async function submitSearchItem(r: SearchResult) {
     }
     omnierr.value = 'No magnet or infohash found'
   } catch (e) {
-    omnierr.value = e instanceof Error ? e.message : String(e)
+    if (requestGeneration === generation.value) omnierr.value = e instanceof Error ? e.message : String(e)
   }
 }
 
@@ -245,6 +258,7 @@ async function onFiles(e: Event) {
             <option v-for="id in providerIds" :key="id" :value="id">{{ providers[id].name }}</option>
           </select>
           <AsyncButton
+            :key="generation"
             :action="submitSearch"
             :disabled="searching || noResults || (hasMore && results.length > 0)"
             data-testid="search-submit"
@@ -285,7 +299,8 @@ async function onFiles(e: Event) {
         </tr>
         <tr v-if="hasMore">
           <td colspan="10" class="loadmore">
-            <AsyncButton :disabled="searching" :action="submitSearch" data-testid="search-loadmore">
+            <AsyncButton :disabled="searching" :key="generation"
+            :action="submitSearch" data-testid="search-loadmore">
               Load more
             </AsyncButton>
           </td>
