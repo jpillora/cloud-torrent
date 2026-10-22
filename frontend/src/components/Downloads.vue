@@ -20,6 +20,9 @@ const free = computed(() => {
       <h3>Downloads</h3>
       <span v-if="free" class="free">{{ free }} free</span>
     </div>
+    <p v-if="state.Downloads?.Truncated" class="muted" data-testid="downloads-truncated">
+      File list is incomplete: too many entries to display.
+    </p>
     <p v-if="children.length === 0" class="empty" data-testid="downloads-empty">
       Download files above
     </p>

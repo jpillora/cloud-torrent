@@ -4,6 +4,8 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +13,55 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestFileEnumerationBudget(t *testing.T) {
+	for _, count := range []int{999, 1000, 10000, 30000} {
+		t.Run(fmt.Sprint(count), func(t *testing.T) {
+			dir := t.TempDir()
+			for i := range count {
+				mustWrite(t, filepath.Join(dir, fmt.Sprintf("file-%05d", i)), "")
+			}
+			info, err := os.Stat(dir)
+			must(t, err)
+			var elapsed time.Duration
+			for range 3 {
+				visited, root := 0, &FsNode{}
+				start := time.Now()
+				err := list(dir, info, root, &visited)
+				elapsed += time.Since(start)
+				truncated := count > fileNumberLimit-1
+				if visited != fileNumberLimit || len(root.Children) != fileNumberLimit-1 || root.Truncated != truncated || errors.Is(err, errFileLimit) != truncated {
+					t.Fatalf("count=%d visited=%d shown=%d truncated=%v err=%v", count, visited, len(root.Children), root.Truncated, err)
+				}
+			}
+			t.Logf("files=%d visited=%d shown=%d mean=%s", count, fileNumberLimit, fileNumberLimit-1, elapsed/3)
+		})
+	}
+}
+
+func TestFileBudgetCountsHiddenEntriesAndPropagatesTruncation(t *testing.T) {
+	for _, hidden := range []bool{false, true} {
+		dir := t.TempDir()
+		sub := filepath.Join(dir, "sub")
+		must(t, os.Mkdir(sub, 0o755))
+		for i := range 1500 {
+			name := fmt.Sprintf("file-%04d", i)
+			if hidden {
+				name = "." + name
+			}
+			mustWrite(t, filepath.Join(sub, name), "")
+		}
+		root := listFiles(dir)
+		if !root.Truncated || len(root.Children) != 1 || !root.Children[0].Truncated {
+			t.Fatalf("nested truncation lost: %+v", root)
+		}
+		if hidden && len(root.Children[0].Children) != 0 {
+			t.Fatal("hidden entries exposed")
+		}
+	}
+}
 
 func TestFilesystemNodeKinds(t *testing.T) {
 	dir := t.TempDir()

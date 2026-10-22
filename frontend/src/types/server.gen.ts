@@ -44,6 +44,7 @@ export interface FsNode {
   Size: number /* int64 */;
   Modified: string;
   Directory: boolean;
+  Truncated: boolean;
   Children: (FsNode | undefined)[];
 }
 

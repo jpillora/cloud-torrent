@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 )
@@ -23,6 +24,7 @@ type FsNode struct {
 	Size      int64
 	Modified  time.Time
 	Directory bool
+	Truncated bool
 	Children  []*FsNode
 }
 
@@ -44,12 +46,12 @@ var (
 )
 
 func list(path string, info os.FileInfo, node *FsNode, n *int) error {
-	if (!info.IsDir() && !info.Mode().IsRegular()) || strings.HasPrefix(info.Name(), ".") {
-		return errNotRegular
+	if *n >= fileNumberLimit {
+		return errFileLimit
 	}
 	*n++
-	if *n > fileNumberLimit {
-		return errFileLimit
+	if (!info.IsDir() && !info.Mode().IsRegular()) || strings.HasPrefix(info.Name(), ".") {
+		return errNotRegular
 	}
 	node.Name = info.Name()
 	node.Size = info.Size()
@@ -60,24 +62,52 @@ func list(path string, info os.FileInfo, node *FsNode, n *int) error {
 		return nil
 	}
 	node.Size = 0
-	entries, err := os.ReadDir(path)
+	dir, err := os.Open(path)
 	if err != nil {
 		// Preserve directory identity even when its contents are unavailable.
 		return nil
 	}
-	for _, e := range entries {
-		ci, err := e.Info()
-		if err != nil {
-			continue
+	defer dir.Close()
+	defer func() {
+		slices.SortFunc(node.Children, func(a, b *FsNode) int { return strings.Compare(a.Name, b.Name) })
+	}()
+	for {
+		remaining := fileNumberLimit - *n
+		if remaining == 0 {
+			// One un-statted entry distinguishes an exact fit from truncation.
+			entries, _ := dir.ReadDir(1)
+			if len(entries) != 0 {
+				node.Truncated = true
+				return errFileLimit
+			}
+			return nil
 		}
-		child := &FsNode{}
-		if err := list(filepath.Join(path, e.Name()), ci, child, n); err != nil {
-			continue
+		entries, readErr := dir.ReadDir(min(64, remaining))
+		for _, e := range entries {
+			if *n >= fileNumberLimit {
+				node.Truncated = true
+				return errFileLimit
+			}
+			ci, err := e.Info()
+			if err != nil {
+				*n++ // Failed metadata reads also consume the work budget.
+				continue
+			}
+			child := &FsNode{}
+			err = list(filepath.Join(path, e.Name()), ci, child, n)
+			if err == nil || (errors.Is(err, errFileLimit) && child.Name != "") {
+				node.Size += child.Size
+				node.Children = append(node.Children, child)
+			}
+			if errors.Is(err, errFileLimit) {
+				node.Truncated = true
+				return err
+			}
 		}
-		node.Size += child.Size
-		node.Children = append(node.Children, child)
+		if readErr != nil {
+			return nil
+		}
 	}
-	return nil
 }
 
 // downloadHandler serves and deletes files under the directory returned by dir
