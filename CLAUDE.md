@@ -241,7 +241,7 @@ make check-types                                # regen types + git diff --exit-
 ## Packaging — `.github/`
 - `goreleaser.yml` has a **`before` hook that runs `npm ci` + `vite build`** so
   the SPA is embedded into every release binary. CI = `check-types` → vite build
-  → `go build`/`test`; tagged `v*` pushes release binaries + multi-arch images.
+  → `go build`/`test`; tagged `v*` pushes publish GitHub prerelease binaries only. Docker image publishing is disabled.
 - `Dockerfile` is multi-stage (node → golang → scratch). Container CWD is `/`, so
   the default `./downloads` resolves to `/downloads` (the volume); config is
   pinned there via `--config-path /downloads/cloud-torrent.json`.

@@ -6,6 +6,7 @@
 # js dependencies
 node_modules/
 # runtime data
+/cloud-torrent
 downloads
 cloud-torrent.json
 tmp/

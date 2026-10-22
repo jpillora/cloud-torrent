@@ -2,6 +2,9 @@
 #   goreleaser build --snapshot --clean --config .github/goreleaser.yml
 version: 2
 project_name: cloud-torrent
+release:
+  prerelease: true
+  make_latest: false
 before:
   hooks:
     - go mod download
@@ -36,7 +39,7 @@ nfpms:
       - rpm
       - apk
 archives:
-  - format: gz
+  - formats: [gz]
     files:
       - none*
 changelog:
