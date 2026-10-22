@@ -103,11 +103,22 @@ async function remove() {
 <template>
   <div class="node" :class="{ dir: !isFile, file: isFile }" data-testid="fs-node">
     <div class="node-row">
-      <span class="icon" @click="toggle"><Icon :path="icon" :spin="downloading" /></span>
+      <button
+        v-if="!isFile"
+        type="button"
+        class="folder-toggle name"
+        :aria-expanded="open"
+        data-testid="fs-folder-toggle"
+        @click="toggle"
+      >
+        <Icon :path="icon" />
+        {{ node.Name }}
+      </button>
+      <span v-else class="icon"><Icon :path="icon" :spin="downloading" /></span>
       <a v-if="isFile && !downloading" :href="href" class="name" data-testid="fs-file-link">{{
         node.Name
       }}</a>
-      <span v-else class="name" @click="toggle">{{ node.Name }}</span>
+      <span v-else-if="isFile" class="name">{{ node.Name }}</span>
       <span class="meta">{{ bytes(node.Size) }} &middot; updated {{ ago(node.Modified) }}</span>
       <button
         v-if="mediaType && !downloading"

@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:36:58Z
+* updated: 2026-10-22T13:37:53Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1763,11 +1763,12 @@ Replaced span with native button, accessible name Upload torrent files and visib
 
 ## 55. Make download folders expandable with the keyboard
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:06:15Z
+* updated: 2026-10-22T13:37:53Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -1795,6 +1796,10 @@ Provide a native button or equivalent keyboard-operable disclosure control, an a
 ### Confidence
 
 High; actual built app browser fixture and source verified.
+
+### Completion evidence
+
+Folder icon and name form one native disclosure button with accessible folder text, aria-expanded and visible focus. Actual rebuilt Chrome SPA fixture used a 2020 folder with a child: Tab reached disclosure, Enter changed false to true and rendered child, further Tab reached child link, Space collapsed to false and removed child. Browser fixture discarded by reload. Frontend type-check/build, embedded Go build and diff check passed.
 
 ## 56. Reveal file action buttons when they receive keyboard focus
 

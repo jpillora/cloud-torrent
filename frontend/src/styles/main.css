@@ -696,8 +696,25 @@ select:focus {
   gap: 0.4rem;
   padding: 0.18rem 0;
 }
+.folder-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+}
+.folder-toggle:hover {
+  background: transparent;
+  color: var(--blue);
+}
+.folder-toggle:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
 .node .icon {
-  cursor: pointer;
   user-select: none;
 }
 .node .name {
