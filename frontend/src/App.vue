@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { mdiFlash, mdiClose } from '@mdi/js'
 import { uploadTorrentFiles } from './upload'
 import { connection, retryNow } from './state'
@@ -24,6 +24,25 @@ import Omni from './components/Omni.vue'
 import Torrents from './components/Torrents.vue'
 import Downloads from './components/Downloads.vue'
 import Footer from './components/Footer.vue'
+
+// Native modal dialog makes the underlying app inert and traps keyboard focus.
+const connectionDialog = ref<HTMLDialogElement | null>(null)
+const retryButton = ref<HTMLButtonElement | null>(null)
+let previousFocus: HTMLElement | null = null
+function syncConnectionDialog() {
+  const dialog = connectionDialog.value
+  if (!dialog) return
+  if (!connection.connected && !dialog.open) {
+    previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    dialog.showModal()
+    retryButton.value?.focus()
+  } else if (connection.connected && dialog.open) {
+    dialog.close()
+    if (previousFocus?.isConnected) previousFocus.focus()
+    previousFocus = null
+  }
+}
+watch(() => connection.connected, syncConnectionDialog, { flush: 'post' })
 
 // Full-page .torrent drop target. Listeners live on window so a drop anywhere
 // on the page is caught (the app column is narrower than the viewport).
@@ -82,6 +101,7 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 onMounted(() => {
+  syncConnectionDialog()
   window.addEventListener('dragover', onDragOver)
   window.addEventListener('drop', onDrop)
   window.addEventListener('keydown', onKeydown)
@@ -119,18 +139,26 @@ onBeforeUnmount(() => {
 
     <!-- connection overlay: dims/blurs the app whenever the realtime sync is
          down, and shows the reconnect loop's live status -->
-    <div v-if="!connection.connected" class="connect-overlay" data-testid="connect-overlay">
+    <dialog
+      ref="connectionDialog"
+      class="connect-overlay"
+      data-testid="connect-overlay"
+      aria-modal="true"
+      aria-labelledby="connect-title"
+      aria-describedby="connect-description"
+      @cancel.prevent
+    >
       <div class="connect-card">
         <div class="connect-pulse" :class="connection.phase">
           <Icon :path="mdiFlash" />
         </div>
-        <h2 data-testid="connect-status">{{ connTitle }}</h2>
-        <p class="connect-detail" data-testid="connect-detail">{{ connDetail }}</p>
+        <h2 id="connect-title" data-testid="connect-status">{{ connTitle }}</h2>
+        <p id="connect-description" class="connect-detail" data-testid="connect-detail">{{ connDetail }}</p>
         <p v-if="connection.error" class="connect-error" data-testid="connect-error">
           {{ connection.error }}
         </p>
-        <button class="blue" data-testid="connect-retry" @click="retryNow">Retry now</button>
+        <button ref="retryButton" class="blue" data-testid="connect-retry" @click="retryNow">Retry now</button>
       </div>
-    </div>
+    </dialog>
   </div>
 </template>

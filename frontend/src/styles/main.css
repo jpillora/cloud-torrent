@@ -841,7 +841,16 @@ select:focus {
   font-size: 1.6rem;
   background: rgba(255, 255, 255, 0.7);
 }
+.connect-overlay:not([open]) {
+  display: none;
+}
 .connect-overlay {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: none;
   position: fixed;
   inset: 0;
   z-index: 2000;

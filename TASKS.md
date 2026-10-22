@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:42:16Z
+* updated: 2026-10-22T13:43:33Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -2006,11 +2006,12 @@ Global Space shortcut ignores interactive ancestors, editable/focusable widgets,
 
 ## 61. Isolate keyboard focus while the connection overlay is shown
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:06:16Z
+* updated: 2026-10-22T13:43:33Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -2038,6 +2039,10 @@ When connection UI blocks interaction, move focus to an appropriately labelled s
 ### Confidence
 
 High; browser focusability and modal DOM attributes verified.
+
+### Completion evidence
+
+Reconnect overlay is a native showModal dialog with labelled heading/description and Retry focus; browser makes background inert. Connection recovery closes dialog and restores prior connected element. Escape cannot dismiss the blocking state. Actual rebuilt Chrome offline test: disconnect opened :modal with Retry focused; programmatic background Omni focus failed; repeated Tab did not reach background controls; Escape left modal open. Restoring network and Retry closed dialog and restored Omni focus. Network restored after test. Frontend type-check/build, Go embedded build and diff check passed.
 
 ## 62. Surface failed actions at the user's current location and announce errors
 
