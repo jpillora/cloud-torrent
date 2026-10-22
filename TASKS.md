@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T12:53:12Z
+* updated: 2026-10-22T12:55:33Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1098,11 +1098,12 @@ Real browser against rebuilt binary captured successful actual request bodies fo
 
 ## 40. Represent file versus directory explicitly instead of inferring it from nullable children
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,simplicity
 * created: 2026-10-22T10:04:29Z
+* updated: 2026-10-22T12:55:33Z
 
 Review: Astra adversarial review — code simplicity and layout.
 
@@ -1133,6 +1134,14 @@ Add an explicit directory/file discriminator, or guarantee [] for every director
 ### Confidence
 
 high; source/JSON contract proof
+
+### Completion evidence
+
+FsNode now has an explicit Directory boolean consumed by FileNode. Every listed node has a non-null Children array, matching its generated type. An unreadable directory retains its directory node with no listed children. Regenerated server types are committed.
+
+Full server race suite, frontend production build, embedded Go build and check-types pass. Backend tests cover empty, hidden-only, unreadable, populated and ordinary-file nodes, non-null wire arrays, and a forced ReadDir failure even under root.
+
+Live browser against built app: empty.mp4, hidden-only, unreadable and populated all render as directories with no file link or media preview action; ordinary.txt and hello.txt render as file links. Empty folder collapses and expands on click. Following hello.txt download link returns 200 and exact hello content. Test directory cleaned afterward.
 
 ## 41. Include realtime client bootstrap failure in the retry state machine
 

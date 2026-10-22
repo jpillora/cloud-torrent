@@ -3,6 +3,7 @@ package server
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +12,43 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestFilesystemNodeKinds(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"empty", "hidden-only", "unreadable", "populated"} {
+		must(t, os.Mkdir(filepath.Join(dir, name), 0o755))
+	}
+	mustWrite(t, filepath.Join(dir, "hidden-only", ".hidden"), "hidden")
+	mustWrite(t, filepath.Join(dir, "populated", "file.txt"), "contents")
+	mustWrite(t, filepath.Join(dir, "ordinary.txt"), "ordinary")
+	must(t, os.Chmod(filepath.Join(dir, "unreadable"), 0))
+	t.Cleanup(func() { _ = os.Chmod(filepath.Join(dir, "unreadable"), 0o755) })
+	root := listFiles(dir)
+	if !root.Directory || len(root.Children) != 5 {
+		t.Fatalf("unexpected root: %+v", root)
+	}
+	for _, n := range root.Children {
+		if n.Directory != (n.Name != "ordinary.txt") || n.Children == nil {
+			t.Fatalf("incorrect node kind/children: %+v", n)
+		}
+		if n.Name == "populated" && (len(n.Children) != 1 || n.Children[0].Directory) {
+			t.Fatalf("file child misclassified: %+v", n)
+		}
+	}
+	// Force ReadDir to fail even when tests run as root (which can read 000).
+	info, err := os.Stat(filepath.Join(dir, "empty"))
+	must(t, err)
+	node, count := &FsNode{}, 0
+	must(t, list(filepath.Join(dir, "missing-directory"), info, node, &count))
+	if !node.Directory || node.Children == nil {
+		t.Fatalf("unlistable directory lost identity: %+v", node)
+	}
+	b, err := json.Marshal(root)
+	must(t, err)
+	if bytes.Contains(b, []byte(`"Children":null`)) {
+		t.Fatalf("wire children contradict generated array type: %s", b)
+	}
+}
 
 func TestListFiles(t *testing.T) {
 	dir := t.TempDir()

@@ -16,20 +16,21 @@ import (
 
 const fileNumberLimit = 1000
 
-// FsNode is a node in the downloads file tree, synced to the browser. A
-// directory node has Children; a file node does not.
+// FsNode is a node in the downloads file tree, synced to the browser.
+// Directory identifies folders independently of whether they have children.
 type FsNode struct {
-	Name     string
-	Size     int64
-	Modified time.Time
-	Children []*FsNode
+	Name      string
+	Size      int64
+	Modified  time.Time
+	Directory bool
+	Children  []*FsNode
 }
 
 // listFiles walks rootDir and returns it as the root FsNode. Dotfiles and
 // non-regular files are skipped, and the walk is capped at fileNumberLimit
 // entries. A missing rootDir yields an empty node.
 func listFiles(rootDir string) *FsNode {
-	root := &FsNode{}
+	root := &FsNode{Directory: true, Children: []*FsNode{}}
 	if info, err := os.Stat(rootDir); err == nil {
 		n := 0
 		_ = list(rootDir, info, root, &n)
@@ -53,14 +54,17 @@ func list(path string, info os.FileInfo, node *FsNode, n *int) error {
 	node.Name = info.Name()
 	node.Size = info.Size()
 	node.Modified = info.ModTime()
+	node.Directory = info.IsDir()
+	node.Children = []*FsNode{}
 	if !info.IsDir() {
 		return nil
 	}
+	node.Size = 0
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return err
+		// Preserve directory identity even when its contents are unavailable.
+		return nil
 	}
-	node.Size = 0
 	for _, e := range entries {
 		ci, err := e.Info()
 		if err != nil {

@@ -24,7 +24,7 @@ const props = defineProps<{ node: FsNode; basePath?: string }>()
 
 // path relative to the download directory (used for /download links)
 const path = computed(() => (props.basePath ? props.basePath + '/' : '') + props.node.Name)
-const isFile = computed(() => !props.node.Children)
+const isFile = computed(() => !props.node.Directory)
 const href = computed(
   () => 'download/' + path.value.split('/').map(encodeURIComponent).join('/'),
 )

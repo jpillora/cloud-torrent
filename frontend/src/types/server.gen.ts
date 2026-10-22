@@ -36,13 +36,14 @@ export interface FileRequest {
 // source: files.go
 
 /**
- * FsNode is a node in the downloads file tree, synced to the browser. A
- * directory node has Children; a file node does not.
+ * FsNode is a node in the downloads file tree, synced to the browser.
+ * Directory identifies folders independently of whether they have children.
  */
 export interface FsNode {
   Name: string;
   Size: number /* int64 */;
   Modified: string;
+  Directory: boolean;
   Children: (FsNode | undefined)[];
 }
 
