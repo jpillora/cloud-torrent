@@ -147,6 +147,9 @@ make check-types                                # regen types + git diff --exit-
   streaming is incompatible with it. Matters under `--cert/--key` TLS.
 
 ## Torrent engine (anacrolix) — see `engine/`
+- Engine owns its mutable cache/config/client behind one mutex. `*Locked` helpers
+  require that lock. `GetTorrents` returns detached torrent/file DTO snapshots;
+  API actions explicitly publish a fresh snapshot before pushing realtime state.
 - `DeleteTorrent` drops the torrent but does **NOT** delete files on disk
   (master parity). `StopFile` returns `"unsupported"` (no per-file pause).
 - `str2ih` guards `len==40` before hex-decoding (a longer string panics the

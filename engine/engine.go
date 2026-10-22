@@ -13,7 +13,8 @@ import (
 )
 
 // Engine wraps anacrolix/torrent and maintains a cache of view-models keyed by
-// infohash hex string.
+// infohash hex string. mut owns the client, configuration and all cached models.
+// Public methods lock it; helpers suffixed Locked require the caller to hold it.
 type Engine struct {
 	mut      sync.Mutex
 	cacheDir string
@@ -29,12 +30,16 @@ func New() *Engine {
 
 // Config returns the engine's current configuration.
 func (e *Engine) Config() Config {
+	e.mut.Lock()
+	defer e.mut.Unlock()
 	return e.config
 }
 
 // Configure (re)creates the underlying torrent client from c. An existing
 // client is closed first.
 func (e *Engine) Configure(c Config) error {
+	e.mut.Lock()
+	defer e.mut.Unlock()
 	if e.client != nil {
 		e.client.Close()
 		time.Sleep(1 * time.Second)
@@ -49,11 +54,9 @@ func (e *Engine) Configure(c Config) error {
 	if err != nil {
 		return err
 	}
-	e.mut.Lock()
 	e.config = c
 	e.client = client
-	e.mut.Unlock()
-	e.GetTorrents()
+	e.refreshLocked()
 	return nil
 }
 
@@ -70,49 +73,84 @@ func (e *Engine) Close() error {
 
 // NewMagnet adds a torrent from a magnet URI.
 func (e *Engine) NewMagnet(magnetURI string) error {
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	if e.client == nil {
+		return fmt.Errorf("engine is not configured")
+	}
 	tt, err := e.client.AddMagnet(magnetURI)
 	if err != nil {
 		return err
 	}
-	return e.newTorrent(tt)
+	return e.newTorrentLocked(tt)
 }
 
 // NewTorrent adds a torrent from a parsed .torrent spec.
 func (e *Engine) NewTorrent(spec *torrent.TorrentSpec) error {
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	if e.client == nil {
+		return fmt.Errorf("engine is not configured")
+	}
 	tt, _, err := e.client.AddTorrentSpec(spec)
 	if err != nil {
 		return err
 	}
-	return e.newTorrent(tt)
+	return e.newTorrentLocked(tt)
 }
 
-func (e *Engine) newTorrent(tt *torrent.Torrent) error {
-	t := e.upsertTorrent(tt)
+func (e *Engine) newTorrentLocked(tt *torrent.Torrent) error {
+	t := e.upsertTorrentLocked(tt)
 	// once metadata arrives, auto-start if configured
 	go func() {
-		<-t.t.GotInfo()
-		if e.config.AutoStart {
-			e.StartTorrent(t.InfoHash)
+		<-tt.GotInfo()
+		e.mut.Lock()
+		defer e.mut.Unlock()
+		// A metadata callback must not act on a removed/replaced torrent.
+		if e.client != nil && e.ts[t.InfoHash] == t && t.t == tt && e.config.AutoStart {
+			e.startTorrentLocked(t.InfoHash)
 		}
 	}()
 	return nil
 }
 
-// GetTorrents syncs the view-model cache with the client's torrents and returns
-// the cache.
+// GetTorrents returns a detached snapshot. The server may retain and serialize
+// it independently; later engine mutations cannot alter it.
 func (e *Engine) GetTorrents() map[string]*Torrent {
 	e.mut.Lock()
 	defer e.mut.Unlock()
 	if e.client == nil {
 		return nil
 	}
-	for _, tt := range e.client.Torrents() {
-		e.upsertTorrent(tt)
+	e.refreshLocked()
+	snapshot := make(map[string]*Torrent, len(e.ts))
+	for ih, t := range e.ts {
+		copy := *t
+		copy.t = nil
+		copy.updatedAt = time.Time{}
+		if t.Files != nil {
+			copy.Files = make([]*File, len(t.Files))
+			for i, f := range t.Files {
+				if f == nil {
+					continue
+				}
+				file := *f
+				file.f = nil
+				copy.Files[i] = &file
+			}
+		}
+		snapshot[ih] = &copy
 	}
-	return e.ts
+	return snapshot
 }
 
-func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
+func (e *Engine) refreshLocked() {
+	for _, tt := range e.client.Torrents() {
+		e.upsertTorrentLocked(tt)
+	}
+}
+
+func (e *Engine) upsertTorrentLocked(tt *torrent.Torrent) *Torrent {
 	ih := tt.InfoHash().HexString()
 	t, ok := e.ts[ih]
 	if !ok {
@@ -123,7 +161,10 @@ func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
 	return t
 }
 
-func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
+func (e *Engine) getTorrentLocked(infohash string) (*Torrent, error) {
+	if e.client == nil {
+		return nil, fmt.Errorf("engine is not configured")
+	}
 	ih, err := str2ih(infohash)
 	if err != nil {
 		return nil, err
@@ -137,7 +178,13 @@ func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
 
 // StartTorrent begins downloading a torrent (and all its files).
 func (e *Engine) StartTorrent(infohash string) error {
-	t, err := e.getTorrent(infohash)
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	return e.startTorrentLocked(infohash)
+}
+
+func (e *Engine) startTorrentLocked(infohash string) error {
+	t, err := e.getTorrentLocked(infohash)
 	if err != nil {
 		return err
 	}
@@ -159,7 +206,9 @@ func (e *Engine) StartTorrent(infohash string) error {
 // StopTorrent stops a torrent. anacrolix/torrent has no pause, so the
 // underlying torrent is dropped.
 func (e *Engine) StopTorrent(infohash string) error {
-	t, err := e.getTorrent(infohash)
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	t, err := e.getTorrentLocked(infohash)
 	if err != nil {
 		return err
 	}
@@ -181,7 +230,9 @@ func (e *Engine) StopTorrent(infohash string) error {
 
 // DeleteTorrent removes a torrent from the engine and drops it from the client.
 func (e *Engine) DeleteTorrent(infohash string) error {
-	t, err := e.getTorrent(infohash)
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	t, err := e.getTorrentLocked(infohash)
 	if err != nil {
 		return err
 	}
@@ -196,7 +247,9 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 
 // StartFile marks a single file for download.
 func (e *Engine) StartFile(infohash, path string) error {
-	t, err := e.getTorrent(infohash)
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	t, err := e.getTorrentLocked(infohash)
 	if err != nil {
 		return err
 	}

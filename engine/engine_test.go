@@ -1,7 +1,14 @@
 package engine
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"net"
+	"sync"
+
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/bencode"
 	"testing"
 
 	"github.com/anacrolix/torrent/metainfo"
@@ -126,4 +133,99 @@ func freePort(t *testing.T) int {
 	}
 	defer l.Close()
 	return l.Addr().(*net.TCPAddr).Port
+}
+
+func TestSnapshotsOwnTheirModels(t *testing.T) {
+	e := New()
+	mustConfigureEngine(t, e)
+	info := metainfo.Info{Name: "snapshot-fixture", PieceLength: 16, Length: 16, Pieces: make([]byte, 20)}
+	infoBytes, err := bencode.Marshal(info)
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec := &torrent.TorrentSpec{InfoHash: metainfo.HashBytes(infoBytes), InfoBytes: infoBytes}
+	if err := e.NewTorrent(spec); err != nil {
+		t.Fatal(err)
+	}
+	ih := spec.InfoHash.HexString()
+	before := e.GetTorrents()
+	beforeJSON, err := json.Marshal(before)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(before[ih].Files) != 1 {
+		t.Fatal("expected loaded file")
+	}
+	if before[ih].t != nil || before[ih].Files[0].f != nil {
+		t.Fatal("snapshot leaked torrent handles")
+	}
+	if err := e.StartTorrent(ih); err != nil {
+		t.Fatal(err)
+	}
+	afterJSON, err := json.Marshal(before)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(beforeJSON, afterJSON) {
+		t.Fatal("previous snapshot changed after Start")
+	}
+	// A caller can edit its own DTOs and map without modifying the engine.
+	before[ih].Name = "caller mutation"
+	before[ih].Files[0].Path = "caller file mutation"
+	delete(before, ih)
+	next := e.GetTorrents()[ih]
+	if next.Name != info.Name || next.Files[0].Path == "caller file mutation" || !next.Started {
+		t.Fatalf("caller modified engine: %+v", next)
+	}
+}
+
+func mustConfigureEngine(t *testing.T, e *Engine) Config {
+	t.Helper()
+	c := Config{DownloadDirectory: t.TempDir(), IncomingPort: freePort(t)}
+	if err := e.Configure(c); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { e.Close() })
+	return c
+}
+
+func TestConcurrentEngineLifecycleAndSnapshots(t *testing.T) {
+	e := New()
+	c := mustConfigureEngine(t, e)
+	var wg sync.WaitGroup
+	for worker := range 4 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for iteration := range 12 {
+				ih := fmt.Sprintf("%040x", worker*100+iteration+1)
+				// Operations may race with Close/Configure and legitimately fail;
+				// they must never access unprotected maps, models or client pointers.
+				_ = e.NewMagnet("magnet:?xt=urn:btih:" + ih)
+				_ = e.StartTorrent(ih)
+				_ = e.StopTorrent(ih)
+				_ = e.DeleteTorrent(ih)
+			}
+		}()
+	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for range 100 {
+			snapshot := e.GetTorrents()
+			_, _ = json.Marshal(snapshot)
+			_ = e.Config()
+		}
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for range 2 {
+			if err := e.Configure(c); err != nil {
+				t.Error(err)
+			}
+		}
+		_ = e.Close()
+	}()
+	wg.Wait()
 }

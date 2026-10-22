@@ -51,6 +51,12 @@ func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	// Engine snapshots are detached; explicitly publish a fresh one after an
+	// action rather than relying on shared pointers or waiting for the poll.
+	torrents := s.engine.GetTorrents()
+	s.state.Lock()
+	s.state.Torrents = torrents
+	s.state.Unlock()
 	s.state.Push()
 	w.Write([]byte("OK"))
 }
