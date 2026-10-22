@@ -173,6 +173,12 @@ make check-types                                # regen types + git diff --exit-
   leave any single file < 100% for ages. Tests that spin a real client touch the
   network (DHT) and are `-short`/`e2e`-gated.
 
+## Configuration persistence
+- Saves serialize the engine transition and file replacement. Stage and sync JSON
+  beside the destination before applying settings; atomically rename afterward.
+  A replacement failure restores the previous engine config and returns an error.
+  Startup accepts a missing config, but reports read/parse failures.
+
 ## HTTP server chain — `server/server.go`
 - `handler()` composes exactly as master: route mux → **gzip** (whole chain,
   minSize 0) → **cookieauth** (`--auth user:pass`) → **requestlog** (`--log`),

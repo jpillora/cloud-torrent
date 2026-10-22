@@ -3,14 +3,14 @@ package server
 import (
 	"compress/gzip"
 	"crypto/tls"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/NYTimes/gziphandler"
@@ -38,7 +38,8 @@ type Server struct {
 	engine       *engine.Engine
 	state        State
 	scraper      *scraper.Handler
-	searchConfig []byte // last-loaded (normalized) provider config, for change detection
+	searchConfig []byte     // last-loaded (normalized) provider config, for change detection
+	configMu     sync.Mutex // serializes engine changes and their persisted configuration
 }
 
 // Run wires the torrent engine and realtime state, starts the poll/stats loops,
@@ -58,6 +59,15 @@ func (s *Server) Run(version string) error {
 	// (in handleSync) so we can track per-connection users.
 	_ = velox.SyncHandler(&s.state)
 
+	c, err := readConfig(s.ConfigPath, engine.Config{
+		DownloadDirectory: "./downloads",
+		EnableUpload:      true,
+		AutoStart:         true,
+	})
+	if err != nil {
+		return err
+	}
+
 	// search providers: load the embedded config, publish into the state, and
 	// start the background refresh of the remote config.
 	if err := s.startSearch(); err != nil {
@@ -66,16 +76,6 @@ func (s *Server) Run(version string) error {
 
 	// torrent engine + persisted config
 	s.engine = engine.New()
-	c := engine.Config{
-		DownloadDirectory: "./downloads",
-		EnableUpload:      true,
-		AutoStart:         true,
-	}
-	if b, err := os.ReadFile(s.ConfigPath); err == nil && len(b) > 0 {
-		if err := json.Unmarshal(b, &c); err != nil {
-			return fmt.Errorf("malformed configuration: %w", err)
-		}
-	}
 	if err := s.reconfigure(c); err != nil {
 		return fmt.Errorf("initial configure failed: %w", err)
 	}
@@ -198,6 +198,8 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 // reconfigure applies a new engine config, persists it, and updates the synced
 // state.
 func (s *Server) reconfigure(c engine.Config) error {
+	s.configMu.Lock()
+	defer s.configMu.Unlock()
 	dldir, err := filepath.Abs(c.DownloadDirectory)
 	if err != nil {
 		return fmt.Errorf("invalid download directory")
@@ -206,19 +208,40 @@ func (s *Server) reconfigure(c engine.Config) error {
 	if c.IncomingPort <= 0 || c.IncomingPort >= 65535 {
 		c.IncomingPort = 50007
 	}
+	pending, err := stageConfig(s.ConfigPath, c)
+	if err != nil {
+		return err
+	}
+	defer pending.discard()
+	previous := s.engine.Config()
 	if err := s.engine.Configure(c); err != nil {
 		return err
 	}
-	if b, err := json.MarshalIndent(&c, "", "  "); err == nil {
-		os.WriteFile(s.ConfigPath, b, 0644)
+	if err := pending.commit(s.ConfigPath); err != nil {
+		var rollback error
+		if previous.DownloadDirectory == "" {
+			rollback = s.engine.Close()
+		} else {
+			rollback = s.engine.Configure(previous)
+			s.publishConfiguration()
+		}
+		if rollback != nil {
+			return errors.Join(err, fmt.Errorf("restore previous configuration: %w", rollback))
+		}
+		return err
 	}
+	s.publishConfiguration()
+	return nil
+}
+
+func (s *Server) publishConfiguration() {
 	torrents := s.engine.GetTorrents()
+	c := s.engine.Config()
 	s.state.Lock()
 	s.state.Config = c
 	s.state.Torrents = torrents
 	s.state.Unlock()
 	s.state.Push()
-	return nil
 }
 
 // refreshDownloads re-lists the download directory into the synced state and

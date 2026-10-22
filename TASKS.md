@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-10-22T12:45:31Z
+* updated: 2026-10-22T12:48:53Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -962,11 +962,12 @@ Live browser verified with public Big Buck Bunny at 100%: clicked Stop then Remo
 
 ## 37. Treat configuration persistence failure as a failed save
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,simplicity
 * created: 2026-10-22T10:04:29Z
+* updated: 2026-10-22T12:48:53Z
 
 Review: Astra adversarial review — code simplicity and layout.
 
@@ -996,6 +997,14 @@ Surface actionable read/write errors, distinguish missing config from unreadable
 ### Confidence
 
 high; direct ignored-error proof
+
+### Completion evidence
+
+Configuration saves serialize stage/write/fsync, engine application and atomic rename. Failed staging leaves the engine untouched; a failed rename restores the previous engine config and publishes that restored state. Read/parse failures are actionable startup errors; absence alone permits defaults. Replacement preserves existing file permissions and cleans staged files.
+
+Full server race suite, embedded binary build and check-types pass. Regression coverage exercises missing parents, a directory target (rollback after engine application), unchanged original JSON, successful durable saves, retained 0600 mode and no leaked staging files.
+
+Live browser against isolated built app on port 3002: moved its config parent aside, toggled AutoStart and clicked Save; inline stage-configuration error appeared while synced AutoStart stayed false. Restored parent and retried Save: no error and AutoStart true in memory and disk. Restarted the binary and reopened settings: AutoStart remained true with the configured download path. CLI with a directory config path exited 1 with an explicit read error. Isolated app stopped and scratch removed.
 
 ## 38. Honor the advertised DisableEncryption configuration
 
