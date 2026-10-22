@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T12:51:20Z
+* updated: 2026-10-22T12:53:12Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1053,11 +1053,12 @@ Live browser: changed Disable Encryption to true and saved into a fresh scratch 
 
 ## 39. Use generated request payload types at the frontend API boundary
 
-* status: open
+* status: closed
 * priority: P3
 * type: task
 * tags: adversarial-review,simplicity
 * created: 2026-10-22T10:04:29Z
+* updated: 2026-10-22T12:53:12Z
 
 Review: Astra adversarial review — code simplicity and layout.
 
@@ -1088,6 +1089,12 @@ Type the small action-to-request mapping or use satisfies GeneratedRequest on ea
 ### Confidence
 
 high; static type boundary verified
+
+### Completion evidence
+
+Frontend URL, magnet, torrent and file wrappers now use satisfies against generated URLRequest, MagnetRequest, TorrentRequest and FileRequest; existing action unions are retained. A deliberate temporary URL payload mismatch (wrongURL instead of url) failed vue-tsc with TS2353 naming URLRequest. The correct payload was restored; production vue-tsc/Vite build, embedded Go build and check-types pass.
+
+Real browser against rebuilt binary captured successful actual request bodies for public Big Buck Bunny: URL submission, per-file poster Start (poster reached 100%), whole Start, Stop, Remove and magnet Load all returned 200 with matching JSON fields. Removed test torrent, restored config/fetch observer, and cleaned scratch.
 
 ## 40. Represent file versus directory explicitly instead of inferring it from nullable children
 

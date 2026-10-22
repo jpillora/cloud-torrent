@@ -1,4 +1,4 @@
-import type { Config } from './types/generated'
+import type { Config, URLRequest, MagnetRequest, TorrentRequest, FileRequest } from './types/generated'
 import { ui } from './ui'
 
 // post sends a typed action to POST /api/<action>. JSON bodies are stringified;
@@ -27,13 +27,13 @@ async function post(action: string, body?: unknown): Promise<void> {
 // api is the typed client for every server mutation.
 export const api = {
   configure: (config: Config) => post('configure', config),
-  url: (url: string) => post('url', { url }),
-  magnet: (uri: string) => post('magnet', { uri }),
+  url: (url: string) => post('url', { url } satisfies URLRequest),
+  magnet: (uri: string) => post('magnet', { uri } satisfies MagnetRequest),
   torrentfile: (data: Uint8Array) => post('torrentfile', data),
   torrent: (action: 'start' | 'stop' | 'delete', infohash: string) =>
-    post('torrent', { action, infohash }),
+    post('torrent', { action, infohash } satisfies TorrentRequest),
   file: (action: 'start' | 'stop', infohash: string, path: string) =>
-    post('file', { action, infohash, path }),
+    post('file', { action, infohash, path } satisfies FileRequest),
 }
 
 // SearchResult is one row from a scraper provider (scraper.Result =
