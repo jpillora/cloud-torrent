@@ -357,6 +357,9 @@ is parsed live into a **mode**, and the trailing icon + action buttons change ac
   icon. Clicking download: if the result already has a `magnet`/`torrent`, submit it directly;
   otherwise fetch `/search/:provider/item?item=<path>` and resolve a magnet from
   `magnet` | `torrent` | `infohash + tracker` list. Pagination via "Load more" (increment `page`).
+  While pending, replace the download icon with a spinner in the same button. After five seconds,
+  the button becomes clickable to cancel the pending request. Cancel restores the download icon,
+  permits retry, and suppresses late results; changing query/provider cancels removed rows too.
   *(ref: `submitSearch`, `submitSearchItem`)*
 - Remember last query + provider in `localStorage` (`tcOmni`, `tcProvider`). *(ref: `storage`)*
 

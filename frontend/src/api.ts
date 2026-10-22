@@ -5,8 +5,8 @@ import { ui } from './ui'
 // a Uint8Array (a .torrent file) is sent as-is. Failures throw the server's
 // error text. State changes are observed via velox, not the response body.
 // ui.requests is bumped for the duration so the header shows a spinner.
-async function post(action: string, body?: unknown): Promise<void> {
-  const init: RequestInit = { method: 'POST' }
+async function post(action: string, body?: unknown, signal?: AbortSignal): Promise<void> {
+  const init: RequestInit = { method: 'POST', signal }
   if (body instanceof Uint8Array) {
     // a .torrent file; Uint8Array is a valid BufferSource body at runtime
     init.body = body as unknown as BodyInit
@@ -27,8 +27,8 @@ async function post(action: string, body?: unknown): Promise<void> {
 // api is the typed client for every server mutation.
 export const api = {
   configure: (config: Config) => post('configure', config),
-  url: (url: string) => post('url', { url } satisfies URLRequest),
-  magnet: (uri: string) => post('magnet', { uri } satisfies MagnetRequest),
+  url: (url: string, signal?: AbortSignal) => post('url', { url } satisfies URLRequest, signal),
+  magnet: (uri: string, signal?: AbortSignal) => post('magnet', { uri } satisfies MagnetRequest, signal),
   torrentfile: (data: Uint8Array) => post('torrentfile', data),
   torrent: (action: 'start' | 'stop' | 'delete', infohash: string) =>
     post('torrent', { action, infohash } satisfies TorrentRequest),
@@ -55,8 +55,8 @@ export interface SearchResult {
 
 // get issues a GET to /search/* and parses the JSON body, throwing the server's
 // error text (the scraper returns {"error": ...} with a non-2xx status).
-async function get<T>(path: string, params: Record<string, string>): Promise<T> {
-  const res = await fetch(`${path}?${new URLSearchParams(params)}`)
+async function get<T>(path: string, params: Record<string, string>, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(`${path}?${new URLSearchParams(params)}`, { signal })
   if (!res.ok) {
     throw new Error(extractError(await res.text()) || res.statusText)
   }
@@ -85,6 +85,6 @@ export const search = {
   all: (provider: string, query: string, page: number) =>
     get<SearchResult[]>(`/search/${encodeURIComponent(provider)}`, { query, page: String(page) }),
   // one resolves a single result's detail page (magnet/infohash/etc.).
-  one: (provider: string, item: string) =>
-    get<SearchResult>(`/search/${encodeURIComponent(provider)}/item`, { item }),
+  one: (provider: string, item: string, signal?: AbortSignal) =>
+    get<SearchResult>(`/search/${encodeURIComponent(provider)}/item`, { item }, signal),
 }

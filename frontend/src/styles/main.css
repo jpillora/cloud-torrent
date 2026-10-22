@@ -584,6 +584,11 @@ select:focus {
   text-align: right;
 }
 .search-results .download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7em;
+  height: 1.7em;
   background: none;
   padding: 0 0.3em;
   font-size: 1.1rem;
@@ -591,6 +596,11 @@ select:focus {
 }
 .search-results .download:hover {
   background: none;
+}
+.search-results .download .btn-spinner {
+  margin: 0;
+  width: 1.15em;
+  height: 1.15em;
 }
 .search-results .loadmore {
   text-align: center;

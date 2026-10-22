@@ -9,6 +9,11 @@ Appearance checks cover the system default, live OS changes, explicit light/dark
 overrides, reload persistence, tab synchronization, denied theme storage, keyboard
 selection and mobile settings layout. The torrent/download workflow runs in dark mode.
 
+Search cancellation checks hold provider/API responses at the HTTP boundary. They
+verify that one spinner replaces the icon without changing button dimensions,
+cancellation unlocks at five seconds and aborts the request, late detail responses
+cannot submit downloads, retry works, and removed result rows cancel pending work.
+
 ## Deterministic fixture (default, CI)
 
 `fixture.ts` authors two CC0 text files and canonically bencodes a v1 torrent with

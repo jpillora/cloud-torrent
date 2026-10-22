@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { mdiMagnify, mdiMagnet, mdiUpload, mdiDownload } from '@mdi/js'
+import { mdiMagnify, mdiMagnet, mdiUpload } from '@mdi/js'
 import { api, search, type SearchResult } from '../api'
 import { state } from '../state'
 import { ui } from '../ui'
 import { uploadTorrentFiles } from '../upload'
 import AsyncButton from './AsyncButton.vue'
+import SearchDownloadButton from './SearchDownloadButton.vue'
 import Icon from './Icon.vue'
 import MagnetEditor from './MagnetEditor.vue'
 
@@ -122,31 +123,31 @@ function magnetURI(name: string, infohash: string, trackers: string[]): string {
 
 // add a result: use its magnet/torrent if present, else resolve via the
 // provider's "<id>/item" detail handler.
-async function submitSearchItem(r: ProviderResult) {
+async function submitSearchItem(r: ProviderResult, signal: AbortSignal) {
   const requestGeneration = generation.value
   omnierr.value = ''
   try {
-    if (r.magnet) return await api.magnet(r.magnet)
-    if (r.torrent) return await api.url(r.torrent)
+    if (r.magnet) return await api.magnet(r.magnet, signal)
+    if (r.torrent) return await api.url(r.torrent, signal)
     if (!r.path) {
       omnierr.value = 'No item URL found'
       return
     }
-    const data = await search.one(r.providerId, r.path)
-    if (requestGeneration !== generation.value) return
+    const data = await search.one(r.providerId, r.path, signal)
+    if (signal.aborted || requestGeneration !== generation.value) return
     if (!data) {
       omnierr.value = 'No response'
       return
     }
-    if (data.torrent) return await api.url(data.torrent)
-    if (data.magnet) return await api.magnet(data.magnet)
+    if (data.torrent) return await api.url(data.torrent, signal)
+    if (data.magnet) return await api.magnet(data.magnet, signal)
     if (data.infohash) {
       const trackers = (data.tracker ?? '').split(',').filter((s) => /^(http|udp):\/\//.test(s))
-      return await api.magnet(magnetURI(r.name ?? '', data.infohash, trackers))
+      return await api.magnet(magnetURI(r.name ?? '', data.infohash, trackers), signal)
     }
     omnierr.value = 'No magnet or infohash found'
   } catch (e) {
-    if (requestGeneration === generation.value) omnierr.value = e instanceof Error ? e.message : String(e)
+    if (!signal.aborted && requestGeneration === generation.value) omnierr.value = e instanceof Error ? e.message : String(e)
   }
 }
 
@@ -278,7 +279,7 @@ async function onFiles(e: Event) {
       data-testid="search-results"
     >
       <tbody>
-        <tr v-for="(r, i) in results" :key="i" data-testid="search-result">
+        <tr v-for="(r, i) in results" :key="`${generation}:${i}`" data-testid="search-result">
           <td class="name">
             <a v-if="r.url" :href="r.url" target="_blank">{{ r.name }}</a>
             <span v-else>{{ r.name }}</span>
@@ -289,14 +290,7 @@ async function onFiles(e: Event) {
             <span class="peers">{{ r.peers }}</span>
           </td>
           <td class="controls">
-            <AsyncButton
-              class="green download"
-              title="Download"
-              data-testid="search-download"
-              :action="() => submitSearchItem(r)"
-            >
-              <Icon :path="mdiDownload" />
-            </AsyncButton>
+            <SearchDownloadButton :name="r.name || 'search result'" :action="(signal) => submitSearchItem(r, signal)" />
           </td>
         </tr>
         <tr v-if="hasMore">
