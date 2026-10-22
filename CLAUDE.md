@@ -155,6 +155,9 @@ make check-types                                # regen types + git diff --exit-
   and rebind torrents to the replacement client. Failure restores the previous
   configuration. anacrolix closes listener sockets asynchronously, so only bind
   conflicts get a bounded retry; there is no unconditional restart sleep.
+- Whole-torrent Stop disables data upload/download and clears file priorities
+  while retaining metadata and its live handle. Start restores priorities and
+  resumes; only Delete drops the handle.
 - `DeleteTorrent` drops the torrent but does **NOT** delete files on disk
   (master parity). `StopFile` returns `"unsupported"` (no per-file pause).
 - `str2ih` guards `len==40` before hex-decoding (a longer string panics the

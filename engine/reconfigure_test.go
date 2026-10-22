@@ -1,12 +1,9 @@
 package engine
 
 import (
-	"bytes"
-	"crypto/sha1"
 	"errors"
 	"net"
 	"net/http"
-	"net/http/httptest"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -19,28 +16,7 @@ import (
 // Use a real, throttled HTTP webseed and verified torrent pieces. Transitions
 // must resume byte progress, not merely preserve Started flags.
 func TestReconfigureMaintainsTransfer(t *testing.T) {
-	data := bytes.Repeat([]byte("0123456789abcdef"), 512*1024)
-	seed := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeContent(throttledWriter{w, r}, r, "fixture.bin", time.Time{}, bytes.NewReader(data))
-	}))
-	defer seed.Close()
-	const pieceLength = 64 * 1024
-	var pieces []byte
-	for offset := 0; offset < len(data); offset += pieceLength {
-		hash := sha1.Sum(data[offset:min(offset+pieceLength, len(data))])
-		pieces = append(pieces, hash[:]...)
-	}
-	infoBytes, err := bencode.Marshal(metainfo.Info{Name: "fixture.bin", Length: int64(len(data)), PieceLength: pieceLength, Pieces: pieces})
-	if err != nil {
-		t.Fatal(err)
-	}
-	spec := &torrent.TorrentSpec{AddTorrentOpts: torrent.AddTorrentOpts{InfoHash: metainfo.HashBytes(infoBytes), InfoBytes: infoBytes}, Webseeds: []string{seed.URL + "/fixture.bin"}}
-	ih := spec.InfoHash.HexString()
-	e := New()
-	c := mustConfigureEngine(t, e)
-	if err := e.NewTorrent(spec); err != nil {
-		t.Fatal(err)
-	}
+	e, c, ih := newTransferFixture(t)
 	if err := e.StartTorrent(ih); err != nil {
 		t.Fatal(err)
 	}

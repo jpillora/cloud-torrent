@@ -161,6 +161,10 @@ func (e *Engine) replaceClientLocked(c Config, saved []savedTorrent) error {
 		ih := tt.InfoHash().HexString()
 		model := &Torrent{InfoHash: ih, Started: state.started, spec: state.spec, autoStart: state.autoStart}
 		model.Update(tt)
+		if !model.Started {
+			tt.DisallowDataDownload()
+			tt.DisallowDataUpload()
+		}
 		for _, f := range model.Files {
 			f.Started = state.files[f.Path]
 		}
@@ -262,7 +266,7 @@ func (e *Engine) watchMetadataLocked(t *Torrent, start bool) {
 		e.mut.Lock()
 		defer e.mut.Unlock()
 		// A metadata callback must not act on a removed/replaced torrent.
-		if e.client != nil && e.ts[t.InfoHash] == t && t.t == tt && start {
+		if e.client != nil && e.ts[t.InfoHash] == t && t.t == tt && start && t.autoStart {
 			// Refresh files before restoring a pending start.
 			t.Update(tt)
 			t.Started = false
@@ -351,6 +355,11 @@ func (e *Engine) startTorrentLocked(infohash string) error {
 		return fmt.Errorf("already started")
 	}
 	t.Started = true
+	t.autoStart = false
+	t.t.AllowDataDownload()
+	if e.config.EnableUpload {
+		t.t.AllowDataUpload()
+	}
 	for _, f := range t.Files {
 		if f != nil {
 			f.Started = true
@@ -362,8 +371,8 @@ func (e *Engine) startTorrentLocked(infohash string) error {
 	return nil
 }
 
-// StopTorrent stops a torrent. anacrolix/torrent has no pause, so the
-// underlying torrent is dropped.
+// StopTorrent pauses transfer while retaining metadata and the live handle.
+// StartTorrent restores all file priorities and resumes transfer.
 func (e *Engine) StopTorrent(infohash string) error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
@@ -374,16 +383,17 @@ func (e *Engine) StopTorrent(infohash string) error {
 	if !t.Started {
 		return fmt.Errorf("already stopped")
 	}
+	t.t.DisallowDataDownload()
+	t.t.DisallowDataUpload()
 	t.Started = false
+	t.autoStart = false
+	t.DownloadRate = 0
 	for _, f := range t.Files {
 		if f != nil {
+			f.f.SetPriority(torrent.PiecePriorityNone)
 			f.Started = false
 		}
 	}
-	// Drop can block until the torrent's goroutines unwind (notably under active
-	// download). Run it in the background so the API call returns immediately and
-	// the UI flips to stopped/"Remove" without a multi-second hang.
-	go t.t.Drop()
 	return nil
 }
 
