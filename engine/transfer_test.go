@@ -3,22 +3,38 @@ package engine
 import (
 	"bytes"
 	"crypto/sha1"
-	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/bencode"
-	"github.com/anacrolix/torrent/metainfo"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/bencode"
+	"github.com/anacrolix/torrent/metainfo"
 )
 
 // Real torrent pieces served over HTTP at a bounded speed, allowing lifecycle
 // tests to assert transfer behavior rather than only model flags.
 func newTransferFixture(t *testing.T) (*Engine, Config, string) {
+	return newTransferFixtureFiles(t, false)
+}
+
+func newTransferFixtureFiles(t *testing.T, multi bool) (*Engine, Config, string) {
 	t.Helper()
 	data := bytes.Repeat([]byte("0123456789abcdef"), 512*1024)
 	seed := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeContent(throttledWriter{w, r}, r, "fixture.bin", time.Time{}, bytes.NewReader(data))
+		content := data
+		if multi {
+			if r.URL.Path == "/fixture/first.bin" {
+				content = data[:len(data)/2]
+			} else if r.URL.Path == "/fixture/second.bin" {
+				content = data[len(data)/2:]
+			} else {
+				http.NotFound(w, r)
+				return
+			}
+		}
+		http.ServeContent(throttledWriter{w, r}, r, "fixture.bin", time.Time{}, bytes.NewReader(content))
 	}))
 	t.Cleanup(seed.Close)
 	const pieceLength = 64 * 1024
@@ -27,11 +43,18 @@ func newTransferFixture(t *testing.T) (*Engine, Config, string) {
 		hash := sha1.Sum(data[offset:min(offset+pieceLength, len(data))])
 		pieces = append(pieces, hash[:]...)
 	}
-	infoBytes, err := bencode.Marshal(metainfo.Info{Name: "fixture.bin", Length: int64(len(data)), PieceLength: pieceLength, Pieces: pieces})
+	info := metainfo.Info{Name: "fixture.bin", Length: int64(len(data)), PieceLength: pieceLength, Pieces: pieces}
+	webseed := seed.URL + "/fixture.bin"
+	if multi {
+		info.Name, info.Length = "fixture", 0
+		info.Files = []metainfo.FileInfo{{Length: int64(len(data) / 2), Path: []string{"first.bin"}}, {Length: int64(len(data) / 2), Path: []string{"second.bin"}}}
+		webseed = seed.URL + "/"
+	}
+	infoBytes, err := bencode.Marshal(info)
 	if err != nil {
 		t.Fatal(err)
 	}
-	spec := &torrent.TorrentSpec{AddTorrentOpts: torrent.AddTorrentOpts{InfoHash: metainfo.HashBytes(infoBytes), InfoBytes: infoBytes}, Webseeds: []string{seed.URL + "/fixture.bin"}}
+	spec := &torrent.TorrentSpec{AddTorrentOpts: torrent.AddTorrentOpts{InfoHash: metainfo.HashBytes(infoBytes), InfoBytes: infoBytes}, Webseeds: []string{webseed}}
 	ih := spec.InfoHash.HexString()
 	e := New()
 	c := mustConfigureEngine(t, e)
@@ -40,6 +63,33 @@ func newTransferFixture(t *testing.T) (*Engine, Config, string) {
 	}
 
 	return e, c, ih
+}
+
+func TestStartFileTransfersAndStartAllSchedulesRemaining(t *testing.T) {
+	e, _, ih := newTransferFixtureFiles(t, true)
+	if err := e.StartFile(ih, "fixture/first.bin"); err != nil {
+		t.Fatal(err)
+	}
+	waitTransferProgress(t, e, ih, 0)
+	e.mut.Lock()
+	files := e.ts[ih].t.Files()
+	firstPriority, secondPriority := files[0].Priority(), files[1].Priority()
+	firstBytes, secondBytes := files[0].BytesCompleted(), files[1].BytesCompleted()
+	e.mut.Unlock()
+	if firstPriority == torrent.PiecePriorityNone || secondPriority != torrent.PiecePriorityNone || firstBytes == 0 || secondBytes != 0 {
+		t.Fatalf("selective download: priorities %v/%v bytes %d/%d", firstPriority, secondPriority, firstBytes, secondBytes)
+	}
+	if err := e.StartTorrent(ih); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(15 * time.Second)
+	for time.Now().Before(deadline) {
+		if files[1].Priority() != torrent.PiecePriorityNone && files[1].BytesCompleted() > 0 {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("Start all did not transfer the remaining file")
 }
 
 func waitTransferProgress(t *testing.T, e *Engine, ih string, baseline int64) int64 {

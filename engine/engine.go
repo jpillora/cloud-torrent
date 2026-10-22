@@ -351,7 +351,13 @@ func (e *Engine) startTorrentLocked(infohash string) error {
 	if err != nil {
 		return err
 	}
-	if t.Started {
+	allStarted := t.Started
+	for _, f := range t.Files {
+		if f != nil && !f.Started {
+			allStarted = false
+		}
+	}
+	if allStarted {
 		return fmt.Errorf("already started")
 	}
 	t.Started = true
@@ -362,11 +368,9 @@ func (e *Engine) startTorrentLocked(infohash string) error {
 	}
 	for _, f := range t.Files {
 		if f != nil {
+			f.f.Download()
 			f.Started = true
 		}
-	}
-	if t.t.Info() != nil {
-		t.t.DownloadAll()
 	}
 	return nil
 }
@@ -435,6 +439,12 @@ func (e *Engine) StartFile(infohash, path string) error {
 	if f.Started {
 		return fmt.Errorf("already started")
 	}
+	f.f.Download()
+	t.t.AllowDataDownload()
+	if e.config.EnableUpload {
+		t.t.AllowDataUpload()
+	}
+	t.autoStart = false
 	t.Started = true
 	f.Started = true
 	return nil

@@ -69,12 +69,12 @@ function filename(path: string): string {
       <div class="controls">
         <button :class="{ active: showFiles }" @click="showFiles = !showFiles">Files</button>
         <AsyncButton
-          v-if="!torrent.Started && torrent.Loaded"
+          v-if="torrent.Loaded && (!torrent.Started || files.some(f => !f.Started))"
           class="green"
           :action="start"
           data-testid="torrent-start"
         >
-          Start
+          {{ torrent.Started ? 'Start all' : 'Start' }}
         </AsyncButton>
         <AsyncButton v-if="torrent.Started" class="red" :action="stop" data-testid="torrent-stop">
           Stop
