@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:08:01Z
+* updated: 2026-10-22T13:11:54Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1371,12 +1371,12 @@ Production frontend build, embedded Go build, check-types and whitespace checks 
 
 ## 46. Cancel metadata waiters when magnets are removed or the engine closes
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,performance
 * created: 2026-10-22T10:05:36Z
-* updated: 2026-10-22T10:06:54Z
+* updated: 2026-10-22T13:11:54Z
 
 Review: Astra adversarial review — performance.
 
@@ -1404,6 +1404,14 @@ Select between captured torrent GotInfo and Closed/engine cancellation; avoid du
 ### Confidence
 
 high
+
+### Completion evidence
+
+Metadata watchers now select on captured GotInfo and Closed channels. Duplicate adds reuse the existing model, preserve pending Start, retain additional source URLs and do not create another watcher.
+
+Race-enabled offline integration captures actual goroutine profiles: 30 metadata-less magnets with three duplicate adds each have exactly 30 waiters above baseline. Reconfiguration keeps exactly 30; deleting all returns to baseline. Another 30 pending magnets followed by Engine.Close also return to baseline. Pending explicit Start survives duplicates. Full go test -race ./..., embedded Go build and check-types pass.
+
+Live browser public Big Buck Bunny: AutoStart=false, added magnet, explicitly started it, then added the same magnet 10 times. One torrent remained started, metadata loaded and transfer reached 93569024 bytes (33.84%). Test torrent removed, original config restored and scratch cleaned.
 
 ## 47. Stop filesystem enumeration when the downloads entry budget is exhausted
 

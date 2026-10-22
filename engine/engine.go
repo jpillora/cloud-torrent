@@ -253,6 +253,16 @@ func (e *Engine) NewTorrent(spec *torrent.TorrentSpec) error {
 
 func (e *Engine) newTorrentLocked(tt *torrent.Torrent, spec *torrent.TorrentSpec) error {
 	t := e.upsertTorrentLocked(tt)
+	if t.spec != nil {
+		// AddTorrentSpec already merges sources/trackers into the live handle.
+		// Re-adding must not reset a pending start or create another waiter.
+		for _, source := range spec.Sources {
+			if !slices.Contains(t.spec.Sources, source) {
+				t.spec.Sources = append(t.spec.Sources, source)
+			}
+		}
+		return nil
+	}
 	t.spec = spec
 	t.autoStart = e.config.AutoStart
 	e.watchMetadataLocked(t)
@@ -263,7 +273,11 @@ func (e *Engine) watchMetadataLocked(t *Torrent) {
 	tt := t.t
 	// once metadata arrives, auto-start if configured
 	go func() {
-		<-tt.GotInfo()
+		select {
+		case <-tt.GotInfo():
+		case <-tt.Closed():
+			return
+		}
 		e.mut.Lock()
 		defer e.mut.Unlock()
 		// A metadata callback must not act on a removed/replaced torrent.
