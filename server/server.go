@@ -143,7 +143,7 @@ func (s *Server) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/sync", s.handleSync)
 	mux.HandleFunc("/api/", s.handleAPI)
-	mux.Handle("/search/", http.StripPrefix("/search", s.scraper))
+	mux.Handle("/search/", http.StripPrefix("/search", http.HandlerFunc(s.handleSearch)))
 	mux.Handle("/download/", http.StripPrefix("/download/", downloadHandler(func() string {
 		return s.engine.Config().DownloadDirectory
 	}, s.refreshDownloads)))

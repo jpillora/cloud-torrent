@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jpillora/backoff"
@@ -18,6 +19,21 @@ const searchConfigURL = "https://gist.githubusercontent.com/jpillora/4d945b46b30
 
 // userAgent is sent to providers so they treat us like a regular browser.
 const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
+
+// Expose only provider queries, never the dependency's config administration.
+func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		http.Error(w, "search queries require GET", http.StatusMethodNotAllowed)
+		return
+	}
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")
+	if parts[0] == "" || len(parts) > 2 || (len(parts) == 2 && parts[1] != "item") {
+		http.NotFound(w, r)
+		return
+	}
+	s.scraper.ServeHTTP(w, r)
+}
 
 // startSearch builds the scraper handler from the embedded default config,
 // publishes the providers into the synced state, and kicks off the background
