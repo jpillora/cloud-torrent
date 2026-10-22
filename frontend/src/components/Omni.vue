@@ -218,15 +218,16 @@ async function onFiles(e: Event) {
         @keyup.enter="submit"
         data-testid="omni-input"
       />
-      <span
+      <button
+        type="button"
         class="omni-icon"
         :title="`Upload .torrent file (${mode})`"
-        role="button"
+        aria-label="Upload torrent files"
         @click="pickFiles"
         data-testid="omni-upload"
       >
         <Icon :path="modeIcon" />
-      </span>
+      </button>
       <input
         ref="fileInput"
         type="file"

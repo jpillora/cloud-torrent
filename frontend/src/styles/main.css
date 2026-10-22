@@ -391,6 +391,7 @@ select:focus {
   box-shadow: var(--ring);
 }
 .omni-icon {
+  background: transparent;
   position: absolute;
   right: 0;
   top: 0;
@@ -402,6 +403,14 @@ select:focus {
   color: #9aa0a6;
   cursor: pointer;
   user-select: none;
+}
+.omni-icon:hover {
+  background: transparent;
+  color: var(--blue);
+}
+.omni-icon:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -3px;
 }
 .omni-error {
   color: var(--red);

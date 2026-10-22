@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:35:30Z
+* updated: 2026-10-22T13:36:58Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1723,11 +1723,12 @@ Shared submit now rejects duplicate URL/magnet actions while busy; submitSearch 
 
 ## 54. Make the torrent upload control keyboard operable
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:06:15Z
+* updated: 2026-10-22T13:36:58Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -1755,6 +1756,10 @@ Use a native focusable button with a clear accessible name for upload. Tab must 
 ### Confidence
 
 High; live DOM and focus behavior verified.
+
+### Completion evidence
+
+Replaced span with native button, accessible name Upload torrent files and visible keyboard focus styling. Actual Chrome CDP keyboard events on rebuilt SPA: Tab from Omni input focuses omni-upload BUTTON; Enter invokes hidden file input once; Space invokes it a second time. File input click default prevented during check to avoid leaving an open picker. Frontend type-check/build, Go embedded build and diff check passed.
 
 ## 55. Make download folders expandable with the keyboard
 
