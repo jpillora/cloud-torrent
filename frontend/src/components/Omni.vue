@@ -170,6 +170,7 @@ watch(input, (v) => {
 })
 
 async function submit() {
+  if (busy.value) return
   if (mode.value === 'search') return submitSearch()
   omnierr.value = ''
   busy.value = true
