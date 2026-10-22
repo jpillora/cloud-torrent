@@ -140,9 +140,9 @@ make check-types                                # regen types + git diff --exit-
   it (`{retry:false}`) and drive the reconnect loop ourselves in `frontend/src/
   velox.ts` (backoff + an attempt-timeout backstop, since velox never reports a
   failed SSE attempt; surfaced via `ConnStatus`). Retry-on-`online`/refocus too.
-- **gzip must wrap the whole handler chain with `minSize 0`** — otherwise
-  gziphandler buffers to its threshold and the `/sync` SSE stream stops flushing
-  in realtime (clients hang on "Connecting"). See `server.go handler()`.
+- **gzip wraps the handler chain with `minSize 0` and a compressible MIME
+  allowlist.** SSE must flush immediately; media/archive downloads bypass gzip.
+  Raising the threshold buffers `/sync` and can leave clients on Connecting.
 - **HTTP/2 must stay disabled** (`http.Server{TLSNextProto: map[...]{}}`) — velox
   streaming is incompatible with it. Matters under `--cert/--key` TLS.
 

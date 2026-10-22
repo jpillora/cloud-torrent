@@ -194,11 +194,7 @@ func (s *Server) handler() http.Handler {
 	mux.Handle("/js/velox.js", velox.JS)
 	mux.Handle("/", static.Handler())
 
-	// gzip everything. minSize 0 (gzip even small/streamed responses) keeps the
-	// velox sync stream flushing in realtime instead of buffering to a threshold.
-	h := http.Handler(mux)
-	gzipWrap, _ := gziphandler.NewGzipLevelAndMinSize(gzip.DefaultCompression, 0)
-	h = gzipWrap(h)
+	h := compressResponses(mux)
 
 	// basic auth (cookie-backed) when --auth user:pass is provided
 	if s.Auth != "" {
@@ -215,6 +211,20 @@ func (s *Server) handler() http.Handler {
 		h = requestlog.Wrap(h)
 	}
 	return h
+}
+
+func compressResponses(h http.Handler) http.Handler {
+	// minSize 0 preserves immediate SSE flushing. Media/archive downloads
+	// avoid DEFLATE work; only deliberate text/structured MIME types compress.
+	wrap, _ := gziphandler.GzipHandlerWithOpts(
+		gziphandler.CompressionLevel(gzip.DefaultCompression), gziphandler.MinSize(0),
+		gziphandler.ContentTypes([]string{
+			"text/html", "text/plain", "text/css", "text/javascript",
+			"application/javascript", "application/json", "text/event-stream",
+			"application/xml", "text/xml", "image/svg+xml",
+		}),
+	)
+	return wrap(h)
 }
 
 // handleSync upgrades a velox connection on the embedded state and tracks the

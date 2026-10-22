@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-10-22T13:15:18Z
+* updated: 2026-10-22T13:18:22Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1459,12 +1459,12 @@ Live browser with 1001 files: 999 rows, root Truncated=true and visible incomple
 
 ## 48. Avoid gzip-compressing already-compressed download payloads
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,performance
 * created: 2026-10-22T10:05:36Z
-* updated: 2026-10-22T10:06:54Z
+* updated: 2026-10-22T13:18:22Z
 
 Review: Astra adversarial review — performance.
 
@@ -1492,6 +1492,14 @@ Skip compression for incompressible downloads or use a deliberate compressible M
 ### Confidence
 
 high
+
+### Completion evidence
+
+Compression now uses a deliberate text/JSON/JavaScript/XML/SVG/SSE MIME allowlist with minSize 0. Media and archives bypass gzip, including generated directory ZIPs.
+
+Full server race suite, embedded Go build, type and whitespace checks pass. Tests assert byte-preserving identity responses for MP4/JPEG/ZIP and compression for text/JSON/JavaScript. A real HTTP SSE request with Accept-Encoding:gzip receives a data line within its two-second deadline, proving immediate gzip flush. The reproducible 8 MiB random-media benchmark improved from 4.253 ms/op to 0.693 ms/op (~6.1x handler-path improvement; in-process warm-cache, not network throughput).
+
+Live browser public Big Buck Bunny download checks: JPEG (310380 bytes), MP4 and directory ZIP all return 200 with no Content-Encoding, while HTML still returns gzip and the app stays connected. Fetching the poster with Accept-Encoding:gzip retains SHA256 d082c4ae86f4f8d323c4a03665cdec24c20ad0dcaddcfef1bcab073457a101ff. Large media/archive response bodies were cancelled after headers.
 
 ## 49. Bound outbound torrent URL and provider fetches and propagate cancellation
 
