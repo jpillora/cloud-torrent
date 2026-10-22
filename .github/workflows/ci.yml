@@ -22,16 +22,16 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
       - name: Check generated types
-        run: make check-types
-      - name: Build frontend
-        run: |
-          npm --prefix frontend ci
-          npm --prefix frontend run build
+        run: ./dev.ts check-types
       - name: Build
-        run: go build -v -o /dev/null .
+        run: ./dev.ts build
       - name: Test
-        run: go test -v ./...
+        run: ./dev.ts test
   # Publish binaries as GitHub prereleases when a v* tag is pushed.
   release_binaries:
     name: Release Binaries
@@ -56,12 +56,18 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: GoReleaser
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - name: Set up GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean --config .github/goreleaser.yml
+          install-only: true
+      - name: Release
+        run: ./dev.ts release
         env:
           GITHUB_USER: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

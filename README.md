@@ -35,21 +35,19 @@ Download binaries from [GitHub Releases](https://github.com/jpillora/cloud-torre
 Docker image publishing is disabled. To build and run the current source locally:
 
 ```sh
-docker build -f .github/Dockerfile -t cloud-torrent .
+docker build -f .dev/Dockerfile -t cloud-torrent .
 docker run -d -p 3000:3000 -v /path/to/downloads:/downloads cloud-torrent
 ```
 
 **Source**
 
-*[Go](https://go.dev/dl/) 1.27.3+ and [Node](https://nodejs.org) 24+ are required.*
+*[Go](https://go.dev/dl/) 1.27.3+, [Node](https://nodejs.org) 24+, and [Bun](https://bun.sh) 1.4.4+ are required.*
 
 ```sh
 git clone https://github.com/jpillora/cloud-torrent
 cd cloud-torrent
-npm --prefix frontend ci
-npm --prefix frontend run build   # builds the SPA into static/dist
-go build -o cloud-torrent .       # embeds static/dist into the binary
-./cloud-torrent --port 3000
+./dev.ts build                   # builds the SPA and dist/cloud-torrent
+./dist/cloud-torrent --port 3000
 ```
 
 ### Usage
@@ -80,12 +78,15 @@ and persisted to `cloud-torrent.json`.
 
 The Go structs are the single source of truth for data shapes; the TypeScript
 types are generated from them with [tygo](https://github.com/gzuidhof/tygo).
+Build commands use [Take](https://github.com/jpillora/take) via `./dev.ts`;
+run `./dev.ts --help` to list commands. Build and release configuration lives in `.dev/`.
 
 ```sh
-make gen-types                    # regenerate frontend/src/types/*.gen.ts
-make check-types                  # CI guard: regenerate + fail if stale
+./dev.ts gen-types                # regenerate frontend/src/types/*.gen.ts
+./dev.ts check-types              # CI guard: regenerate + fail if stale
 npm --prefix frontend run dev     # Vite dev server (proxies /sync /api -> :3000)
-go test ./...                     # backend unit tests
+./dev.ts test                     # backend tests
+./dev.ts ci                       # the complete CI pipeline
 ```
 
 ### Credits

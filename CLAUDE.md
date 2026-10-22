@@ -87,7 +87,7 @@ it's the original AngularJS + Semantic-UI build.
 
 Layout: `main.go` (CLI via jpillora/opts) → `server/` (state/server/api/files/
 stats/search) → `engine/` (anacrolix wrapper) → `static/` (embeds `dist/`) →
-`frontend/src/` (Vue). `tygo.yaml` + `generate.go` drive type-gen; `Makefile`
+`frontend/src/` (Vue). `.dev/tygo.yaml` drives type-gen; `dev.ts`
 has `gen-types`/`check-types`.
 
 ## Build / run / test (and the CWD trap)
@@ -99,7 +99,7 @@ npm --prefix frontend run dev                  # vite :5173, proxies /sync /api 
 go build -o /tmp/ct .                           # from REPO ROOT; embeds static/dist
 go test ./...                                   # unit (fast, hermetic)
 go test -tags e2e -run E2E ./server/...         # live core-loop E2E (downloads a real fixture, ~6s)
-make check-types                                # regen types + git diff --exit-code (CI guard)
+./dev.ts check-types                            # regen types + git diff --exit-code (CI guard)
 ```
 
 - **CWD trap:** the Bash tool's working dir persists. `cd frontend && npm build`
@@ -120,7 +120,7 @@ make check-types                                # regen types + git diff --exit-
   `go build` compiling before any frontend build. `static/dist/*` is gitignored.
 
 ## Type generation (tygo)
-- tygo is a **go tool**: `go tool tygo generate` (via `make gen-types`).
+- tygo is a **go tool**: `go tool tygo generate --config .dev/tygo.yaml` (via `./dev.ts gen-types`).
 - It **overwrites a shared output**, so each Go package emits its own `*.gen.ts`
   and `frontend/src/types/generated.ts` is a **hand-written barrel** re-exporting
   them. Don't edit `*.gen.ts`.
@@ -128,7 +128,7 @@ make check-types                                # regen types + git diff --exit-
   in `State` → fixed via frontmatter import + `type_mappings`). `scraper.Config`
   is intentionally left `any`. `time.Time → string`.
 - Non-data structs (`server.Server`, `engine.Engine`) are excluded via
-  `exclude_files`. After changing any **synced** struct, run `make check-types`
+  `exclude_files`. After changing any **synced** struct, run `./dev.ts check-types`
   and commit the regenerated `*.gen.ts` (CI fails if stale).
 
 ## velox realtime sync (`/sync`)

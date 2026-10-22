@@ -1,8 +1,9 @@
 # keep the build context small; .git is kept so `git describe` works
 **/node_modules
-/dist/
-/frontend/dist/
-/downloads/
+dist/
+frontend/dist/
+downloads/
 cloud-torrent.json
 *.log
 .DS_Store
+cloud-torrent

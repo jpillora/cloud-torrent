@@ -102,3 +102,18 @@ md set-status <id> closed    # Mark task done
 - `md doctor` also detects tasks that have diverged after independent edits in two clones, and repairs duplicate ids left by two clones creating a task offline at the same id; a genuine divergence needs manual resolution.
 - Task IDs are auto-assigned integers.
 <!-- md-prime:end -->
+
+## Development commands
+
+Use `./dev.ts` (Take) for project commands; Bun 1.4.4+ is required.
+Build commands and Docker, release, and type-generation configuration live in `.dev/`.
+
+- `./dev.ts build` builds the frontend, then embeds it in `dist/cloud-torrent`.
+- `./dev.ts gen-types` regenerates frontend types from Go structs.
+- `./dev.ts check-types` regenerates types and fails if they differ from Git.
+- `./dev.ts test` runs the Go test suite.
+- `./dev.ts ci` runs type checks, the build, and tests in sequence.
+- `./dev.ts release` publishes a tagged prerelease with GoReleaser.
+
+Run `./dev.ts --help` for the full command list. The entrypoint sets the repo
+root as the working directory, so it can also be invoked by absolute path.

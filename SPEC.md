@@ -63,8 +63,8 @@ cloud-torrent/                  (orphan branch: airewrite)
 ├── SPEC.md                     ← this file
 ├── go.mod / go.sum
 ├── main.go                     ← CLI entry (jpillora/opts → server.Server)
-├── Makefile / justfile         ← build, dev, gen-types, test targets
-├── tygo.yaml                   ← Go struct → TS type generation config
+├── dev.ts                      ← Take command entrypoint
+├── .dev/                       ← build commands, Docker/release/type-gen configs
 │
 ├── engine/                     ← torrent engine (wraps anacrolix/torrent)
 │   ├── engine.go               ← Engine: configure, add, start/stop/delete, poll
@@ -227,7 +227,7 @@ type State struct {
 The frontend's `src/types/generated.ts` is produced from the Go packages — **never hand-edited**.
 
 ```yaml
-# tygo.yaml
+# .dev/tygo.yaml
 packages:
   - path: "github.com/jpillora/cloud-torrent/engine"
     output_path: "frontend/src/types/generated.ts"
@@ -243,7 +243,7 @@ Rules:
 - `time.Time` maps to `string` (RFC3339); the frontend parses with `dayjs`.
 - **API request/response bodies (§8) are also Go structs** and are generated the same way, so the
   typed `api.ts` client and the server share one definition.
-- Regenerate via `go generate ./...` (a `//go:generate tygo generate` directive) or `make gen-types`.
+- Regenerate via `./dev.ts gen-types` using `.dev/tygo.yaml`.
   CI fails if `generated.ts` is stale (run gen, `git diff --exit-code`).
 
 ---
@@ -437,7 +437,7 @@ embedded.
 **Dev:** run Go (`:3000`) and Vite (`:5173`) together; `vite.config.ts` proxies `/sync`, `/js/velox.js`,
 `/api`, `/search`, `/download` → `:3000`. Hot-reload on the frontend, normal rebuilds on Go.
 
-**Type pipeline:** `make gen-types` runs `tygo generate` → `frontend/src/types/generated.ts`. Run it
+**Type pipeline:** `./dev.ts gen-types` runs `tygo generate` → `frontend/src/types/generated.ts`. Run it
 whenever a synced Go struct changes; CI enforces freshness.
 
 **Prod build:** `vite build` → `frontend/dist` → embedded by `static/embed.go` (`//go:embed dist`) →

@@ -1,5 +1,5 @@
 # test this file with
-#   goreleaser build --snapshot --clean --config .github/goreleaser.yml
+#   goreleaser build --snapshot --clean --config .dev/goreleaser.yml
 version: 2
 project_name: cloud-torrent
 release:
@@ -9,8 +9,7 @@ before:
   hooks:
     - go mod download
     # build the Vue SPA so it is embedded into every binary (static/dist)
-    - npm --prefix frontend ci
-    - npm --prefix frontend run build
+    - ./dev.ts frontend
 builds:
   - env:
       - CGO_ENABLED=0
