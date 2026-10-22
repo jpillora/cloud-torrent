@@ -74,6 +74,8 @@ func (s *Server) Run(version string) error {
 	s.state.Stats.System.pusher = velox.Pusher(&s.state)
 	//init maps
 	s.state.Users = map[string]string{}
+	// Bind the embedded state so pushes and connections share one sync instance.
+	velox.SyncHandler(&s.state)
 	//will use a the local embed/ dir if it exists, otherwise will use the hardcoded embedded binaries
 	s.files = http.HandlerFunc(s.serveFiles)
 	s.static = ctstatic.FileSystemHandler()
@@ -214,15 +216,19 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	//handle realtime client connections
 	if r.URL.Path == "/sync" {
-		conn, err := velox.Sync(&s.state, w, r)
+		conn, err := s.state.Handle(w, r)
 		if err != nil {
 			log.Printf("sync failed: %s", err)
 			return
 		}
+		s.state.Lock()
 		s.state.Users[conn.ID()] = r.RemoteAddr
+		s.state.Unlock()
 		s.state.Push()
 		conn.Wait()
+		s.state.Lock()
 		delete(s.state.Users, conn.ID())
+		s.state.Unlock()
 		s.state.Push()
 		return
 	}

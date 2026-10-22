@@ -20,7 +20,7 @@ type fsNode struct {
 	Name     string
 	Size     int64
 	Modified time.Time
-	Children []*fsNode
+	Children map[string]*fsNode
 }
 
 func (s *Server) listFiles() *fsNode {
@@ -101,6 +101,7 @@ func list(path string, info os.FileInfo, node *fsNode, n *int) error {
 		return fmt.Errorf("Failed to list files")
 	}
 	node.Size = 0
+	node.Children = make(map[string]*fsNode)
 	for _, i := range children {
 		c := &fsNode{}
 		p := filepath.Join(path, i.Name())
@@ -108,7 +109,7 @@ func list(path string, info os.FileInfo, node *fsNode, n *int) error {
 			continue
 		}
 		node.Size += c.Size
-		node.Children = append(node.Children, c)
+		node.Children[i.Name()] = c
 	}
 	return nil
 }

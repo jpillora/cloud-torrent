@@ -5,7 +5,7 @@ app.controller("DownloadsController", function($scope, $rootScope) {
 
   $scope.numDownloads = function() {
     if ($scope.state.Downloads && $scope.state.Downloads.Children)
-      return $scope.state.Downloads.Children.length;
+      return Object.keys($scope.state.Downloads.Children).length;
     return 0;
   };
 });
