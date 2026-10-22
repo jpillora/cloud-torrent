@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:00:54Z
+* updated: 2026-10-22T13:03:16Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1238,11 +1238,12 @@ Live browser against updated binary: POST /search/ with {} returned 405 and Allo
 
 ## 43. Apply search request headers independently of scraper logging
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,simplicity
 * created: 2026-10-22T10:04:29Z
+* updated: 2026-10-22T13:03:16Z
 
 Review: Astra adversarial review — code simplicity and layout.
 
@@ -1272,6 +1273,14 @@ Normalize/copy required headers into every loaded endpoint independently of logg
 ### Confidence
 
 high; pinned dependency implementation verified
+
+### Completion evidence
+
+A shared newSearchHandler builder explicitly populates endpoint headers independently of logging. It canonicalizes header names and retains provider overrides. Embedded startup and remote refresh both use it. Refresh builds an immutable candidate and swaps it under searchMu so active queries retain a stable old handler.
+
+Full server race suite, embedded Go build, check-types and whitespace checks pass. Local HTTP fixture records the exact browser User-Agent from an embedded endpoint and from a provider delivered through the actual fetchSearchConfig refresh method with logging disabled; a lowercase provider-specific override survives.
+
+Live browser after updated binary startup/remote refresh: all eight synced providers have the intended User-Agent (six browser defaults, two explicit curl/8.4.0 overrides). A live nyaa search for Big Buck Bunny returns 200.
 
 ## 44. Implement or remove the no-op --open CLI flag
 

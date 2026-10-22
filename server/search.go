@@ -32,21 +32,44 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	s.scraper.ServeHTTP(w, r)
+	s.searchMu.RLock()
+	h := s.scraper
+	s.searchMu.RUnlock()
+	h.ServeHTTP(w, r)
+}
+
+func newSearchHandler(config []byte) (*scraper.Handler, error) {
+	h := &scraper.Handler{Log: false, Debug: false}
+	if err := h.LoadConfig(config); err != nil {
+		return nil, err
+	}
+	// scraper v0.3.0 only inherits handler headers when logging is enabled.
+	// Populate each immutable endpoint explicitly, preserving provider overrides.
+	for _, endpoint := range h.Config {
+		if endpoint == nil {
+			continue
+		}
+		headers := http.Header{}
+		for k, v := range endpoint.Headers {
+			headers.Set(k, v)
+		}
+		if headers.Get("User-Agent") == "" {
+			headers.Set("User-Agent", userAgent)
+		}
+		endpoint.Headers = make(map[string]string, len(headers))
+		for k := range headers {
+			endpoint.Headers[k] = headers.Get(k)
+		}
+	}
+	return h, nil
 }
 
 // startSearch builds the scraper handler from the embedded default config,
 // publishes the providers into the synced state, and kicks off the background
 // refresh loop. Mounted in handler() at /search.
 func (s *Server) startSearch() error {
-	h := &scraper.Handler{
-		Log:   false,
-		Debug: false,
-		Headers: map[string]string{
-			"User-Agent": userAgent,
-		},
-	}
-	if err := h.LoadConfig(defaultSearchConfig); err != nil {
+	h, err := newSearchHandler(defaultSearchConfig)
+	if err != nil {
 		return err
 	}
 	s.scraper = h
@@ -89,17 +112,24 @@ func (s *Server) fetchSearchConfig() error {
 	if err != nil {
 		return err
 	}
-	if bytes.Equal(s.searchConfig, newConfig) {
+	s.searchMu.RLock()
+	unchanged := bytes.Equal(s.searchConfig, newConfig)
+	s.searchMu.RUnlock()
+	if unchanged {
 		return nil // unchanged
 	}
-	if err := s.scraper.LoadConfig(newConfig); err != nil {
+	h, err := newSearchHandler(newConfig)
+	if err != nil {
 		return err
 	}
+	s.searchMu.Lock()
+	s.scraper = h
+	s.searchConfig = newConfig
+	s.searchMu.Unlock()
 	s.state.Lock()
-	s.state.SearchProviders = s.scraper.Config
+	s.state.SearchProviders = h.Config
 	s.state.Unlock()
 	s.state.Push()
-	s.searchConfig = newConfig
 	log.Printf("Loaded new search providers")
 	return nil
 }

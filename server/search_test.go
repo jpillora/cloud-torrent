@@ -9,7 +9,59 @@ import (
 	"testing"
 
 	"github.com/jpillora/scraper/scraper"
+	"github.com/jpillora/velox"
 )
+
+type searchRoundTrip func(*http.Request) (*http.Response, error)
+
+func (f searchRoundTrip) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+func TestSearchHeadersWithLoggingDisabled(t *testing.T) {
+	agents := make(chan string, 4)
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		agents <- r.UserAgent()
+		io.WriteString(w, `<h1>fixture</h1>`)
+	}))
+	defer upstream.Close()
+	embedded, err := newSearchHandler(defaultSearchConfig)
+	must(t, err)
+	if embedded.Log {
+		t.Fatal("header compatibility must not require logging")
+	}
+	for _, endpoint := range embedded.Config {
+		if endpoint.Headers["User-Agent"] != userAgent {
+			t.Fatal("embedded endpoint lacks browser User-Agent")
+		}
+	}
+	embedded.Config["zq"].URL = upstream.URL
+	_, err = embedded.Config["zq"].Execute(nil)
+	must(t, err)
+	if got := <-agents; got != userAgent {
+		t.Fatalf("embedded request User-Agent %q", got)
+	}
+	refreshed := `{"fixture":{"url":"` + upstream.URL + `","result":{"name":"h1"}},"override":{"url":"` + upstream.URL + `","headers":{"user-agent":"provider-specific"},"result":{"name":"h1"}}}`
+	oldClient := http.DefaultClient
+	http.DefaultClient = &http.Client{Transport: searchRoundTrip(func(r *http.Request) (*http.Response, error) {
+		if r.URL.String() == searchConfigURL {
+			return &http.Response{StatusCode: http.StatusOK, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(refreshed))}, nil
+		}
+		return http.DefaultTransport.RoundTrip(r)
+	})}
+	t.Cleanup(func() { http.DefaultClient = oldClient })
+	s := &Server{scraper: embedded}
+	_ = velox.SyncHandler(&s.state)
+	must(t, s.fetchSearchConfig())
+	if s.scraper.Log {
+		t.Fatal("refresh enabled logging")
+	}
+	for id, want := range map[string]string{"fixture": userAgent, "override": "provider-specific"} {
+		_, err := s.scraper.Config[id].Execute(nil)
+		must(t, err)
+		if got := <-agents; got != want {
+			t.Fatalf("refreshed %s request User-Agent %q, want %q", id, got, want)
+		}
+	}
+}
 
 func TestSearchExposesOnlyReadOnlyProviderQueries(t *testing.T) {
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

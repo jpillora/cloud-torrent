@@ -38,8 +38,9 @@ type Server struct {
 	engine       *engine.Engine
 	state        State
 	scraper      *scraper.Handler
-	searchConfig []byte     // last-loaded (normalized) provider config, for change detection
-	configMu     sync.Mutex // serializes engine changes and their persisted configuration
+	searchConfig []byte       // last-loaded (normalized) provider config, for change detection
+	configMu     sync.Mutex   // serializes engine changes and their persisted configuration
+	searchMu     sync.RWMutex // protects replacement of immutable scraper configurations
 }
 
 // Run wires the torrent engine and realtime state, starts the poll/stats loops,
