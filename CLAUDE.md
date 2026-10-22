@@ -193,6 +193,11 @@ make check-types                                # regen types + git diff --exit-
   deletion during filesystem resolution. Relative symlinks within the root work;
   external/absolute symlinks and root requests are rejected. Archives omit
   symlinks; deleting an internal symlink removes the link, retaining its target.
+- Active incomplete files (including upstream `.part` names) and their ancestors
+  cannot be deleted. `Engine.RemoveDownload` holds the engine lock across the
+  policy check and confined removal, protecting against concurrent starts and
+  config changes; HTTP returns 409 until the torrent is stopped. The frontend
+  active-path index includes ancestors and `.part` paths.
 - The **download directory is config-file/UI only — there is no CLI flag.**
   Engine port defaults to **50007**; HTTP port to **3000**.
 

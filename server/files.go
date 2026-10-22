@@ -13,6 +13,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/jpillora/cloud-torrent/engine"
 )
 
 const fileNumberLimit = 1000
@@ -114,13 +116,14 @@ func list(path string, info os.FileInfo, node *FsNode, n *int) error {
 // (read per-request, so it tracks config changes). Mount it stripped of its URL
 // prefix:
 //
-//	http.StripPrefix("/download/", downloadHandler(dir, onChange))
+//	http.StripPrefix("/download/", downloadHandler(dir, onChange, remove))
 //
 // GET streams a file, or a zip of a directory; DELETE removes the target. Paths
 // that escape the download directory (or target the root itself) are rejected.
+// remove (when supplied) enforces the engine deletion policy under its lock.
 // onChange (if non-nil) is invoked after a successful DELETE so the file tree
 // can be refreshed immediately rather than on the next poll.
-func downloadHandler(dir func() string, onChange func()) http.Handler {
+func downloadHandler(dir func() string, onChange func(), remove func(*os.Root, string) error) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Root resolves links during each filesystem operation and prevents
 		// escapes even if a path component changes concurrently.
@@ -176,8 +179,16 @@ func downloadHandler(dir func() string, onChange func()) http.Handler {
 			// Close the read handle before unlinking (required on Windows).
 			f.Close()
 			// RemoveAll unlinks a final symlink, never its target.
-			if err := root.RemoveAll(name); err != nil {
-				http.Error(w, "delete failed: "+err.Error(), http.StatusInternalServerError)
+			deletePath := remove
+			if deletePath == nil {
+				deletePath = func(root *os.Root, name string) error { return root.RemoveAll(name) }
+			}
+			if err := deletePath(root, name); err != nil {
+				status := http.StatusInternalServerError
+				if errors.Is(err, engine.ErrActiveDownload) {
+					status = http.StatusConflict
+				}
+				http.Error(w, "delete failed: "+err.Error(), status)
 				return
 			}
 			// reflect the removal immediately instead of waiting for the poll

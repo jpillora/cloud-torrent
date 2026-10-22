@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jpillora/cloud-torrent/engine"
 )
 
 func TestFileEnumerationBudget(t *testing.T) {
@@ -206,7 +208,7 @@ func TestDownloadDelete(t *testing.T) {
 // helpers
 
 func mount(dir string) http.Handler {
-	return http.StripPrefix("/download/", downloadHandler(func() string { return dir }, nil))
+	return http.StripPrefix("/download/", downloadHandler(func() string { return dir }, nil, nil))
 }
 
 func do(h http.Handler, method, target string) *httptest.ResponseRecorder {
@@ -308,5 +310,19 @@ func TestDownloadSymlinkConfinement(t *testing.T) {
 		if _, err := os.Stat(name); err != nil {
 			t.Fatalf("target lost: %s: %v", name, err)
 		}
+	}
+}
+
+func TestDownloadDeleteConflictKeepsData(t *testing.T) {
+	dir := t.TempDir()
+	mustWrite(t, filepath.Join(dir, "active.bin.part"), "in progress")
+	changed := false
+	h := http.StripPrefix("/download/", downloadHandler(func() string { return dir }, func() { changed = true }, func(root *os.Root, name string) error { return engine.ErrActiveDownload }))
+	rr := do(h, http.MethodDelete, "/download/active.bin.part")
+	if rr.Code != http.StatusConflict || changed {
+		t.Fatalf("code=%d changed=%v body=%s", rr.Code, changed, rr.Body.String())
+	}
+	if b, err := os.ReadFile(filepath.Join(dir, "active.bin.part")); err != nil || string(b) != "in progress" {
+		t.Fatalf("data changed: %q %v", b, err)
 	}
 }

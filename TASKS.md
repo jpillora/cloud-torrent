@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:45:31Z
+* updated: 2026-10-22T13:50:26Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -2130,11 +2130,12 @@ All magnet name/hash/tracker fields declare type=text and receive common input s
 
 ## 64. Protect active torrent files from deletion through their parent folders
 
-* status: open
+* status: closed
 * priority: P1
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:06:16Z
+* updated: 2026-10-22T13:50:26Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -2164,6 +2165,10 @@ Treat directories containing active incomplete files as active and prevent unint
 ### Confidence
 
 High; browser verified parent/child inconsistency and server removal path inspected; destructive end-to-end execution intentionally not performed.
+
+### Completion evidence
+
+Engine serializes active-download checks and os.Root removal with Start/config changes, rejects stale roots, and protects exact files, .part storage names, ancestors and aliases. Frontend shared Set indexes both storage names and ancestors. Race tests cover real throttled transfer, direct/parent/alias deletion rejection, invalid/stale roots, unrelated prefix deletion, paused deletion; HTTP test confirms 409 preserves data. Actual Chrome + public https://webtorrent.io/torrents/big-buck-bunny.torrent in isolated /mnt/data/downloads/review-task64-* downloaded 238090523 bytes (86.12%). Active parent DELETE and direct Big Buck Bunny.mp4.part DELETE both returned 409; parent and incomplete file showed no Delete controls. Whole Stop followed by parent DELETE succeeded 200. Removed test torrent/scratch and restored original configuration; retained original downloads unchanged. Frontend type-check/build, embedded Go build, targeted engine/server race suites and diff check passed.
 
 ## 65. Do not offer a per-file Stop action that the engine always rejects
 

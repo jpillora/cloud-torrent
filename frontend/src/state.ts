@@ -12,7 +12,14 @@ export const downloadingPaths = computed(() => {
   for (const t of Object.values(state.Torrents ?? {})) {
     if (!t?.Started) continue
     for (const f of t.Files ?? []) {
-      if (f?.Started && f.Percent < 100) paths.add(f.Path)
+      if (f?.Started && f.Percent < 100) {
+        paths.add(f.Path)
+        paths.add(f.Path + '.part') // upstream storage name while incomplete
+        // Protect all enclosing folders without scanning torrents per row.
+        for (let i = f.Path.indexOf('/'); i >= 0; i = f.Path.indexOf('/', i + 1)) {
+          paths.add(f.Path.slice(0, i))
+        }
+      }
     }
   }
   return paths

@@ -191,7 +191,7 @@ func (s *Server) handler() http.Handler {
 	mux.Handle("/search/", http.StripPrefix("/search", http.HandlerFunc(s.handleSearch)))
 	mux.Handle("/download/", http.StripPrefix("/download/", downloadHandler(func() string {
 		return s.engine.Config().DownloadDirectory
-	}, s.refreshDownloads)))
+	}, s.refreshDownloads, s.engine.RemoveDownload)))
 	mux.Handle("/js/velox.js", velox.JS)
 	mux.Handle("/", static.Handler())
 
