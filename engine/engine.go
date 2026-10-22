@@ -116,26 +116,31 @@ type savedTorrent struct {
 func (e *Engine) saveTorrentsLocked() []savedTorrent {
 	saved := make([]savedTorrent, 0, len(e.ts))
 	for _, t := range e.ts {
-		spec := cloneSpec(t.spec)
-		mi := t.t.Metainfo()
-		spec.InfoBytes = slices.Clone(mi.InfoBytes)
-		spec.Trackers = mi.UpvertedAnnounceList()
-		spec.Webseeds = mi.UrlList
-		// Upstream emits an empty non-nil layer map even for v1 torrents.
-		// Feeding that back invokes v2 validation against missing v1 roots.
-		spec.PieceLayers = mi.PieceLayers
-		if len(spec.PieceLayers) == 0 {
-			spec.PieceLayers = nil
-		}
-		state := savedTorrent{spec: spec, started: t.Started, autoStart: t.autoStart, files: map[string]bool{}}
-		for _, f := range t.Files {
-			if f != nil {
-				state.files[f.Path] = f.Started
-			}
-		}
-		saved = append(saved, state)
+		saved = append(saved, saveTorrent(t))
 	}
 	return saved
+}
+
+// saveTorrent retains metadata, sources and selection policy before replacing a handle.
+func saveTorrent(t *Torrent) savedTorrent {
+	spec := cloneSpec(t.spec)
+	mi := t.t.Metainfo()
+	spec.InfoBytes = slices.Clone(mi.InfoBytes)
+	spec.Trackers = mi.UpvertedAnnounceList()
+	spec.Webseeds = mi.UrlList
+	// Upstream emits an empty non-nil layer map even for v1 torrents.
+	// Feeding that back invokes v2 validation against missing v1 roots.
+	spec.PieceLayers = mi.PieceLayers
+	if len(spec.PieceLayers) == 0 {
+		spec.PieceLayers = nil
+	}
+	state := savedTorrent{spec: spec, started: t.Started, autoStart: t.autoStart, files: map[string]bool{}}
+	for _, f := range t.Files {
+		if f != nil {
+			state.files[f.Path] = f.Started
+		}
+	}
+	return state
 }
 
 func (e *Engine) replaceClientLocked(c Config, saved []savedTorrent) error {
@@ -154,38 +159,49 @@ func (e *Engine) replaceClientLocked(c Config, saved []savedTorrent) error {
 	// Construct the complete replacement before publishing any handles.
 	models := make(map[string]*Torrent, len(saved))
 	for _, state := range saved {
-		tt, _, err := client.AddTorrentSpec(state.spec)
+		model, err := restoreTorrent(client, state)
 		if err != nil {
 			client.Close()
-			return fmt.Errorf("restore torrent: %w", err)
+			return err
 		}
-		ih := tt.InfoHash().HexString()
-		model := &Torrent{InfoHash: ih, Started: state.started, spec: state.spec, autoStart: state.autoStart}
-		model.Update(tt)
-		if !model.Started {
-			tt.DisallowDataDownload()
-			tt.DisallowDataUpload()
-		}
-		for _, f := range model.Files {
-			f.Started = state.files[f.Path]
-		}
-		models[ih] = model
+		models[model.InfoHash] = model
 	}
 	e.client, e.config, e.ts = client, c, models
 	for _, model := range models {
-		if model.Loaded {
-			for _, f := range model.Files {
-				if f.Started {
-					f.f.Download()
-				}
-			}
-		} else {
-			// Preserve pending explicit start intent and initial AutoStart
-			// policy, rather than applying a changed policy to old torrents.
-			e.watchMetadataLocked(model)
-		}
+		e.resumeTorrentLocked(model)
 	}
 	return nil
+}
+
+func restoreTorrent(client *torrent.Client, state savedTorrent) (*Torrent, error) {
+	tt, _, err := client.AddTorrentSpec(state.spec)
+	if err != nil {
+		return nil, fmt.Errorf("restore torrent: %w", err)
+	}
+	model := &Torrent{InfoHash: tt.InfoHash().HexString(), Started: state.started, spec: state.spec, autoStart: state.autoStart}
+	model.Update(tt)
+	if !model.Started {
+		tt.DisallowDataDownload()
+		tt.DisallowDataUpload()
+	}
+	for _, f := range model.Files {
+		f.Started = state.files[f.Path]
+	}
+	return model, nil
+}
+
+func (e *Engine) resumeTorrentLocked(model *Torrent) {
+	if model.Loaded {
+		for _, f := range model.Files {
+			if f.Started {
+				f.f.Download()
+			}
+		}
+	} else {
+		// Preserve pending explicit start intent and initial AutoStart
+		// policy, rather than applying a changed policy to old torrents.
+		e.watchMetadataLocked(model)
+	}
 }
 
 // anacrolix closes listener sockets asynchronously after Client.Close returns.
