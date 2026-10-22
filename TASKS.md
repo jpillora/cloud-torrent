@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T07:00:20Z
-* updated: 2026-10-22T12:17:39Z
+* updated: 2026-10-22T12:30:03Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -730,11 +730,12 @@ Engine client/config/cache mutations now share the engine mutex, including metad
 
 ## 32. Make reconfiguration preserve valid torrent handles and recover from client creation failure
 
-* status: open
+* status: closed
 * priority: P1
 * type: bug
 * tags: adversarial-review,simplicity
 * created: 2026-10-22T10:04:29Z
+* updated: 2026-10-22T12:30:03Z
 
 Review: Astra adversarial review — code simplicity and layout.
 
@@ -765,6 +766,16 @@ Implement a bounded configuration transition: apply safe changes in place or re-
 ### Confidence
 
 high; source and standalone runtime harness verified
+
+### Completion verification (2026-10-22)
+
+AutoStart-only saves retain the live client. Client-level changes validate writable storage and changed listen ports, capture metainfo/source URLs/start selections, recreate all torrent/file handles, and restore the previous configuration on replacement failure. Config and fresh torrent snapshots publish together. Socket bind retries are bounded to one second and only apply to address-in-use, accommodating upstream asynchronous listener closure.
+
+- `go test -race ./... -count=1` and `make check-types` passed.
+- New real-transfer test uses verified pieces from a throttled HTTP webseed. Actual byte counts increase after AutoStart changes, client replacement, occupied-port rejection and an injected post-close creation failure followed by real rollback. Directory changes restart actual transfer in new storage. Stopped torrents and pending magnet sources/start policy are preserved.
+- Ten consecutive race-enabled concurrent add/start/stop/delete/configure/close runs passed after addressing asynchronous socket closure.
+- Live embedded browser test used public Big Buck Bunny in isolated subdirectories under /mnt/data/downloads. SSE byte counts: 81,920 (0.02%) initially; 5,865,472 (2.12%) after AutoStart change; 6,881,280 (2.48%) after changing incoming port/client; 34,766,848 (12.57%) after rejected occupied port 3001 (HTTP 400). Transfer continued in the visible app.
+- Restored original configuration (/mnt/data/downloads, incoming port 50007, AutoStart true), removed only the three task scratch directories, retained the original public download and verified poster HTTP retrieval.
 
 ## 33. Implement Stop and Start as a reversible engine transition
 

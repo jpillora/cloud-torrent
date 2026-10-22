@@ -212,8 +212,10 @@ func (s *Server) reconfigure(c engine.Config) error {
 	if b, err := json.MarshalIndent(&c, "", "  "); err == nil {
 		os.WriteFile(s.ConfigPath, b, 0644)
 	}
+	torrents := s.engine.GetTorrents()
 	s.state.Lock()
 	s.state.Config = c
+	s.state.Torrents = torrents
 	s.state.Unlock()
 	s.state.Push()
 	return nil

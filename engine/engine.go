@@ -2,10 +2,15 @@ package engine
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"maps"
+	"net"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -16,16 +21,17 @@ import (
 // infohash hex string. mut owns the client, configuration and all cached models.
 // Public methods lock it; helpers suffixed Locked require the caller to hold it.
 type Engine struct {
-	mut      sync.Mutex
-	cacheDir string
-	client   *torrent.Client
-	config   Config
-	ts       map[string]*Torrent
+	mut       sync.Mutex
+	newClient func(*torrent.ClientConfig) (*torrent.Client, error)
+	cacheDir  string
+	client    *torrent.Client
+	config    Config
+	ts        map[string]*Torrent
 }
 
 // New returns an unconfigured engine. Call Configure before adding torrents.
 func New() *Engine {
-	return &Engine{ts: map[string]*Torrent{}}
+	return &Engine{ts: map[string]*Torrent{}, newClient: torrent.NewClient}
 }
 
 // Config returns the engine's current configuration.
@@ -35,29 +41,174 @@ func (e *Engine) Config() Config {
 	return e.config
 }
 
-// Configure (re)creates the underlying torrent client from c. An existing
-// client is closed first.
+// Configure applies AutoStart in place. Client-level changes recreate the
+// client and rebind every torrent; a failed replacement restores the old setup.
 func (e *Engine) Configure(c Config) error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
-	if e.client != nil {
-		e.client.Close()
-		time.Sleep(1 * time.Second)
-	}
 	c.IncomingPort = defaultPort(c.IncomingPort)
+	old := e.config
+	if e.client != nil {
+		sameClient := old
+		sameClient.AutoStart = c.AutoStart
+		if sameClient == c {
+			e.config = c
+			return nil
+		}
+	}
+	if err := validateDownloadDirectory(c.DownloadDirectory); err != nil {
+		return err
+	}
+	// Catch the common rejected-port case without interrupting the old client.
+	if e.client != nil && c.IncomingPort != old.IncomingPort {
+		if err := checkListenPort(c.IncomingPort); err != nil {
+			return err
+		}
+	}
+	saved := e.saveTorrentsLocked()
+	hadClient := e.client != nil
+	if hadClient {
+		e.client.Close()
+		e.client = nil
+	}
+	if err := e.replaceClientLocked(c, saved); err != nil {
+		if hadClient {
+			if rollback := e.replaceClientLocked(old, saved); rollback != nil {
+				return errors.Join(err, fmt.Errorf("restore previous engine: %w", rollback))
+			}
+		}
+		return err
+	}
+	return nil
+}
+
+func validateDownloadDirectory(dir string) error {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("download directory: %w", err)
+	}
+	f, err := os.CreateTemp(dir, ".cloud-torrent-write-check-*")
+	if err != nil {
+		return fmt.Errorf("download directory: %w", err)
+	}
+	name := f.Name()
+	return errors.Join(f.Close(), os.Remove(name))
+}
+
+func checkListenPort(port int) error {
+	address := fmt.Sprintf(":%d", port)
+	tcp, err := net.Listen("tcp", address)
+	if err != nil {
+		return fmt.Errorf("incoming port: %w", err)
+	}
+	defer tcp.Close()
+	udp, err := net.ListenPacket("udp", address)
+	if err != nil {
+		return fmt.Errorf("incoming port: %w", err)
+	}
+	return udp.Close()
+}
+
+type savedTorrent struct {
+	spec      *torrent.TorrentSpec
+	started   bool
+	autoStart bool
+	files     map[string]bool
+}
+
+func (e *Engine) saveTorrentsLocked() []savedTorrent {
+	saved := make([]savedTorrent, 0, len(e.ts))
+	for _, t := range e.ts {
+		spec := cloneSpec(t.spec)
+		mi := t.t.Metainfo()
+		spec.InfoBytes = slices.Clone(mi.InfoBytes)
+		spec.Trackers = mi.UpvertedAnnounceList()
+		spec.Webseeds = mi.UrlList
+		// Upstream emits an empty non-nil layer map even for v1 torrents.
+		// Feeding that back invokes v2 validation against missing v1 roots.
+		spec.PieceLayers = mi.PieceLayers
+		if len(spec.PieceLayers) == 0 {
+			spec.PieceLayers = nil
+		}
+		state := savedTorrent{spec: spec, started: t.Started, autoStart: t.autoStart, files: map[string]bool{}}
+		for _, f := range t.Files {
+			if f != nil {
+				state.files[f.Path] = f.Started
+			}
+		}
+		saved = append(saved, state)
+	}
+	return saved
+}
+
+func (e *Engine) replaceClientLocked(c Config, saved []savedTorrent) error {
 	config := torrent.NewDefaultClientConfig()
 	config.DataDir = c.DownloadDirectory
 	config.NoUpload = !c.EnableUpload
 	config.Seed = c.EnableSeeding
 	config.ListenPort = c.IncomingPort
-	client, err := torrent.NewClient(config)
+	client, err := e.openClientLocked(config)
 	if err != nil {
-		return err
+		return fmt.Errorf("configure torrent client: %w", err)
 	}
-	e.config = c
-	e.client = client
-	e.refreshLocked()
+	// Construct the complete replacement before publishing any handles.
+	models := make(map[string]*Torrent, len(saved))
+	for _, state := range saved {
+		tt, _, err := client.AddTorrentSpec(state.spec)
+		if err != nil {
+			client.Close()
+			return fmt.Errorf("restore torrent: %w", err)
+		}
+		ih := tt.InfoHash().HexString()
+		model := &Torrent{InfoHash: ih, Started: state.started, spec: state.spec, autoStart: state.autoStart}
+		model.Update(tt)
+		for _, f := range model.Files {
+			f.Started = state.files[f.Path]
+		}
+		models[ih] = model
+	}
+	e.client, e.config, e.ts = client, c, models
+	for _, model := range models {
+		if model.Loaded {
+			for _, f := range model.Files {
+				if f.Started {
+					f.f.Download()
+				}
+			}
+		} else {
+			// Preserve pending explicit start intent and initial AutoStart
+			// policy, rather than applying a changed policy to old torrents.
+			e.watchMetadataLocked(model, model.Started || model.autoStart)
+		}
+	}
 	return nil
+}
+
+// anacrolix closes listener sockets asynchronously after Client.Close returns.
+// Retry only address-in-use briefly; other creation failures roll back at once.
+func (e *Engine) openClientLocked(config *torrent.ClientConfig) (*torrent.Client, error) {
+	deadline := time.Now().Add(time.Second)
+	for {
+		client, err := e.newClient(config)
+		if !errors.Is(err, syscall.EADDRINUSE) || time.Now().After(deadline) {
+			return client, err
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func cloneSpec(spec *torrent.TorrentSpec) *torrent.TorrentSpec {
+	copy := *spec
+	copy.InfoBytes = slices.Clone(spec.InfoBytes)
+	copy.Trackers = make([][]string, len(spec.Trackers))
+	for i, tier := range spec.Trackers {
+		copy.Trackers[i] = slices.Clone(tier)
+	}
+	copy.Webseeds = slices.Clone(spec.Webseeds)
+	copy.DhtNodes = slices.Clone(spec.DhtNodes)
+	copy.PeerAddrs = slices.Clone(spec.PeerAddrs)
+	copy.Sources = slices.Clone(spec.Sources)
+	copy.PieceLayers = maps.Clone(spec.PieceLayers)
+	return &copy
 }
 
 // Close shuts down the underlying torrent client.
@@ -73,16 +224,11 @@ func (e *Engine) Close() error {
 
 // NewMagnet adds a torrent from a magnet URI.
 func (e *Engine) NewMagnet(magnetURI string) error {
-	e.mut.Lock()
-	defer e.mut.Unlock()
-	if e.client == nil {
-		return fmt.Errorf("engine is not configured")
-	}
-	tt, err := e.client.AddMagnet(magnetURI)
+	spec, err := torrent.TorrentSpecFromMagnetUri(magnetURI)
 	if err != nil {
 		return err
 	}
-	return e.newTorrentLocked(tt)
+	return e.NewTorrent(spec)
 }
 
 // NewTorrent adds a torrent from a parsed .torrent spec.
@@ -92,26 +238,37 @@ func (e *Engine) NewTorrent(spec *torrent.TorrentSpec) error {
 	if e.client == nil {
 		return fmt.Errorf("engine is not configured")
 	}
-	tt, _, err := e.client.AddTorrentSpec(spec)
+	ownedSpec := cloneSpec(spec)
+	tt, _, err := e.client.AddTorrentSpec(ownedSpec)
 	if err != nil {
 		return err
 	}
-	return e.newTorrentLocked(tt)
+	return e.newTorrentLocked(tt, ownedSpec)
 }
 
-func (e *Engine) newTorrentLocked(tt *torrent.Torrent) error {
+func (e *Engine) newTorrentLocked(tt *torrent.Torrent, spec *torrent.TorrentSpec) error {
 	t := e.upsertTorrentLocked(tt)
+	t.spec = spec
+	t.autoStart = e.config.AutoStart
+	e.watchMetadataLocked(t, t.autoStart)
+	return nil
+}
+
+func (e *Engine) watchMetadataLocked(t *Torrent, start bool) {
+	tt := t.t
 	// once metadata arrives, auto-start if configured
 	go func() {
 		<-tt.GotInfo()
 		e.mut.Lock()
 		defer e.mut.Unlock()
 		// A metadata callback must not act on a removed/replaced torrent.
-		if e.client != nil && e.ts[t.InfoHash] == t && t.t == tt && e.config.AutoStart {
+		if e.client != nil && e.ts[t.InfoHash] == t && t.t == tt && start {
+			// Refresh files before restoring a pending start.
+			t.Update(tt)
+			t.Started = false
 			e.startTorrentLocked(t.InfoHash)
 		}
 	}()
-	return nil
 }
 
 // GetTorrents returns a detached snapshot. The server may retain and serialize
@@ -127,6 +284,8 @@ func (e *Engine) GetTorrents() map[string]*Torrent {
 	for ih, t := range e.ts {
 		copy := *t
 		copy.t = nil
+		copy.spec = nil
+		copy.autoStart = false
 		copy.updatedAt = time.Time{}
 		if t.Files != nil {
 			copy.Files = make([]*File, len(t.Files))

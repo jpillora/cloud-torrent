@@ -156,7 +156,7 @@ func TestSnapshotsOwnTheirModels(t *testing.T) {
 	if len(before[ih].Files) != 1 {
 		t.Fatal("expected loaded file")
 	}
-	if before[ih].t != nil || before[ih].Files[0].f != nil {
+	if before[ih].t != nil || before[ih].spec != nil || before[ih].Files[0].f != nil {
 		t.Fatal("snapshot leaked torrent handles")
 	}
 	if err := e.StartTorrent(ih); err != nil {
@@ -221,6 +221,7 @@ func TestConcurrentEngineLifecycleAndSnapshots(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		for range 2 {
+			c.EnableUpload = !c.EnableUpload
 			if err := e.Configure(c); err != nil {
 				t.Error(err)
 			}
