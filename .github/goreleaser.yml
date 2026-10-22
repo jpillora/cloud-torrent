@@ -15,7 +15,7 @@ builds:
       - linux
       - darwin
       - windows
-      - openbsd
+      # OpenBSD is blocked by torrent v1.61.0 using unix.SEEK_DATA.
     goarch:
       - '386'
       - amd64
