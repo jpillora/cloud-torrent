@@ -8,6 +8,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { chromium } from "playwright";
 import { unzipSync } from "fflate";
 import { files, infohash, name, startFixture } from "./fixture.ts";
+import { verifyAppearance } from "./appearance.ts";
 
 const publicFixture = process.argv.includes("--public-fixture");
 const publicURL = "https://webtorrent.io/torrents/big-buck-bunny.torrent";
@@ -116,7 +117,11 @@ try {
   });
   browser = await launching;
   assert(!interrupted, "test interrupted");
-  const context = await browser.newContext({ acceptDownloads: true });
+  await verifyAppearance(browser, base);
+  const context = await browser.newContext({
+    acceptDownloads: true,
+    colorScheme: "dark",
+  });
   const page = await context.newPage();
   page.setDefaultTimeout(publicFixture ? 150_000 : 30_000);
   page.on("pageerror", (error) => errors.push(error.message));

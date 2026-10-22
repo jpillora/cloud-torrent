@@ -333,6 +333,10 @@ drop cover and a disconnect overlay on top. Each maps to original code for parit
 - **Config editor** (collapsible form): iterate `state.Config` entries; render a **toggle** for
   booleans and a labelled text/number input otherwise (keys shown spaced: `DownloadDirectory` →
   "Download Directory"). **Save** → `api.configure(state.Config)`; **Cancel** closes.
+- **Appearance** (above server configuration): a labelled System / Light / Dark theme selector.
+  Defaults to System, follows live OS appearance changes, and applies immediately. Overrides
+  persist only in the current browser and synchronize between its tabs; they do not alter server
+  configuration or require Save. Apply the initial palette before paint to avoid a light flash.
 
 ### §B Omni bar — the universal input  *(ref: `omni-controller.js`, `omni.html`)*
 One text input: *"Enter search query, magnet URI, torrent URL or drop a torrent file here"*. The input

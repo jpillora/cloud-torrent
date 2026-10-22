@@ -5,6 +5,7 @@ import { ui } from '../ui'
 import { api } from '../api'
 import type { Config } from '../types/generated'
 import AsyncButton from './AsyncButton.vue'
+import { themePreference } from '../theme'
 
 // A local, editable copy of the synced Config. Editing a copy (rather than
 // state.Config directly) keeps an incoming velox push from clobbering an
@@ -46,6 +47,18 @@ function cancel() {
 
 <template>
   <section v-if="ui.configEdit" class="section section-config" data-testid="config-editor">
+    <div class="config-form appearance-settings">
+      <h4>Appearance</h4>
+      <label class="field">
+        <span>Theme</span>
+        <select v-model="themePreference" data-testid="theme-preference" aria-describedby="theme-help">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </label>
+      <p id="theme-help" class="settings-help">Applies immediately in this browser. System follows your device’s appearance.</p>
+    </div>
     <form class="config-form" @submit.prevent="save">
       <h4>Configuration</h4>
       <template v-for="(v, k) in form" :key="k">

@@ -1,21 +1,37 @@
-/* Visual parity with the original Semantic-UI build, recreated with plain CSS
-   (no Semantic UI / jQuery). Palette, segments, progress bars, mini buttons,
-   toggles and Lato typography mirror the original look. */
+/* Semantic-UI-inspired layout in plain CSS. Semantic palette tokens support
+   light and dark surfaces; action fills stay distinct from text/icon colours
+   so white button labels remain readable in both themes. */
 
 :root {
-  --blue: #2185d0;
-  --blue-hover: #1678c2;
-  --green: #21ba45;
-  --green-hover: #16ab39;
-  --red: #db2828;
-  --red-hover: #d01919;
+  color-scheme: light;
+  --blue: #176fae;
+  --blue-fill: #176fae;
+  --blue-fill-hover: #125e96;
+  --green: #187e34;
+  --green-fill: #187e34;
+  --green-fill-hover: #12672a;
+  --red: #c62626;
+  --red-fill: #c62626;
+  --red-fill-hover: #ad2020;
   --grey-btn: #eceef1;
   --grey-btn-hover: #e0e3e8;
   --text: #1f2329;
-  --muted: #8a9099;
+  --muted: #626b78;
   --bg: #f4f5f7;
   --card: #ffffff;
-  --border: rgba(20, 24, 31, 0.1);
+  --border: rgba(20, 24, 31, 0.16);
+  --input-border: #818996;
+  --button-text: #4a5159;
+  --heading: #6b7280;
+  --icon: #68717e;
+  --status: #666;
+  --track: #eaecef;
+  --toggle-off: #737b86;
+  --dimmer: rgba(255, 255, 255, 0.92);
+  --error-bg: #fff6f6;
+  --error-text: #9f3a38;
+  --drop-bg: rgba(173, 216, 230, 0.75);
+  --drop-card: rgba(255, 255, 255, 0.95);
   --card-shadow: 0 1px 2px rgba(20, 24, 31, 0.05), 0 1px 3px rgba(20, 24, 31, 0.04);
   --card-shadow-hover: 0 2px 6px rgba(20, 24, 31, 0.08), 0 1px 3px rgba(20, 24, 31, 0.05);
   --ring: 0 0 0 3px rgba(33, 133, 208, 0.18);
@@ -27,6 +43,42 @@
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --blue: #80c7ff;
+  --blue-fill: #176da5;
+  --blue-fill-hover: #125c8d;
+  --green: #72dc96;
+  --green-fill: #227a40;
+  --green-fill-hover: #1b6534;
+  --red: #ff969e;
+  --red-fill: #af3445;
+  --red-fill-hover: #962b3a;
+  --grey-btn: #333e4d;
+  --grey-btn-hover: #414f61;
+  --text: #e6edf5;
+  --muted: #a8b4c4;
+  --bg: #111720;
+  --card: #1c2531;
+  --border: #465264;
+  --input-border: #65748a;
+  --footer-opacity: 1;
+  --button-text: #e0e8f2;
+  --heading: #b7c3d2;
+  --icon: #b0bed0;
+  --status: #b7c3d2;
+  --track: #414e60;
+  --toggle-off: #65748a;
+  --dimmer: rgba(28, 37, 49, 0.94);
+  --error-bg: #3b2029;
+  --error-text: #ffb8bd;
+  --drop-bg: rgba(17, 23, 32, 0.8);
+  --drop-card: #1c2531;
+  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  --card-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --ring: 0 0 0 3px rgba(128, 199, 255, 0.3);
 }
 
 * {
@@ -87,7 +139,7 @@ button {
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #4a5159;
+  color: var(--button-text);
   background: var(--grey-btn);
   border: none;
   border-radius: var(--radius-sm);
@@ -123,27 +175,27 @@ button.loading {
   animation: spin 0.6s linear infinite;
 }
 button.green {
-  background: var(--green);
+  background: var(--green-fill);
   color: #fff;
 }
 button.green:hover {
-  background: var(--green-hover);
+  background: var(--green-fill-hover);
 }
 button.red {
-  background: var(--red);
+  background: var(--red-fill);
   color: #fff;
 }
 button.red:hover {
-  background: var(--red-hover);
+  background: var(--red-fill-hover);
 }
 button.blue,
 button.active {
-  background: var(--blue);
+  background: var(--blue-fill);
   color: #fff;
 }
 button.blue:hover,
 button.active:hover {
-  background: var(--blue-hover);
+  background: var(--blue-fill-hover);
 }
 
 input[type='text'],
@@ -152,7 +204,7 @@ select {
   font-family: inherit;
   font-size: 1rem;
   padding: 0.6em 0.75em;
-  border: 1px solid var(--border);
+  border: 1px solid var(--input-border);
   border-radius: var(--radius-sm);
   background: var(--card);
   color: var(--text);
@@ -194,7 +246,7 @@ select:focus {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #6b7280;
+  color: var(--heading);
 }
 .section-header .count,
 .section-header .free {
@@ -246,7 +298,7 @@ select:focus {
   border: none;
   border-radius: 50%;
   background: var(--grey-btn);
-  color: #9aa0a6;
+  color: var(--icon);
   font-size: 0.6rem;
   cursor: pointer;
   transition:
@@ -256,7 +308,7 @@ select:focus {
     transform 0.12s ease;
 }
 .icon-btn:hover {
-  color: #5f6368;
+  color: var(--text);
   background: var(--grey-btn-hover);
   box-shadow: var(--card-shadow);
   transform: scale(1.08);
@@ -295,6 +347,22 @@ select:focus {
   border-radius: var(--radius);
   box-shadow: var(--card-shadow);
   padding: 1.1em 1.2em;
+}
+.appearance-settings {
+  margin-bottom: 1.4rem;
+}
+.settings-help {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
 }
 .config-form {
   display: flex;
@@ -339,7 +407,7 @@ select:focus {
   width: 3rem;
   height: 1.5rem;
   border-radius: 1rem;
-  background: #d0d0d0;
+  background: var(--toggle-off);
   position: relative;
   cursor: pointer;
   transition: background 0.2s ease;
@@ -357,7 +425,7 @@ select:focus {
   transition: left 0.2s ease;
 }
 .field-toggle input[type='checkbox']:checked {
-  background: var(--blue);
+  background: var(--blue-fill);
 }
 .field-toggle input[type='checkbox']:checked::after {
   left: calc(100% - 1.1rem - 2px);
@@ -378,7 +446,7 @@ select:focus {
   font-family: inherit;
   color: var(--text);
   background: var(--card);
-  border: 1px solid var(--border);
+  border: 1px solid var(--input-border);
   border-radius: var(--radius);
   box-shadow: var(--card-shadow);
   transition:
@@ -400,7 +468,7 @@ select:focus {
   align-items: center;
   padding: 0 0.75em;
   font-size: 1.2rem;
-  color: #9aa0a6;
+  color: var(--icon);
   cursor: pointer;
   user-select: none;
 }
@@ -427,14 +495,14 @@ select:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--blue);
+  background: var(--blue-fill);
   color: #fff;
 }
 .omni-actions button:hover {
-  background: var(--blue-hover);
+  background: var(--blue-fill-hover);
 }
 .omni-actions button.active {
-  background: var(--green);
+  background: var(--green-fill);
 }
 .omni-actions select {
   cursor: pointer;
@@ -485,7 +553,7 @@ select:focus {
 }
 .search-results td {
   padding: 0.4rem 0.5rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border);
   vertical-align: middle;
 }
 .search-results tr:first-child td {
@@ -550,7 +618,7 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--dimmer);
   border-radius: var(--radius);
   color: var(--muted);
   z-index: 2;
@@ -594,16 +662,16 @@ select:focus {
 }
 .torrent .status {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--status);
   margin-top: 0.5rem;
 }
 .torrent .status .muted {
-  color: lightgray;
+  color: var(--muted);
 }
 
 /* progress bar */
 .progress {
-  background: #eaecef;
+  background: var(--track);
   border-radius: 999px;
   overflow: hidden;
   height: 8px;
@@ -644,7 +712,7 @@ select:focus {
 .files th,
 .files td {
   padding: 0.3rem 0.4rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border);
   text-align: left;
 }
 .files thead th {
@@ -774,7 +842,7 @@ select:focus {
 }
 .children {
   margin-left: 1.2rem;
-  border-left: 1px solid #eee;
+  border-left: 1px solid var(--border);
   padding-left: 0.4rem;
 }
 .preview {
@@ -797,10 +865,10 @@ select:focus {
      bottom when the page is short, and collapses to nothing once content fills
      the viewport (then only the .app `gap` separates it from the files). */
   margin-top: auto;
-  color: grey;
+  color: var(--muted);
   font-style: italic;
   font-size: 0.8rem;
-  opacity: 0.35;
+  opacity: var(--footer-opacity, 0.35);
   transition: opacity 0.3s ease-in-out;
 }
 .section-footer:hover {
@@ -840,16 +908,16 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(173, 216, 230, 0.55);
-  color: #1b1c1d;
+  background: var(--drop-bg);
+  color: var(--text);
   pointer-events: none;
 }
 .file-drop-cover .msg {
-  border: 2px dashed #2185d0;
+  border: 2px dashed var(--blue);
   border-radius: 8px;
   padding: 1.5rem 3rem;
   font-size: 1.6rem;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--drop-card);
 }
 .connect-overlay:not([open]) {
   display: none;
@@ -974,8 +1042,8 @@ select:focus {
   padding: 0.8rem 2.2rem 0.8rem 0.9rem;
   border: 1px solid var(--red);
   border-radius: var(--radius);
-  background: #fff6f6;
-  color: #9f3a38;
+  background: var(--error-bg);
+  color: var(--error-text);
 }
 .error-banner .error-header {
   font-weight: 700;

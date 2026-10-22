@@ -5,6 +5,10 @@ real Vue UI in Playwright Chromium, and checks the actual SSE connection, progre
 file contents, and decoded ZIP entries. No mocked sync or injected app state is used.
 Playwright and ZIP-reader versions are locked in this directory's package-lock.json.
 
+Appearance checks cover the system default, live OS changes, explicit light/dark
+overrides, reload persistence, tab synchronization, denied theme storage, keyboard
+selection and mobile settings layout. The torrent/download workflow runs in dark mode.
+
 ## Deterministic fixture (default, CI)
 
 `fixture.ts` authors two CC0 text files and canonically bencodes a v1 torrent with
