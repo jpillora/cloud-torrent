@@ -1,14 +1,17 @@
 package server
 
 import (
+	"archive/zip"
 	"errors"
+	"io"
+	"io/fs"
+	"log"
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/jpillora/archive"
 )
 
 const fileNumberLimit = 1000
@@ -85,35 +88,61 @@ func list(path string, info os.FileInfo, node *FsNode, n *int) error {
 // can be refreshed immediately rather than on the next poll.
 func downloadHandler(dir func() string, onChange func()) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		full, ok := safeJoin(dir(), r.URL.Path)
-		if !ok {
+		// Root resolves links during each filesystem operation and prevents
+		// escapes even if a path component changes concurrently.
+		name := filepath.FromSlash(strings.TrimPrefix(r.URL.Path, "/"))
+		if !filepath.IsLocal(name) || filepath.Clean(name) == "." {
 			http.Error(w, "invalid path", http.StatusBadRequest)
 			return
 		}
-		info, err := os.Stat(full)
+		root, err := os.OpenRoot(dir())
+		if err != nil {
+			http.Error(w, "download directory unavailable", http.StatusBadRequest)
+			return
+		}
+		defer root.Close()
+		f, err := root.Open(name)
+		if err != nil {
+			http.Error(w, "file open error: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer f.Close()
+		info, err := f.Stat()
 		if err != nil {
 			http.Error(w, "file stat error: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		rootInfo, err := root.Stat(".")
+		if err != nil || os.SameFile(rootInfo, info) {
+			http.Error(w, "invalid path", http.StatusBadRequest)
 			return
 		}
 		switch r.Method {
 		case http.MethodGet:
 			if info.IsDir() {
+				folder, err := root.OpenRoot(name)
+				if err != nil {
+					http.Error(w, "directory open error: "+err.Error(), http.StatusBadRequest)
+					return
+				}
+				defer folder.Close()
 				w.Header().Set("Content-Type", "application/zip")
-				w.Header().Set("Content-Disposition", "attachment; filename=\""+info.Name()+".zip\"")
-				a := archive.NewZipWriter(w)
-				a.AddDir(full)
-				a.Close()
+				w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": info.Name() + ".zip"}))
+				if err := writeDownloadZip(w, folder); err != nil {
+					log.Printf("download archive: %v", err)
+				}
 				return
 			}
-			f, err := os.Open(full)
-			if err != nil {
-				http.Error(w, "file open error: "+err.Error(), http.StatusBadRequest)
+			if !info.Mode().IsRegular() {
+				http.Error(w, "not a regular file", http.StatusBadRequest)
 				return
 			}
-			defer f.Close()
 			http.ServeContent(w, r, info.Name(), info.ModTime(), f)
 		case http.MethodDelete:
-			if err := os.RemoveAll(full); err != nil {
+			// Close the read handle before unlinking (required on Windows).
+			f.Close()
+			// RemoveAll unlinks a final symlink, never its target.
+			if err := root.RemoveAll(name); err != nil {
 				http.Error(w, "delete failed: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -127,13 +156,41 @@ func downloadHandler(dir func() string, onChange func()) http.Handler {
 	})
 }
 
-// safeJoin joins rel onto root, rejecting paths that escape root or target the
-// root itself. root is cleaned; rel is treated as a slash-separated URL path.
-func safeJoin(root, rel string) (string, bool) {
-	root = filepath.Clean(root)
-	full := filepath.Join(root, filepath.FromSlash(rel))
-	if full == root || !strings.HasPrefix(full, root+string(filepath.Separator)) {
-		return "", false
-	}
-	return full, true
+// writeDownloadZip skips links and special files, matching the downloads tree.
+// Every archive read remains confined even if an entry is replaced mid-walk.
+func writeDownloadZip(w io.Writer, root *os.Root) error {
+	zw := zip.NewWriter(w)
+	walkErr := fs.WalkDir(root.FS(), ".", func(name string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !entry.Type().IsRegular() {
+			return nil
+		}
+		f, err := root.Open(name)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		info, err := f.Stat()
+		if err != nil {
+			return err
+		}
+		if !info.Mode().IsRegular() {
+			return nil
+		}
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+		header.Name = name
+		header.Method = zip.Store
+		dst, err := zw.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(dst, f)
+		return err
+	})
+	return errors.Join(walkErr, zw.Close())
 }

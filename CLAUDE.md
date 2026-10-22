@@ -165,8 +165,10 @@ make check-types                                # regen types + git diff --exit-
 - `handler()` composes exactly as master: route mux → **gzip** (whole chain,
   minSize 0) → **cookieauth** (`--auth user:pass`) → **requestlog** (`--log`),
   log outermost. TLS via `--cert-path`/`--key-path` (both required).
-- `/download/` path-escape guard (`safeJoin` in `files.go`) rejects `..` escapes
-  and the root itself — stricter than master's `HasPrefix`.
+- `/download/` uses `os.Root` in `files.go` to confine reads, archives and
+  deletion during filesystem resolution. Relative symlinks within the root work;
+  external/absolute symlinks and root requests are rejected. Archives omit
+  symlinks; deleting an internal symlink removes the link, retaining its target.
 - The **download directory is config-file/UI only — there is no CLI flag.**
   Engine port defaults to **50007**; HTTP port to **3000**.
 

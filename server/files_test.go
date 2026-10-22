@@ -3,6 +3,7 @@ package server
 import (
 	"archive/zip"
 	"bytes"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,7 +14,7 @@ import (
 
 func TestListFiles(t *testing.T) {
 	dir := t.TempDir()
-	mustWrite(t, filepath.Join(dir, "a.txt"), "hello")    // 5 bytes
+	mustWrite(t, filepath.Join(dir, "a.txt"), "hello") // 5 bytes
 	must(t, os.Mkdir(filepath.Join(dir, "sub"), 0o755))
 	mustWrite(t, filepath.Join(dir, "sub", "b.txt"), "world!") // 6 bytes
 	mustWrite(t, filepath.Join(dir, ".hidden"), "x")           // skipped
@@ -90,7 +91,7 @@ func TestDownloadTraversalBlocked(t *testing.T) {
 
 	for _, p := range []string{
 		"/download/../" + filepath.Base(outside), // escape via ..
-		"/download/",                              // the root itself
+		"/download/",                             // the root itself
 	} {
 		rr := do(h, http.MethodGet, p)
 		if rr.Code == http.StatusOK {
@@ -137,4 +138,87 @@ func must(t *testing.T, err error) {
 func mustWrite(t *testing.T, path, content string) {
 	t.Helper()
 	must(t, os.WriteFile(path, []byte(content), 0o644))
+}
+
+// Exercise the real HTTP transport and on-disk link resolution, including
+// archives and deletion, rather than only testing string normalization.
+func TestDownloadSymlinkConfinement(t *testing.T) {
+	dir, outside := t.TempDir(), t.TempDir()
+	mustWrite(t, filepath.Join(outside, "secret.txt"), "outside secret")
+	must(t, os.Mkdir(filepath.Join(dir, "folder"), 0o755))
+	mustWrite(t, filepath.Join(dir, "folder", "safe.txt"), "inside file")
+	links := map[string]string{
+		"external-file": filepath.Join(outside, "secret.txt"),
+		"external-dir":  outside,
+		"internal-file": filepath.Join("folder", "safe.txt"),
+		"internal-dir":  "folder",
+		"root-alias":    ".",
+		"folder/leak":   filepath.Join(outside, "secret.txt"),
+	}
+	for name, target := range links {
+		if err := os.Symlink(target, filepath.Join(dir, filepath.FromSlash(name))); err != nil {
+			t.Skipf("symlinks unavailable: %v", err)
+		}
+	}
+	srv := httptest.NewServer(mount(dir))
+	defer srv.Close()
+	request := func(method, name string) (int, []byte) {
+		t.Helper()
+		req, err := http.NewRequest(method, srv.URL+"/download/"+name, nil)
+		must(t, err)
+		resp, err := srv.Client().Do(req)
+		must(t, err)
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		must(t, err)
+		return resp.StatusCode, body
+	}
+	for _, name := range []string{"external-file", "external-dir", "external-dir/secret.txt", "root-alias"} {
+		for _, method := range []string{http.MethodGet, http.MethodDelete} {
+			code, body := request(method, name)
+			if code == http.StatusOK || bytes.Contains(body, []byte("outside secret")) {
+				t.Fatalf("%s %s escaped: status=%d body=%q", method, name, code, body)
+			}
+		}
+	}
+	for _, name := range []string{"folder/safe.txt", "internal-file", "internal-dir/safe.txt"} {
+		code, body := request(http.MethodGet, name)
+		if code != http.StatusOK || string(body) != "inside file" {
+			t.Fatalf("GET %s: status=%d body=%q", name, code, body)
+		}
+	}
+	for _, name := range []string{"folder", "internal-dir"} {
+		code, body := request(http.MethodGet, name)
+		if code != http.StatusOK {
+			t.Fatalf("GET archive %s: %d", name, code)
+		}
+		zr, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
+		must(t, err)
+		if len(zr.File) != 1 || zr.File[0].Name != "safe.txt" {
+			t.Fatalf("archive %s must omit links: %+v", name, zr.File)
+		}
+		f, err := zr.File[0].Open()
+		must(t, err)
+		contents, err := io.ReadAll(f)
+		f.Close()
+		must(t, err)
+		if string(contents) != "inside file" {
+			t.Fatalf("archive contents: %q", contents)
+		}
+	}
+	// Deleting an internal link removes the link, retaining the target.
+	for _, name := range []string{"internal-file", "internal-dir"} {
+		code, body := request(http.MethodDelete, name)
+		if code != http.StatusOK {
+			t.Fatalf("DELETE %s: %d %s", name, code, body)
+		}
+		if _, err := os.Lstat(filepath.Join(dir, name)); !os.IsNotExist(err) {
+			t.Fatalf("link remains: %s", name)
+		}
+	}
+	for _, name := range []string{filepath.Join(outside, "secret.txt"), filepath.Join(dir, "folder", "safe.txt")} {
+		if _, err := os.Stat(name); err != nil {
+			t.Fatalf("target lost: %s: %v", name, err)
+		}
+	}
 }

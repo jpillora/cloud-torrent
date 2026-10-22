@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T10:07:02Z
+* updated: 2026-10-22T12:14:03Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -654,11 +654,12 @@ Maybe related to slow refresh
 
 ## 30. Enforce resolved download paths before serving files and archives
 
-* status: open
+* status: closed
 * priority: P1
 * type: bug
 * tags: adversarial-review,simplicity,security
 * created: 2026-10-22T10:01:28Z
+* updated: 2026-10-22T12:14:03Z
 
 Review: code simplicity and layout; root validation, confirmed by Astra reviewer.
 
@@ -670,6 +671,14 @@ Acceptance criteria:
 - Enforce confinement against filesystem resolution for file serving and archives, including symlinked intermediate directories; define deletion behavior consistently.
 - Cover a symlink to an external file, an external directory, and an internal target with handler-level regression checks.
 - Preserve ordinary downloads and reject root/parent escapes.
+
+### Completion verification (2026-10-22)
+
+Implemented os.Root confinement for file reads, directory archives and deletion. Archives omit links; relative internal links work, external/absolute links and root aliases are rejected. Deleting an internal link retains its target.
+
+- Passed full `go test ./...` and `go test -race ./server -run TestDownload -count=1`. New real-HTTP regression covers external file/directory links, intermediate escapes, internal links, root aliases, ZIP contents and deletion target retention.
+- Built/restarted the embedded app at http://100.103.141.66:3001/ and repeated external-link rejection, internal-link serving, ZIP and delete checks over its actual listener using isolated sentinels (cleaned afterward).
+- Browser submitted the public Big Buck Bunny torrent URL, observed 276.4 MB / 100%. HTTP subtitle/poster matched disk, poster matched public webseed byte-for-byte; MP4 range returned 206 and the correct 65,536 bytes. Content remains in /mnt/data/downloads/Big Buck Bunny for later engine checks.
 
 ## 31. Give engine mutations and synced snapshots a single ownership and locking contract
 
