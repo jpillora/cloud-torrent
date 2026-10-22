@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -84,7 +85,7 @@ func (s *Server) api(r *http.Request) error {
 		if err := json.Unmarshal(body, &req); err != nil {
 			return err
 		}
-		return s.addTorrentFromURL(req.URL)
+		return s.addTorrentFromURL(r.Context(), req.URL)
 	case "torrentfile":
 		return s.addTorrentFromBytes(body)
 	case "magnet":
@@ -126,15 +127,10 @@ func (s *Server) api(r *http.Request) error {
 	}
 }
 
-func (s *Server) addTorrentFromURL(url string) error {
-	resp, err := http.Get(url)
+func (s *Server) addTorrentFromURL(ctx context.Context, url string) error {
+	body, err := s.fetchBytes(ctx, url, maxRequestBytes)
 	if err != nil {
-		return fmt.Errorf("invalid remote torrent URL: %s", err)
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxRequestBytes))
-	if err != nil {
-		return fmt.Errorf("failed to download remote torrent: %s", err)
+		return fmt.Errorf("fetch torrent: %w", err)
 	}
 	return s.addTorrentFromBytes(body)
 }

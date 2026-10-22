@@ -44,6 +44,7 @@ type Server struct {
 	searchConfig []byte       // last-loaded (normalized) provider config, for change detection
 	configMu     sync.Mutex   // serializes engine changes and their persisted configuration
 	searchMu     sync.RWMutex // protects replacement of immutable scraper configurations
+	fetchClient  *http.Client // optional client override; configured before serving
 }
 
 // Run wires the torrent engine and realtime state, starts the poll/stats loops,

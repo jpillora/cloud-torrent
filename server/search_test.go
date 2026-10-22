@@ -40,15 +40,13 @@ func TestSearchHeadersWithLoggingDisabled(t *testing.T) {
 		t.Fatalf("embedded request User-Agent %q", got)
 	}
 	refreshed := `{"fixture":{"url":"` + upstream.URL + `","result":{"name":"h1"}},"override":{"url":"` + upstream.URL + `","headers":{"user-agent":"provider-specific"},"result":{"name":"h1"}}}`
-	oldClient := http.DefaultClient
-	http.DefaultClient = &http.Client{Transport: searchRoundTrip(func(r *http.Request) (*http.Response, error) {
+	client := &http.Client{Transport: searchRoundTrip(func(r *http.Request) (*http.Response, error) {
 		if r.URL.String() == searchConfigURL {
 			return &http.Response{StatusCode: http.StatusOK, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(refreshed))}, nil
 		}
 		return http.DefaultTransport.RoundTrip(r)
 	})}
-	t.Cleanup(func() { http.DefaultClient = oldClient })
-	s := &Server{scraper: embedded}
+	s := &Server{scraper: embedded, fetchClient: client}
 	_ = velox.SyncHandler(&s.state)
 	must(t, s.fetchSearchConfig())
 	if s.scraper.Log {

@@ -19,6 +19,7 @@ packages:
     exclude_files:
       - "server.go"
       - "config.go"
+      - "fetch.go"
     # the server State references engine types; import them and map the
     # qualified Go names to the imported TS names (tygo would otherwise emit any).
     frontmatter: |

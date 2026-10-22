@@ -2,8 +2,8 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -99,12 +99,7 @@ func (s *Server) fetchSearchConfigLoop() {
 // fetchSearchConfig pulls the remote config; if it differs from the currently
 // loaded one, it reloads the scraper and republishes the providers.
 func (s *Server) fetchSearchConfig() error {
-	resp, err := http.Get(searchConfigURL)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	newConfig, err := io.ReadAll(resp.Body)
+	newConfig, err := s.fetchBytes(context.Background(), searchConfigURL, 1<<20)
 	if err != nil {
 		return err
 	}
