@@ -92,6 +92,65 @@ func TestStartFileTransfersAndStartAllSchedulesRemaining(t *testing.T) {
 	t.Fatal("Start all did not transfer the remaining file")
 }
 
+func TestStartBeforeMetadataTransfersWhenInfoArrives(t *testing.T) {
+	for _, mode := range []string{"explicit", "reconfigured", "stopped", "automatic"} {
+		t.Run(mode, func(t *testing.T) {
+			e, c, ih := newTransferFixture(t)
+			e.mut.Lock()
+			spec := cloneSpec(e.ts[ih].spec)
+			e.mut.Unlock()
+			if err := e.DeleteTorrent(ih); err != nil {
+				t.Fatal(err)
+			}
+			if mode == "automatic" {
+				c.AutoStart = true
+				if err := e.Configure(c); err != nil {
+					t.Fatal(err)
+				}
+			}
+			pending := cloneSpec(spec)
+			pending.InfoBytes = nil
+			if err := e.NewTorrent(pending); err != nil {
+				t.Fatal(err)
+			}
+			if e.GetTorrents()[ih].Loaded {
+				t.Fatal("fixture metadata arrived before explicit Start")
+			}
+			if mode != "automatic" {
+				if err := e.StartTorrent(ih); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if mode == "reconfigured" {
+				c.EnableUpload = !c.EnableUpload
+				if err := e.Configure(c); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if mode == "stopped" {
+				if err := e.StopTorrent(ih); err != nil {
+					t.Fatal(err)
+				}
+			}
+			e.mut.Lock()
+			err := e.ts[ih].t.SetInfoBytes(spec.InfoBytes)
+			e.mut.Unlock()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if mode != "stopped" {
+				waitTransferProgress(t, e, ih, 0)
+				return
+			}
+			time.Sleep(300 * time.Millisecond)
+			tr := e.GetTorrents()[ih]
+			if tr.Started || tr.Downloaded != 0 {
+				t.Fatalf("metadata revived cancelled start: %+v", tr)
+			}
+		})
+	}
+}
+
 func waitTransferProgress(t *testing.T, e *Engine, ih string, baseline int64) int64 {
 	t.Helper()
 	deadline := time.Now().Add(15 * time.Second)

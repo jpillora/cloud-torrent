@@ -163,9 +163,10 @@ make check-types                                # regen types + git diff --exit-
 - `str2ih` guards `len==40` before hex-decoding (a longer string panics the
   fixed-size array). `percent()`/`DownloadRate` formulas are byte-identical to
   master — don't "simplify" them.
-- Add → `<-GotInfo()` → auto-start. The rewrite gates auto-start on the
-  `AutoStart` config flag (master ignored it; default is `true`, so observable
-  behaviour matches — the flag now actually works).
+- Add → `<-GotInfo()` → auto-start according to the initial `AutoStart` policy.
+  An explicit Start before metadata sets pending whole-torrent intent too; the
+  metadata callback schedules files after they exist. Stop cancels that intent,
+  and reconfiguration preserves it. Partial file starts clear whole-torrent intent.
 - **`anacrolix/torrent` does NOT compile on OpenBSD** (`unix.SEEK_DATA`
   undefined) — OpenBSD is dropped from the goreleaser matrix.
 - E2E timing: poll for `Percent > 0`, not a fully-complete file — piece order can

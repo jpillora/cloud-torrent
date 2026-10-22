@@ -181,7 +181,7 @@ func (e *Engine) replaceClientLocked(c Config, saved []savedTorrent) error {
 		} else {
 			// Preserve pending explicit start intent and initial AutoStart
 			// policy, rather than applying a changed policy to old torrents.
-			e.watchMetadataLocked(model, model.Started || model.autoStart)
+			e.watchMetadataLocked(model)
 		}
 	}
 	return nil
@@ -254,11 +254,11 @@ func (e *Engine) newTorrentLocked(tt *torrent.Torrent, spec *torrent.TorrentSpec
 	t := e.upsertTorrentLocked(tt)
 	t.spec = spec
 	t.autoStart = e.config.AutoStart
-	e.watchMetadataLocked(t, t.autoStart)
+	e.watchMetadataLocked(t)
 	return nil
 }
 
-func (e *Engine) watchMetadataLocked(t *Torrent, start bool) {
+func (e *Engine) watchMetadataLocked(t *Torrent) {
 	tt := t.t
 	// once metadata arrives, auto-start if configured
 	go func() {
@@ -266,7 +266,7 @@ func (e *Engine) watchMetadataLocked(t *Torrent, start bool) {
 		e.mut.Lock()
 		defer e.mut.Unlock()
 		// A metadata callback must not act on a removed/replaced torrent.
-		if e.client != nil && e.ts[t.InfoHash] == t && t.t == tt && start && t.autoStart {
+		if e.client != nil && e.ts[t.InfoHash] == t && t.t == tt && t.autoStart {
 			// Refresh files before restoring a pending start.
 			t.Update(tt)
 			t.Started = false
@@ -351,6 +351,7 @@ func (e *Engine) startTorrentLocked(infohash string) error {
 	if err != nil {
 		return err
 	}
+	t.Update(t.t)
 	allStarted := t.Started
 	for _, f := range t.Files {
 		if f != nil && !f.Started {
@@ -361,7 +362,7 @@ func (e *Engine) startTorrentLocked(infohash string) error {
 		return fmt.Errorf("already started")
 	}
 	t.Started = true
-	t.autoStart = false
+	t.autoStart = !t.Loaded
 	t.t.AllowDataDownload()
 	if e.config.EnableUpload {
 		t.t.AllowDataUpload()

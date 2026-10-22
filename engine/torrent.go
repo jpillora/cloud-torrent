@@ -22,7 +22,7 @@ type Torrent struct {
 	Percent      float32 // 0..100, truncated to 2 dp
 	DownloadRate float32 // bytes/sec since the last update
 
-	autoStart bool // pending initial start policy, retained across reconfiguration
+	autoStart bool // pending whole-torrent start, from initial policy or explicit Start
 	spec      *torrent.TorrentSpec
 	t         *torrent.Torrent
 	updatedAt time.Time
