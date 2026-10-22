@@ -1,10 +1,22 @@
-import { reactive } from 'vue'
+import { computed, reactive } from 'vue'
 import type { State } from './types/generated'
 import { connect, type Conn, type ConnPhase } from './velox'
 
 // state is the root application state, synced from the Go backend via velox.
 // It starts empty and is filled in place as updates arrive.
 export const state = reactive<Partial<State>>({})
+
+// Build once per torrent update; each filesystem row needs only a Set lookup.
+export const downloadingPaths = computed(() => {
+  const paths = new Set<string>()
+  for (const t of Object.values(state.Torrents ?? {})) {
+    if (!t?.Started) continue
+    for (const f of t.Files ?? []) {
+      if (f?.Started && f.Percent < 100) paths.add(f.Path)
+    }
+  }
+  return paths
+})
 
 // connection drives the connect overlay + header lightning. Beyond connected/
 // hasConnected it surfaces the reconnect loop: the current phase, the attempt

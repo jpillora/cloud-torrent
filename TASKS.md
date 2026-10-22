@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:05:47Z
+* updated: 2026-10-22T13:08:01Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1329,12 +1329,12 @@ Actual CLI end-to-end: launched built binary with --open and an isolated PATH co
 
 ## 45. Index downloading paths once instead of scanning all torrent files per download row
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,performance
 * created: 2026-10-22T10:05:36Z
-* updated: 2026-10-22T10:06:54Z
+* updated: 2026-10-22T13:08:01Z
 
 Review: Astra adversarial review — performance.
 
@@ -1362,6 +1362,12 @@ Compute a shared reactive set/map of incomplete started file paths once per stat
 ### Confidence
 
 high
+
+### Completion evidence
+
+state.ts now computes one shared reactive Set of paths whose torrent and file are started and incomplete. Each FileNode performs one Set lookup instead of scanning every torrent file. Unselected files in a partial torrent no longer get an incorrect downloading indicator.
+
+Production frontend build, embedded Go build, check-types and whitespace checks pass. Repeated the actual embedded frontend browser benchmark in an isolated offscreen iframe with 900 mounted file rows, fake Velox data and fetch blocked inside the fixture. Files-array replacement plus Vue flush/layout: before 100/1000/5000 files = 64.9/539.6/3600.9 ms; after = 5.8/9.7/28.4 ms. The 5000-file case improved about 127x without multi-second stalls. Browser correctness cases: active selected incomplete file hides the download link; unselected, complete and stopped cases retain it. Fixture removed; live backend state unchanged.
 
 ## 46. Cancel metadata waiters when magnets are removed or the engine closes
 

@@ -15,7 +15,7 @@ import {
   mdiCheck,
 } from '@mdi/js'
 import type { FsNode } from '../types/generated'
-import { state } from '../state'
+import { downloadingPaths } from '../state'
 import { ui } from '../ui'
 import { bytes, ago } from '../format'
 import Icon from './Icon.vue'
@@ -33,15 +33,7 @@ const children = computed<FsNode[]>(() =>
 )
 
 // a file is "downloading" if a started torrent holds it incomplete
-const downloading = computed(() => {
-  for (const t of Object.values(state.Torrents ?? {})) {
-    if (!t || !t.Started) continue
-    for (const f of t.Files ?? []) {
-      if (f && f.Path === path.value && f.Percent < 100) return true
-    }
-  }
-  return false
-})
+const downloading = computed(() => downloadingPaths.value.has(path.value))
 
 const ext = computed(() => /\.([^.]+)$/.exec(props.node.Name)?.[1].toLowerCase() ?? '')
 
