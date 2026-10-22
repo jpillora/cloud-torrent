@@ -410,10 +410,12 @@ The flow the rewrite must nail first, exactly as the brief states:
 `file:function`. Keep `master` checked out elsewhere (`git worktree add ../ct-master master`) for
 side-by-side runs.
 
-**Fixtures:** real, legal, well-seeded torrents from <https://webtorrent.io/free-torrents> (Sintel,
-Big Buck Bunny, Cosmos Laundromat, …). They publish **WebSeeds**, so they download over HTTP even with
-no BitTorrent peers — making CI deterministic. Pin the chosen magnet/infohash(es) in a
-`testdata/fixtures.go` (and a matching TS constant) sourced from that page; document how to refresh.
+**Fixtures:** routine CI uses authored CC0 bytes and a pinned torrent infohash in
+`.dev/e2e/fixture.ts`, served by a throttled loopback WebSeed so progress is observable
+without public swarm access. The opt-in `./dev.ts e2e --public-fixture` check uses
+Big Buck Bunny's poster from <https://webtorrent.io/free-torrents>, with its length
+and SHA-256 pinned in `.dev/e2e/core.ts`. Provenance and refresh instructions live
+in `.dev/e2e/README.md`.
 
 **Layers:**
 1. **Go unit** — `percent()`, magnet parsing/encoding, `FsNode` tree walk + path-escape guard,
@@ -422,7 +424,7 @@ no BitTorrent peers — making CI deterministic. Pin the chosen magnet/infohash(
    pinned fixture → poll `/sync` until `Torrent.Loaded`, then `Started`, then `Percent > 0` → assert
    files land on disk → `GET /download/<file>` returns bytes (and a directory returns a valid zip) →
    `torrent:delete` cleans up.
-3. **Playwright E2E** — run the built single binary against a temp download dir; drive the **UI**:
+3. **Playwright E2E** (`./dev.ts e2e`, implemented in `.dev/e2e/`) — run the built single binary against a temp download dir; drive the **UI**:
    type a magnet in the Omni bar → click Load Magnet → assert a Torrent card appears, its progress
    advances, a file shows in Downloads, and the download link serves content. Covers the §10 loop end
    to end through real Vue components + velox.

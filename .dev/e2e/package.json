@@ -1,0 +1,9 @@
+{
+  "name": "cloud-torrent-e2e",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "fflate": "0.8.3",
+    "playwright": "1.64.1"
+  }
+}

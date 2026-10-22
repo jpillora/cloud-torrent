@@ -112,7 +112,8 @@ Build commands and Docker, release, and type-generation configuration live in `.
 - `./dev.ts gen-types` regenerates frontend types from Go structs.
 - `./dev.ts check-types` regenerates types and fails if they differ from Git.
 - `./dev.ts test` runs the Go test suite.
-- `./dev.ts ci` runs type checks, the build, and tests in sequence.
+- `./dev.ts e2e` runs isolated Chromium UI/sync/content checks; add `--install-browser` on first use.
+- `./dev.ts ci` runs type checks, the build, Go tests, and deterministic browser E2E in sequence.
 - `./dev.ts release` publishes a tagged prerelease with GoReleaser.
 
 Run `./dev.ts --help` for the full command list. The entrypoint sets the repo

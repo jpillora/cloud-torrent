@@ -3,10 +3,17 @@
 package server
 
 import (
+	"archive/zip"
+	"bytes"
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -14,70 +21,114 @@ import (
 	"github.com/jpillora/cloud-torrent/engine"
 )
 
-// TestE2ECoreLoop proves the core loop (choose -> track -> download) against a
-// live fixture. It downloads real data, so it is gated behind the `e2e` build
-// tag:
-//
-//	go test -tags e2e -run E2E ./server/...
-//
-// The browser half of the E2E (Omni -> Torrents -> Downloads in a real page) is
-// driven via the Chrome DevTools MCP per CLAUDE.md, not a committed suite.
+// TestE2ECoreLoop is an opt-in public-network backend smoke test. The full UI
+// and realtime contract is covered by ./dev.ts e2e (optionally --public-fixture).
+// Run this additional test with: go test -tags e2e -run E2E ./server/...
 func TestE2ECoreLoop(t *testing.T) {
+	const name = "Big Buck Bunny"
+	const poster = "poster.jpg"
+	const checksum = "d082c4ae86f4f8d323c4a03665cdec24c20ad0dcaddcfef1bcab073457a101ff"
 	dir := t.TempDir()
 	s := &Server{engine: engine.New()}
 	t.Cleanup(func() { s.engine.Close() })
-	if err := s.engine.Configure(engine.Config{
-		DownloadDirectory: dir,
-		IncomingPort:      freePort(t),
-		EnableUpload:      true,
-		AutoStart:         true,
-	}); err != nil {
-		t.Fatalf("configure: %v", err)
+	if err := s.engine.Configure(engine.Config{DownloadDirectory: dir, IncomingPort: freePort(t)}); err != nil {
+		t.Fatal(err)
 	}
 	srv := httptest.NewServer(s.handler())
 	t.Cleanup(srv.Close)
-
-	// choose: add the fixture magnet
-	postJSON(t, srv.URL+"/api/magnet", `{"uri":"`+sintelMagnet+`"}`)
-
-	// track: poll until metadata loads, the torrent starts, and it progresses
-	var tr *engine.Torrent
+	// Explicit metainfo provides WebSeeds without requiring DHT/swarm metadata.
+	postJSON(t, srv.URL+"/api/url", `{"url":"https://webtorrent.io/torrents/big-buck-bunny.torrent"}`)
+	torrents := s.engine.GetTorrents()
+	if len(torrents) != 1 {
+		t.Fatalf("torrents: %+v", torrents)
+	}
+	var hash string
+	for ih := range torrents {
+		hash = ih
+	}
+	request, _ := json.Marshal(FileRequest{Action: "start", InfoHash: hash, Path: name + "/" + poster})
+	postJSON(t, srv.URL+"/api/file", string(request))
 	deadline := time.Now().Add(150 * time.Second)
+	complete := false
 	for time.Now().Before(deadline) {
-		tr = s.engine.GetTorrents()[sintelInfoHash]
-		if tr != nil && tr.Loaded && tr.Started && tr.Percent > 0 {
+		tr := s.engine.GetTorrents()[hash]
+		for _, f := range tr.Files {
+			if f.Path == name+"/"+poster && f.Percent == 100 {
+				_, err := os.Stat(filepath.Join(dir, name, poster))
+				complete = err == nil
+			}
+		}
+		if complete {
 			break
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 	}
-	if tr == nil || !tr.Loaded {
-		t.Fatalf("torrent did not load within timeout (tr=%+v)", tr)
+	if !complete {
+		t.Fatal("public poster did not complete")
 	}
-	if !tr.Started || tr.Percent <= 0 {
-		t.Fatalf("no download progress: started=%v percent=%v", tr.Started, tr.Percent)
+	verify := func(content []byte) {
+		t.Helper()
+		if len(content) != 310380 || fmt.Sprintf("%x", sha256.Sum256(content)) != checksum {
+			t.Fatal("poster content mismatch")
+		}
 	}
-	t.Logf("progress: percent=%v files=%d size=%d", tr.Percent, len(tr.Files), tr.Size)
-
-	// download: the torrent directory streams a valid zip of what's on disk
-	// (check the magic bytes rather than draining the whole archive)
-	resp := httpGet(t, srv.URL+"/download/"+url.PathEscape(sintelName))
-	defer resp.Body.Close()
-	if ct := resp.Header.Get("Content-Type"); ct != "application/zip" {
-		t.Errorf("dir content-type = %q, want application/zip", ct)
+	resp := httpGet(t, srv.URL+"/download/"+url.PathEscape(name)+"/"+poster)
+	content, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		t.Fatal(err)
 	}
-	magic := make([]byte, 4)
-	if _, err := io.ReadFull(resp.Body, magic); err != nil {
-		t.Fatalf("read zip stream: %v", err)
+	verify(content)
+	for _, action := range []string{"stop", "delete"} {
+		request, _ := json.Marshal(TorrentRequest{Action: action, InfoHash: hash})
+		postJSON(t, srv.URL+"/api/torrent", string(request))
 	}
-	if string(magic[:2]) != "PK" {
-		t.Errorf("dir download is not a zip (magic %q)", magic)
+	if len(s.engine.GetTorrents()) != 0 {
+		t.Fatal("torrent was not removed")
 	}
-
-	// cleanup: delete the torrent
-	postJSON(t, srv.URL+"/api/torrent", `{"action":"delete","infohash":"`+sintelInfoHash+`"}`)
-	if _, ok := s.engine.GetTorrents()[sintelInfoHash]; ok {
-		t.Error("torrent still present after delete")
+	// The poster shares a boundary piece with the film. Remove that sparse
+	// partial neighbor before archiving; do not download or archive the film.
+	entries, err := os.ReadDir(filepath.Join(dir, name))
+	if err != nil {
+		t.Fatal(err)
 	}
+	for _, entry := range entries {
+		if !strings.HasSuffix(entry.Name(), ".part") {
+			continue
+		}
+		req, _ := http.NewRequest(http.MethodDelete, srv.URL+"/download/"+url.PathEscape(name)+"/"+url.PathEscape(entry.Name()), nil)
+		deleted, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		deleted.Body.Close()
+		if deleted.StatusCode != http.StatusOK {
+			t.Fatalf("partial cleanup: %s", deleted.Status)
+		}
+	}
+	resp = httpGet(t, srv.URL+"/download/"+url.PathEscape(name))
+	archive, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(zr.File) != 1 || zr.File[0].Name != poster {
+		t.Fatalf("unexpected archive entries: %+v", zr.File)
+	}
+	f, err := zr.File[0].Open()
+	if err != nil {
+		t.Fatal(err)
+	}
+	content, err = io.ReadAll(f)
+	f.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	verify(content)
 }
 
 func postJSON(t *testing.T, u, body string) {

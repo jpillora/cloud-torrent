@@ -86,8 +86,34 @@ run `./dev.ts --help` to list commands. Build and release configuration lives in
 ./dev.ts check-types              # CI guard: regenerate + fail if stale
 npm --prefix frontend run dev     # Vite dev server (proxies /sync /api -> :3000)
 ./dev.ts test                     # backend tests
-./dev.ts ci                       # the complete CI pipeline
+./dev.ts ci                       # types, build, Go tests, and browser E2E
 ```
+
+### Browser end-to-end checks
+
+Install Chromium once with `./dev.ts e2e --install-browser`. On Linux machines
+missing browser libraries, add `--with-deps` (may require sudo). Subsequent runs
+use `./dev.ts e2e`; this builds the embedded app before testing. Use `--skip-build`
+only when `dist/cloud-torrent` is already current. `CHROMIUM_EXECUTABLE_PATH` can
+select an existing compatible Chromium installation.
+
+The default Playwright test uses a pinned, locally generated CC0 torrent with a
+throttled loopback WebSeed. It exercises the real Omni input, metadata/progress
+updates over SSE, exact downloaded bytes, keyboard folder controls, and ZIP
+contents after removing the torrent card. It needs no public torrent service;
+package/browser installation still requires internet. Both the app configuration
+and downloads live in a temporary directory and are removed on exit, including
+failures and interrupts. Production services and download folders are never used.
+
+For the public fixture from [WebTorrent's free torrents](https://webtorrent.io/free-torrents),
+run `./dev.ts e2e --public-fixture`. This opt-in check downloads only Big Buck
+Bunny's `poster.jpg` (310,380 bytes), verifies its pinned SHA-256, and verifies the
+folder archive. It requires outbound internet and allows a longer timeout. The
+fixture provenance and refresh procedure are in [.dev/e2e/README.md](.dev/e2e/README.md).
+
+GitHub Actions runs the deterministic browser test as a separate Take step;
+`./dev.ts ci` includes it locally as well. The Go public-network poster/content smoke test
+remains available with `go test -tags e2e -run E2E ./server/...`.
 
 ### Credits
 

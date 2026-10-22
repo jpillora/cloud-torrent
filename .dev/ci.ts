@@ -8,5 +8,6 @@ export default Command({
     await cmd("check-types");
     await cmd("build");
     await cmd("test");
+    await cmd("e2e", "--skip-build");
   },
 });

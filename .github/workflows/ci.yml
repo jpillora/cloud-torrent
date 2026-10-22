@@ -32,6 +32,8 @@ jobs:
         run: ./dev.ts build
       - name: Test
         run: ./dev.ts test
+      - name: Browser E2E
+        run: ./dev.ts e2e --skip-build --install-browser --with-deps
   # Publish binaries as GitHub prereleases when a v* tag is pushed.
   release_binaries:
     name: Release Binaries

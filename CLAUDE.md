@@ -65,11 +65,14 @@ md set-status <id> closed    # Mark task done
 
 # Front-end Testing
 
-Use the **Chrome DevTools MCP** for all front-end / UI testing. Drive the running
+Run `./dev.ts e2e` for the automated UI → realtime sync → verified-content
+contract. It uses isolated Playwright Chromium and a pinned local fixture;
+`--public-fixture` adds the public Big Buck Bunny poster check. For exploratory
+front-end / UI testing, use the **Chrome DevTools MCP** when available. Drive the running
 app in a real browser to verify UI behaviour and end-to-end flows — e.g. add a
 torrent in the Omni bar → track progress in the Torrent engine → download a file
 — rather than asserting from code alone. Reach for the Chrome DevTools MCP
-whenever validating the Vue front-end or confirming a UI change works.
+when manually validating the Vue front-end or confirming a UI change works.
 
 When a screenshot successfully validates a task, send it to the user via the
 announce endpoint (`https://announce.jpillora.com`, with an `attachment` — see
