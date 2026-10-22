@@ -9,7 +9,7 @@
  */
 export interface Config {
   AutoStart: boolean;
-  DisableEncryption: boolean;
+  DisableEncryption: boolean; // require plaintext peer transport; false prefers encryption with plaintext fallback
   DownloadDirectory: string;
   EnableUpload: boolean;
   EnableSeeding: boolean;

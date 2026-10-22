@@ -155,6 +155,8 @@ make check-types                                # regen types + git diff --exit-
   and rebind torrents to the replacement client. Failure restores the previous
   configuration. anacrolix closes listener sockets asynchronously, so only bind
   conflicts get a bounded retry; there is no unconditional restart sleep.
+- `DisableEncryption=true` requires plaintext peer transport (no obfuscation);
+  false retains upstream encryption preference with plaintext fallback.
 - Whole-torrent Stop disables data upload/download and clears file priorities
   while retaining metadata and its live handle. Start restores priorities and
   resumes; only Delete drops the handle.

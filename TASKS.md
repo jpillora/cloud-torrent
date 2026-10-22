@@ -2,16 +2,16 @@
 
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
-* created: 2026-06-16T07:00:20Z
-* updated: 2026-10-22T12:48:53Z
+* created: 2026-06-16T09:52:49Z
+* updated: 2026-10-22T12:51:20Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
 * status: closed
 * priority: P1
 * type: task
-* created: 2026-06-16T07:04:44Z
-* updated: 2026-06-16T07:22:49Z
+* created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T12:07:26Z
 
 **Objective:** Stand up the Go module and the binary entrypoint so everything else has a home.
 
@@ -33,8 +33,8 @@ SPEC: §3, §12
 * status: closed
 * priority: P1
 * type: task
-* created: 2026-06-16T07:04:44Z
-* updated: 2026-06-16T07:28:22Z
+* created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T13:39:25Z
 
 **Objective:** Create the Vue 3 + Vite + TypeScript frontend shell that the five sections will live in.
 
@@ -58,7 +58,7 @@ SPEC: §3
 * priority: P1
 * type: task
 * depends-on: 2,7,10
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T08:05:04Z
 
 **Objective:** Make Go structs the single source of truth for data shapes by generating TypeScript from them.
@@ -83,8 +83,8 @@ SPEC: §5, §6
 * priority: P1
 * type: task
 * depends-on: 2,3
-* created: 2026-06-16T07:04:44Z
-* updated: 2026-06-16T07:46:33Z
+* created: 2026-06-16T09:57:13Z
+* updated: 2026-06-16T21:28:05Z
 
 **Objective:** One binary in production; a smooth proxied dev loop.
 
@@ -106,7 +106,7 @@ SPEC: §3, §12
 * priority: P1
 * type: task
 * depends-on: 2,3,4,5
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T08:17:30Z
 
 **Objective:** Prove the realtime stack end-to-end with a trivial synced value ("hello world" for velox).
@@ -131,8 +131,8 @@ SPEC: §4, §7
 * priority: P1
 * type: feature
 * depends-on: 2
-* created: 2026-06-16T07:04:44Z
-* updated: 2026-06-16T07:54:56Z
+* created: 2026-06-16T09:57:13Z
+* updated: 2026-06-17T08:17:32Z
 
 **Objective:** Wrap `anacrolix/torrent` behind a small engine that produces the synced view-models.
 
@@ -156,7 +156,7 @@ SPEC: §5, §8
 * priority: P1
 * type: feature
 * depends-on: 6,7,10
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T08:28:49Z
 
 **Objective:** Assemble the full velox-synced `State` and the background loops that keep it fresh.
@@ -182,7 +182,7 @@ SPEC: §4, §5, §7
 * priority: P1
 * type: feature
 * depends-on: 8
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T08:32:34Z
 
 **Objective:** Typed JSON action API for every mutation the UI performs.
@@ -211,8 +211,8 @@ SPEC: §8
 * priority: P1
 * type: feature
 * depends-on: 2
-* created: 2026-06-16T07:04:44Z
-* updated: 2026-06-16T07:59:00Z
+* created: 2026-06-16T09:57:13Z
+* updated: 2026-06-17T11:23:33Z
 
 **Objective:** List downloaded files as a tree and serve/delete them over HTTP.
 
@@ -237,7 +237,7 @@ SPEC: §8, §9 §D
 * priority: P1
 * type: feature
 * depends-on: 9,3,4
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T09:08:15Z
 
 **Objective:** The universal Omni input — first two modes (magnet + torrent URL), the heart of "choose a torrent".
@@ -264,7 +264,7 @@ SPEC: §9 §B, §10
 * priority: P1
 * type: feature
 * depends-on: 8,3,4
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T09:19:58Z
 
 **Objective:** The Torrent-engine section — live, controllable torrent cards.
@@ -289,7 +289,7 @@ SPEC: §9 §C, §10
 * priority: P1
 * type: feature
 * depends-on: 10,8,3
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T09:25:22Z
 
 **Objective:** The Downloads section — browse and stream what's on disk.
@@ -315,7 +315,7 @@ SPEC: §9 §D, §10
 * priority: P2
 * type: feature
 * depends-on: 8,3
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T09:28:37Z
 
 **Objective:** The Footer — version + live resource usage.
@@ -338,7 +338,7 @@ SPEC: §9 §E
 * priority: P1
 * type: task
 * depends-on: 11,12,13,14
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T09:45:34Z
 
 **Objective:** Prove the core loop (choose → track → download) against a real torrent.
@@ -361,7 +361,7 @@ SPEC: §10, §11
 * priority: P2
 * type: feature
 * depends-on: 9,8,3
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T10:21:33Z
 
 **Objective:** The Header section — title bar + the settings/config editor.
@@ -383,7 +383,7 @@ SPEC: §9 §A
 * priority: P2
 * type: feature
 * depends-on: 9,11
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T10:31:31Z
 
 **Objective:** Add torrents by uploading `.torrent` files — drag-drop anywhere or click the Omni upload icon.
@@ -405,7 +405,7 @@ SPEC: §9 §0, §9 §B
 * priority: P2
 * type: feature
 * depends-on: 12,9
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T10:38:14Z
 
 **Objective:** Per-file start/stop within a torrent.
@@ -428,7 +428,7 @@ SPEC: §8, §9 §C
 * priority: P2
 * type: feature
 * depends-on: 13
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T10:44:44Z
 
 **Objective:** Inline media previews + the page-wide spacebar play/pause.
@@ -450,7 +450,7 @@ SPEC: §9 §0, §9 §D
 * priority: P2
 * type: feature
 * depends-on: 6
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T10:50:27Z
 
 **Objective:** Connection overlay + global error banner — the app-shell feedback layer.
@@ -472,7 +472,7 @@ SPEC: §9 §0
 * priority: P2
 * type: feature
 * depends-on: 8
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T11:42:42Z
 
 **Objective:** Backend torrent search via `jpillora/scraper` providers.
@@ -493,7 +493,7 @@ SPEC: §8, §9 §B
 * priority: P2
 * type: feature
 * depends-on: 11,21
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T11:51:29Z
 
 **Objective:** The Omni bar's search mode UI (third mode) — find torrents and add them.
@@ -517,7 +517,7 @@ SPEC: §9 §B
 * priority: P3
 * type: task
 * depends-on: 11,12,13,14,16
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T12:00:48Z
 
 **Objective:** Match the original look without Semantic UI / jQuery.
@@ -540,7 +540,7 @@ SPEC: §1, §9
 * priority: P3
 * type: feature
 * depends-on: 6
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T12:06:05Z
 
 **Objective:** Port the server's auth, TLS, and logging wrappers.
@@ -564,7 +564,7 @@ SPEC: §8, §12
 * priority: P3
 * type: task
 * depends-on: 5,15
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T12:37:56Z
 
 **Objective:** Ship it — single-binary releases + Docker + docs.
@@ -587,7 +587,7 @@ SPEC: §12
 * priority: P2
 * type: task
 * depends-on: 15,16,17,18,19,20,22,23,24
-* created: 2026-06-16T07:04:44Z
+* created: 2026-06-16T09:57:13Z
 * updated: 2026-06-16T12:15:52Z
 
 **Objective:** Final gate — verify behaviour is equal to `master`, item by item.
@@ -1008,11 +1008,12 @@ Live browser against isolated built app on port 3002: moved its config parent as
 
 ## 38. Honor the advertised DisableEncryption configuration
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,simplicity
 * created: 2026-10-22T10:04:29Z
+* updated: 2026-10-22T12:51:20Z
 
 Review: Astra adversarial review — code simplicity and layout.
 
@@ -1041,6 +1042,14 @@ Map the field to the intended supported anacrolix crypto policy, or explicitly r
 ### Confidence
 
 high; exhaustive field-use search
+
+### Completion evidence
+
+DisableEncryption=true now sets anacrolix HeaderObfuscationPolicy to Preferred=false, RequirePreferred=true, requiring plaintext peer transport. False retains the upstream default Preferred=true, RequirePreferred=false (encryption preferred with plaintext fallback). The field comment and generated type document this contract.
+
+Focused race test captures real ClientConfig policies across false → true → false client transitions. Full go test -race ./... passes; embedded Go build and generated-type checks pass.
+
+Live browser: changed Disable Encryption to true and saved into a fresh scratch directory, then submitted public Big Buck Bunny. Synced config confirmed true and torrent transferred 51986432 bytes (18.8%). Toggled false and saved while active; same infohash remained started and transferred 6748443 bytes after rebind/recheck at observation. Original config restored and test torrent/scratch removed.
 
 ## 39. Use generated request payload types at the frontend API boundary
 

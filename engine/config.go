@@ -4,7 +4,7 @@ package engine
 // and synced to the browser as part of the application state.
 type Config struct {
 	AutoStart         bool
-	DisableEncryption bool
+	DisableEncryption bool // require plaintext peer transport; false prefers encryption with plaintext fallback
 	DownloadDirectory string
 	EnableUpload      bool
 	EnableSeeding     bool

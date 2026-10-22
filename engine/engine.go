@@ -144,6 +144,9 @@ func (e *Engine) replaceClientLocked(c Config, saved []savedTorrent) error {
 	config.NoUpload = !c.EnableUpload
 	config.Seed = c.EnableSeeding
 	config.ListenPort = c.IncomingPort
+	if c.DisableEncryption {
+		config.HeaderObfuscationPolicy = torrent.HeaderObfuscationPolicy{Preferred: false, RequirePreferred: true}
+	}
 	client, err := e.openClientLocked(config)
 	if err != nil {
 		return fmt.Errorf("configure torrent client: %w", err)
