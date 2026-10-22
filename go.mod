@@ -5,13 +5,12 @@ go 1.27.3
 require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/anacrolix/torrent v1.59.1
-	github.com/jpillora/archive v0.0.0-20160301031048-e0b3681851f1
 	github.com/jpillora/backoff v1.0.0
 	github.com/jpillora/cookieauth v1.1.1
 	github.com/jpillora/opts v1.2.3
 	github.com/jpillora/requestlog v1.0.0
 	github.com/jpillora/scraper v0.3.0
-	github.com/jpillora/velox v0.4.2
+	github.com/jpillora/velox v0.12.1
 	github.com/shirou/gopsutil/v3 v3.24.5
 )
 
@@ -46,7 +45,6 @@ require (
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/elithrar/simple-scrypt v1.3.0 // indirect
-	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/floatdrop/lru v1.3.0 // indirect
 	github.com/go-llsqlite/adapter v0.0.0-20230927005056-7f5ce7f0c916 // indirect
@@ -63,7 +61,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jpillora/ansi v1.0.3 // indirect
-	github.com/jpillora/eventsource v1.1.0 // indirect
+	github.com/jpillora/eventsource v1.2.0 // indirect
 	github.com/jpillora/sizestr v1.0.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
 	github.com/lufia/plan9stats v0.0.0-20220913051719-115f729f3c8c // indirect
@@ -112,7 +110,7 @@ require (
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948 // indirect
 	golang.org/x/mod v0.25.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect

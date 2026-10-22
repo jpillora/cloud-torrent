@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:21:39Z
+* updated: 2026-10-22T13:26:57Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1548,12 +1548,12 @@ Live browser: aborting POST /api/url after 300 ms closed the actual stalled upst
 
 ## 50. Avoid replacing whole file arrays for single-file progress updates
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,performance
 * created: 2026-10-22T10:05:36Z
-* updated: 2026-10-22T10:06:54Z
+* updated: 2026-10-22T13:26:57Z
 
 Review: Astra adversarial review — performance.
 
@@ -1583,6 +1583,14 @@ Represent large collections with stable keyed entries or use an element-addresse
 ### Confidence
 
 high
+
+### Completion evidence
+
+Upgraded embedded Velox Go/JS together from v0.4.2 to latest v0.12.1, enabling negotiated v3 element-addressed array operations without changing application collection types or ordering. Dependencies tidied. Test port helpers now check TCP and UDP together after validation exposed intermittent UDP collisions.
+
+Full go test -race ./..., embedded Go build, generated-type and whitespace checks pass. Actual SSE integration with 5000 torrent files and 5000 filesystem nodes: initial snapshot 1005739 bytes; changing one file progress and one node timestamp sends a 389-byte operation delta addressing just those array elements.
+
+Real browser against an isolated server using the actual embedded SPA and real new Velox client: 5000 torrent files and 900 download rows, sync URL p=3. Updating progress/timestamp preserves both array identities, unchanged file/node objects and unchanged DOM row while changed values arrive. Fixture stopped. Main app also negotiates p=3, loads public Big Buck Bunny with all three files, automatically reconnects with exactly one connection, and removes the test torrent while retaining public media.
 
 ## 51. Prevent a slow sync client from blocking state broadcasts to other clients
 

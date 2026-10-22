@@ -127,12 +127,22 @@ func TestDefaultPort(t *testing.T) {
 
 func freePort(t *testing.T) int {
 	t.Helper()
-	l, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("freePort: %v", err)
+	for range 100 {
+		tcp, err := net.Listen("tcp", ":0")
+		if err != nil {
+			t.Fatal(err)
+		}
+		port := tcp.Addr().(*net.TCPAddr).Port
+		udp, err := net.ListenPacket("udp", fmt.Sprintf(":%d", port))
+		tcp.Close()
+		if err != nil {
+			continue
+		}
+		udp.Close()
+		return port
 	}
-	defer l.Close()
-	return l.Addr().(*net.TCPAddr).Port
+	t.Fatal("could not find a free TCP and UDP port")
+	return 0
 }
 
 func TestSnapshotsOwnTheirModels(t *testing.T) {

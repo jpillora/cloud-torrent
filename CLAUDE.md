@@ -132,6 +132,9 @@ make check-types                                # regen types + git diff --exit-
   and commit the regenerated `*.gen.ts` (CI fails if stale).
 
 ## velox realtime sync (`/sync`)
+- Velox v0.12.1 negotiates protocol v3 (`p=3`): per-element array operations
+  keep file-progress deltas small and preserve unchanged frontend item identities.
+  The embedded Go handler and served JS client must be upgraded together.
 - Bind the **embedded** `velox.State` with `velox.SyncHandler(&s.state)` once at
   startup (NOT `velox.Sync`, which wraps a separate State so `state.Push()` won't
   reach clients). `SyncHandler` must run **before any `Push()`**.
