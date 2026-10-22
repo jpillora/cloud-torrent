@@ -22,7 +22,8 @@ let conn: Conn | null = null
 
 // startSync opens the realtime connection and keeps `state` live.
 export function startSync(): void {
-  connect('/sync', state, (s) => {
+  if (conn) return
+  conn = connect('/sync', state, (s) => {
     connection.connected = s.connected
     connection.phase = s.phase
     connection.attempt = s.attempt
@@ -30,12 +31,6 @@ export function startSync(): void {
     connection.error = s.error
     if (s.connected) connection.hasConnected = true
   })
-    .then((c) => {
-      conn = c
-    })
-    .catch((err) => {
-      console.error('velox connect failed:', err)
-    })
 }
 
 // retryNow forces an immediate reconnect attempt (the overlay's "Retry now").

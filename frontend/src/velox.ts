@@ -56,24 +56,36 @@ function loadClient(): Promise<VeloxFactory> {
     const el = document.createElement('script')
     el.src = '/js/velox.js'
     el.async = false
-    el.onload = () =>
-      window.velox ? resolve(window.velox) : reject(new Error('velox client did not register'))
-    el.onerror = () => reject(new Error('failed to load /js/velox.js'))
+    const timeout = setTimeout(() => fail('timed out loading /js/velox.js'), ATTEMPT_TIMEOUT)
+    function fail(message: string) {
+      clearTimeout(timeout)
+      el.onload = el.onerror = null
+      el.remove()
+      reject(new Error(message))
+    }
+    el.onload = () => {
+      clearTimeout(timeout)
+      if (window.velox) resolve(window.velox)
+      else fail('velox client did not register')
+    }
+    el.onerror = () => fail('failed to load /js/velox.js')
     document.head.appendChild(el)
+  }).catch((err) => {
+    loading = null
+    throw err
   })
   return loading
 }
 
 // connect loads the velox client, syncs `target` in place from `url`, and drives
 // a visible reconnect loop, reporting every transition via onStatus.
-export async function connect(
+export function connect(
   url: string,
   target: object,
   onStatus: (s: ConnStatus) => void,
-): Promise<Conn> {
-  const velox = await loadClient()
-  const conn = velox(url, target, { retry: false }) // we own the retry loop
-
+): Conn {
+  let conn: VeloxConn | null = null
+  let generation = 0
   let attempt = 0
   let waitTimer: ReturnType<typeof setTimeout> | undefined
   let attemptTimer: ReturnType<typeof setTimeout> | undefined
@@ -95,23 +107,57 @@ export async function connect(
 
   // an attempt didn't connect in time. velox swallows SSE connection errors, so
   // surface a generic reason unless a specific one was already reported.
-  function failAttempt() {
-    if (!status.error) status.error = 'Could not reach the server'
+  function closeConnection() {
+    if (!conn) return
+    conn.onconnect = conn.ondisconnect = conn.onerror = () => {}
+    conn.disconnect()
+  }
+
+  function failAttempt(error?: unknown) {
+    generation++
+    closeConnection()
+    status.error = error instanceof Error ? error.message : typeof error === 'string' ? error : 'Could not reach the server'
     scheduleRetry()
   }
 
   // a connection attempt is underway (initial or a retry)
-  function attemptNow() {
+  async function attemptNow() {
     clearTimers()
+    closeConnection()
+    const current = ++generation
     status.connected = false
-    status.phase = 'retrying'
+    status.phase = attempt === 0 ? 'connecting' : 'retrying'
     status.retryInSec = 0
     status.attempt = attempt
     emit()
-    conn.connect()
-    // velox doesn't report a failed SSE attempt, so fall back to a timeout:
-    // if onconnect hasn't fired by now, treat the attempt as failed.
-    attemptTimer = setTimeout(failAttempt, ATTEMPT_TIMEOUT)
+    try {
+      const velox = await loadClient()
+      if (current !== generation) return
+      const reconnect = conn !== null
+      conn ??= velox(url, target, { retry: false }) // construction connects
+      conn.onconnect = () => {
+        if (current !== generation) return
+        clearTimers()
+        attempt = 0
+        status.connected = true
+        status.phase = 'connected'
+        status.attempt = 0
+        status.retryInSec = 0
+        status.error = ''
+        emit()
+      }
+      conn.ondisconnect = () => {
+        if (current === generation) failAttempt()
+      }
+      conn.onerror = (err: unknown) => {
+        if (current === generation) failAttempt(err)
+      }
+      if (reconnect) conn.connect()
+      // velox swallows SSE connection errors; bound every transport attempt.
+      attemptTimer = setTimeout(() => failAttempt(), ATTEMPT_TIMEOUT)
+    } catch (err) {
+      if (current === generation) failAttempt(err)
+    }
   }
 
   // wait (with a visible countdown) before the next attempt
@@ -131,24 +177,6 @@ export async function connect(
     waitTimer = setTimeout(attemptNow, delay)
   }
 
-  conn.onconnect = () => {
-    clearTimers()
-    attempt = 0
-    status.connected = true
-    status.phase = 'connected'
-    status.attempt = 0
-    status.retryInSec = 0
-    status.error = ''
-    emit()
-  }
-  conn.ondisconnect = () => {
-    if (status.phase !== 'waiting') scheduleRetry()
-  }
-  conn.onerror = (err: unknown) => {
-    status.error = err instanceof Error ? err.message : typeof err === 'string' ? err : 'connection error'
-    emit()
-  }
-
   // skip the backoff wait and try immediately when the network returns or the
   // tab is refocused (don't interrupt an attempt already in flight)
   function wake() {
@@ -159,9 +187,7 @@ export async function connect(
     if (document.visibilityState === 'visible') wake()
   })
 
-  // velox connects on construction; reflect that and arm the failure backstop.
-  emit()
-  attemptTimer = setTimeout(failAttempt, ATTEMPT_TIMEOUT)
+  void attemptNow()
 
-  return { retryNow: attemptNow }
+  return { retryNow: () => { void attemptNow() } }
 }
