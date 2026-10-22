@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:50:26Z
+* updated: 2026-10-22T13:52:49Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -2172,11 +2172,12 @@ Engine serializes active-download checks and os.Root removal with Start/config c
 
 ## 65. Do not offer a per-file Stop action that the engine always rejects
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:07:02Z
+* updated: 2026-10-22T13:52:49Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -2205,3 +2206,7 @@ Either support per-file pause end-to-end, or suppress/disable the unsupported ac
 ### Confidence
 
 High; button rendering verified in browser and unconditional backend rejection verified in source. Real API call omitted to avoid changing user torrents.
+
+### Completion evidence
+
+Suppressed unsupported per-file Stop: selected rows show Selected, with visible guidance to use whole-torrent Stop. Per-file handler now only sends Start. Actual rebuilt Chrome + public Big Buck Bunny in isolated /mnt/data/downloads/review-task65-* selected poster.jpg only: selected=1, per-file Stop buttons=0, whole Stop present, help visible. Poster downloaded 310380 bytes, SHA256 d082c4ae86f4f8d323c4a03665cdec24c20ad0dcaddcfef1bcab073457a101ff matched public fixture. Whole Stop succeeded; fresh synced state showed Started=false, no selected labels and three Start buttons. Removed test torrent/scratch and restored original /mnt/data/downloads configuration. Final browser connected via Velox p=3, zero test torrents, no overlay, retained original completed Bunny media. Frontend type-check/build, embedded Go build, full go test -race ./... (engine 74.4s, server 10.7s) and diff check passed.

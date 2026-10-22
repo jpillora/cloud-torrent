@@ -10,7 +10,7 @@ import Icon from './Icon.vue'
 const props = defineProps<{ torrent: Torrent }>()
 const showFiles = ref(false)
 
-// per-file API errors, keyed by file path (e.g. Stop -> "unsupported").
+// Per-file Start errors, keyed by file path.
 const fileErrors = reactive<Record<string, string>>({})
 
 const files = computed<File[]>(() =>
@@ -33,12 +33,11 @@ function remove() {
   return api.torrent('delete', props.torrent.InfoHash)
 }
 
-// per-file start/stop. StartFile is supported; StopFile returns "unsupported"
-// (master parity) — the resulting error is surfaced inline on the file row.
-async function setFile(action: 'start' | 'stop', f: File) {
+// Files can be selected individually; pausing uses the whole-torrent control.
+async function startFile(f: File) {
   delete fileErrors[f.Path]
   try {
-    await api.file(action, props.torrent.InfoHash, f.Path)
+    await api.file('start', props.torrent.InfoHash, f.Path)
   } catch (e) {
     fileErrors[f.Path] = e instanceof Error ? e.message : String(e)
   }
@@ -118,14 +117,12 @@ async function setFile(action: 'start' | 'stop', f: File) {
             <AsyncButton
               v-if="!f.Started"
               class="green"
-              :action="() => setFile('start', f)"
+              :action="() => startFile(f)"
               data-testid="file-start"
             >
               Start
             </AsyncButton>
-            <AsyncButton v-else class="red" :action="() => setFile('stop', f)" data-testid="file-stop">
-              Stop
-            </AsyncButton>
+            <span v-else class="muted" data-testid="file-selected">Selected</span>
           </td>
         </tr>
       </tbody>
@@ -137,5 +134,8 @@ async function setFile(action: 'start' | 'stop', f: File) {
         </tr>
       </tfoot>
     </table>
+    <p v-if="showFiles && torrent.Loaded && torrent.Started" class="muted" data-testid="file-pause-help">
+      Use Stop above to pause the whole torrent. Individual files cannot be paused.
+    </p>
   </div>
 </template>

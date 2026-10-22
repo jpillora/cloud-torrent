@@ -166,6 +166,8 @@ make check-types                                # regen types + git diff --exit-
   resumes; only Delete drops the handle.
 - `DeleteTorrent` drops the torrent but does **NOT** delete files on disk
   (master parity). `StopFile` returns `"unsupported"` (no per-file pause).
+  The UI shows Selected instead of an unsupported Stop action and directs users
+  to the whole-torrent Stop control.
 - `str2ih` guards `len==40` before hex-decoding (a longer string panics the
   fixed-size array). `percent()`/`DownloadRate` formulas are byte-identical to
   master — don't "simplify" them.
