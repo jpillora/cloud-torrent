@@ -3,7 +3,7 @@
 a [meads](https://github.com/jpillora/meads) (`md`) managed task log
 
 * created: 2026-06-16T09:52:49Z
-* updated: 2026-10-22T13:38:36Z
+* updated: 2026-10-22T13:39:22Z
 
 ## 2. M0: Initialize Go module + CLI entry
 
@@ -1843,11 +1843,12 @@ Download rows reveal actions with :focus-within and focused actions have explici
 
 ## 57. Keep the magnet editor synchronized with direct Omni edits
 
-* status: open
+* status: closed
 * priority: P2
 * type: bug
 * tags: adversarial-review,ui-ux
 * created: 2026-10-22T10:06:16Z
+* updated: 2026-10-22T13:39:22Z
 
 Review: Astra adversarial review — UI/UX.
 
@@ -1876,6 +1877,10 @@ Synchronize editor fields when modelValue changes externally without causing edi
 ### Confidence
 
 High; live browser reproduced without submitting any magnet.
+
+### Completion evidence
+
+Magnet editor watches external model changes and skips its own emitted values to preserve field edits/cursors. Rebuilt SPA Chrome check pasted first magnet, opened editor, then pasted public Big Buck Bunny hash with a new name and two trackers. All fields updated; name edit preserved second hash/trackers; adding tracker preserved metadata; clearing Omni cleared editor fields. No magnet submitted. Frontend type-check/build, Go embedded build and diff check passed.
 
 ## 58. Keep torrent file tables within narrow viewports for long filenames
 
