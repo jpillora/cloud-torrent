@@ -1,0 +1,1 @@
+{"id":29,"title":"Stopping a torrent does nothing","status":"closed","priority":"P2","type":"bug","description":"Stopping a torrent does nothing\n\nIt should stop downloading, and show “remove”\n\nMaybe related to slow refresh","meta":{"created":"2026-06-24T12:07:58Z","updated":"2026-06-24T12:32:19Z"}}
