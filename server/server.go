@@ -20,7 +20,7 @@ import (
 	"github.com/jpillora/cloud-torrent/engine"
 	"github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/cookieauth"
-	"github.com/jpillora/requestlog"
+	"github.com/jpillora/requestlog/v2"
 	"github.com/jpillora/scraper/scraper"
 	"github.com/jpillora/velox"
 )
@@ -225,7 +225,16 @@ func compressResponses(h http.Handler) http.Handler {
 			"application/xml", "text/xml", "image/svg+xml",
 		}),
 	)
-	return wrap(h)
+	compressed := wrap(h)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/sync" {
+			// Velox owns SSE gzip and requires access to the raw writer for
+			// write deadlines; the outer gzip writer cannot unwrap itself.
+			h.ServeHTTP(w, r)
+			return
+		}
+		compressed.ServeHTTP(w, r)
+	})
 }
 
 // handleSync upgrades a velox connection on the embedded state and tracks the

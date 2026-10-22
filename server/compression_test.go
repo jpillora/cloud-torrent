@@ -60,7 +60,7 @@ func TestGzippedRealtimeStreamFlushesImmediately(t *testing.T) {
 	srv := httptest.NewServer(compressResponses(http.HandlerFunc(s.handleSync)))
 	defer srv.Close()
 	client := &http.Client{Timeout: 2 * time.Second}
-	r, err := http.NewRequest(http.MethodGet, srv.URL, nil)
+	r, err := http.NewRequest(http.MethodGet, srv.URL+"/sync", nil)
 	must(t, err)
 	r.Header.Set("Accept-Encoding", "gzip")
 	r.Header.Set("Accept", "text/event-stream")
