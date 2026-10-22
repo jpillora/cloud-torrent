@@ -26,25 +26,22 @@ This is a ground-up rewrite of the original
 
 **Binaries**
 
-[![Releases](https://img.shields.io/github/release/jpillora/cloud-torrent.svg)](https://github.com/jpillora/cloud-torrent/releases)
+[![Releases](https://img.shields.io/github/v/release/jpillora/cloud-torrent?include_prereleases)](https://github.com/jpillora/cloud-torrent/releases)
 
-See [the latest release](https://github.com/jpillora/cloud-torrent/releases/latest),
-or download and install it now with:
-
-```sh
-curl https://i.jpillora.com/cloud-torrent! | bash
-```
+Download binaries from [GitHub Releases](https://github.com/jpillora/cloud-torrent/releases). New releases are published as prereleases for Linux, macOS, and Windows.
 
 **Docker**
 
+Docker image publishing is disabled. To build and run the current source locally:
+
 ```sh
-docker run -d -p 3000:3000 -v /path/to/downloads:/downloads \
-  ghcr.io/jpillora/cloud-torrent
+docker build -f .github/Dockerfile -t cloud-torrent .
+docker run -d -p 3000:3000 -v /path/to/downloads:/downloads cloud-torrent
 ```
 
 **Source**
 
-*[Go](https://go.dev/dl/) 1.26+ and [Node](https://nodejs.org) 20+ are required.*
+*[Go](https://go.dev/dl/) 1.27.3+ and [Node](https://nodejs.org) 24+ are required.*
 
 ```sh
 git clone https://github.com/jpillora/cloud-torrent

@@ -1,6 +1,6 @@
 module github.com/jpillora/cloud-torrent
 
-go 1.26.4
+go 1.27.3
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
