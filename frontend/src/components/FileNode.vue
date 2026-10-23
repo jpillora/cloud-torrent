@@ -158,7 +158,7 @@ async function remove() {
         node.Name
       }}</a>
       <span v-else-if="isFile" class="name">{{ node.Name }}</span>
-      <span class="meta">{{ bytes(node.Size) }} &middot; updated {{ ago(node.Modified) }}</span>
+      <span class="meta">{{ bytes(node.Size) }} &middot; {{ ago(node.Modified) }}</span>
       <div v-if="!downloading" ref="actions" class="download-actions" @focusout="leaveActions">
         <button
           ref="actionsButton"
