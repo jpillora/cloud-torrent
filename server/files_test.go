@@ -108,18 +108,20 @@ func TestListFiles(t *testing.T) {
 	must(t, os.Mkdir(filepath.Join(dir, "sub"), 0o755))
 	mustWrite(t, filepath.Join(dir, "sub", "b.txt"), "world!") // 6 bytes
 	mustWrite(t, filepath.Join(dir, ".hidden"), "x")           // skipped
+	mustWrite(t, filepath.Join(dir, "cloud-torrent.json"), "config")
+	mustWrite(t, filepath.Join(dir, "sub", "cloud-torrent.json"), "nested config")
 
 	root := listFiles(dir)
 	if len(root.Children) != 2 {
-		t.Fatalf("got %d children, want 2 (dotfile should be skipped)", len(root.Children))
+		t.Fatalf("got %d children, want 2 (dotfile and config should be skipped)", len(root.Children))
 	}
 	if root.Size != 11 {
 		t.Errorf("aggregate size = %d, want 11", root.Size)
 	}
 	var sub *FsNode
 	for _, c := range root.Children {
-		if c.Name == ".hidden" {
-			t.Error("dotfile was not skipped")
+		if c.Name == ".hidden" || c.Name == "cloud-torrent.json" {
+			t.Errorf("%s was not skipped", c.Name)
 		}
 		if c.Name == "sub" {
 			sub = c

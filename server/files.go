@@ -30,9 +30,9 @@ type FsNode struct {
 	Children  []*FsNode
 }
 
-// listFiles walks rootDir and returns it as the root FsNode. Dotfiles and
-// non-regular files are skipped, and the walk is capped at fileNumberLimit
-// entries. A missing rootDir yields an empty node.
+// listFiles walks rootDir and returns it as the root FsNode. Dotfiles,
+// cloud-torrent.json files and non-regular files are skipped, and the walk is
+// capped at fileNumberLimit entries. A missing rootDir yields an empty node.
 func listFiles(rootDir string) *FsNode {
 	root := &FsNode{Directory: true, Children: []*FsNode{}}
 	if info, err := os.Stat(rootDir); err == nil {
@@ -53,6 +53,9 @@ func list(path string, info os.FileInfo, node *FsNode, n *int) error {
 	}
 	*n++
 	if (!info.IsDir() && !info.Mode().IsRegular()) || strings.HasPrefix(info.Name(), ".") {
+		return errNotRegular
+	}
+	if !info.IsDir() && info.Name() == "cloud-torrent.json" {
 		return errNotRegular
 	}
 	node.Name = info.Name()
