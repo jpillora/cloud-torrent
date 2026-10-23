@@ -205,6 +205,7 @@ try {
     await partial.waitFor();
     assert.equal(await partial.innerText(), "Big Buck Bunny.mp4.part");
     const row = partial.locator("..");
+    await row.getByTestId("fs-actions-toggle").click();
     await row.getByTestId("fs-delete").click();
     await row.getByTestId("fs-delete-confirm").click();
     await partial.waitFor({ state: "detached" });
@@ -214,13 +215,16 @@ try {
     name: `Download ${directory} as ZIP`,
     exact: true,
   });
-  await zip.waitFor();
   const folder = page.getByRole("button", { name: directory, exact: true });
   await folder.focus();
   await page.keyboard.press("Enter");
   assert.equal(await folder.getAttribute("aria-expanded"), "false");
   await page.keyboard.press("Space");
   assert.equal(await folder.getAttribute("aria-expanded"), "true");
+  const folderRow = folder.locator("..");
+  await folderRow.getByTestId("fs-actions-toggle").click();
+  await zip.waitFor();
+  assert.equal(await folderRow.getByTestId("fs-preview-toggle").count(), 0);
   const downloadPending = page.waitForEvent("download");
   await zip.click();
   const download = await downloadPending;
@@ -237,6 +241,47 @@ try {
       );
     } else assert.deepEqual(bytes, files.get(path));
   }
+  // Exercise media actions and confirmation on a separate file, preserving the torrent fixture.
+  await writeFile(
+    join(scratch, "downloads", "preview.png"),
+    Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=", "base64"),
+  );
+  const previewLink = page.getByTestId("fs-file-link").filter({ hasText: /^preview\.png$/ });
+  await previewLink.waitFor();
+  const previewNode = previewLink.locator("../..");
+  const actions = previewNode.getByTestId("fs-actions-toggle");
+  assert.equal(await previewNode.getByTestId("fs-delete").count(), 0);
+  await actions.focus();
+  await page.keyboard.press("Enter");
+  await previewNode.getByTestId("fs-preview-toggle").waitFor();
+  assert.equal(await previewNode.getByTestId("fs-folder-download").count(), 0);
+  await page.keyboard.press("Escape");
+  assert.equal(await actions.getAttribute("aria-expanded"), "false");
+  assert(await actions.evaluate((element) => element === document.activeElement));
+  await actions.click();
+  await previewNode.getByTestId("fs-preview-toggle").click();
+  await previewNode.getByTestId("fs-preview").waitFor();
+  assert.equal(await actions.getAttribute("aria-expanded"), "false");
+  await actions.click();
+  await previewNode.getByRole("button", { name: "Hide preview", exact: true }).click();
+  await previewNode.getByTestId("fs-preview").waitFor({ state: "hidden" });
+  await actions.click();
+  await page.getByRole("heading", { name: "Downloads", exact: true }).click();
+  assert.equal(await actions.getAttribute("aria-expanded"), "false");
+  await page.setViewportSize({ width: 375, height: 812 });
+  await actions.click();
+  const menuBox = await previewNode.getByTestId("fs-actions-menu").boundingBox();
+  assert(menuBox && menuBox.x >= 0 && menuBox.x + menuBox.width <= 375);
+  await previewNode.getByTestId("fs-delete").click();
+  await previewNode.getByTestId("fs-delete-confirm").waitFor();
+  assert.equal(await context.request.get(new URL((await previewLink.getAttribute("href"))!, base).href).then((r) => r.status()), 200);
+  await page.keyboard.press("Escape");
+  await actions.click();
+  await previewNode.getByTestId("fs-delete").waitFor();
+  await previewNode.getByTestId("fs-delete").click();
+  await previewNode.getByTestId("fs-delete-confirm").click();
+  await previewLink.waitFor({ state: "detached" });
+  console.log("PASS: download actions menu, keyboard/outside dismissal, media preview, mobile and confirmed deletion");
   assert.deepEqual(errors, [], "browser runtime errors");
   console.log(
     `PASS: ${

@@ -795,16 +795,6 @@ select:focus {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
 }
-.archive-download {
-  flex-shrink: 0;
-  padding: 0.2em 0.4em;
-  font-size: 0.8rem;
-  font-weight: bold;
-}
-.archive-download:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
-}
 .node .icon {
   user-select: none;
 }
@@ -817,38 +807,59 @@ select:focus {
   color: var(--muted);
   font-size: 0.78rem;
 }
-.preview-toggle,
-.del {
-  background: none;
-  padding: 0 0.25em;
-  font-size: 1.05rem;
+.download-actions {
+  position: relative;
+  flex-shrink: 0;
+}
+.actions-toggle {
+  display: flex;
+  padding: 0.2rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+.actions-toggle:hover,
+.actions-toggle[aria-expanded="true"] {
   color: var(--blue);
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  background: var(--card);
 }
-.preview-toggle:hover,
-.del:hover {
-  background: none;
+.download-actions-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 10;
+  min-width: 10rem;
+  padding: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--card-shadow);
 }
-.del {
+.download-actions-menu > * {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--text);
+  background: transparent;
+  border-radius: 4px;
+}
+.download-actions-menu > a:hover,
+.download-actions-menu > button:hover {
+  background: var(--border);
+  text-decoration: none;
+}
+.download-actions-menu .delete-action {
   color: var(--red);
 }
-.del.deleting {
-  cursor: default;
-}
-.node-row:focus-within .preview-toggle,
-.node-row:focus-within .del,
-.node-row:hover .preview-toggle,
-.node-row:hover .del,
-.preview-toggle.active,
-.del.confirm,
-.del.deleting {
-  opacity: 1;
-}
-.preview-toggle:focus-visible,
-.del:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
+.actions-toggle:focus-visible,
+.download-actions-menu > :focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
 }
 .children {
   margin-left: 1.2rem;
@@ -1112,12 +1123,6 @@ select:focus {
     flex-basis: 100%;
     margin: 0.05rem 0 0 1.55rem;
   }
-  /* touch devices have no hover, so keep the row controls visible */
-  .preview-toggle,
-  .del {
-    opacity: 0.55;
-  }
-
   .files .size {
     width: auto;
   }

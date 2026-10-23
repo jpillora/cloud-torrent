@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onUnmounted, useId } from 'vue'
 import dayjs from 'dayjs'
 import {
   mdiLoading,
@@ -13,6 +13,8 @@ import {
   mdiEyeOff,
   mdiDelete,
   mdiCheck,
+  mdiDotsVertical,
+  mdiDownload,
 } from '@mdi/js'
 import type { FsNode } from '../types/generated'
 import { downloadingPaths } from '../state'
@@ -66,6 +68,7 @@ const icon = computed(() => {
 const showPreview = ref(false)
 function togglePreview() {
   showPreview.value = !showPreview.value
+  closeActions()
 }
 
 // folders auto-collapse when not touched in the last 24h
@@ -76,14 +79,49 @@ function toggle() {
   if (!isFile.value) open.value = !open.value
 }
 
-// confirm-to-delete (master parity): trash -> confirm check -> DELETE the file
+const actionsOpen = ref(false)
+const actions = ref<HTMLElement>()
+const actionsButton = ref<HTMLButtonElement>()
+const actionsId = useId()
+function closeActions() {
+  actionsOpen.value = false
+  confirming.value = false
+}
+function dismissActions(event: PointerEvent) {
+  if (!actions.value?.contains(event.target as Node)) closeActions()
+}
+function escapeActions(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    closeActions()
+    actionsButton.value?.focus()
+  }
+}
+function leaveActions(event: FocusEvent) {
+  if (!actions.value?.contains(event.relatedTarget as Node | null)) closeActions()
+}
+watch(actionsOpen, (open, _, onCleanup) => {
+  if (!open) return
+  document.addEventListener('pointerdown', dismissActions)
+  document.addEventListener('keydown', escapeActions)
+  onCleanup(() => {
+    document.removeEventListener('pointerdown', dismissActions)
+    document.removeEventListener('keydown', escapeActions)
+  })
+})
+watch(downloading, (active) => { if (active) closeActions() })
+
+// confirm-to-delete: Delete -> confirm check -> DELETE the file
 // or directory under /download. The node disappears on the next synced tree.
 const confirming = ref(false)
 const deleting = ref(false)
+let confirmationTimer: ReturnType<typeof setTimeout> | undefined
+watch(confirming, (value) => { if (!value) clearTimeout(confirmationTimer) })
+onUnmounted(() => clearTimeout(confirmationTimer))
 function preremove() {
   confirming.value = true
   // auto-cancel the confirmation after 3s, as master does
-  setTimeout(() => {
+  clearTimeout(confirmationTimer)
+  confirmationTimer = setTimeout(() => {
     confirming.value = false
   }, 3000)
 }
@@ -121,42 +159,47 @@ async function remove() {
       }}</a>
       <span v-else-if="isFile" class="name">{{ node.Name }}</span>
       <span class="meta">{{ bytes(node.Size) }} &middot; updated {{ ago(node.Modified) }}</span>
-      <a
-        v-if="!isFile && !downloading"
-        :href="href"
-        class="archive-download"
-        :aria-label="`Download ${node.Name} as ZIP`"
-        data-testid="fs-folder-download"
-      >ZIP</a>
-      <button
-        v-if="mediaType && !downloading"
-        class="preview-toggle"
-        :class="{ active: showPreview }"
-        :title="showPreview ? 'Hide preview' : 'Preview'"
-        data-testid="fs-preview-toggle"
-        @click="togglePreview"
-      >
-        <Icon :path="showPreview ? mdiEyeOff : mdiEye" />
-      </button>
-      <button
-        v-if="!downloading && !confirming && !deleting"
-        class="del"
-        title="Delete"
-        data-testid="fs-delete"
-        @click="preremove"
-      >
-        <Icon :path="mdiDelete" />
-      </button>
-      <button
-        v-if="confirming && !deleting"
-        class="del confirm"
-        title="Confirm delete"
-        data-testid="fs-delete-confirm"
-        @click="remove"
-      >
-        <Icon :path="mdiCheck" />
-      </button>
-      <span v-if="deleting" class="del deleting" title="Deleting…"><Icon :path="mdiLoading" spin /></span>
+      <div v-if="!downloading" ref="actions" class="download-actions" @focusout="leaveActions">
+        <button
+          ref="actionsButton"
+          type="button"
+          class="actions-toggle"
+          :aria-label="`Actions for ${node.Name}`"
+          :aria-expanded="actionsOpen"
+          :aria-controls="actionsId"
+          data-testid="fs-actions-toggle"
+          @click="actionsOpen ? closeActions() : (actionsOpen = true)"
+        >
+          <Icon :path="mdiDotsVertical" />
+        </button>
+        <div v-if="actionsOpen" :id="actionsId" class="download-actions-menu" data-testid="fs-actions-menu">
+          <a
+            v-if="!isFile"
+            :href="href"
+            :aria-label="`Download ${node.Name} as ZIP`"
+            data-testid="fs-folder-download"
+            @click="closeActions"
+          ><Icon :path="mdiDownload" /> Download ZIP</a>
+          <button
+            v-if="mediaType"
+            type="button"
+            :aria-pressed="showPreview"
+            data-testid="fs-preview-toggle"
+            @click="togglePreview"
+          >
+            <Icon :path="showPreview ? mdiEyeOff : mdiEye" />
+            {{ showPreview ? 'Hide preview' : 'Preview' }}
+          </button>
+          <button
+            v-if="!deleting"
+            type="button"
+            class="delete-action"
+            :data-testid="confirming ? 'fs-delete-confirm' : 'fs-delete'"
+            @click="confirming ? remove() : preremove()"
+          ><Icon :path="confirming ? mdiCheck : mdiDelete" /> {{ confirming ? 'Confirm delete' : 'Delete' }}</button>
+          <span v-if="deleting" class="delete-action" role="status"><Icon :path="mdiLoading" spin /> Deleting…</span>
+        </div>
+      </div>
     </div>
     <div v-if="showPreview && mediaType" class="preview" data-testid="fs-preview">
       <audio v-if="mediaType === 'audio'" controls :src="href"></audio>
