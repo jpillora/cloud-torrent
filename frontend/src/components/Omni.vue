@@ -260,14 +260,18 @@ async function onFiles(e: Event) {
           <select v-model="provider" data-testid="search-provider">
             <option v-for="id in providerIds" :key="id" :value="id">{{ providers[id].name }}</option>
           </select>
-          <AsyncButton
-            :key="generation"
-            :action="submitSearch"
+          <button
+            type="button"
+            class="search-submit"
+            :class="{ loading: searching }"
+            :aria-busy="searching"
             :disabled="searching || noResults || (hasMore && results.length > 0)"
+            @click="submitSearch"
             data-testid="search-submit"
           >
-            {{ noResults ? 'No results!' : 'Search' }}
-          </AsyncButton>
+            <span v-if="searching" class="btn-spinner" aria-hidden="true"></span>
+            <span class="search-label">{{ noResults ? 'No results!' : 'Search' }}</span>
+          </button>
         </template>
         <span v-else class="muted" data-testid="search-no-providers">You have no search providers</span>
       </template>

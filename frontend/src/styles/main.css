@@ -163,6 +163,18 @@ button.loading {
   opacity: 0.8;
   cursor: default;
 }
+.search-submit {
+  position: relative;
+}
+.search-submit.loading .search-label {
+  opacity: 0;
+}
+.search-submit .btn-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: -0.425em 0 0 -0.425em;
+}
 .btn-spinner {
   display: inline-block;
   width: 0.85em;

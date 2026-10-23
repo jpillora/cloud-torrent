@@ -9,7 +9,7 @@ import { chromium } from "playwright";
 import { unzipSync } from "fflate";
 import { files, infohash, name, startFixture } from "./fixture.ts";
 import { verifyAppearance } from "./appearance.ts";
-import { verifySearchCancellation } from "./search.ts";
+import { verifySearchCancellation, verifySearchLoading } from "./search.ts";
 
 const publicFixture = process.argv.includes("--public-fixture");
 const publicURL = "https://webtorrent.io/torrents/big-buck-bunny.torrent";
@@ -119,6 +119,7 @@ try {
   browser = await launching;
   assert(!interrupted, "test interrupted");
   await verifyAppearance(browser, base);
+  await verifySearchLoading(browser, base);
   await verifySearchCancellation(browser, base);
   const context = await browser.newContext({
     acceptDownloads: true,
