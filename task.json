@@ -1,0 +1,1 @@
+{"id":70,"title":"Hide cloud-torrent.json from the Downloads list","status":"open","priority":"P2","type":"task","description":"If cloud-torrent.json is present in the downloads directory, exclude it from the Downloads list so the application configuration file is not shown as downloadable content.","meta":{"created":"2026-10-23T01:02:24Z"}}
