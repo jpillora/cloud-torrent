@@ -2,7 +2,6 @@ package server
 
 import (
 	"compress/gzip"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
@@ -51,6 +50,7 @@ type Server struct {
 	searchInit    sync.Once
 	searchSlots   chan struct{}
 	searchTimeout time.Duration // optional override for isolated tests
+	ingress       ingressLimits // optional isolated-test deadlines
 	searchMu      sync.RWMutex  // protects replacement of immutable scraper configurations
 	fetchClient   *http.Client  // optional client override; configured before serving
 }
@@ -162,12 +162,7 @@ func (s *Server) Run(version string) error {
 	if isTLS && (s.CertPath == "" || s.KeyPath == "") {
 		return fmt.Errorf("both --cert-path and --key-path are required for TLS")
 	}
-	srv := &http.Server{
-		Addr:    addr,
-		Handler: s.handler(),
-		// disable HTTP/2: velox's streaming sync is incompatible with it.
-		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){},
-	}
+	srv := s.httpServer(addr)
 	return s.serveHTTP(srv, openBrowser)
 }
 
@@ -257,7 +252,7 @@ func (s *Server) handler() http.Handler {
 	if s.Log {
 		h = requestlog.Wrap(h)
 	}
-	return h
+	return s.protectIngress(h)
 }
 
 func compressResponses(h http.Handler) http.Handler {

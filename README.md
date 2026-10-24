@@ -261,3 +261,17 @@ outbound policy, 2 MiB decoded-body and 500-result limits. Empty valid results
 succeed without fallback; network, status, parsing and validation failures can
 try the next configured mirror. Invalid catalog refreshes preserve the entire
 last-known-good catalog. Restart to apply edits to a private operator file.
+
+Inbound HTTP requests have a 5-second header deadline and a 60-second idle
+keep-alive timeout. Request bodies have a total read budget of 15 seconds, or
+60 seconds for `/api/torrentfile`, and a 10 MiB byte limit (including chunked
+uploads). The budget starts after headers arrive and includes authentication;
+stalling uploads return 408, oversized bodies return 413, and failed body reads
+close the connection. These are fixed server defaults. Deployments needing
+slower uploads should also account for any reverse proxy's own request limits.
+
+A fully consumed body clears its read deadline before action processing. There
+is no global response write timeout: active `/sync` connections, file/ZIP
+transfers and range responses can continue beyond the upload deadlines. Sync
+retains its separate stalled-writer protection. Authentication and compression
+still wrap the same routes.

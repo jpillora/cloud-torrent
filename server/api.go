@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -45,7 +45,16 @@ type FileRequest struct {
 // clients via velox and the response body is a plain "OK"; failures return 400.
 func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) {
 	if err := s.api(r); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		status := http.StatusBadRequest
+		if errors.Is(err, errRequestTooLarge) {
+			status = http.StatusRequestEntityTooLarge
+			w.Header().Set("Connection", "close")
+		}
+		if errors.Is(err, errRequestTimedOut) {
+			status = http.StatusRequestTimeout
+			w.Header().Set("Connection", "close")
+		}
+		http.Error(w, err.Error(), status)
 		return
 	}
 	// Engine snapshots are detached; explicitly publish a fresh one after an
@@ -62,11 +71,12 @@ func (s *Server) api(r *http.Request) error {
 	if r.Method != http.MethodPost {
 		return fmt.Errorf("expecting POST")
 	}
-	defer r.Body.Close()
+	// net/http closes incoming bodies after the response. Closing an unread
+	// body here can block error delivery while it drains a stalled upload.
 	action := strings.TrimPrefix(r.URL.Path, "/api/")
-	body, err := io.ReadAll(io.LimitReader(r.Body, maxRequestBytes))
+	body, err := readAPIRequest(r)
 	if err != nil {
-		return fmt.Errorf("failed to read request body")
+		return err
 	}
 
 	switch action {
