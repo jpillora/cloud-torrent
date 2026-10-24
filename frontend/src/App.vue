@@ -24,6 +24,7 @@ import Omni from './components/Omni.vue'
 import Torrents from './components/Torrents.vue'
 import Downloads from './components/Downloads.vue'
 import Footer from './components/Footer.vue'
+import Inbox from './components/Inbox.vue'
 
 // Native modal dialog makes the underlying app inert and traps keyboard focus.
 const connectionDialog = ref<HTMLDialogElement | null>(null)
@@ -128,6 +129,7 @@ onBeforeUnmount(() => {
     </div>
 
     <ConfigEditor />
+    <Inbox />
     <Omni />
     <Torrents />
     <Downloads />

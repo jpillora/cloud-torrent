@@ -96,7 +96,7 @@ func (p *contentPolicy) checkDelete(root *os.Root, name string) error {
 }
 
 func (s *Server) contentPaths() []string {
-	return []string{s.ConfigPath, s.StateDirectory, s.KeyPath, s.CertPath}
+	return []string{s.ConfigPath, s.StateDirectory, s.KeyPath, s.CertPath, s.WatchDirectory}
 }
 
 func validateStateDirectory(download, state string) error {

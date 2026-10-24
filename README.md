@@ -203,3 +203,22 @@ a skipped file may receive incidental bytes. Skip cancels combined webseed
 requests once so they cannot hold up selected siblings. Deleting a skipped file
 or its ancestor still requires a whole-torrent pause when an active sibling
 shares its pieces. File selection actions accept only exact torrent file paths.
+
+Opt in to local torrent import with `--watch-directory /private/torrent-inbox`.
+The operator-configured inbox must be outside downloads and private session state;
+it cannot be changed through the web UI. It accepts only regular `.torrent`
+files, never links or subdirectories, and retains every source file. Sources
+must remain unchanged for at least one second; writing a temporary file and
+renaming it into the inbox is recommended. Imports use the same outbound policy,
+queue, AutoStart setting, download root and existing file selections as manual
+imports. Inbox status and sanitized errors appear in the browser.
+
+The watcher scans once a second, accepts at most 256 directory entries and
+imports at most two files per scan, with a 10 MiB per-file limit. Move old files
+out when the entry limit is reached. A full torrent queue retries automatically
+when its size changes; unchanged invalid files or failed session saves require
+correcting the problem and touching or renaming the source. SHA-256 receipts
+persist atomically with acceptance, including after torrent removal, so retained
+files do not resurrect removed torrents after restart. The private store retains
+at most 4096 accepted-file receipts; after that use manual import. Inbox files
+cannot select a download destination or run commands.

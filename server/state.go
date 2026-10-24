@@ -13,6 +13,7 @@ type State struct {
 	velox.State `json:"-"`
 	sync.Mutex  `json:"-"`
 
+	Inbox           InboxStatus
 	Config          engine.Config
 	Downloads       *FsNode
 	Torrents        map[string]*engine.Torrent

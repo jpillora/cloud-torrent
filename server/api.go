@@ -1,16 +1,12 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
-
-	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/metainfo"
 
 	"github.com/jpillora/cloud-torrent/engine"
 )
@@ -140,10 +136,9 @@ func (s *Server) addTorrentFromURL(ctx context.Context, url string) error {
 }
 
 func (s *Server) addTorrentFromBytes(b []byte) error {
-	info, err := metainfo.Load(bytes.NewReader(b))
+	spec, err := parseTorrentBytes(b)
 	if err != nil {
-		return fmt.Errorf("invalid torrent file: %s", err)
+		return err
 	}
-	spec := torrent.TorrentSpecFromMetaInfo(info)
 	return s.engine.NewTorrent(spec)
 }

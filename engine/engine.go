@@ -42,6 +42,7 @@ type Engine struct {
 	clock           func() time.Time
 	accountDirty    bool
 	mutationDepth   int
+	inboxReceipts   map[string]bool
 }
 
 // New returns an unconfigured engine. Call Configure before adding torrents.
@@ -50,7 +51,7 @@ func New(policies ...*outbound.Policy) *Engine {
 	if len(policies) > 0 && policies[0] != nil {
 		policy = policies[0]
 	}
-	return &Engine{downloadLimiter: rate.NewLimiter(rate.Inf, bandwidthBurst), uploadLimiter: rate.NewLimiter(rate.Inf, bandwidthBurst), outbound: policy, ts: map[string]*Torrent{}, newClient: torrent.NewClient}
+	return &Engine{downloadLimiter: rate.NewLimiter(rate.Inf, bandwidthBurst), uploadLimiter: rate.NewLimiter(rate.Inf, bandwidthBurst), outbound: policy, ts: map[string]*Torrent{}, inboxReceipts: map[string]bool{}, newClient: torrent.NewClient}
 }
 
 // Config returns the engine's current configuration.
@@ -343,6 +344,10 @@ func (e *Engine) validateSpec(spec *torrent.TorrentSpec) error {
 
 // NewTorrent adds a torrent from a parsed .torrent spec.
 func (e *Engine) NewTorrent(spec *torrent.TorrentSpec) error {
+	return e.addTorrent(spec, "")
+}
+
+func (e *Engine) addTorrent(spec *torrent.TorrentSpec, receipt string) error {
 	if err := e.validateSpec(spec); err != nil {
 		return err
 	}
@@ -364,39 +369,59 @@ func (e *Engine) NewTorrent(spec *torrent.TorrentSpec) error {
 	if e.client == nil {
 		return errors.New("engine is not configured")
 	}
+	if receipt != "" && e.sessionDir == "" {
+		return errors.New("inbox imports require a private session store")
+	}
 	return e.sessionMutationLocked(func() error {
-		if existing := e.findIdentityLocked(owned); existing != nil {
-			if existing.t != nil {
-				merge := cloneSpec(owned)
-				merge.ChunkSize = 0
-				if err := existing.t.MergeSpec(merge); err != nil {
-					return err
-				}
+		if receipt != "" {
+			if e.inboxReceipts[receipt] {
+				return nil
 			}
-			for _, source := range owned.Sources {
-				if !slices.Contains(existing.spec.Sources, source) {
-					existing.spec.Sources = append(existing.spec.Sources, source)
-				}
+			if len(e.inboxReceipts) >= maxInboxReceipts {
+				return ErrInboxReceiptsFull
 			}
-			if len(owned.InfoBytes) > 0 {
-				existing.spec.InfoBytes = owned.InfoBytes
-				existing.spec.PieceLayers = owned.PieceLayers
-			}
-			existing.spec.Trackers = append(existing.spec.Trackers, owned.Trackers...)
-			existing.spec.Webseeds = append(existing.spec.Webseeds, owned.Webseeds...)
-			return e.scheduleLocked()
 		}
-		if len(e.ts) >= maxSessionTorrents {
-			return errors.New("torrent admission limit reached")
-		}
-		model := &Torrent{InfoHash: key, Name: owned.DisplayName, spec: owned, autoStart: e.config.AutoStart, wantStart: e.config.AutoStart, order: e.nextOrderLocked(), selection: map[string]bool{}}
-		e.ts[key] = model
-		if err := e.scheduleLocked(); err != nil {
-			if model.t != nil {
-				model.t.Drop()
+		accepted := func() error {
+			if existing := e.findIdentityLocked(owned); existing != nil {
+				if existing.t != nil {
+					merge := cloneSpec(owned)
+					merge.ChunkSize = 0
+					if err := existing.t.MergeSpec(merge); err != nil {
+						return err
+					}
+				}
+				for _, source := range owned.Sources {
+					if !slices.Contains(existing.spec.Sources, source) {
+						existing.spec.Sources = append(existing.spec.Sources, source)
+					}
+				}
+				if len(owned.InfoBytes) > 0 {
+					existing.spec.InfoBytes = owned.InfoBytes
+					existing.spec.PieceLayers = owned.PieceLayers
+				}
+				existing.spec.Trackers = append(existing.spec.Trackers, owned.Trackers...)
+				existing.spec.Webseeds = append(existing.spec.Webseeds, owned.Webseeds...)
+				return e.scheduleLocked()
 			}
-			delete(e.ts, key)
+			if len(e.ts) >= maxSessionTorrents {
+				return ErrAdmissionFull
+			}
+			model := &Torrent{InfoHash: key, Name: owned.DisplayName, spec: owned, autoStart: e.config.AutoStart, wantStart: e.config.AutoStart, order: e.nextOrderLocked(), selection: map[string]bool{}}
+			e.ts[key] = model
+			if err := e.scheduleLocked(); err != nil {
+				if model.t != nil {
+					model.t.Drop()
+				}
+				delete(e.ts, key)
+				return err
+			}
+			return nil
+		}
+		if err := accepted(); err != nil {
 			return err
+		}
+		if receipt != "" {
+			e.inboxReceipts[receipt] = true
 		}
 		return nil
 	})

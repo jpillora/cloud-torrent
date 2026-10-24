@@ -53,6 +53,20 @@ export interface FsNode {
 }
 
 //////////
+// source: inbox.go
+
+export interface InboxError {
+  Name: string;
+  Message: string;
+}
+export interface InboxStatus {
+  Enabled: boolean;
+  Pending: number /* int */;
+  Accepted: number /* int */;
+  Errors: InboxError[];
+}
+
+//////////
 // source: search.go
 
 
@@ -67,6 +81,7 @@ export interface FsNode {
  * State is the root object synced to every connected browser via velox.
  */
 export interface State {
+  Inbox: InboxStatus;
   Config: Config;
   Downloads?: FsNode;
   Torrents: { [key: string]: Torrent | undefined};

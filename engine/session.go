@@ -1,10 +1,12 @@
 package engine
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
 	"sort"
@@ -35,8 +37,9 @@ type sessionEntry struct {
 type sessionLayer struct{ Key, Value []byte }
 
 type sessionDisk struct {
-	Version  int
-	Torrents []sessionEntry
+	Version       int
+	Torrents      []sessionEntry
+	InboxReceipts []string
 }
 
 // EnablePersistence must be called before Configure. The directory is operator
@@ -117,6 +120,17 @@ func (e *Engine) readSessionsLocked() ([]savedTorrent, error) {
 	if len(disk.Torrents) > maxSessionTorrents {
 		return nil, errors.New("too many saved torrents")
 	}
+	if len(disk.InboxReceipts) > maxInboxReceipts {
+		return nil, errors.New("too many inbox receipts")
+	}
+	receipts := map[string]bool{}
+	for _, receipt := range disk.InboxReceipts {
+		decoded, err := hex.DecodeString(receipt)
+		if err != nil || len(decoded) != 32 || receipt != hex.EncodeToString(decoded) || receipts[receipt] {
+			return nil, errors.New("invalid inbox receipts")
+		}
+		receipts[receipt] = true
+	}
 	saved := make([]savedTorrent, 0, len(disk.Torrents))
 	seen := map[string]bool{}
 	for _, entry := range disk.Torrents {
@@ -171,6 +185,7 @@ func (e *Engine) readSessionsLocked() ([]savedTorrent, error) {
 		}
 		saved = append(saved, savedTorrent{spec: spec, started: entry.Started, autoStart: entry.AutoStart, files: entry.Files, wantStart: want, order: order, metadataPaused: entry.MetadataPaused, account: entry.Account})
 	}
+	e.inboxReceipts = receipts
 	return saved, nil
 }
 func (e *Engine) persistLocked() error {
@@ -183,6 +198,10 @@ func (e *Engine) persistLocked() error {
 		return errors.New("session torrent limit reached")
 	}
 	disk := sessionDisk{Version: 1, Torrents: make([]sessionEntry, 0, len(states))}
+	for receipt := range e.inboxReceipts {
+		disk.InboxReceipts = append(disk.InboxReceipts, receipt)
+	}
+	sort.Strings(disk.InboxReceipts)
 	for _, state := range states {
 		spec := state.spec
 		magnet := metainfo.MagnetV2{V2InfoHash: spec.InfoHashV2, DisplayName: spec.DisplayName}
@@ -238,10 +257,12 @@ func (e *Engine) sessionMutationLocked(change func() error) error {
 		return change()
 	}
 	before := e.saveTorrentsLocked()
+	beforeReceipts := maps.Clone(e.inboxReceipts)
 	if err := change(); err != nil {
 		return err
 	}
 	if err := e.persistLocked(); err != nil {
+		e.inboxReceipts = beforeReceipts
 		e.client.Close()
 		e.client = nil
 		rollback := e.replaceClientLocked(e.config, before)

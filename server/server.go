@@ -35,6 +35,7 @@ type Server struct {
 	Host               string `help:"Listening interface (default all)"`
 	Auth               string `help:"Optional basic auth in form 'user:password'" env:"AUTH"`
 	OutboundAllowCIDRs string `opts:"name=outbound-allow-cidrs,short=-" help:"Explicit comma-separated CIDRs allowed for outbound LAN HTTP"`
+	WatchDirectory     string `opts:"name=watch-directory,short=-" help:"Opt-in private torrent inbox outside downloads and session state"`
 	StateDirectory     string `help:"Private operational state directory (must be outside downloads)"`
 	ConfigPath         string `help:"Configuration file path"`
 	KeyPath            string `help:"TLS Key file path"`
@@ -117,6 +118,11 @@ func (s *Server) Run(version string) error {
 	if err := s.reconfigure(c); err != nil {
 		return fmt.Errorf("initial configure failed: %w", err)
 	}
+	stopInbox, err := s.startInbox()
+	if err != nil {
+		return err
+	}
+	defer stopInbox()
 
 	// poll torrents + downloads every second
 	go func() {
@@ -309,6 +315,9 @@ func (s *Server) reconfigure(c engine.Config) error {
 		return fmt.Errorf("invalid download directory")
 	}
 	c.DownloadDirectory = dldir
+	if err := s.validateInboxLayout(dldir); err != nil {
+		return err
+	}
 	if err := validateStateDirectory(dldir, s.StateDirectory); err != nil {
 		return err
 	}
