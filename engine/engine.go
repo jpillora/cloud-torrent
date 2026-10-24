@@ -6,7 +6,6 @@ import (
 	"fmt"
 	alog "github.com/anacrolix/log"
 	"io"
-	"log"
 	"log/slog"
 	"maps"
 	"net"
@@ -39,6 +38,7 @@ type Engine struct {
 	sessionDir      string
 	sessionLock     *flock.Flock
 	pendingSessions []savedTorrent
+	queueSequence   uint64
 }
 
 // New returns an unconfigured engine. Call Configure before adding torrents.
@@ -62,6 +62,9 @@ func (e *Engine) Config() Config {
 func (e *Engine) Configure(c Config) error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
+	if err := validateQueue(c); err != nil {
+		return err
+	}
 	if err := validateBandwidth(c); err != nil {
 		return err
 	}
@@ -72,10 +75,12 @@ func (e *Engine) Configure(c Config) error {
 		sameClient.AutoStart = c.AutoStart
 		sameClient.DownloadLimitKiB = c.DownloadLimitKiB
 		sameClient.UploadLimitKiB = c.UploadLimitKiB
+		sameClient.MaxActiveDownloads = c.MaxActiveDownloads
+		sameClient.MaxActiveMetadata = c.MaxActiveMetadata
 		if sameClient == c {
 			e.applyBandwidthLocked(c)
 			e.config = c
-			return nil
+			return e.scheduleLocked()
 		}
 	}
 	if err := validateDownloadDirectory(c.DownloadDirectory); err != nil {
@@ -135,10 +140,13 @@ func checkListenPort(port int) error {
 }
 
 type savedTorrent struct {
-	spec      *torrent.TorrentSpec
-	started   bool
-	autoStart bool
-	files     map[string]bool
+	spec           *torrent.TorrentSpec
+	started        bool
+	autoStart      bool
+	files          map[string]bool
+	wantStart      bool
+	order          uint64
+	metadataPaused bool
 }
 
 func (e *Engine) saveTorrentsLocked() []savedTorrent {
@@ -152,26 +160,19 @@ func (e *Engine) saveTorrentsLocked() []savedTorrent {
 // saveTorrent retains metadata, sources and selection policy before replacing a handle.
 func saveTorrent(t *Torrent) savedTorrent {
 	spec := cloneSpec(t.spec)
-	mi := t.t.Metainfo()
-	spec.InfoBytes = slices.Clone(mi.InfoBytes)
-	spec.Trackers = mi.UpvertedAnnounceList()
-	spec.Webseeds = mi.UrlList
-	// Upstream emits an empty non-nil layer map even for v1 torrents.
-	// Feeding that back invokes v2 validation against missing v1 roots.
-	spec.PieceLayers = mi.PieceLayers
-	if len(spec.PieceLayers) == 0 {
-		spec.PieceLayers = nil
-	}
-	state := savedTorrent{spec: spec, started: t.Started, autoStart: t.autoStart, files: map[string]bool{}}
-	for _, f := range t.Files {
-		if f != nil {
-			state.files[f.Path] = f.Started
+	if t.t != nil {
+		mi := t.t.Metainfo()
+		if len(mi.InfoBytes) > 0 {
+			spec.InfoBytes = slices.Clone(mi.InfoBytes)
+		}
+		spec.Trackers = mi.UpvertedAnnounceList()
+		spec.Webseeds = mi.UrlList
+		spec.PieceLayers = mi.PieceLayers
+		if len(spec.PieceLayers) == 0 {
+			spec.PieceLayers = nil
 		}
 	}
-	if !t.Started && t.selection != nil {
-		state.files = maps.Clone(t.selection)
-	}
-	return state
+	return savedTorrent{spec: spec, started: t.Started, autoStart: t.autoStart, files: maps.Clone(t.selection), wantStart: t.wantStart, order: t.order, metadataPaused: t.metadataPaused}
 }
 
 func (e *Engine) replaceClientLocked(c Config, saved []savedTorrent) error {
@@ -200,58 +201,44 @@ func (e *Engine) replaceClientLocked(c Config, saved []savedTorrent) error {
 	if err != nil {
 		return fmt.Errorf("configure torrent client: %w", err)
 	}
-	// Construct the complete replacement before publishing any handles.
+	// Publish paused models first; the single scheduler owns all admission.
 	models := make(map[string]*Torrent, len(saved))
 	for _, state := range saved {
-		model, err := restoreTorrent(client, state)
-		if err != nil {
-			client.Close()
-			return err
-		}
+		model := restoreQueuedModel(state)
 		models[model.InfoHash] = model
+		if model.order > e.queueSequence {
+			e.queueSequence = model.order
+		}
 	}
 	e.client, e.config, e.ts = client, c, models
-	for _, model := range models {
-		e.resumeTorrentLocked(model)
+	if err := e.scheduleLocked(); err != nil {
+		client.Close()
+		e.client = nil
+		return err
 	}
 	return nil
 }
 
+// Deletion reconciliation restores known metadata with transfers held until
+// the engine scheduler admits it again.
 func restoreTorrent(client *torrent.Client, state savedTorrent) (*Torrent, error) {
+	model := restoreQueuedModel(state)
+	if len(state.spec.InfoBytes) == 0 {
+		return model, nil
+	}
 	spec := cloneSpec(state.spec)
-	spec.DisallowDataDownload = !state.started
-	spec.DisallowDataUpload = !state.started
+	spec.DisallowDataDownload = true
+	spec.DisallowDataUpload = true
 	spec.DisableInitialPieceCheck = false
 	spec.IgnoreUnverifiedPieceCompletion = true
-	tt, _, err := client.AddTorrentSpec(spec)
+	tt, _, err := addQueuedSpec(client, spec)
 	if err != nil {
 		return nil, fmt.Errorf("restore torrent: %w", err)
 	}
-	model := &Torrent{InfoHash: tt.InfoHash().HexString(), Started: state.started, spec: state.spec, autoStart: state.autoStart, selection: maps.Clone(state.files)}
 	model.Update(tt)
-	if !model.Started {
-		tt.DisallowDataDownload()
-		tt.DisallowDataUpload()
-	}
-	for _, f := range model.Files {
-		f.Started = state.started && state.files[f.Path]
-	}
 	return model, nil
 }
-
-func (e *Engine) resumeTorrentLocked(model *Torrent) {
-	if model.Loaded {
-		for _, f := range model.Files {
-			if f.Started {
-				f.f.Download()
-			}
-		}
-	} else {
-		// Preserve pending explicit start intent and initial AutoStart
-		// policy, rather than applying a changed policy to old torrents.
-		e.watchMetadataLocked(model)
-	}
-}
+func (e *Engine) resumeTorrentLocked(model *Torrent) { _ = e.scheduleLocked() }
 
 // anacrolix closes listener sockets asynchronously after Client.Close returns.
 // Retry only address-in-use briefly; other creation failures roll back at once.
@@ -335,41 +322,60 @@ func (e *Engine) NewTorrent(spec *torrent.TorrentSpec) error {
 	if err := e.validateSpec(spec); err != nil {
 		return err
 	}
-
+	owned := cloneSpec(spec)
+	if specIdentity(owned) == "" && len(owned.InfoBytes) > 0 {
+		normalized, err := torrent.TorrentSpecFromMetaInfoErr(&metainfo.MetaInfo{InfoBytes: owned.InfoBytes})
+		if err != nil {
+			return errors.New("invalid metainfo")
+		}
+		owned.InfoHash = normalized.InfoHash
+		owned.InfoHashV2 = normalized.InfoHashV2
+	}
+	key := specIdentity(owned)
+	if key == "" {
+		return errors.New("missing torrent identity")
+	}
 	e.mut.Lock()
 	defer e.mut.Unlock()
 	if e.client == nil {
-		return fmt.Errorf("engine is not configured")
+		return errors.New("engine is not configured")
 	}
 	return e.sessionMutationLocked(func() error {
+		if existing := e.findIdentityLocked(owned); existing != nil {
+			if existing.t != nil {
+				merge := cloneSpec(owned)
+				merge.ChunkSize = 0
+				if err := existing.t.MergeSpec(merge); err != nil {
+					return err
+				}
+			}
+			for _, source := range owned.Sources {
+				if !slices.Contains(existing.spec.Sources, source) {
+					existing.spec.Sources = append(existing.spec.Sources, source)
+				}
+			}
+			if len(owned.InfoBytes) > 0 {
+				existing.spec.InfoBytes = owned.InfoBytes
+				existing.spec.PieceLayers = owned.PieceLayers
+			}
+			existing.spec.Trackers = append(existing.spec.Trackers, owned.Trackers...)
+			existing.spec.Webseeds = append(existing.spec.Webseeds, owned.Webseeds...)
+			return e.scheduleLocked()
+		}
 		if len(e.ts) >= maxSessionTorrents {
 			return errors.New("torrent admission limit reached")
 		}
-		ownedSpec := cloneSpec(spec)
-		tt, _, err := e.client.AddTorrentSpec(ownedSpec)
-		if err != nil {
+		model := &Torrent{InfoHash: key, Name: owned.DisplayName, spec: owned, autoStart: e.config.AutoStart, wantStart: e.config.AutoStart, order: e.nextOrderLocked(), selection: map[string]bool{}}
+		e.ts[key] = model
+		if err := e.scheduleLocked(); err != nil {
+			if model.t != nil {
+				model.t.Drop()
+			}
+			delete(e.ts, key)
 			return err
 		}
-		return e.newTorrentLocked(tt, ownedSpec)
-	})
-}
-
-func (e *Engine) newTorrentLocked(tt *torrent.Torrent, spec *torrent.TorrentSpec) error {
-	t := e.upsertTorrentLocked(tt)
-	if t.spec != nil {
-		// AddTorrentSpec already merges sources/trackers into the live handle.
-		// Re-adding must not reset a pending start or create another waiter.
-		for _, source := range spec.Sources {
-			if !slices.Contains(t.spec.Sources, source) {
-				t.spec.Sources = append(t.spec.Sources, source)
-			}
-		}
 		return nil
-	}
-	t.spec = spec
-	t.autoStart = e.config.AutoStart
-	e.watchMetadataLocked(t)
-	return nil
+	})
 }
 
 func (e *Engine) watchMetadataLocked(t *Torrent) {
@@ -383,20 +389,18 @@ func (e *Engine) watchMetadataLocked(t *Torrent) {
 		}
 		e.mut.Lock()
 		defer e.mut.Unlock()
-		// A metadata callback must not act on a removed/replaced torrent.
+		// Stale callbacks from a removed or capacity-suspended handle are inert.
 		if e.client != nil && e.ts[t.InfoHash] == t && t.t == tt {
-			// Refresh files before restoring a pending start.
 			t.Update(tt)
-			if t.autoStart {
-				t.Started = false
-				e.startTorrentLocked(t.InfoHash)
+			if err := e.scheduleLocked(); err != nil {
+				tt.DisallowDataDownload()
+				tt.DisallowDataUpload()
+				return
 			}
 			if err := e.persistLocked(); err != nil {
-				log.Print("Session metadata could not be saved; transfer paused. Check the private state directory and available disk space.")
 				tt.DisallowDataDownload()
 				tt.DisallowDataUpload()
 				t.Started = false
-				t.autoStart = false
 			}
 		}
 	}()
@@ -411,6 +415,7 @@ func (e *Engine) GetTorrents() map[string]*Torrent {
 		return nil
 	}
 	e.refreshLocked()
+	_ = e.scheduleLocked()
 	snapshot := make(map[string]*Torrent, len(e.ts))
 	for ih, t := range e.ts {
 		copy := *t
@@ -442,6 +447,12 @@ func (e *Engine) refreshLocked() {
 }
 
 func (e *Engine) upsertTorrentLocked(tt *torrent.Torrent) *Torrent {
+	for _, model := range e.ts {
+		if model.t == tt {
+			model.Update(tt)
+			return model
+		}
+	}
 	ih := tt.InfoHash().HexString()
 	t, ok := e.ts[ih]
 	if !ok {
@@ -467,128 +478,59 @@ func (e *Engine) getTorrentLocked(infohash string) (*Torrent, error) {
 	return t, nil
 }
 
-// StartTorrent begins downloading a torrent (and all its files).
+// StartTorrent requests all files through FIFO admission, including pending metadata.
 func (e *Engine) StartTorrent(infohash string) error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
 	return e.sessionMutationLocked(func() error { return e.startTorrentLocked(infohash) })
 }
-
 func (e *Engine) startTorrentLocked(infohash string) error {
-	t, err := e.getTorrentLocked(infohash)
+	model, err := e.getTorrentLocked(infohash)
 	if err != nil {
 		return err
 	}
-	t.Update(t.t)
-	allStarted := t.Started
-	for _, f := range t.Files {
-		if f != nil && !f.Started {
-			allStarted = false
-		}
-	}
-	if allStarted {
-		return fmt.Errorf("already started")
-	}
-	t.Started = true
-	t.selection = nil
-	t.autoStart = !t.Loaded
-	t.t.AllowDataDownload()
-	if e.config.EnableUpload {
-		t.t.AllowDataUpload()
-	}
-	for _, f := range t.Files {
-		if f != nil {
-			f.f.Download()
-			f.Started = true
-		}
-	}
-	return nil
+	return e.queueStartLocked(model, true, "")
 }
-
-// StopTorrent pauses transfer while retaining metadata and the live handle.
-// StartTorrent restores all file priorities and resumes transfer.
 func (e *Engine) StopTorrent(infohash string) error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
+	model, err := e.getTorrentLocked(infohash)
+	if err != nil {
+		return err
+	}
+	if !model.wantStart && (model.Loaded || model.metadataPaused) {
+		return errors.New("already stopped")
+	}
 	return e.sessionMutationLocked(func() error {
-		t, err := e.getTorrentLocked(infohash)
-		if err != nil {
-			return err
-		}
-		if !t.Started && !t.autoStart {
-			return fmt.Errorf("already stopped")
-		}
-		t.selection = map[string]bool{}
-		for _, f := range t.Files {
-			if f != nil {
-				t.selection[f.Path] = f.Started
-			}
-		}
-		t.t.DisallowDataDownload()
-		t.t.DisallowDataUpload()
-		t.Started = false
-		t.autoStart = false
-		t.DownloadRate = 0
-		for _, f := range t.Files {
-			if f != nil {
-				f.f.SetPriority(torrent.PiecePriorityNone)
-				f.Started = false
-			}
-		}
-		return nil
+		model.wantStart = false
+		model.autoStart = false
+		model.metadataPaused = !model.Loaded
+		return e.scheduleLocked()
 	})
 }
-
-// DeleteTorrent removes a torrent from the engine and drops it from the client.
 func (e *Engine) DeleteTorrent(infohash string) error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
+	model, err := e.getTorrentLocked(infohash)
+	if err != nil {
+		return err
+	}
 	return e.sessionMutationLocked(func() error {
-		t, err := e.getTorrentLocked(infohash)
-		if err != nil {
-			return err
+		delete(e.ts, model.InfoHash)
+		if model.t != nil {
+			model.t.Drop()
 		}
-		delete(e.ts, t.InfoHash)
-		ih, _ := str2ih(infohash)
-		if tt, ok := e.client.Torrent(ih); ok {
-			tt.Drop()
-		}
-		return nil
+		return e.scheduleLocked()
 	})
 }
-
-// StartFile marks a single file for download.
 func (e *Engine) StartFile(infohash, path string) error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
-	return e.sessionMutationLocked(func() error {
-		t, err := e.getTorrentLocked(infohash)
-		if err != nil {
-			return err
-		}
-		var f *File
-		for _, file := range t.Files {
-			if file.Path == path {
-				f = file
-				break
-			}
-		}
-		if f == nil {
-			return fmt.Errorf("missing file %s", path)
-		}
-		if f.Started {
-			return fmt.Errorf("already started")
-		}
-		f.f.Download()
-		t.t.AllowDataDownload()
-		if e.config.EnableUpload {
-			t.t.AllowDataUpload()
-		}
-		t.autoStart = false
-		t.Started = true
-		f.Started = true
-		return nil
-	})
+	model, err := e.getTorrentLocked(infohash)
+	if err != nil {
+		return err
+	}
+	return e.sessionMutationLocked(func() error { return e.queueStartLocked(model, false, path) })
 }
 
 // StopFile is not supported by the underlying engine (parity with master).

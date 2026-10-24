@@ -37,6 +37,10 @@ func TestMetadataWaitersCancelAndDuplicateAddsAreIdempotent(t *testing.T) {
 		return torrent.NewClient(c)
 	}
 	c := mustConfigureEngine(t, e)
+	c.MaxActiveMetadata = 32
+	if err := e.Configure(c); err != nil {
+		t.Fatal(err)
+	}
 	add := func() {
 		for i := 1; i <= 30; i++ {
 			uri := fmt.Sprintf("magnet:?xt=urn:btih:%040x", i)

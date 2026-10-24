@@ -84,6 +84,7 @@ function cancel() {
         </label>
       </template>
 
+      <p class="settings-help">Active downloads: 0 means unlimited; completed torrents can seed without a download slot. Metadata concurrency: 0 uses four slots (maximum 64). Up to 256 torrents may be admitted.</p>
       <p class="settings-help">Bandwidth limits use KiB/s (1024 bytes/s). Set 0 for unlimited. Each direction allows a 64 KiB burst.</p>
       <p v-if="error" class="config-error" data-testid="config-error" role="alert">{{ error }}</p>
 

@@ -166,3 +166,16 @@ sustained rate. Download limiting covers peer reads and decoded webseed payloads
 upload limiting covers peer payloads. Protocol and other application HTTP traffic
 are not upload payload. Limits update in place without replacing torrent clients
 or changing paused state and file selections.
+
+The FIFO queue exposes `queued`, `metadata`, `downloading`, `paused`, `completed`
+and `seeding` states with one-based waiting positions. `MaxActiveDownloads`
+accepts 0 (unlimited, the compatibility default) through 256. Completed selected
+files release their download slot even while seeding. Manual Start joins the
+queue and never bypasses capacity. Pause and removal advance waiting work;
+capacity changes retain selections and never resume user-paused entries.
+`MaxActiveMetadata` accepts 1–64, with 0 selecting a bounded default of four.
+Excess pending magnets wait without a torrent client handle, so HTTP metadata
+sources, peer metadata work and waiters are admitted separately from downloads.
+Pausing a pending magnet releases its metadata slot. The overall store admits
+at most 256 entries, deduplicates identities, and preserves queue order and
+intent across restarts.

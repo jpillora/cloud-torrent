@@ -134,9 +134,9 @@ func TestStartBeforeMetadataTransfersWhenInfoArrives(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			e.mut.Lock()
-			err := e.ts[ih].t.SetInfoBytes(spec.InfoBytes)
-			e.mut.Unlock()
+			// Resolving a stopped/queued magnet through the same admission API must
+			// preserve its user intent even when it currently has no live handle.
+			err := e.NewTorrent(spec)
 			if err != nil {
 				t.Fatal(err)
 			}

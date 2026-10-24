@@ -17,16 +17,21 @@ type Torrent struct {
 	Size       int64
 	Files      []*File
 	// cloud-torrent state
-	Started      bool
-	Dropped      bool
-	Percent      float32 // 0..100, truncated to 2 dp
-	DownloadRate float32 // bytes/sec since the last update
+	State         string // queued, metadata, downloading, paused, completed or seeding
+	QueuePosition int    // one-based FIFO waiting position, zero when not queued
+	Started       bool
+	Dropped       bool
+	Percent       float32 // 0..100, truncated to 2 dp
+	DownloadRate  float32 // bytes/sec since the last update
 
-	selection map[string]bool // retained selected files while paused
-	autoStart bool            // pending whole-torrent start, from initial policy or explicit Start
-	spec      *torrent.TorrentSpec
-	t         *torrent.Torrent
-	updatedAt time.Time
+	wantStart      bool
+	order          uint64
+	metadataPaused bool
+	selection      map[string]bool // retained selected files while paused
+	autoStart      bool            // pending whole-torrent start, from initial policy or explicit Start
+	spec           *torrent.TorrentSpec
+	t              *torrent.Torrent
+	updatedAt      time.Time
 }
 
 // File is the engine's view-model for one file within a torrent.

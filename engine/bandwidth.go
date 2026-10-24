@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"golang.org/x/time/rate"
 	"strings"
+
+	"golang.org/x/time/rate"
 )
 
 // A fixed 64 KiB burst admits peer request blocks and HTTP reads without
@@ -42,12 +43,15 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 		return errors.New("configuration must be an object")
 	}
 	for key, value := range fields {
-		if (strings.EqualFold(key, "DownloadLimitKiB") || strings.EqualFold(key, "UploadLimitKiB")) && bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
-			return errors.New("bandwidth limit cannot be null")
+		if (strings.EqualFold(key, "DownloadLimitKiB") || strings.EqualFold(key, "UploadLimitKiB") || strings.EqualFold(key, "MaxActiveDownloads") || strings.EqualFold(key, "MaxActiveMetadata")) && bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+			return errors.New("numeric limit cannot be null")
 		}
 	}
 	next := plain(*c)
 	if err := json.Unmarshal(data, &next); err != nil {
+		return err
+	}
+	if err := validateQueue(Config(next)); err != nil {
 		return err
 	}
 	if err := validateBandwidth(Config(next)); err != nil {

@@ -18,7 +18,7 @@ import (
 	"github.com/jpillora/cloud-torrent/internal/outbound"
 )
 
-func isolatedBandwidthEngine(t *testing.T, dir string, up, down int64, seed bool) *Engine {
+func isolatedBandwidthEngine(t *testing.T, dir string, up, down int64, seed bool, sessionDir ...string) *Engine {
 	t.Helper()
 	policy, _ := outbound.New("127.0.0.1/32")
 	e := New(policy)
@@ -30,6 +30,9 @@ func isolatedBandwidthEngine(t *testing.T, dir string, up, down int64, seed bool
 		c.DisableUTP = true
 		c.DisableWebtorrent = true
 		return torrent.NewClient(c)
+	}
+	if len(sessionDir) > 0 {
+		bandwidthMust(t, e.EnablePersistence(sessionDir[0]))
 	}
 	c := Config{DownloadDirectory: dir, IncomingPort: freePort(t), EnableUpload: seed, EnableSeeding: seed, UploadLimitKiB: up, DownloadLimitKiB: down}
 	bandwidthMust(t, e.Configure(c))
@@ -90,7 +93,9 @@ func TestBandwidthAggregateAndRuntimeUpdates(t *testing.T) {
 				bandwidthMust(t, leecher.NewTorrent(spec))
 				bandwidthMust(t, leecher.StartTorrent(spec.InfoHash.HexString()))
 				if seed != nil {
+					leecher.mut.Lock()
 					leecher.ts[spec.InfoHash.HexString()].t.AddClientPeer(seed.client)
+					leecher.mut.Unlock()
 				}
 			}
 			target := leecher

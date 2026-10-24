@@ -47,7 +47,9 @@ async function startFile(f: File) {
 
 <template>
   <div class="torrent" :class="{ loading: !torrent.Loaded }" data-testid="torrent">
-    <div v-if="!torrent.Loaded" class="dimmer">Loading…</div>
+    <div class="status" data-testid="torrent-queue-state">
+      {{ torrent.State }}<span v-if="torrent.QueuePosition"> · Queue position {{ torrent.QueuePosition }}</span>
+    </div>
 
     <div class="row">
       <div class="info">
@@ -64,14 +66,14 @@ async function startFile(f: File) {
       <div class="controls">
         <button :class="{ active: showFiles }" @click="showFiles = !showFiles">Files</button>
         <AsyncButton
-          v-if="torrent.Loaded && (!torrent.Started || files.some(f => !f.Started))"
+          v-if="torrent.State !== 'queued' && (!torrent.Started || files.some(f => !f.Started))"
           class="green"
           :action="start"
           data-testid="torrent-start"
         >
           {{ torrent.Started ? 'Start all' : 'Start' }}
         </AsyncButton>
-        <AsyncButton v-if="torrent.Started" class="red" :action="stop" data-testid="torrent-stop">
+        <AsyncButton v-if="torrent.Started || torrent.State === 'queued' || torrent.State === 'metadata'" class="red" :action="stop" data-testid="torrent-stop">
           Stop
         </AsyncButton>
         <AsyncButton v-if="!torrent.Started" class="red" :action="remove" data-testid="torrent-remove">

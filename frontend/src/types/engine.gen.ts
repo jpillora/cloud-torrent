@@ -12,6 +12,8 @@
  * and synced to the browser as part of the application state.
  */
 export interface Config {
+  MaxActiveDownloads: number /* int */; // 0 means unlimited; completed selections do not consume slots
+  MaxActiveMetadata: number /* int */; // 0 selects the bounded default of four
   DownloadLimitKiB: number /* int64 */; // global KiB/s, 0 explicitly means unlimited
   UploadLimitKiB: number /* int64 */; // global KiB/s, 0 explicitly means unlimited
   AutoStart: boolean;
@@ -46,6 +48,8 @@ export interface Torrent {
   /**
    * cloud-torrent state
    */
+  State: string; // queued, metadata, downloading, paused, completed or seeding
+  QueuePosition: number /* int */; // one-based FIFO waiting position, zero when not queued
   Started: boolean;
   Dropped: boolean;
   Percent: number /* float32 */; // 0..100, truncated to 2 dp

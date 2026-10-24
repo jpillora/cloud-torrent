@@ -26,6 +26,9 @@ type sessionEntry struct {
 	Webseeds, Sources, DhtNodes, PeerAddrs []string
 	PieceLayers                            []sessionLayer
 	Started, AutoStart                     bool
+	WantStart                              *bool
+	Order                                  uint64
+	MetadataPaused                         bool
 	Files                                  map[string]bool
 }
 type sessionLayer struct{ Key, Value []byte }
@@ -140,24 +143,29 @@ func (e *Engine) readSessionsLocked() ([]savedTorrent, error) {
 			// Verify the content identity before opening any torrent handles.
 			meta := metainfo.MetaInfo{InfoBytes: spec.InfoBytes}
 			mi, err = meta.UnmarshalInfo()
-			if err != nil || (mi.HasV1() && spec.InfoHash != metainfo.HashBytes(spec.InfoBytes)) {
+			if err != nil || (spec.InfoHash != (metainfo.Hash{}) && (!mi.HasV1() || spec.InfoHash != metainfo.HashBytes(spec.InfoBytes))) {
 				return nil, errors.New("invalid saved metainfo")
 			}
-			if spec.InfoHashV2.Ok && spec.InfoHashV2.Value != infohashv2.HashBytes(spec.InfoBytes) {
+			if spec.InfoHashV2.Ok && (!mi.HasV2() || spec.InfoHashV2.Value != infohashv2.HashBytes(spec.InfoBytes)) {
 				return nil, errors.New("invalid saved v2 identity")
 			}
 		}
-		// Canonical magnets containing only identities avoid duplicate aliases.
-		identity := metainfo.MagnetV2{V2InfoHash: spec.InfoHashV2}
-		if spec.InfoHash != (metainfo.Hash{}) {
-			identity.InfoHash = g.Some(spec.InfoHash)
+		for key := range identityKeys(spec) {
+			if seen[key] {
+				return nil, errors.New("duplicate saved torrent")
+			}
+			seen[key] = true
 		}
-		key := identity.String()
-		if seen[key] {
-			return nil, errors.New("duplicate saved torrent")
+
+		want := entry.Started || entry.AutoStart
+		if entry.WantStart != nil {
+			want = *entry.WantStart
 		}
-		seen[key] = true
-		saved = append(saved, savedTorrent{spec: spec, started: entry.Started, autoStart: entry.AutoStart, files: entry.Files})
+		order := entry.Order
+		if order == 0 {
+			order = uint64(len(saved) + 1)
+		}
+		saved = append(saved, savedTorrent{spec: spec, started: entry.Started, autoStart: entry.AutoStart, files: entry.Files, wantStart: want, order: order, metadataPaused: entry.MetadataPaused})
 	}
 	return saved, nil
 }
@@ -176,7 +184,7 @@ func (e *Engine) persistLocked() error {
 		if spec.InfoHash != (metainfo.Hash{}) {
 			magnet.InfoHash = g.Some(spec.InfoHash)
 		}
-		disk.Torrents = append(disk.Torrents, sessionEntry{Magnet: magnet.String(), InfoBytes: spec.InfoBytes, Trackers: spec.Trackers, Webseeds: spec.Webseeds, Sources: spec.Sources, DhtNodes: spec.DhtNodes, PeerAddrs: spec.PeerAddrs, PieceLayers: encodeSessionLayers(spec.PieceLayers), Started: state.started, AutoStart: state.autoStart, Files: state.files})
+		disk.Torrents = append(disk.Torrents, sessionEntry{Magnet: magnet.String(), InfoBytes: spec.InfoBytes, Trackers: spec.Trackers, Webseeds: spec.Webseeds, Sources: spec.Sources, DhtNodes: spec.DhtNodes, PeerAddrs: spec.PeerAddrs, PieceLayers: encodeSessionLayers(spec.PieceLayers), Started: state.started, AutoStart: state.autoStart, Files: state.files, WantStart: &state.wantStart, Order: state.order, MetadataPaused: state.metadataPaused})
 	}
 	sort.Slice(disk.Torrents, func(i, j int) bool { return disk.Torrents[i].Magnet < disk.Torrents[j].Magnet })
 	data, err := json.Marshal(disk)
