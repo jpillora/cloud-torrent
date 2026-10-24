@@ -33,6 +33,10 @@ export interface FileRequest {
 }
 
 //////////
+// source: content_policy.go
+
+
+//////////
 // source: files.go
 
 /**

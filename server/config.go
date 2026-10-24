@@ -44,10 +44,7 @@ func stageConfig(path string, c engine.Config) (pendingConfig, error) {
 			pending.discard()
 		}
 	}()
-	mode := os.FileMode(0o644)
-	if info, err := os.Stat(path); err == nil && info.Mode().IsRegular() {
-		mode = info.Mode().Perm()
-	}
+	mode := os.FileMode(0o600)
 	if err = f.Chmod(mode); err == nil {
 		_, err = f.Write(b)
 	}

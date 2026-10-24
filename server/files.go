@@ -33,11 +33,11 @@ type FsNode struct {
 // listFiles walks rootDir and returns it as the root FsNode. Dotfiles,
 // cloud-torrent.json files and non-regular files are skipped, and the walk is
 // capped at fileNumberLimit entries. A missing rootDir yields an empty node.
-func listFiles(rootDir string) *FsNode {
+func listFiles(rootDir string, protected ...string) *FsNode {
 	root := &FsNode{Directory: true, Children: []*FsNode{}}
 	if info, err := os.Stat(rootDir); err == nil {
 		n := 0
-		_ = list(rootDir, info, root, &n)
+		_ = list(rootDir, info, root, &n, newContentPolicy(protected...))
 	}
 	return root
 }
@@ -47,7 +47,14 @@ var (
 	errFileLimit  = errors.New("over file limit")
 )
 
-func list(path string, info os.FileInfo, node *FsNode, n *int) error {
+func list(path string, info os.FileInfo, node *FsNode, n *int, policies ...*contentPolicy) error {
+	policy := newContentPolicy()
+	if len(policies) > 0 {
+		policy = policies[0]
+	}
+	if policy.hidden(path, info) {
+		return errNotRegular
+	}
 	if *n >= fileNumberLimit {
 		return errFileLimit
 	}
@@ -99,7 +106,7 @@ func list(path string, info os.FileInfo, node *FsNode, n *int) error {
 				continue
 			}
 			child := &FsNode{}
-			err = list(filepath.Join(path, e.Name()), ci, child, n)
+			err = list(filepath.Join(path, e.Name()), ci, child, n, policy)
 			if err == nil || (errors.Is(err, errFileLimit) && child.Name != "") {
 				node.Size += child.Size
 				node.Children = append(node.Children, child)
@@ -126,8 +133,13 @@ func list(path string, info os.FileInfo, node *FsNode, n *int) error {
 // remove (when supplied) enforces the engine deletion policy under its lock.
 // onChange (if non-nil) is invoked after a successful DELETE so the file tree
 // can be refreshed immediately rather than on the next poll.
-func downloadHandler(dir func() string, onChange func(), remove func(*os.Root, string) error) http.Handler {
+func downloadHandler(dir func() string, onChange func(), remove func(*os.Root, string) error, protected ...func() []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var paths []string
+		for _, get := range protected {
+			paths = append(paths, get()...)
+		}
+		policy := newContentPolicy(paths...)
 		// Root resolves links during each filesystem operation and prevents
 		// escapes even if a path component changes concurrently.
 		name := filepath.FromSlash(strings.TrimPrefix(r.URL.Path, "/"))
@@ -157,8 +169,12 @@ func downloadHandler(dir func() string, onChange func(), remove func(*os.Root, s
 			http.Error(w, "invalid path", http.StatusBadRequest)
 			return
 		}
+		if policy.hidden(filepath.Join(root.Name(), name), info) {
+			http.Error(w, "protected application state", http.StatusForbidden)
+			return
+		}
 		switch r.Method {
-		case http.MethodGet:
+		case http.MethodGet, http.MethodHead:
 			if info.IsDir() {
 				folder, err := root.OpenRoot(name)
 				if err != nil {
@@ -168,7 +184,10 @@ func downloadHandler(dir func() string, onChange func(), remove func(*os.Root, s
 				defer folder.Close()
 				w.Header().Set("Content-Type", "application/zip")
 				w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": info.Name() + ".zip"}))
-				if err := writeDownloadZip(w, folder); err != nil {
+				if r.Method == http.MethodHead {
+					return
+				}
+				if err := writeDownloadZip(w, folder, policy); err != nil {
 					log.Printf("download archive: %v", err)
 				}
 				return
@@ -179,6 +198,10 @@ func downloadHandler(dir func() string, onChange func(), remove func(*os.Root, s
 			}
 			http.ServeContent(w, r, info.Name(), info.ModTime(), f)
 		case http.MethodDelete:
+			if err := policy.checkDelete(root, name); err != nil {
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
 			// Close the read handle before unlinking (required on Windows).
 			f.Close()
 			// RemoveAll unlinks a final symlink, never its target.
@@ -206,11 +229,24 @@ func downloadHandler(dir func() string, onChange func(), remove func(*os.Root, s
 
 // writeDownloadZip skips links and special files, matching the downloads tree.
 // Every archive read remains confined even if an entry is replaced mid-walk.
-func writeDownloadZip(w io.Writer, root *os.Root) error {
+func writeDownloadZip(w io.Writer, root *os.Root, policies ...*contentPolicy) error {
+	policy := newContentPolicy()
+	if len(policies) > 0 {
+		policy = policies[0]
+	}
 	zw := zip.NewWriter(w)
 	walkErr := fs.WalkDir(root.FS(), ".", func(name string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
+		}
+		if entry.IsDir() {
+			info, err := entry.Info()
+			if err != nil {
+				return err
+			}
+			if policy.hidden(filepath.Join(root.Name(), name), info) {
+				return fs.SkipDir
+			}
 		}
 		if !entry.Type().IsRegular() {
 			return nil
@@ -224,7 +260,7 @@ func writeDownloadZip(w io.Writer, root *os.Root) error {
 		if err != nil {
 			return err
 		}
-		if !info.Mode().IsRegular() {
+		if !info.Mode().IsRegular() || policy.hidden(filepath.Join(root.Name(), name), info) {
 			return nil
 		}
 		header, err := zip.FileInfoHeader(info)

@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -28,15 +29,16 @@ import (
 // Server is the cloud-torrent HTTP server. Its exported fields double as the
 // command-line flags, parsed by github.com/jpillora/opts (see main.go).
 type Server struct {
-	Title      string `help:"Title of this instance" env:"TITLE"`
-	Port       int    `help:"Listening port" env:"PORT"`
-	Host       string `help:"Listening interface (default all)"`
-	Auth       string `help:"Optional basic auth in form 'user:password'" env:"AUTH"`
-	ConfigPath string `help:"Configuration file path"`
-	KeyPath    string `help:"TLS Key file path"`
-	CertPath   string `help:"TLS Certificate file path" short:"r"`
-	Log        bool   `help:"Enable request logging"`
-	Open       bool   `help:"Open browser after the server starts"`
+	Title          string `help:"Title of this instance" env:"TITLE"`
+	Port           int    `help:"Listening port" env:"PORT"`
+	Host           string `help:"Listening interface (default all)"`
+	Auth           string `help:"Optional basic auth in form 'user:password'" env:"AUTH"`
+	StateDirectory string `help:"Private operational state directory (must be outside downloads)"`
+	ConfigPath     string `help:"Configuration file path"`
+	KeyPath        string `help:"TLS Key file path"`
+	CertPath       string `help:"TLS Certificate file path" short:"r"`
+	Log            bool   `help:"Enable request logging"`
+	Open           bool   `help:"Open browser after the server starts"`
 
 	engine       *engine.Engine
 	state        State
@@ -91,7 +93,7 @@ func (s *Server) Run(version string) error {
 			// compute outside the state lock so a slow GetTorrents/listFiles (e.g.
 			// under active download) doesn't block action-triggered pushes
 			torrents := s.engine.GetTorrents()
-			downloads := listFiles(s.engine.Config().DownloadDirectory)
+			downloads := listFiles(s.engine.Config().DownloadDirectory, s.contentPaths()...)
 			s.state.Lock()
 			s.state.Torrents = torrents
 			s.state.Downloads = downloads
@@ -191,7 +193,14 @@ func (s *Server) handler() http.Handler {
 	mux.Handle("/search/", http.StripPrefix("/search", http.HandlerFunc(s.handleSearch)))
 	mux.Handle("/download/", http.StripPrefix("/download/", downloadHandler(func() string {
 		return s.engine.Config().DownloadDirectory
-	}, s.refreshDownloads, s.engine.RemoveDownload)))
+	}, s.refreshDownloads, func(root *os.Root, name string) error {
+		s.configMu.Lock()
+		defer s.configMu.Unlock()
+		if err := newContentPolicy(s.contentPaths()...).checkDelete(root, name); err != nil {
+			return err
+		}
+		return s.engine.RemoveDownload(root, name)
+	}, s.contentPaths)))
 	mux.Handle("/js/velox.js", velox.JS)
 	mux.Handle("/", static.Handler())
 
@@ -269,6 +278,9 @@ func (s *Server) reconfigure(c engine.Config) error {
 		return fmt.Errorf("invalid download directory")
 	}
 	c.DownloadDirectory = dldir
+	if err := validateStateDirectory(dldir, s.StateDirectory); err != nil {
+		return err
+	}
 	if c.IncomingPort <= 0 || c.IncomingPort >= 65535 {
 		c.IncomingPort = 50007
 	}
@@ -312,7 +324,7 @@ func (s *Server) publishConfiguration() {
 // pushes immediately, so a file deletion is reflected without waiting for the
 // one-second poll.
 func (s *Server) refreshDownloads() {
-	downloads := listFiles(s.engine.Config().DownloadDirectory)
+	downloads := listFiles(s.engine.Config().DownloadDirectory, s.contentPaths()...)
 	s.state.Lock()
 	s.state.Downloads = downloads
 	s.state.Unlock()

@@ -119,3 +119,10 @@ remains available with `go test -tags e2e -run E2E ./server/...`.
 
 Powered by [anacrolix/torrent](https://github.com/anacrolix/torrent). A rewrite
 of the original [Node version](https://github.com/jpillora/node-torrent-cloud).
+
+Operational files (the configured settings file, TLS key/certificate, and private
+state directory) are excluded from download listings and archives, and cannot
+be retrieved or deleted through the download API. Aliases and parent-folder
+removal are checked too. `--state-directory` reserves a private location outside
+the download tree; overlapping directories are rejected. Settings writes use
+owner-only permissions.
