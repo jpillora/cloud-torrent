@@ -74,7 +74,7 @@ func TestSeedingTimeBoundaryPauseSelectionAndOverride(t *testing.T) {
 	}
 	seconds.Store(360)
 	model := e.GetTorrents()[ih]
-	if model.State != "paused" || model.StopReason != "seed-time" || model.SeedSeconds != 60 {
+	if model.State != "stopped-by-policy" || model.StopReason != "seed-time" || model.SeedSeconds != 60 {
 		t.Fatal("time boundary missed", model)
 	}
 	if e.StartTorrent(ih) == nil || e.StartFile(ih, "restart-fixture/one") == nil {
@@ -254,7 +254,7 @@ func TestSeedingStateFailurePausesAndCanRecover(t *testing.T) {
 	e.mut.Unlock()
 	seconds.Store(1)
 	model := e.GetTorrents()[ih]
-	if model.Started || model.State != "paused" || model.StopReason != "state-unavailable" {
+	if model.Started || model.State != "stopped-by-policy" || model.StopReason != "state-unavailable" {
 		t.Fatal("unpersisted accounting did not pause sharing", model)
 	}
 	e.mut.Lock()

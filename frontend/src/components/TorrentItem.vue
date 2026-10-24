@@ -9,6 +9,14 @@ import Icon from './Icon.vue'
 
 const props = defineProps<{ torrent: Torrent }>()
 const showFiles = ref(false)
+const stateLabel = computed(() => ({
+  queued: 'Queued', metadata: 'Fetching metadata', downloading: 'Downloading',
+  seeding: 'Seeding', paused: 'Paused', completed: 'Completed',
+  'stopped-by-policy': 'Stopped by policy',
+}[props.torrent.State] ?? 'Waiting'))
+function finiteValue(value: number | undefined): number {
+  return value !== undefined && Number.isFinite(value) && value >= 0 ? value : 0
+}
 
 // Per-file selection errors, keyed by file path.
 const fileErrors = reactive<Record<string, string>>({})
@@ -54,7 +62,7 @@ async function setFile(f: File, action: 'start' | 'stop') {
 <template>
   <div class="torrent" :class="{ loading: !torrent.Loaded }" data-testid="torrent">
     <div class="status" data-testid="torrent-queue-state">
-      {{ torrent.State }}<span v-if="torrent.QueuePosition"> · Queue position {{ torrent.QueuePosition }}</span>
+      {{ stateLabel }}<span v-if="torrent.QueuePosition"> · Queue position {{ torrent.QueuePosition }}</span>
     </div>
 
     <p v-if="torrent.StopReason" class="status" data-testid="torrent-stop-reason">
@@ -95,10 +103,15 @@ async function setFile(f: File, action: 'start' | 'stop') {
     </div>
 
     <div v-if="torrent.Loaded" class="status" data-testid="torrent-status">
-      <span :class="{ muted: torrent.Downloaded === 0 }">{{ bytes(torrent.Downloaded) }}</span>
+      Verified <span :class="{ muted: torrent.Downloaded === 0 }">{{ bytes(torrent.Downloaded) }}</span>
       / {{ bytes(torrent.Size) }} — {{ torrent.Percent }}%
-      <span> · Uploaded {{ bytes(torrent.Uploaded ?? 0) }} · Ratio {{ (torrent.SeedRatio ?? 0).toFixed(2) }} · Seeding {{ torrent.SeedSeconds }}s</span>
-      <span :class="{ muted: torrent.DownloadRate === 0 }"> — {{ bytes(torrent.DownloadRate) }}/s</span>
+      <span> · Uploaded {{ bytes(torrent.Uploaded ?? 0) }} · Ratio {{ finiteValue(torrent.SeedRatio).toFixed(2) }} · Seeding {{ torrent.SeedSeconds }}s</span>
+    </div>
+
+    <div class="transfer-summary" data-testid="torrent-transfers" aria-label="Transfer activity">
+      <span data-testid="torrent-rates">↓ {{ bytes(torrent.DownloadRate) }}/s · ↑ {{ bytes(torrent.UploadRate) }}/s</span>
+      <span data-testid="torrent-peers">Peers {{ finiteValue(torrent.ActivePeers) }} active / {{ finiteValue(torrent.KnownPeers) }} known</span>
+      <span data-testid="torrent-received" title="Payload received during this torrent connection session; resets on restart or engine reconfiguration.">Received {{ bytes(torrent.NetworkDownloaded) }} ({{ bytes(torrent.UsefulDownloaded) }} useful)</span>
     </div>
 
     <table v-if="showFiles && torrent.Loaded" class="files" data-testid="torrent-files">
@@ -157,3 +170,8 @@ async function setFile(f: File, action: 'start' | 'stop') {
     </p>
   </div>
 </template>
+
+<style scoped>
+.transfer-summary { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin: .5rem 0; font-size: .85rem; }
+.transfer-summary span { max-width: 100%; overflow-wrap: anywhere; }
+</style>

@@ -170,6 +170,25 @@ try {
     { timeout: publicFixture ? 150_000 : 30_000 },
   );
   assert(syncConnections > 0, "no successful realtime SSE connection observed");
+  await card.getByTestId("torrent-transfers").waitFor();
+  const checkTelemetry = async () => {
+    const text = await card.getByTestId("torrent-transfers").innerText();
+    assert.match(text, /↓ .*\/s.*↑ .*\/s/);
+    assert.match(text, /Peers \d+ active \/ \d+ known/);
+    assert.match(text, /Received .* useful/);
+    assert(!/NaN|Infinity|undefined|-[0-9]/.test(text), `invalid transfer telemetry: ${text}`);
+    assert.match(await card.getByTestId("torrent-status").innerText(), /Verified/);
+  };
+  await checkTelemetry();
+  await page.setViewportSize({ width: 375, height: 812 });
+  await checkTelemetry();
+  for (const span of await card.getByTestId("torrent-transfers").locator("span").all()) {
+    const box = await span.boundingBox();
+    assert(box && box.x >= 0 && box.x + box.width <= 375, "mobile telemetry overflow");
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+  console.log("PASS: typed transfer rates, payload counters and peer summaries on desktop/mobile");
+
   const expected = publicFixture ? ["poster.jpg"] : [...files.keys()];
   for (const path of expected) {
     const link = page.getByTestId("fs-file-link").filter({
@@ -203,6 +222,8 @@ try {
     await first.getByTestId("file-start").waitFor();
     assert.equal(await card.getByTestId("file-selected").count(), files.size - 1);
     await card.getByTestId("torrent-stop").click();
+    await card.getByTestId("torrent-queue-state").filter({ hasText: "Paused" }).waitFor();
+    assert.match(await card.getByTestId("torrent-rates").innerText(), /↓ 0 B\/s.*↑ 0 B\/s/);
     const resume = card.getByTestId("torrent-start");
     await resume.waitFor();
     assert.equal((await resume.innerText()).trim(), "Resume selected");

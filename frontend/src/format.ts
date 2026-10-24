@@ -5,7 +5,7 @@ dayjs.extend(relativeTime)
 
 // bytes formats a byte count with a metric prefix, e.g. 1500000 -> "1.5 MB".
 export function bytes(n: number, decimals = 1): string {
-  if (!n || n < 0 || isNaN(n)) return '0 B'
+  if (!n || n < 0 || !Number.isFinite(n)) return '0 B'
   const i = Math.floor(Math.floor(Math.log(n) * Math.LOG10E) / 3)
   const f = Math.pow(10, decimals)
   const s = Math.round((n / Math.pow(10, i * 3)) * f) / f

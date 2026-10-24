@@ -275,3 +275,22 @@ is no global response write timeout: active `/sync` connections, file/ZIP
 transfers and range responses can continue beyond the upload deadlines. Sync
 retains its separate stalled-writer protection. Authentication and compression
 still wrap the same routes.
+
+Torrent cards distinguish **Verified** content present on disk from **Received**
+network payload. Download/upload rates measure payload bytes per second (not
+protocol overhead or disk verification), sampled at intervals of at least
+250 ms. Idle and paused transfers show zero rates. **Received** and its useful
+subset cover the current torrent client-handle session, including peer and
+webseed payload; they reset on restart or client recreation during
+reconfiguration. Existing verified files do not increase received counters.
+**Uploaded**, ratio and seeding time reuse durable session accounting and survive
+restart. Ratio uses the selected content size, rather than network-received
+bytes; zero-size selections show zero.
+
+Cards show active connected peers and total known peers without peer addresses,
+tracker URLs, passkeys or raw transport statistics. Webseeds contribute to
+payload counters but not peer counts. States distinguish queued, fetching
+metadata, downloading, seeding, completed, paused and stopped by policy. A
+seeding-budget stop includes its reason and explicit sharing override action.
+Download/seeding state describes admitted work; rates and peers show whether
+that work is currently moving payload.

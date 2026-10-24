@@ -39,6 +39,10 @@ export interface Config {
 
 
 //////////
+// source: telemetry.go
+
+
+//////////
 // source: torrent.go
 
 /**
@@ -52,23 +56,28 @@ export interface Torrent {
   InfoHash: string;
   Name: string;
   Loaded: boolean; // true once metadata (Info) has arrived
-  Downloaded: number /* int64 */;
+  Downloaded: number /* int64 */; // verified content present on disk, including existing files
   Size: number /* int64 */;
   Files: (File | undefined)[];
   /**
    * cloud-torrent state
    */
-  Uploaded: number /* int64 */;
+  Uploaded: number /* int64 */; // durable payload uploads, reused by seeding budgets
   SeedSeconds: number /* int64 */;
   SeedRatio: number /* float64 */;
   StopReason: string;
   SeedingOverride: boolean;
-  State: string; // queued, metadata, downloading, paused, completed or seeding
+  State: string; // queued, metadata, downloading, paused, completed, seeding or stopped-by-policy
   QueuePosition: number /* int */; // one-based FIFO waiting position, zero when not queued
   Started: boolean;
   Dropped: boolean;
   Percent: number /* float32 */; // 0..100, truncated to 2 dp
-  DownloadRate: number /* float32 */; // bytes/sec since the last update
+  DownloadRate: number /* float32 */; // network payload bytes/sec over the sampling interval
+  UploadRate: number /* float32 */; // network payload bytes/sec over the sampling interval
+  NetworkDownloaded: number /* int64 */; // payload received during this torrent client-handle session
+  UsefulDownloaded: number /* int64 */; // useful payload received during the same session
+  ActivePeers: number /* int */; // established peer connections, excludes webseeds
+  KnownPeers: number /* int */; // upstream known peers, including active/pending connections
 }
 /**
  * File is the engine's view-model for one file within a torrent.

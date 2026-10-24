@@ -85,6 +85,7 @@ func (e *Engine) scheduleLocked() error {
 			if model.metadataPaused || pending >= metadataLimit {
 				model.t.Drop()
 				model.t = nil
+				model.clearTransfers()
 				model.Started = false
 			} else {
 				pending++
@@ -175,12 +176,19 @@ func (e *Engine) scheduleLocked() error {
 			model.t.DisallowDataDownload()
 			model.t.DisallowDataUpload()
 			model.DownloadRate = 0
+			model.UploadRate = 0
 			model.State = "paused"
 			if model.wantStart {
 				model.State = "queued"
 				position++
 				model.QueuePosition = position
 			}
+		}
+		if !admit && model.account.StopReason != "" {
+			model.State = "stopped-by-policy"
+		}
+		if !e.config.EnableUpload || model.State == "completed" {
+			model.UploadRate = 0
 		}
 		model.wasSeeding = admit && complete && e.config.EnableSeeding && e.config.EnableUpload
 		projectSeedAccount(model)
@@ -205,7 +213,9 @@ func (e *Engine) scheduleLocked() error {
 					model.wantStart = false
 					model.Started = false
 					model.wasSeeding = false
-					model.State = "paused"
+					model.State = "stopped-by-policy"
+					model.DownloadRate = 0
+					model.UploadRate = 0
 					for _, file := range model.Files {
 						file.Started = false
 						file.f.SetPriority(torrent.PiecePriorityNone)

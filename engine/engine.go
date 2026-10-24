@@ -472,7 +472,7 @@ func (e *Engine) GetTorrents() map[string]*Torrent {
 		copy.spec = nil
 		copy.autoStart = false
 		copy.selection = nil
-		copy.updatedAt = time.Time{}
+		copy.transferSample = transferSample{}
 		if t.Files != nil {
 			copy.Files = make([]*File, len(t.Files))
 			for i, f := range t.Files {
