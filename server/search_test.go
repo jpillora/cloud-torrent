@@ -67,7 +67,7 @@ func TestSearchExposesOnlyReadOnlyProviderQueries(t *testing.T) {
 	}))
 	defer upstream.Close()
 	config := []byte(`{"fixture":{"url":"` + upstream.URL + `","list":"li","result":{"name":"b"}},"fixture/item":{"url":"` + upstream.URL + `","result":{"name":"h1"}}}`)
-	s := &Server{scraper: &scraper.Handler{}, searchConfig: config, OutboundAllowCIDRs: "127.0.0.0/8"}
+	s := &Server{scraper: &providerCatalog{}, searchConfig: config, OutboundAllowCIDRs: "127.0.0.0/8"}
 	if err := s.scraper.LoadConfig(config); err != nil {
 		t.Fatal(err)
 	}

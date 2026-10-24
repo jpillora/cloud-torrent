@@ -222,3 +222,42 @@ persist atomically with acceptance, including after torrent removal, so retained
 files do not resurrect removed torrents after restart. The private store retains
 at most 4096 accepted-file receipts; after that use manual import. Inbox files
 cannot select a download destination or run commands.
+
+Use `--search-config /private/providers.json` for a private operator-controlled
+search catalog; this disables remote catalog refresh. Keep credentials in that
+file's headers, protect it with filesystem permissions and place it outside
+served downloads. Browser provider descriptors contain only a name and origin.
+Existing HTML `list`/`result` extraction remains supported. JSON providers use
+explicit JSON pointers (RFC 6901), including array indices and `~0`/`~1` escapes:
+
+```json
+{
+  "legal": {
+    "name": "Legal fixtures",
+    "type": "json",
+    "url": "https://primary.example/search?q={{query}}&page={{page:1}}",
+    "mirrors": ["https://mirror.example/search?q={{query}}&page={{page:1}}"],
+    "json": {
+      "list": "/data/items",
+      "fields": {"name": "/title", "torrent": "/links/0", "seeds": "/stats/seeds"}
+    }
+  }
+}
+```
+
+Set JSON `list` to `""` for a root array, or omit it for a single detail object
+(e.g. a `legal/item` endpoint). Pointers allow at most 16 segments; extracted
+fields must be scalars. Providers may return `name`, `url`, `path`, `torrent`,
+`magnet`, `infohash`, `size`, `seeds` and `peers`. Links resolve against the
+successful response URL, including mirror redirects. Unsafe link schemes and
+invalid identities fail the attempt; extracted trackers are never added to
+constructed magnets.
+
+Only the private operator file can opt in to mirrors (up to two per endpoint).
+Each mirror is a complete URL template and receives the configured headers, so
+include only origins trusted with those credentials. Attempts run sequentially
+within one 15-second request deadline and one concurrency slot, using the shared
+outbound policy, 2 MiB decoded-body and 500-result limits. Empty valid results
+succeed without fallback; network, status, parsing and validation failures can
+try the next configured mirror. Invalid catalog refreshes preserve the entire
+last-known-good catalog. Restart to apply edits to a private operator file.

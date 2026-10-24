@@ -8,6 +8,7 @@ require (
 	github.com/anacrolix/generics v0.1.0
 	github.com/anacrolix/log v0.17.0
 	github.com/anacrolix/torrent v1.59.1
+	github.com/andybalholm/cascadia v1.3.1
 	github.com/gofrs/flock v0.12.1
 	github.com/jpillora/backoff v1.0.0
 	github.com/jpillora/cookieauth v1.1.1
@@ -37,7 +38,6 @@ require (
 	github.com/anacrolix/sync v0.5.4 // indirect
 	github.com/anacrolix/upnp v0.1.4 // indirect
 	github.com/anacrolix/utp v0.1.0 // indirect
-	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/benbjohnson/immutable v0.4.1-0.20221220213129-8932b999621d // indirect

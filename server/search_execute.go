@@ -19,7 +19,7 @@ import (
 
 // Provider requests use the application's transport instead of the scraper's
 // package-global DefaultClient. The dependency remains the config validator.
-func (s *Server) executeSearch(w http.ResponseWriter, r *http.Request, e *scraper.Endpoint) {
+func (s *Server) executeSearch(w http.ResponseWriter, r *http.Request, e *scraper.Endpoint, options providerOptions) {
 
 	timeout := s.searchTimeout
 	if timeout <= 0 {
@@ -37,60 +37,93 @@ func (s *Server) executeSearch(w http.ResponseWriter, r *http.Request, e *scrape
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	raw, err := renderSearchURL(e.URL, r.URL.Query())
-	if err != nil {
-		http.Error(w, "invalid provider request", 400)
-		return
-	}
-	// The supported search surface is read-only GET, regardless of remote config.
 	policyClient, err := s.remoteClient()
 	if err != nil {
 		http.Error(w, "invalid outbound policy", 500)
 		return
 	}
-	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, raw, nil)
-	if err != nil {
-		http.Error(w, "invalid provider URL", 400)
-		return
+	templates := append([]string{e.URL}, options.Mirrors...)
+	var rows []scraper.Result
+	var failure error
+	for _, template := range templates {
+		if ctx.Err() != nil {
+			break
+		}
+		raw, err := renderSearchURL(template, r.URL.Query())
+		if err != nil {
+			http.Error(w, "invalid provider request", 400)
+			return
+		}
+		rows, err = fetchSearchAttempt(ctx, policyClient, raw, e, options)
+		if err == nil {
+			failure = nil
+			break
+		}
+		failure = err
 	}
-	for k, v := range e.Headers {
-		req.Header.Set(k, v)
-	}
-	resp, err := policyClient.Do(req)
-	if err != nil {
-		http.Error(w, "provider request failed", 502)
-		return
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		http.Error(w, "provider returned unsuccessful status", 502)
-		return
-	}
-
-	body, err := readSearchBody(resp)
-	if err != nil {
-		http.Error(w, "provider response exceeds limits or is invalid", 502)
-		return
-	}
-	if r.Context().Err() != nil {
+	if ctx.Err() != nil {
 		http.Error(w, "provider request expired", 504)
 		return
 	}
-	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(body))
-	if err != nil {
-		http.Error(w, "invalid provider response", 502)
-		return
-	}
-	rows, err := extractSearchHTML(e, doc)
-	if err != nil {
-		http.Error(w, "invalid provider extraction", 502)
+	if failure != nil {
+		http.Error(w, "provider attempts failed or response is invalid", 502)
 		return
 	}
 	var result any = rows
-	if e.List == "" && len(rows) == 1 {
+	if e.List == "" && (options.JSON == nil || options.JSON.List == nil) && len(rows) == 1 {
 		result = rows[0]
 	}
 	_ = json.NewEncoder(w).Encode(result)
+}
+
+// Each attempt is closed before the next starts, sharing the caller's deadline
+// and concurrency slot. An empty successful extraction never triggers fallback.
+func fetchSearchAttempt(ctx context.Context, client *http.Client, raw string, e *scraper.Endpoint, options providerOptions) ([]scraper.Result, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, raw, nil)
+	if err != nil {
+		return nil, err
+	}
+	for key, value := range e.Headers {
+		req.Header.Set(key, value)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, errors.New("provider status")
+	}
+	body, err := readSearchBody(resp)
+	if err != nil {
+		return nil, err
+	}
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	var rows []scraper.Result
+	if options.Type == "json" {
+		rows, err = extractSearchJSON(body, options.JSON)
+	} else {
+		var doc *goquery.Document
+		doc, err = goquery.NewDocumentFromReader(bytes.NewReader(body))
+		if err == nil {
+			rows, err = extractSearchHTML(e, doc)
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	base := req.URL
+	if resp.Request != nil && resp.Request.URL != nil {
+		base = resp.Request.URL
+	}
+	for _, row := range rows {
+		if err := normalizeSearchResult(row, base); err != nil {
+			return nil, err
+		}
+	}
+	return rows, nil
 }
 
 var searchVariables = regexp.MustCompile(`\{\{\s*(\w+)\s*(?::(\w+))?\s*\}\}`)
@@ -105,6 +138,9 @@ func renderSearchURL(template string, values url.Values) (string, error) {
 			value = match[2]
 		}
 		if value == "" {
+			missing = true
+		}
+		if match[1] == "item" && (!strings.HasPrefix(value, "/") || strings.HasPrefix(value, "//")) {
 			missing = true
 		}
 		if queryIndex >= 0 && strings.Index(template, token) > queryIndex {

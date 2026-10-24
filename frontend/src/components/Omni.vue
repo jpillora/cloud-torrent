@@ -85,7 +85,6 @@ async function submitSearch() {
   const requestGeneration = generation.value
   const prov = providers.value[providerId]
   if (!prov) return
-  const origin = /(https?:\/\/[^/]+)/.exec(prov.url)?.[1] ?? ''
   omnierr.value = ''
   searching.value = true
   try {
@@ -97,12 +96,6 @@ async function submitSearch() {
       return
     }
     for (const r of rows) {
-      // provider-relative links are resolved against the provider origin
-      if (r.url && r.url.startsWith('/')) {
-        r.path = r.url
-        r.url = origin + r.url
-      }
-      if (r.torrent && r.torrent.startsWith('/')) r.torrent = origin + r.torrent
       results.value.push({ ...r, providerId })
     }
     page.value = requestPage + 1
@@ -113,12 +106,9 @@ async function submitSearch() {
   }
 }
 
-// build a magnet URI from a resolved infohash (master parity: dn is stripped of
-// non-word characters).
-function magnetURI(name: string, infohash: string, trackers: string[]): string {
-  let uri = 'magnet:?xt=urn:btih:' + infohash + '&dn=' + name.replace(/\W/g, '').replace(/\s+/g, '+')
-  for (const t of trackers) uri += '&tr=' + encodeURIComponent(t)
-  return uri
+// Build a magnet from a validated infohash without adding provider trackers.
+function magnetURI(name: string, infohash: string): string {
+  return 'magnet:?xt=urn:btih:' + infohash + '&dn=' + encodeURIComponent(name)
 }
 
 // add a result: use its magnet/torrent if present, else resolve via the
@@ -129,6 +119,7 @@ async function submitSearchItem(r: ProviderResult, signal: AbortSignal) {
   try {
     if (r.magnet) return await api.magnet(r.magnet, signal)
     if (r.torrent) return await api.url(r.torrent, signal)
+    if (r.infohash) return await api.magnet(magnetURI(r.name ?? '', r.infohash), signal)
     if (!r.path) {
       omnierr.value = 'No item URL found'
       return
@@ -142,8 +133,7 @@ async function submitSearchItem(r: ProviderResult, signal: AbortSignal) {
     if (data.torrent) return await api.url(data.torrent, signal)
     if (data.magnet) return await api.magnet(data.magnet, signal)
     if (data.infohash) {
-      const trackers = (data.tracker ?? '').split(',').filter((s) => /^(http|udp):\/\//.test(s))
-      return await api.magnet(magnetURI(r.name ?? '', data.infohash, trackers), signal)
+      return await api.magnet(magnetURI(r.name ?? '', data.infohash), signal)
     }
     omnierr.value = 'No magnet or infohash found'
   } catch (e) {

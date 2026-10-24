@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -36,55 +39,47 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	s.searchMu.RLock()
 	h := s.scraper
 	s.searchMu.RUnlock()
+	if h == nil {
+		http.NotFound(w, r)
+		return
+	}
 	e := h.Endpoint(strings.TrimPrefix(r.URL.Path, "/"))
 	if e == nil {
 		http.NotFound(w, r)
 		return
 	}
-	s.executeSearch(w, r, e)
-}
-
-func newSearchHandler(config []byte) (*scraper.Handler, error) {
-	h := &scraper.Handler{Log: false, Debug: false}
-	if err := h.LoadConfig(config); err != nil {
-		return nil, err
-	}
-	// scraper v0.3.0 only inherits handler headers when logging is enabled.
-	// Populate each immutable endpoint explicitly, preserving provider overrides.
-	for _, endpoint := range h.Config {
-		if endpoint == nil {
-			continue
-		}
-		headers := http.Header{}
-		for k, v := range endpoint.Headers {
-			headers.Set(k, v)
-		}
-		if headers.Get("User-Agent") == "" {
-			headers.Set("User-Agent", userAgent)
-		}
-		endpoint.Headers = make(map[string]string, len(headers))
-		for k := range headers {
-			endpoint.Headers[k] = headers.Get(k)
-		}
-	}
-	return h, nil
+	s.executeSearch(w, r, e, h.options[strings.TrimPrefix(r.URL.Path, "/")])
 }
 
 // startSearch builds the scraper handler from the embedded default config,
 // publishes the providers into the synced state, and kicks off the background
 // refresh loop. Mounted in handler() at /search.
 func (s *Server) startSearch() error {
-	h, err := newSearchHandler(defaultSearchConfig)
+	config := defaultSearchConfig
+	if s.SearchConfigPath != "" {
+		f, err := os.Open(s.SearchConfigPath)
+		if err != nil {
+			return err
+		}
+		config, err = io.ReadAll(io.LimitReader(f, (1<<20)+1))
+		f.Close()
+		if err != nil {
+			return err
+		}
+	}
+	h, err := newSearchHandler(config)
 	if err != nil {
 		return err
 	}
 	s.scraper = h
 	// baseline for the change-detection in fetchSearchConfig
-	s.searchConfig, _ = normalize(defaultSearchConfig)
+	s.searchConfig, _ = normalize(config)
 	s.state.Lock()
 	s.state.SearchProviders = searchDescriptors(s.scraper.Config)
 	s.state.Unlock()
-	go s.fetchSearchConfigLoop()
+	if s.SearchConfigPath == "" {
+		go s.fetchSearchConfigLoop()
+	}
 	return nil
 }
 
@@ -122,6 +117,11 @@ func (s *Server) fetchSearchConfig() error {
 	h, err := newSearchHandler(newConfig)
 	if err != nil {
 		return err
+	}
+	for _, opt := range h.options {
+		if len(opt.Mirrors) > 0 {
+			return errors.New("mirrors require a private operator search configuration")
+		}
 	}
 	s.searchMu.Lock()
 	s.scraper = h

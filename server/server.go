@@ -23,7 +23,6 @@ import (
 	"github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/cookieauth"
 	"github.com/jpillora/requestlog/v2"
-	"github.com/jpillora/scraper/scraper"
 	"github.com/jpillora/velox"
 )
 
@@ -35,6 +34,7 @@ type Server struct {
 	Host               string `help:"Listening interface (default all)"`
 	Auth               string `help:"Optional basic auth in form 'user:password'" env:"AUTH"`
 	OutboundAllowCIDRs string `opts:"name=outbound-allow-cidrs,short=-" help:"Explicit comma-separated CIDRs allowed for outbound LAN HTTP"`
+	SearchConfigPath   string `opts:"name=search-config,short=-" help:"Private operator provider JSON file (disables remote refresh)"`
 	WatchDirectory     string `opts:"name=watch-directory,short=-" help:"Opt-in private torrent inbox outside downloads and session state"`
 	StateDirectory     string `help:"Private operational state directory (must be outside downloads)"`
 	ConfigPath         string `help:"Configuration file path"`
@@ -45,7 +45,7 @@ type Server struct {
 
 	engine        *engine.Engine
 	state         State
-	scraper       *scraper.Handler
+	scraper       *providerCatalog
 	searchConfig  []byte     // last-loaded (normalized) provider config, for change detection
 	configMu      sync.Mutex // serializes engine changes and their persisted configuration
 	searchInit    sync.Once
