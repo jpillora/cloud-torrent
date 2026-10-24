@@ -144,3 +144,15 @@ Provider list and detail requests share a 15-second deadline and four concurrent
 slots. Browser disconnects cancel upstream work. Responses are limited to 2 MiB
 of decoded content and 500 results, including gzip responses; failures return an
 error rather than an empty result list. Excess requests receive HTTP 429.
+
+Torrent sessions survive process restarts, including pending magnets, running or
+paused intent, metainfo and file selections. The default private store is
+`.<settings-filename>.state` beside the settings file; use `--state-directory`
+to place it on a separate persistent volume. The directory must be writable by
+the server and outside downloads. Only one process may use a store at a time.
+State files contain private source URLs, use owner-only permissions, and must
+be backed up as secrets. Updates are atomic and synced before actions succeed;
+the store is limited to 256 torrents and 16 MiB. Restart verifies actual pieces
+rather than trusting completion counters. Invalid or incompatible state stops
+startup: restore a backup, or stop the server and move `sessions.json` aside to
+start with an empty session. Downloaded files are retained.

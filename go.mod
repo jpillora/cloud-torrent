@@ -4,7 +4,11 @@ go 1.27.3
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
+	github.com/PuerkitoBio/goquery v1.8.1
+	github.com/anacrolix/generics v0.1.0
+	github.com/anacrolix/log v0.17.0
 	github.com/anacrolix/torrent v1.59.1
+	github.com/gofrs/flock v0.12.1
 	github.com/jpillora/backoff v1.0.0
 	github.com/jpillora/cookieauth v1.1.1
 	github.com/jpillora/opts v1.2.3
@@ -15,16 +19,13 @@ require (
 )
 
 require (
-	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/RoaringBitmap/roaring v1.2.3 // indirect
 	github.com/ajwerner/btree v0.0.0-20211221152037-f427b3e689c0 // indirect
 	github.com/alecthomas/atomic v0.1.0-alpha2 // indirect
 	github.com/anacrolix/chansync v0.7.0 // indirect
 	github.com/anacrolix/dht/v2 v2.23.0 // indirect
 	github.com/anacrolix/envpprof v1.3.0 // indirect
-	github.com/anacrolix/generics v0.1.0 // indirect
 	github.com/anacrolix/go-libutp v1.3.2 // indirect
-	github.com/anacrolix/log v0.17.0 // indirect
 	github.com/anacrolix/missinggo v1.3.0 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/missinggo/v2 v2.10.0 // indirect

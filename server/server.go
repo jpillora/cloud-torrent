@@ -86,6 +86,22 @@ func (s *Server) Run(version string) error {
 	}
 	s.fetchClient = policy.Client()
 
+	// Use a per-settings-file private sibling by default; it is never under
+	// DownloadDirectory and can be mounted independently in containers.
+	if s.StateDirectory == "" {
+		configPath := s.ConfigPath
+		if configPath == "" {
+			configPath = "cloud-torrent.json"
+		}
+		absolute, err := filepath.Abs(configPath)
+		if err != nil {
+			return err
+		}
+		s.StateDirectory = filepath.Join(filepath.Dir(absolute), "."+filepath.Base(absolute)+".state")
+	}
+	if err := validateStateDirectory(c.DownloadDirectory, s.StateDirectory); err != nil {
+		return err
+	}
 	// search providers: load the embedded config, publish into the state, and
 	// start the background refresh of the remote config.
 	if err := s.startSearch(); err != nil {
@@ -94,6 +110,10 @@ func (s *Server) Run(version string) error {
 
 	// torrent engine + persisted config
 	s.engine = engine.New(policy)
+	if err := s.engine.EnablePersistence(s.StateDirectory); err != nil {
+		return err
+	}
+	defer s.engine.Close()
 	if err := s.reconfigure(c); err != nil {
 		return fmt.Errorf("initial configure failed: %w", err)
 	}
