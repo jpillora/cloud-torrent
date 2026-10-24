@@ -17,13 +17,22 @@ type Torrent struct {
 	Size       int64
 	Files      []*File
 	// cloud-torrent state
-	State         string // queued, metadata, downloading, paused, completed or seeding
-	QueuePosition int    // one-based FIFO waiting position, zero when not queued
-	Started       bool
-	Dropped       bool
-	Percent       float32 // 0..100, truncated to 2 dp
-	DownloadRate  float32 // bytes/sec since the last update
+	Uploaded        int64
+	SeedSeconds     int64
+	SeedRatio       float64
+	StopReason      string
+	SeedingOverride bool
+	State           string // queued, metadata, downloading, paused, completed or seeding
+	QueuePosition   int    // one-based FIFO waiting position, zero when not queued
+	Started         bool
+	Dropped         bool
+	Percent         float32 // 0..100, truncated to 2 dp
+	DownloadRate    float32 // bytes/sec since the last update
 
+	account        seedAccount
+	lastUploaded   int64
+	accountedAt    time.Time
+	wasSeeding     bool
 	wantStart      bool
 	order          uint64
 	metadataPaused bool

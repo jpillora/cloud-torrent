@@ -102,6 +102,8 @@ func (s *Server) api(r *http.Request) error {
 		switch req.Action {
 		case "start":
 			return s.engine.StartTorrent(req.InfoHash)
+		case "resume-seeding":
+			return s.engine.ResumeSeeding(req.InfoHash)
 		case "stop":
 			return s.engine.StopTorrent(req.InfoHash)
 		case "delete":

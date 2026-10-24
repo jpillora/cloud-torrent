@@ -179,3 +179,17 @@ sources, peer metadata work and waiters are admitted separately from downloads.
 Pausing a pending magnet releases its metadata slot. The overall store admits
 at most 256 entries, deduplicates identities, and preserves queue order and
 intent across restarts.
+
+Optional `SeedRatioLimit` (0 disabled, otherwise up to 1000) and
+`SeedTimeMinutes` (whole minutes, 0 disabled, up to 525600) stop sharing when
+either threshold is reached. They apply after all selected files are verified
+complete. The ratio is cumulative peer payload uploaded divided by selected
+file sizes, including existing verified data; a zero denominator disables ratio
+stopping. Active seeding time excludes pauses, downtime, downloading, and periods
+with upload or seeding disabled. Accounting is persisted during state polls and
+on actions/shutdown. Policies are evaluated on the one-second server poll;
+in-flight transfers and buffering can overshoot a threshold between polls.
+A stopped-by-policy reason is shown, with files, selections and sessions retained.
+“Resume sharing (ignore limits)” explicitly overrides budgets until the next
+Stop; accounting and that override survive restart. Ordinary Start does not
+bypass a policy stop. A failure to persist active accounting pauses sharing.

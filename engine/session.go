@@ -30,6 +30,7 @@ type sessionEntry struct {
 	Order                                  uint64
 	MetadataPaused                         bool
 	Files                                  map[string]bool
+	Account                                seedAccount
 }
 type sessionLayer struct{ Key, Value []byte }
 
@@ -165,12 +166,16 @@ func (e *Engine) readSessionsLocked() ([]savedTorrent, error) {
 		if order == 0 {
 			order = uint64(len(saved) + 1)
 		}
-		saved = append(saved, savedTorrent{spec: spec, started: entry.Started, autoStart: entry.AutoStart, files: entry.Files, wantStart: want, order: order, metadataPaused: entry.MetadataPaused})
+		if entry.Account.Uploaded < 0 || entry.Account.Uploaded > maxSafeTransferBytes || entry.Account.SeedNanos < 0 {
+			return nil, errors.New("invalid seeding accounting")
+		}
+		saved = append(saved, savedTorrent{spec: spec, started: entry.Started, autoStart: entry.AutoStart, files: entry.Files, wantStart: want, order: order, metadataPaused: entry.MetadataPaused, account: entry.Account})
 	}
 	return saved, nil
 }
 func (e *Engine) persistLocked() error {
 	if e.sessionDir == "" {
+		e.accountDirty = false
 		return nil
 	}
 	states := e.saveTorrentsLocked()
@@ -184,7 +189,7 @@ func (e *Engine) persistLocked() error {
 		if spec.InfoHash != (metainfo.Hash{}) {
 			magnet.InfoHash = g.Some(spec.InfoHash)
 		}
-		disk.Torrents = append(disk.Torrents, sessionEntry{Magnet: magnet.String(), InfoBytes: spec.InfoBytes, Trackers: spec.Trackers, Webseeds: spec.Webseeds, Sources: spec.Sources, DhtNodes: spec.DhtNodes, PeerAddrs: spec.PeerAddrs, PieceLayers: encodeSessionLayers(spec.PieceLayers), Started: state.started, AutoStart: state.autoStart, Files: state.files, WantStart: &state.wantStart, Order: state.order, MetadataPaused: state.metadataPaused})
+		disk.Torrents = append(disk.Torrents, sessionEntry{Magnet: magnet.String(), InfoBytes: spec.InfoBytes, Trackers: spec.Trackers, Webseeds: spec.Webseeds, Sources: spec.Sources, DhtNodes: spec.DhtNodes, PeerAddrs: spec.PeerAddrs, PieceLayers: encodeSessionLayers(spec.PieceLayers), Started: state.started, AutoStart: state.autoStart, Files: state.files, WantStart: &state.wantStart, Order: state.order, MetadataPaused: state.metadataPaused, Account: state.account})
 	}
 	sort.Slice(disk.Torrents, func(i, j int) bool { return disk.Torrents[i].Magnet < disk.Torrents[j].Magnet })
 	data, err := json.Marshal(disk)
@@ -219,12 +224,16 @@ func (e *Engine) persistLocked() error {
 		dir.Sync()
 		dir.Close()
 	}
+	e.accountDirty = false
 	return nil
 }
 
 // Commit intent before acknowledging actions. A failed durable write restores
 // the previous handles and priorities, leaving the old atomic file untouched.
 func (e *Engine) sessionMutationLocked(change func() error) error {
+	e.accountSeedingLocked(e.nowLocked())
+	e.mutationDepth++
+	defer func() { e.mutationDepth-- }()
 	if e.sessionDir == "" {
 		return change()
 	}

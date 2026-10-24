@@ -30,7 +30,7 @@ export const api = {
   url: (url: string, signal?: AbortSignal) => post('url', { url } satisfies URLRequest, signal),
   magnet: (uri: string, signal?: AbortSignal) => post('magnet', { uri } satisfies MagnetRequest, signal),
   torrentfile: (data: Uint8Array) => post('torrentfile', data),
-  torrent: (action: 'start' | 'stop' | 'delete', infohash: string) =>
+  torrent: (action: 'start' | 'stop' | 'delete' | 'resume-seeding', infohash: string) =>
     post('torrent', { action, infohash } satisfies TorrentRequest),
   file: (action: 'start' | 'stop', infohash: string, path: string) =>
     post('file', { action, infohash, path } satisfies FileRequest),

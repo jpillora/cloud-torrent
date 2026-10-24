@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"math"
 	"sort"
 
 	"github.com/anacrolix/torrent"
@@ -69,6 +70,7 @@ func (e *Engine) scheduleLocked() error {
 	if e.client == nil {
 		return nil
 	}
+	e.accountSeedingLocked(e.nowLocked())
 	ordered := e.orderedLocked()
 	metadataLimit := e.config.MaxActiveMetadata
 	if metadataLimit == 0 {
@@ -139,6 +141,15 @@ func (e *Engine) scheduleLocked() error {
 				}
 			}
 		}
+		projectSeedAccount(model)
+		if model.wantStart && selected {
+			if reason := e.seedLimitLocked(model, complete); reason != "" {
+				model.wantStart = false
+				model.autoStart = false
+				model.account.StopReason = reason
+				e.accountDirty = true
+			}
+		}
 		admit := model.wantStart && selected && (complete || e.config.MaxActiveDownloads == 0 || active < e.config.MaxActiveDownloads)
 		if admit && !complete {
 			active++
@@ -171,6 +182,8 @@ func (e *Engine) scheduleLocked() error {
 				model.QueuePosition = position
 			}
 		}
+		model.wasSeeding = admit && complete && e.config.EnableSeeding && e.config.EnableUpload
+		projectSeedAccount(model)
 		for _, file := range model.Files {
 			started := admit && model.selection[file.Path]
 			// Avoid re-issuing priorities on every status poll.
@@ -184,9 +197,33 @@ func (e *Engine) scheduleLocked() error {
 			file.Started = started
 		}
 	}
+	if e.accountDirty && e.mutationDepth == 0 {
+		if err := e.persistLocked(); err != nil {
+			for _, model := range ordered {
+				if model.wasSeeding {
+					model.wantStart = false
+					model.Started = false
+					model.wasSeeding = false
+					model.State = "paused"
+					for _, file := range model.Files {
+						file.Started = false
+						file.f.SetPriority(torrent.PiecePriorityNone)
+					}
+					model.account.StopReason = "state-unavailable"
+					projectSeedAccount(model)
+					model.t.DisallowDataUpload()
+					model.t.DisallowDataDownload()
+				}
+			}
+			return err
+		}
+	}
 	return nil
 }
 func (e *Engine) queueStartLocked(model *Torrent, all bool, path string) error {
+	if seedPolicyReason(model.account.StopReason) {
+		return errors.New("seeding limit reached; use Resume sharing to override")
+	}
 	if model.selection == nil {
 		model.selection = map[string]bool{}
 	}
@@ -228,13 +265,14 @@ func (e *Engine) queueStartLocked(model *Torrent, all bool, path string) error {
 	if !model.wantStart {
 		model.order = e.nextOrderLocked()
 	}
+	model.account.StopReason = ""
 	model.wantStart = true
 	model.metadataPaused = false
 	return e.scheduleLocked()
 }
 
 func restoreQueuedModel(state savedTorrent) *Torrent {
-	return &Torrent{InfoHash: specIdentity(state.spec), Name: state.spec.DisplayName, spec: state.spec, wantStart: state.wantStart, autoStart: state.autoStart, selection: maps.Clone(state.files), order: state.order, metadataPaused: state.metadataPaused}
+	return &Torrent{InfoHash: specIdentity(state.spec), Name: state.spec.DisplayName, spec: state.spec, wantStart: state.wantStart, autoStart: state.autoStart, selection: maps.Clone(state.files), order: state.order, metadataPaused: state.metadataPaused, account: state.account}
 }
 
 // Metadata proves cross-version identities; unresolved magnets with unrelated
@@ -282,6 +320,16 @@ func (e *Engine) findIdentityLocked(spec *torrent.TorrentSpec) *Torrent {
 		}
 		// Keep the earlier FIFO entry. Explicit pause wins when previously unknown
 		// aliases collapse, so resolving metadata cannot resume a paused torrent.
+		if candidate.account.Uploaded > maxSafeTransferBytes-match.account.Uploaded {
+			match.account.Uploaded = maxSafeTransferBytes
+		} else {
+			match.account.Uploaded += candidate.account.Uploaded
+		}
+		if candidate.account.SeedNanos > math.MaxInt64-match.account.SeedNanos {
+			match.account.SeedNanos = math.MaxInt64
+		} else {
+			match.account.SeedNanos += candidate.account.SeedNanos
+		}
 		match.wantStart = match.wantStart && candidate.wantStart
 		match.metadataPaused = match.metadataPaused || candidate.metadataPaused
 		if match.selection == nil {

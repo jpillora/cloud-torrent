@@ -76,7 +76,7 @@ function cancel() {
             type="number"
             :min="k.endsWith('LimitKiB') ? 0 : undefined"
             :max="k.endsWith('LimitKiB') ? 1073741824 : undefined"
-            step="1"
+            :step="k === 'SeedRatioLimit' ? 'any' : 1"
             v-model.number="form[k]"
             :data-testid="`config-${k}`"
           />
@@ -84,6 +84,7 @@ function cancel() {
         </label>
       </template>
 
+      <p class="settings-help">Seeding ratio and time limits: 0 disables each limit. Either limit stops sharing; existing selected data counts toward the ratio denominator. Override applies until Stop.</p>
       <p class="settings-help">Active downloads: 0 means unlimited; completed torrents can seed without a download slot. Metadata concurrency: 0 uses four slots (maximum 64). Up to 256 torrents may be admitted.</p>
       <p class="settings-help">Bandwidth limits use KiB/s (1024 bytes/s). Set 0 for unlimited. Each direction allows a 64 KiB burst.</p>
       <p v-if="error" class="config-error" data-testid="config-error" role="alert">{{ error }}</p>

@@ -12,6 +12,8 @@
  * and synced to the browser as part of the application state.
  */
 export interface Config {
+  SeedRatioLimit: number /* float64 */; // 0 disables the ratio limit
+  SeedTimeMinutes: number /* int */; // 0 disables the active seeding time limit
   MaxActiveDownloads: number /* int */; // 0 means unlimited; completed selections do not consume slots
   MaxActiveMetadata: number /* int */; // 0 selects the bounded default of four
   DownloadLimitKiB: number /* int64 */; // global KiB/s, 0 explicitly means unlimited
@@ -23,6 +25,10 @@ export interface Config {
   EnableSeeding: boolean;
   IncomingPort: number /* int */;
 }
+
+//////////
+// source: seeding.go
+
 
 //////////
 // source: session.go
@@ -48,6 +54,11 @@ export interface Torrent {
   /**
    * cloud-torrent state
    */
+  Uploaded: number /* int64 */;
+  SeedSeconds: number /* int64 */;
+  SeedRatio: number /* float64 */;
+  StopReason: string;
+  SeedingOverride: boolean;
   State: string; // queued, metadata, downloading, paused, completed or seeding
   QueuePosition: number /* int */; // one-based FIFO waiting position, zero when not queued
   Started: boolean;

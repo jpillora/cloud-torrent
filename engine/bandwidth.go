@@ -43,12 +43,15 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 		return errors.New("configuration must be an object")
 	}
 	for key, value := range fields {
-		if (strings.EqualFold(key, "DownloadLimitKiB") || strings.EqualFold(key, "UploadLimitKiB") || strings.EqualFold(key, "MaxActiveDownloads") || strings.EqualFold(key, "MaxActiveMetadata")) && bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+		if (strings.EqualFold(key, "DownloadLimitKiB") || strings.EqualFold(key, "UploadLimitKiB") || strings.EqualFold(key, "MaxActiveDownloads") || strings.EqualFold(key, "MaxActiveMetadata") || strings.EqualFold(key, "SeedRatioLimit") || strings.EqualFold(key, "SeedTimeMinutes")) && bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
 			return errors.New("numeric limit cannot be null")
 		}
 	}
 	next := plain(*c)
 	if err := json.Unmarshal(data, &next); err != nil {
+		return err
+	}
+	if err := validateSeeding(Config(next)); err != nil {
 		return err
 	}
 	if err := validateQueue(Config(next)); err != nil {

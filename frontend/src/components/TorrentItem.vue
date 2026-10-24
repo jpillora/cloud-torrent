@@ -26,6 +26,9 @@ const zipUrl = computed(() =>
 function start() {
   return api.torrent('start', props.torrent.InfoHash)
 }
+function resumeSeeding() {
+  return api.torrent('resume-seeding', props.torrent.InfoHash)
+}
 function stop() {
   return api.torrent('stop', props.torrent.InfoHash)
 }
@@ -51,6 +54,10 @@ async function startFile(f: File) {
       {{ torrent.State }}<span v-if="torrent.QueuePosition"> · Queue position {{ torrent.QueuePosition }}</span>
     </div>
 
+    <p v-if="torrent.StopReason" class="status" data-testid="torrent-stop-reason">
+      {{ torrent.StopReason === 'seed-ratio' ? 'Stopped at the seeding ratio limit.' : torrent.StopReason === 'seed-time' ? 'Stopped at the seeding time limit.' : 'Sharing paused: session state could not be saved.' }}
+    </p>
+    <p v-if="torrent.SeedingOverride" class="status">Sharing limits overridden until you stop this torrent.</p>
     <div class="row">
       <div class="info">
         <div class="name" data-testid="torrent-name">
@@ -66,13 +73,14 @@ async function startFile(f: File) {
       <div class="controls">
         <button :class="{ active: showFiles }" @click="showFiles = !showFiles">Files</button>
         <AsyncButton
-          v-if="torrent.State !== 'queued' && (!torrent.Started || files.some(f => !f.Started))"
+          v-if="torrent.StopReason !== 'seed-ratio' && torrent.StopReason !== 'seed-time' && torrent.State !== 'queued' && (!torrent.Started || files.some(f => !f.Started))"
           class="green"
           :action="start"
           data-testid="torrent-start"
         >
           {{ torrent.Started ? 'Start all' : 'Start' }}
         </AsyncButton>
+        <AsyncButton v-if="torrent.StopReason === 'seed-ratio' || torrent.StopReason === 'seed-time'" class="green" :action="resumeSeeding" data-testid="torrent-resume-seeding">Resume sharing (ignore limits)</AsyncButton>
         <AsyncButton v-if="torrent.Started || torrent.State === 'queued' || torrent.State === 'metadata'" class="red" :action="stop" data-testid="torrent-stop">
           Stop
         </AsyncButton>
@@ -82,9 +90,10 @@ async function startFile(f: File) {
       </div>
     </div>
 
-    <div v-if="torrent.Started" class="status" data-testid="torrent-status">
+    <div v-if="torrent.Loaded" class="status" data-testid="torrent-status">
       <span :class="{ muted: torrent.Downloaded === 0 }">{{ bytes(torrent.Downloaded) }}</span>
       / {{ bytes(torrent.Size) }} — {{ torrent.Percent }}%
+      <span> · Uploaded {{ bytes(torrent.Uploaded ?? 0) }} · Ratio {{ (torrent.SeedRatio ?? 0).toFixed(2) }} · Seeding {{ torrent.SeedSeconds }}s</span>
       <span :class="{ muted: torrent.DownloadRate === 0 }"> — {{ bytes(torrent.DownloadRate) }}/s</span>
     </div>
 

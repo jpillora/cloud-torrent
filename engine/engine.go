@@ -39,6 +39,9 @@ type Engine struct {
 	sessionLock     *flock.Flock
 	pendingSessions []savedTorrent
 	queueSequence   uint64
+	clock           func() time.Time
+	accountDirty    bool
+	mutationDepth   int
 }
 
 // New returns an unconfigured engine. Call Configure before adding torrents.
@@ -62,6 +65,13 @@ func (e *Engine) Config() Config {
 func (e *Engine) Configure(c Config) error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
+	if e.sessionDir != "" && e.sessionLock == nil {
+		return errors.New("session store is closed; reopen it before configuring the engine")
+	}
+	if err := validateSeeding(c); err != nil {
+		return err
+	}
+	e.accountSeedingLocked(e.nowLocked())
 	if err := validateQueue(c); err != nil {
 		return err
 	}
@@ -77,6 +87,8 @@ func (e *Engine) Configure(c Config) error {
 		sameClient.UploadLimitKiB = c.UploadLimitKiB
 		sameClient.MaxActiveDownloads = c.MaxActiveDownloads
 		sameClient.MaxActiveMetadata = c.MaxActiveMetadata
+		sameClient.SeedRatioLimit = c.SeedRatioLimit
+		sameClient.SeedTimeMinutes = c.SeedTimeMinutes
 		if sameClient == c {
 			e.applyBandwidthLocked(c)
 			e.config = c
@@ -147,6 +159,7 @@ type savedTorrent struct {
 	wantStart      bool
 	order          uint64
 	metadataPaused bool
+	account        seedAccount
 }
 
 func (e *Engine) saveTorrentsLocked() []savedTorrent {
@@ -172,7 +185,7 @@ func saveTorrent(t *Torrent) savedTorrent {
 			spec.PieceLayers = nil
 		}
 	}
-	return savedTorrent{spec: spec, started: t.Started, autoStart: t.autoStart, files: maps.Clone(t.selection), wantStart: t.wantStart, order: t.order, metadataPaused: t.metadataPaused}
+	return savedTorrent{spec: spec, started: t.Started, autoStart: t.autoStart, files: maps.Clone(t.selection), wantStart: t.wantStart, order: t.order, metadataPaused: t.metadataPaused, account: t.account}
 }
 
 func (e *Engine) replaceClientLocked(c Config, saved []savedTorrent) error {
@@ -272,6 +285,17 @@ func cloneSpec(spec *torrent.TorrentSpec) *torrent.TorrentSpec {
 func (e *Engine) Close() error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
+	if e.client == nil && e.sessionLock == nil {
+		return nil
+	}
+	e.accountSeedingLocked(e.nowLocked())
+	var persistErr error
+	if e.accountDirty {
+		persistErr = e.persistLocked()
+	}
+	for _, model := range e.ts {
+		model.wasSeeding = false
+	}
 	if e.client != nil {
 		e.client.Close()
 		e.client = nil
@@ -279,9 +303,9 @@ func (e *Engine) Close() error {
 	if e.sessionLock != nil {
 		err := e.sessionLock.Unlock()
 		e.sessionLock = nil
-		return err
+		return errors.Join(persistErr, err)
 	}
-	return nil
+	return persistErr
 }
 
 // NewMagnet adds a torrent from a magnet URI.
@@ -503,6 +527,7 @@ func (e *Engine) StopTorrent(infohash string) error {
 	}
 	return e.sessionMutationLocked(func() error {
 		model.wantStart = false
+		model.account.Override = false
 		model.autoStart = false
 		model.metadataPaused = !model.Loaded
 		return e.scheduleLocked()
