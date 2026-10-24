@@ -193,3 +193,13 @@ A stopped-by-policy reason is shown, with files, selections and sessions retaine
 “Resume sharing (ignore limits)” explicitly overrides budgets until the next
 Stop; accounting and that override survive restart. Ordinary Start does not
 bypass a policy stop. A failure to persist active accounting pauses sharing.
+
+Per-file **Skip** changes download priority without deleting data. Selected
+siblings continue, and **Resume selected** retains the subset after pause or
+restart; **Start all** deliberately selects every file. Skipping every file
+pauses the torrent. Selection is shown separately from active transfer state.
+BitTorrent pieces can span file boundaries, and admitted writes can finish, so
+a skipped file may receive incidental bytes. Skip cancels combined webseed
+requests once so they cannot hold up selected siblings. Deleting a skipped file
+or its ancestor still requires a whole-torrent pause when an active sibling
+shares its pieces. File selection actions accept only exact torrent file paths.

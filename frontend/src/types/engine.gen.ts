@@ -75,5 +75,6 @@ export interface File {
   Chunks: number /* int */;
   Completed: number /* int */;
   Started: boolean;
+  Selected: boolean; // durable selection intent, including while paused or queued
   Percent: number /* float32 */;
 }

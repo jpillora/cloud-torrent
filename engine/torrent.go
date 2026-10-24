@@ -50,6 +50,7 @@ type File struct {
 	Chunks    int
 	Completed int
 	Started   bool
+	Selected  bool // durable selection intent, including while paused or queued
 	Percent   float32
 
 	f *torrent.File

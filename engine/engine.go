@@ -558,9 +558,85 @@ func (e *Engine) StartFile(infohash, path string) error {
 	return e.sessionMutationLocked(func() error { return e.queueStartLocked(model, false, path) })
 }
 
-// StopFile is not supported by the underlying engine (parity with master).
+// StopFile deselects an exact torrent file. Shared boundary pieces and already
+// admitted writes can still touch its bytes; skipping never removes content.
 func (e *Engine) StopFile(infohash, path string) error {
-	return fmt.Errorf("unsupported")
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	model, err := e.getTorrentLocked(infohash)
+	if err != nil {
+		return err
+	}
+	found := false
+	for _, file := range model.Files {
+		if file.Path == path {
+			found = true
+		}
+	}
+	if !found {
+		return errors.New("missing file")
+	}
+	if !model.selection[path] {
+		return errors.New("file already skipped")
+	}
+	return e.sessionMutationLocked(func() error {
+		model.selection[path] = false
+		// Upstream coalesces webseed requests across files. A priority change alone
+		// lets an already admitted stream keep reading skipped unique pieces. Cancel
+		// data requests once, then let the scheduler resume only selected priorities.
+		for _, file := range model.Files {
+			if file.Path == path {
+				file.f.SetPriority(torrent.PiecePriorityNone)
+				file.Started = false
+				file.Selected = false
+			}
+		}
+		if model.t != nil {
+			model.t.DisallowDataDownload()
+		}
+		model.autoStart = false
+		anySelected := false
+		for _, selected := range model.selection {
+			anySelected = anySelected || selected
+		}
+		if !anySelected {
+			model.account.StopReason = ""
+			model.wantStart = false
+			model.account.Override = false
+		}
+		return e.scheduleLocked()
+	})
+}
+
+// ResumeTorrent preserves the existing selected subset. StartTorrent is the
+// explicit Start all action, retained for compatibility with existing clients.
+func (e *Engine) ResumeTorrent(infohash string) error {
+	e.mut.Lock()
+	defer e.mut.Unlock()
+	model, err := e.getTorrentLocked(infohash)
+	if err != nil {
+		return err
+	}
+	if seedPolicyReason(model.account.StopReason) {
+		return errors.New("seeding limit reached; use Resume sharing to override")
+	}
+	if model.wantStart {
+		return errors.New("already started or queued")
+	}
+	selected := false
+	for _, want := range model.selection {
+		selected = selected || want
+	}
+	if !selected {
+		return errors.New("select at least one file or use Start all")
+	}
+	return e.sessionMutationLocked(func() error {
+		model.wantStart = true
+		model.metadataPaused = false
+		model.account.StopReason = ""
+		model.order = e.nextOrderLocked()
+		return e.scheduleLocked()
+	})
 }
 
 // defaultPort falls back to 50007 when the configured port is out of range,

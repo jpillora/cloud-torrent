@@ -47,7 +47,7 @@ func (e *Engine) RemoveDownload(root *os.Root, name string) error {
 			if f == nil || !downloadContains(root, target, clean, f.Path) {
 				continue
 			}
-			if t.Started && f.Started && f.Percent < 100 {
+			if deletionTouchesActivePieces(t, f) {
 				return ErrActiveDownload
 			}
 			// Keep scanning: another file in this torrent may still be active.
@@ -89,6 +89,33 @@ func downloadContains(root *os.Root, target os.FileInfo, clean, filePath string)
 			if info, err := root.Stat(p); err == nil && os.SameFile(info, target) {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+// A skipped file can share a boundary piece with an active sibling. Dropping
+// its bytes while that piece is in flight is unsafe, even if its own priority
+// is None. Require whole-torrent pause before deleting that file or ancestor.
+func deletionTouchesActivePieces(model *Torrent, target *File) bool {
+	if !model.Started || model.t == nil || target.f == nil {
+		return false
+	}
+	if target.Started && target.Percent < 100 {
+		return true
+	}
+	info := model.t.Info()
+	if info == nil || info.PieceLength <= 0 || target.Size <= 0 {
+		return false
+	}
+	first, last := target.f.Offset()/info.PieceLength, (target.f.Offset()+target.Size-1)/info.PieceLength
+	for _, file := range model.Files {
+		if !file.Started || file.Percent >= 100 || file.Size <= 0 || file.f == nil {
+			continue
+		}
+		start, end := file.f.Offset()/info.PieceLength, (file.f.Offset()+file.Size-1)/info.PieceLength
+		if first <= end && start <= last {
+			return true
 		}
 	}
 	return false

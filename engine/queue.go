@@ -195,6 +195,7 @@ func (e *Engine) scheduleLocked() error {
 				}
 			}
 			file.Started = started
+			file.Selected = model.selection[file.Path]
 		}
 	}
 	if e.accountDirty && e.mutationDepth == 0 {

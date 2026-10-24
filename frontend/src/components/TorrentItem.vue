@@ -10,7 +10,7 @@ import Icon from './Icon.vue'
 const props = defineProps<{ torrent: Torrent }>()
 const showFiles = ref(false)
 
-// Per-file Start errors, keyed by file path.
+// Per-file selection errors, keyed by file path.
 const fileErrors = reactive<Record<string, string>>({})
 
 const files = computed<File[]>(() =>
@@ -24,6 +24,9 @@ const zipUrl = computed(() =>
 // return the promise so AsyncButton can show its loading state until the
 // request settles (failures surface in the global error banner)
 function start() {
+  return api.torrent(files.value.some(f => f.Selected) ? 'resume' : 'start', props.torrent.InfoHash)
+}
+function startAll() {
   return api.torrent('start', props.torrent.InfoHash)
 }
 function resumeSeeding() {
@@ -36,11 +39,11 @@ function remove() {
   return api.torrent('delete', props.torrent.InfoHash)
 }
 
-// Files can be selected individually; pausing uses the whole-torrent control.
-async function startFile(f: File) {
+// Selection is separate from whether the torrent is currently transferring.
+async function setFile(f: File, action: 'start' | 'stop') {
   delete fileErrors[f.Path]
   try {
-    await api.file('start', props.torrent.InfoHash, f.Path)
+    await api.file(action, props.torrent.InfoHash, f.Path)
   } catch (e) {
     fileErrors[f.Path] = e instanceof Error ? e.message : String(e)
   }
@@ -73,13 +76,14 @@ async function startFile(f: File) {
       <div class="controls">
         <button :class="{ active: showFiles }" @click="showFiles = !showFiles">Files</button>
         <AsyncButton
-          v-if="torrent.StopReason !== 'seed-ratio' && torrent.StopReason !== 'seed-time' && torrent.State !== 'queued' && (!torrent.Started || files.some(f => !f.Started))"
+          v-if="torrent.StopReason !== 'seed-ratio' && torrent.StopReason !== 'seed-time' && torrent.State !== 'queued' && !torrent.Started"
           class="green"
           :action="start"
           data-testid="torrent-start"
         >
-          {{ torrent.Started ? 'Start all' : 'Start' }}
+          {{ files.some(f => f.Selected) ? 'Resume selected' : 'Start all' }}
         </AsyncButton>
+        <AsyncButton v-if="torrent.Loaded && files.some(f => f.Selected) && files.some(f => !f.Selected) && !torrent.StopReason" class="green" :action="startAll" data-testid="torrent-start-all">Start all</AsyncButton>
         <AsyncButton v-if="torrent.StopReason === 'seed-ratio' || torrent.StopReason === 'seed-time'" class="green" :action="resumeSeeding" data-testid="torrent-resume-seeding">Resume sharing (ignore limits)</AsyncButton>
         <AsyncButton v-if="torrent.Started || torrent.State === 'queued' || torrent.State === 'metadata'" class="red" :action="stop" data-testid="torrent-stop">
           Stop
@@ -126,14 +130,17 @@ async function startFile(f: File) {
           </td>
           <td class="file-controls">
             <AsyncButton
-              v-if="!f.Started"
+              v-if="!f.Selected"
               class="green"
-              :action="() => startFile(f)"
+              :action="() => setFile(f, 'start')"
               data-testid="file-start"
             >
               Start
             </AsyncButton>
-            <span v-else class="muted" data-testid="file-selected">Selected</span>
+            <span v-else>
+              <span class="muted" data-testid="file-selected">Selected</span>
+              <AsyncButton class="red" :action="() => setFile(f, 'stop')" data-testid="file-stop">Skip</AsyncButton>
+            </span>
           </td>
         </tr>
       </tbody>
@@ -145,8 +152,8 @@ async function startFile(f: File) {
         </tr>
       </tfoot>
     </table>
-    <p v-if="showFiles && torrent.Loaded && torrent.Started" class="muted" data-testid="file-pause-help">
-      Use Stop above to pause the whole torrent. Individual files cannot be paused.
+    <p v-if="showFiles && torrent.Loaded" class="muted" data-testid="file-pause-help">
+      Skip deselects a file without deleting it. Shared pieces and outstanding writes can still add some bytes. Skipping every file pauses the torrent. Resume selected keeps your choices; Start all selects every file.
     </p>
   </div>
 </template>

@@ -196,6 +196,23 @@ try {
       )?.style.width === "100%"
     );
   }
+  if (!publicFixture) {
+    await card.getByRole("button", { name: "Files", exact: true }).click();
+    const first = card.getByRole("row").filter({ hasText: [...files.keys()][0]! });
+    await first.getByTestId("file-stop").click();
+    await first.getByTestId("file-start").waitFor();
+    assert.equal(await card.getByTestId("file-selected").count(), files.size - 1);
+    await card.getByTestId("torrent-stop").click();
+    const resume = card.getByTestId("torrent-start");
+    await resume.waitFor();
+    assert.equal((await resume.innerText()).trim(), "Resume selected");
+    await resume.click();
+    await first.getByTestId("file-start").waitFor();
+    await first.getByTestId("file-start").click();
+    await first.getByTestId("file-selected").waitFor();
+    assert.equal(await card.getByTestId("file-selected").count(), files.size);
+    console.log("PASS: Skip, selection state, Resume selected and reselect through API/SSE/UI");
+  }
   await card.getByTestId("torrent-stop").click();
   await card.getByTestId("torrent-remove").click();
   await card.waitFor({ state: "detached" });
