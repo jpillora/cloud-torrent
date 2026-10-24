@@ -139,3 +139,8 @@ redirect limits remain bounded (five hops for application/source fetches, the
 HTTP client's default ten for library-owned requests). Raw upstream diagnostics
 are suppressed because they can contain tracker passkeys; application errors
 and typed status remain available without raw URLs or headers.
+
+Provider list and detail requests share a 15-second deadline and four concurrent
+slots. Browser disconnects cancel upstream work. Responses are limited to 2 MiB
+of decoded content and 500 results, including gzip responses; failures return an
+error rather than an empty result list. Excess requests receive HTTP 429.

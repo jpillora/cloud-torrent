@@ -42,13 +42,16 @@ type Server struct {
 	Log                bool   `help:"Enable request logging"`
 	Open               bool   `help:"Open browser after the server starts"`
 
-	engine       *engine.Engine
-	state        State
-	scraper      *scraper.Handler
-	searchConfig []byte       // last-loaded (normalized) provider config, for change detection
-	configMu     sync.Mutex   // serializes engine changes and their persisted configuration
-	searchMu     sync.RWMutex // protects replacement of immutable scraper configurations
-	fetchClient  *http.Client // optional client override; configured before serving
+	engine        *engine.Engine
+	state         State
+	scraper       *scraper.Handler
+	searchConfig  []byte     // last-loaded (normalized) provider config, for change detection
+	configMu      sync.Mutex // serializes engine changes and their persisted configuration
+	searchInit    sync.Once
+	searchSlots   chan struct{}
+	searchTimeout time.Duration // optional override for isolated tests
+	searchMu      sync.RWMutex  // protects replacement of immutable scraper configurations
+	fetchClient   *http.Client  // optional client override; configured before serving
 }
 
 // Run wires the torrent engine and realtime state, starts the poll/stats loops,

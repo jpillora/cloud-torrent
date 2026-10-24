@@ -1,12 +1,17 @@
 package server
 
 import (
+	"bytes"
+	"compress/gzip"
+	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/jpillora/scraper/scraper"
@@ -15,6 +20,22 @@ import (
 // Provider requests use the application's transport instead of the scraper's
 // package-global DefaultClient. The dependency remains the config validator.
 func (s *Server) executeSearch(w http.ResponseWriter, r *http.Request, e *scraper.Endpoint) {
+
+	timeout := s.searchTimeout
+	if timeout <= 0 {
+		timeout = 15 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+	r = r.WithContext(ctx)
+	s.searchInit.Do(func() { s.searchSlots = make(chan struct{}, maxSearchConcurrency) })
+	select {
+	case s.searchSlots <- struct{}{}:
+		defer func() { <-s.searchSlots }()
+	default:
+		http.Error(w, "too many provider requests", http.StatusTooManyRequests)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	raw, err := renderSearchURL(e.URL, r.URL.Query())
 	if err != nil {
@@ -45,8 +66,17 @@ func (s *Server) executeSearch(w http.ResponseWriter, r *http.Request, e *scrape
 		http.Error(w, "provider returned unsuccessful status", 502)
 		return
 	}
-	// Fetch limits and result admission are tightened independently in task #75.
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
+
+	body, err := readSearchBody(resp)
+	if err != nil {
+		http.Error(w, "provider response exceeds limits or is invalid", 502)
+		return
+	}
+	if r.Context().Err() != nil {
+		http.Error(w, "provider request expired", 504)
+		return
+	}
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(body))
 	if err != nil {
 		http.Error(w, "invalid provider response", 502)
 		return
@@ -109,6 +139,10 @@ func extractSearchHTML(e *scraper.Endpoint, doc *goquery.Document) ([]scraper.Re
 	rows := []scraper.Result{}
 	var failed error
 	nodes.EachWithBreak(func(_ int, row *goquery.Selection) bool {
+		if len(rows) >= maxSearchResults {
+			failed = errors.New("too many provider results")
+			return false
+		}
 		result := scraper.Result{}
 		for field, steps := range rules {
 			value, err := extractHTMLSteps(row, steps)
@@ -190,4 +224,36 @@ func extractHTMLSteps(selection *goquery.Selection, steps []string) (string, err
 		}
 	}
 	return value, nil
+}
+
+const (
+	maxSearchBytes       = 2 << 20
+	maxSearchResults     = 500
+	maxSearchConcurrency = 4
+)
+
+// Limit decoded bytes even when provider headers explicitly request gzip and
+// therefore disable net/http's automatic decompression.
+func readSearchBody(resp *http.Response) ([]byte, error) {
+	var reader io.Reader = resp.Body
+	switch strings.ToLower(strings.TrimSpace(resp.Header.Get("Content-Encoding"))) {
+	case "", "identity":
+	case "gzip":
+		gz, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		defer gz.Close()
+		reader = gz
+	default:
+		return nil, errors.New("unsupported provider encoding")
+	}
+	body, err := io.ReadAll(io.LimitReader(reader, maxSearchBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(body) > maxSearchBytes {
+		return nil, errors.New("provider response too large")
+	}
+	return body, nil
 }
