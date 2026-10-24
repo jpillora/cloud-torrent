@@ -156,3 +156,13 @@ the store is limited to 256 torrents and 16 MiB. Restart verifies actual pieces
 rather than trusting completion counters. Invalid or incompatible state stops
 startup: restore a backup, or stop the server and move `sessions.json` aside to
 start with an empty session. Downloaded files are retained.
+
+Global `DownloadLimitKiB` and `UploadLimitKiB` settings independently cap aggregate
+transfer rates in KiB/s (1024 bytes per second). Set a whole number from 1 to
+1073741824, or explicitly use 0 for unlimited. Invalid values are rejected without
+changing active settings. Each direction permits a fixed 64 KiB token burst;
+network buffers and already admitted reads/requests may briefly exceed the
+sustained rate. Download limiting covers peer reads and decoded webseed payloads;
+upload limiting covers peer payloads. Protocol and other application HTTP traffic
+are not upload payload. Limits update in place without replacing torrent clients
+or changing paused state and file selections.

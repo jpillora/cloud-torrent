@@ -28,6 +28,8 @@ watch(
 
 // "DownloadDirectory" -> "Download Directory" (master's addspaces filter).
 function addSpaces(s: string): string {
+  if (s === 'DownloadLimitKiB') return 'Download limit (KiB/s)'
+  if (s === 'UploadLimitKiB') return 'Upload limit (KiB/s)'
   return s.replace(/([A-Z]+[a-z]*)/g, (_, w) => ' ' + w).replace(/^ /, '')
 }
 
@@ -72,6 +74,9 @@ function cancel() {
           <input
             v-if="typeof v === 'number'"
             type="number"
+            :min="k.endsWith('LimitKiB') ? 0 : undefined"
+            :max="k.endsWith('LimitKiB') ? 1073741824 : undefined"
+            step="1"
             v-model.number="form[k]"
             :data-testid="`config-${k}`"
           />
@@ -79,6 +84,7 @@ function cancel() {
         </label>
       </template>
 
+      <p class="settings-help">Bandwidth limits use KiB/s (1024 bytes/s). Set 0 for unlimited. Each direction allows a 64 KiB burst.</p>
       <p v-if="error" class="config-error" data-testid="config-error" role="alert">{{ error }}</p>
 
       <div class="buttons">

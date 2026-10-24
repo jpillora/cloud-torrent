@@ -21,6 +21,7 @@ import (
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/gofrs/flock"
 	"github.com/jpillora/cloud-torrent/internal/outbound"
+	"golang.org/x/time/rate"
 )
 
 // Engine wraps anacrolix/torrent and maintains a cache of view-models keyed by
@@ -33,6 +34,8 @@ type Engine struct {
 	client          *torrent.Client
 	config          Config
 	ts              map[string]*Torrent
+	downloadLimiter *rate.Limiter
+	uploadLimiter   *rate.Limiter
 	sessionDir      string
 	sessionLock     *flock.Flock
 	pendingSessions []savedTorrent
@@ -44,7 +47,7 @@ func New(policies ...*outbound.Policy) *Engine {
 	if len(policies) > 0 && policies[0] != nil {
 		policy = policies[0]
 	}
-	return &Engine{outbound: policy, ts: map[string]*Torrent{}, newClient: torrent.NewClient}
+	return &Engine{downloadLimiter: rate.NewLimiter(rate.Inf, bandwidthBurst), uploadLimiter: rate.NewLimiter(rate.Inf, bandwidthBurst), outbound: policy, ts: map[string]*Torrent{}, newClient: torrent.NewClient}
 }
 
 // Config returns the engine's current configuration.
@@ -59,12 +62,18 @@ func (e *Engine) Config() Config {
 func (e *Engine) Configure(c Config) error {
 	e.mut.Lock()
 	defer e.mut.Unlock()
+	if err := validateBandwidth(c); err != nil {
+		return err
+	}
 	c.IncomingPort = defaultPort(c.IncomingPort)
 	old := e.config
 	if e.client != nil {
 		sameClient := old
 		sameClient.AutoStart = c.AutoStart
+		sameClient.DownloadLimitKiB = c.DownloadLimitKiB
+		sameClient.UploadLimitKiB = c.UploadLimitKiB
 		if sameClient == c {
+			e.applyBandwidthLocked(c)
 			e.config = c
 			return nil
 		}
@@ -167,6 +176,9 @@ func saveTorrent(t *Torrent) savedTorrent {
 
 func (e *Engine) replaceClientLocked(c Config, saved []savedTorrent) error {
 	config := torrent.NewDefaultClientConfig()
+	e.applyBandwidthLocked(c)
+	config.DownloadRateLimiter = e.downloadLimiter
+	config.UploadRateLimiter = e.uploadLimiter
 	config.DataDir = c.DownloadDirectory
 	// Upstream diagnostics include complete source/tracker URLs and passkeys.
 	// Application errors/status remain available without exposing those details.
