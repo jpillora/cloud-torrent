@@ -62,7 +62,7 @@ func TestFetchSizeLimitAndStatus(t *testing.T) {
 		io.WriteString(w, strings.Repeat("x", 1025))
 	}))
 	defer origin.Close()
-	s := &Server{}
+	s := &Server{OutboundAllowCIDRs: "127.0.0.0/8"}
 	if _, err := s.fetchBytes(context.Background(), origin.URL, 1024); err == nil || !strings.Contains(err.Error(), "exceeds 1024") {
 		t.Fatalf("oversized response: %v", err)
 	}

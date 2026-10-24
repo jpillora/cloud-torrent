@@ -9,6 +9,7 @@ import (
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/bencode"
+	"github.com/jpillora/cloud-torrent/internal/outbound"
 	"testing"
 
 	"github.com/anacrolix/torrent/metainfo"
@@ -191,6 +192,7 @@ func TestSnapshotsOwnTheirModels(t *testing.T) {
 
 func mustConfigureEngine(t *testing.T, e *Engine) Config {
 	t.Helper()
+	e.outbound, _ = outbound.New("127.0.0.0/8,::1/128")
 	c := Config{DownloadDirectory: t.TempDir(), IncomingPort: freePort(t)}
 	if err := e.Configure(c); err != nil {
 		t.Fatal(err)

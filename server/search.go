@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -35,7 +36,12 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	s.searchMu.RLock()
 	h := s.scraper
 	s.searchMu.RUnlock()
-	h.ServeHTTP(w, r)
+	e := h.Endpoint(strings.TrimPrefix(r.URL.Path, "/"))
+	if e == nil {
+		http.NotFound(w, r)
+		return
+	}
+	s.executeSearch(w, r, e)
 }
 
 func newSearchHandler(config []byte) (*scraper.Handler, error) {
@@ -76,7 +82,7 @@ func (s *Server) startSearch() error {
 	// baseline for the change-detection in fetchSearchConfig
 	s.searchConfig, _ = normalize(defaultSearchConfig)
 	s.state.Lock()
-	s.state.SearchProviders = s.scraper.Config
+	s.state.SearchProviders = searchDescriptors(s.scraper.Config)
 	s.state.Unlock()
 	go s.fetchSearchConfigLoop()
 	return nil
@@ -122,7 +128,7 @@ func (s *Server) fetchSearchConfig() error {
 	s.searchConfig = newConfig
 	s.searchMu.Unlock()
 	s.state.Lock()
-	s.state.SearchProviders = h.Config
+	s.state.SearchProviders = searchDescriptors(h.Config)
 	s.state.Unlock()
 	s.state.Push()
 	log.Printf("Loaded new search providers")
@@ -230,3 +236,20 @@ var defaultSearchConfig = []byte(`{
 		}
 	}
 }`)
+
+// Only presentation data crosses the realtime boundary. Endpoint headers,
+// request bodies and query/passkey-bearing templates remain server-side.
+func searchDescriptors(config scraper.Config) scraper.Config {
+	out := scraper.Config{}
+	for id, e := range config {
+		if e == nil {
+			continue
+		}
+		origin := ""
+		if u, err := url.Parse(e.URL); err == nil {
+			origin = (&url.URL{Scheme: u.Scheme, Host: u.Host}).String()
+		}
+		out[id] = &scraper.Endpoint{Name: e.Name, URL: origin}
+	}
+	return out
+}

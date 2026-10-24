@@ -67,11 +67,11 @@ func TestSearchExposesOnlyReadOnlyProviderQueries(t *testing.T) {
 	}))
 	defer upstream.Close()
 	config := []byte(`{"fixture":{"url":"` + upstream.URL + `","list":"li","result":{"name":"b"}},"fixture/item":{"url":"` + upstream.URL + `","result":{"name":"h1"}}}`)
-	s := &Server{scraper: &scraper.Handler{}, searchConfig: config}
+	s := &Server{scraper: &scraper.Handler{}, searchConfig: config, OutboundAllowCIDRs: "127.0.0.0/8"}
 	if err := s.scraper.LoadConfig(config); err != nil {
 		t.Fatal(err)
 	}
-	s.state.SearchProviders = s.scraper.Config
+	s.state.SearchProviders = searchDescriptors(s.scraper.Config)
 	before, err := json.Marshal(s.scraper.Config)
 	must(t, err)
 	h := s.handler()
@@ -100,7 +100,20 @@ func TestSearchExposesOnlyReadOnlyProviderQueries(t *testing.T) {
 	must(t, err)
 	state, err := json.Marshal(s.state.SearchProviders)
 	must(t, err)
-	if string(before) != string(after) || string(before) != string(state) || string(s.searchConfig) != string(config) {
+	expectedState, err := json.Marshal(searchDescriptors(s.scraper.Config))
+	must(t, err)
+	if string(before) != string(after) || string(state) != string(expectedState) || string(s.searchConfig) != string(config) {
 		t.Fatal("query routes changed provider catalog or refresh baseline")
+	}
+}
+
+func TestSearchDescriptorsDoNotExposeCredentials(t *testing.T) {
+	config := scraper.Config{"private": &scraper.Endpoint{Name: "private", URL: "https://user:password@example.com/path?passkey=secret", Headers: map[string]string{"Authorization": "secret"}, Body: "secret"}}
+	b, err := json.Marshal(searchDescriptors(config))
+	must(t, err)
+	for _, secret := range []string{"password", "secret", "Authorization", "passkey"} {
+		if strings.Contains(string(b), secret) {
+			t.Fatal("provider secret exposed")
+		}
 	}
 }

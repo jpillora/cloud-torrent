@@ -126,3 +126,16 @@ be retrieved or deleted through the download API. Aliases and parent-folder
 removal are checked too. `--state-directory` reserves a private location outside
 the download tree; overlapping directories are rejected. Settings writes use
 owner-only permissions.
+
+Outbound HTTP uses a public-destination policy: loopback, private, link-local,
+metadata and reserved addresses are denied, including after DNS resolution and
+redirects. Trusted operators can grant specific CIDRs with
+`--outbound-allow-cidrs '192.168.1.10/32'`. Local E2E fixtures explicitly grant
+`127.0.0.1/32`. This applies to provider/config/torrent fetching, magnet HTTP
+sources, webseeds and HTTP tracker dialing. Ambient HTTP proxy variables are not
+used. Peer TCP/uTP sockets and DHT discovery are separate and are not an anonymity
+boundary; UDP tracker resolution also uses the destination grants. Library
+redirect limits remain bounded (five hops for application/source fetches, the
+HTTP client's default ten for library-owned requests). Raw upstream diagnostics
+are suppressed because they can contain tracker passkeys; application errors
+and typed status remain available without raw URLs or headers.

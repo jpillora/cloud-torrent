@@ -92,6 +92,8 @@ try {
     String(port),
     "--config-path",
     config,
+    "--outbound-allow-cidrs",
+    "127.0.0.1/32",
   ], {
     cwd: scratch,
     stdout: "ignore",

@@ -19,6 +19,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/jpillora/cloud-torrent/engine"
+	"github.com/jpillora/cloud-torrent/internal/outbound"
 	"github.com/jpillora/cloud-torrent/static"
 	"github.com/jpillora/cookieauth"
 	"github.com/jpillora/requestlog/v2"
@@ -29,16 +30,17 @@ import (
 // Server is the cloud-torrent HTTP server. Its exported fields double as the
 // command-line flags, parsed by github.com/jpillora/opts (see main.go).
 type Server struct {
-	Title          string `help:"Title of this instance" env:"TITLE"`
-	Port           int    `help:"Listening port" env:"PORT"`
-	Host           string `help:"Listening interface (default all)"`
-	Auth           string `help:"Optional basic auth in form 'user:password'" env:"AUTH"`
-	StateDirectory string `help:"Private operational state directory (must be outside downloads)"`
-	ConfigPath     string `help:"Configuration file path"`
-	KeyPath        string `help:"TLS Key file path"`
-	CertPath       string `help:"TLS Certificate file path" short:"r"`
-	Log            bool   `help:"Enable request logging"`
-	Open           bool   `help:"Open browser after the server starts"`
+	Title              string `help:"Title of this instance" env:"TITLE"`
+	Port               int    `help:"Listening port" env:"PORT"`
+	Host               string `help:"Listening interface (default all)"`
+	Auth               string `help:"Optional basic auth in form 'user:password'" env:"AUTH"`
+	OutboundAllowCIDRs string `opts:"name=outbound-allow-cidrs,short=-" help:"Explicit comma-separated CIDRs allowed for outbound LAN HTTP"`
+	StateDirectory     string `help:"Private operational state directory (must be outside downloads)"`
+	ConfigPath         string `help:"Configuration file path"`
+	KeyPath            string `help:"TLS Key file path"`
+	CertPath           string `help:"TLS Certificate file path" short:"r"`
+	Log                bool   `help:"Enable request logging"`
+	Open               bool   `help:"Open browser after the server starts"`
 
 	engine       *engine.Engine
 	state        State
@@ -75,6 +77,12 @@ func (s *Server) Run(version string) error {
 		return err
 	}
 
+	policy, err := outbound.New(s.OutboundAllowCIDRs)
+	if err != nil {
+		return err
+	}
+	s.fetchClient = policy.Client()
+
 	// search providers: load the embedded config, publish into the state, and
 	// start the background refresh of the remote config.
 	if err := s.startSearch(); err != nil {
@@ -82,7 +90,7 @@ func (s *Server) Run(version string) error {
 	}
 
 	// torrent engine + persisted config
-	s.engine = engine.New()
+	s.engine = engine.New(policy)
 	if err := s.reconfigure(c); err != nil {
 		return fmt.Errorf("initial configure failed: %w", err)
 	}

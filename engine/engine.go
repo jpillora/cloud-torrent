@@ -4,8 +4,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	alog "github.com/anacrolix/log"
+	"io"
+	"log/slog"
 	"maps"
 	"net"
+	"net/url"
 	"os"
 	"slices"
 	"sync"
@@ -14,12 +18,14 @@ import (
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/metainfo"
+	"github.com/jpillora/cloud-torrent/internal/outbound"
 )
 
 // Engine wraps anacrolix/torrent and maintains a cache of view-models keyed by
 // infohash hex string. mut owns the client, configuration and all cached models.
 // Public methods lock it; helpers suffixed Locked require the caller to hold it.
 type Engine struct {
+	outbound  *outbound.Policy
 	mut       sync.Mutex
 	newClient func(*torrent.ClientConfig) (*torrent.Client, error)
 	client    *torrent.Client
@@ -28,8 +34,12 @@ type Engine struct {
 }
 
 // New returns an unconfigured engine. Call Configure before adding torrents.
-func New() *Engine {
-	return &Engine{ts: map[string]*Torrent{}, newClient: torrent.NewClient}
+func New(policies ...*outbound.Policy) *Engine {
+	policy, _ := outbound.New("")
+	if len(policies) > 0 && policies[0] != nil {
+		policy = policies[0]
+	}
+	return &Engine{outbound: policy, ts: map[string]*Torrent{}, newClient: torrent.NewClient}
 }
 
 // Config returns the engine's current configuration.
@@ -146,6 +156,16 @@ func saveTorrent(t *Torrent) savedTorrent {
 func (e *Engine) replaceClientLocked(c Config, saved []savedTorrent) error {
 	config := torrent.NewDefaultClientConfig()
 	config.DataDir = c.DownloadDirectory
+	// Upstream diagnostics include complete source/tracker URLs and passkeys.
+	// Application errors/status remain available without exposing those details.
+	config.Logger.SetHandlers(alog.DiscardHandler)
+	config.Slogger = slog.New(slog.NewTextHandler(io.Discard, nil))
+	config.HTTPProxy = e.outbound.Proxy
+	config.HTTPDialContext = e.outbound.DialContext
+	config.TrackerDialContext = e.outbound.DialContext
+	config.LookupTrackerIp = e.outbound.LookupTracker
+	config.WebTransport = e.outbound.Transport()
+	config.MetainfoSourcesClient = e.outbound.Client()
 	config.NoUpload = !c.EnableUpload
 	config.Seed = c.EnableSeeding
 	config.ListenPort = c.IncomingPort
@@ -254,6 +274,26 @@ func (e *Engine) NewMagnet(magnetURI string) error {
 
 // NewTorrent adds a torrent from a parsed .torrent spec.
 func (e *Engine) NewTorrent(spec *torrent.TorrentSpec) error {
+	for _, raw := range append(slices.Clone(spec.Sources), spec.Webseeds...) {
+		u, err := url.Parse(raw)
+		if err != nil || e.outbound.CheckURL(u) != nil {
+			return outbound.ErrDenied
+		}
+	}
+	for _, tier := range spec.Trackers {
+		for _, raw := range tier {
+			u, err := url.Parse(raw)
+			if err != nil || u.User != nil || u.Hostname() == "" {
+				return outbound.ErrDenied
+			}
+			switch u.Scheme {
+			case "http", "https", "udp", "ws", "wss":
+			default:
+				return outbound.ErrDenied
+			}
+		}
+	}
+
 	e.mut.Lock()
 	defer e.mut.Unlock()
 	if e.client == nil {
