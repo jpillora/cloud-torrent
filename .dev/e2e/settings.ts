@@ -18,9 +18,18 @@ export async function verifySettings(browser: Browser, base: string) {
     const help = page.getByRole("button", { name: "About Upload limit (KiB/s)", exact: true });
     const explanation = page.locator("#help-UploadLimitKiB");
     assert.equal(await explanation.isVisible(), false);
+    const layout = (element: HTMLElement) => {
+      const box = element.getBoundingClientRect();
+      return { x: box.x + scrollX, y: box.y + scrollY, width: box.width, height: box.height };
+    };
+    const before = await upload.evaluate(layout);
     await help.hover();
     await explanation.waitFor();
+    assert.equal(await explanation.getAttribute("role"), "tooltip");
+    assert.deepEqual(await upload.evaluate(layout), before, "opening a tooltip must not move the setting");
     assert.match(await explanation.innerText(), /Shared upload payload limit/);
+    await explanation.hover();
+    assert(await explanation.isVisible(), "tooltip stays open while its text is hovered");
     await page.getByRole("heading", { name: "Settings", exact: true }).hover();
     await explanation.waitFor({ state: "hidden" });
     await help.click();
@@ -87,6 +96,8 @@ export async function verifySettings(browser: Browser, base: string) {
     await page.locator("#help-DownloadDirectory").waitFor();
     assert.equal(await input.inputValue(), value, "tapping info must not change the setting");
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+    const popup = await page.locator("#help-DownloadDirectory").boundingBox();
+    assert(popup && popup.x >= 0 && popup.x + popup.width <= 375 && popup.y >= 0 && popup.y + popup.height <= 812, "tooltip must fit the mobile viewport");
     await help.tap();
     await page.locator("#help-DownloadDirectory").waitFor({ state: "hidden" });
     const checkbox = page.getByTestId("config-AutoStart");
@@ -94,6 +105,8 @@ export async function verifySettings(browser: Browser, base: string) {
     await page.getByRole("button", { name: "About Auto start", exact: true }).tap();
     await page.locator("#help-AutoStart").waitFor();
     assert.equal(await checkbox.isChecked(), checked, "info must not toggle an adjacent checkbox");
+    await page.getByRole("heading", { name: "Settings", exact: true }).tap();
+    await page.locator("#help-AutoStart").waitFor({ state: "hidden" });
   } finally {
     await mobile.close();
   }
