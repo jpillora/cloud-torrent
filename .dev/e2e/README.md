@@ -7,7 +7,10 @@ Playwright and ZIP-reader versions are locked in this directory's package-lock.j
 
 Appearance checks cover the system default, live OS changes, explicit light/dark
 overrides, reload persistence, tab synchronization, denied theme storage, keyboard
-selection and mobile settings layout. The torrent/download workflow runs in dark mode.
+selection and mobile settings layout. Settings checks cover the dedicated page,
+direct links and browser history, loading after sync, hover/click/keyboard/touch
+help for every field, and save success/error feedback. The torrent/download
+workflow runs in dark mode.
 
 Search cancellation checks hold provider/API responses at the HTTP boundary. They
 verify that one spinner replaces the icon without changing button dimensions,

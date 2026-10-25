@@ -4,6 +4,7 @@ import { mdiFlash, mdiClose } from '@mdi/js'
 import { uploadTorrentFiles } from './upload'
 import { connection, retryNow } from './state'
 import { ui } from './ui'
+import { page } from './navigation'
 
 // connection overlay copy, driven by the reconnect loop's phase
 const connTitle = computed(() => (connection.hasConnected ? 'Connection lost' : 'Connecting'))
@@ -128,11 +129,13 @@ onBeforeUnmount(() => {
       <p>{{ ui.error }}</p>
     </div>
 
-    <ConfigEditor />
-    <Inbox />
-    <Omni />
-    <Torrents />
-    <Downloads />
+    <ConfigEditor v-if="page === 'settings'" />
+    <main v-else data-testid="main-page">
+      <Inbox />
+      <Omni />
+      <Torrents />
+      <Downloads />
+    </main>
     <Footer />
 
     <div v-show="dragging" class="file-drop-cover" data-testid="drop-cover">

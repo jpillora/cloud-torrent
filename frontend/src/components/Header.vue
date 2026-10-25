@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { mdiCloud, mdiGithub, mdiCog, mdiMagnet, mdiFlash, mdiLoading } from '@mdi/js'
 import { state, connection } from '../state'
 import { ui } from '../ui'
+import { page, goHome } from '../navigation'
 import Icon from './Icon.vue'
 
 const repo = 'https://github.com/jpillora/cloud-torrent'
@@ -34,23 +35,23 @@ const logo = computed(() => (logoHover.value ? mdiGithub : mdiCloud))
       >
         <Icon :path="mdiLoading" spin />
       </span>
-      <button
-        type="button"
+      <a
+        href="#/settings"
         class="icon-btn"
-        :class="{ on: ui.configEdit }"
+        :class="{ on: page === 'settings' }"
+        :aria-current="page === 'settings' ? 'page' : undefined"
         title="Settings"
         data-testid="status-settings"
-        @click="ui.configEdit = !ui.configEdit"
       >
         <Icon :path="mdiCog" />
-      </button>
+      </a>
       <button
         type="button"
         class="icon-btn"
         :class="{ on: ui.omniEdit }"
         title="Magnet editor"
         data-testid="status-magnet"
-        @click="ui.omniEdit = !ui.omniEdit"
+        @click="goHome(); ui.omniEdit = !ui.omniEdit"
       >
         <Icon :path="mdiMagnet" />
       </button>
