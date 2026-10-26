@@ -82,8 +82,9 @@ func extractSearchJSON(body []byte, extraction *jsonExtraction) ([]scraper.Resul
 			return nil, errors.New("provider list must be an array")
 		}
 	}
+	// Match HTML extraction: retain a bounded prefix of a valid large response.
 	if len(nodes) > maxSearchResults {
-		return nil, errors.New("too many provider results")
+		nodes = nodes[:maxSearchResults]
 	}
 	rows := make([]scraper.Result, 0, len(nodes))
 	for _, node := range nodes {

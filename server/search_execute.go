@@ -176,7 +176,8 @@ func extractSearchHTML(e *scraper.Endpoint, doc *goquery.Document) ([]scraper.Re
 	var failed error
 	nodes.EachWithBreak(func(_ int, row *goquery.Selection) bool {
 		if len(rows) >= maxSearchResults {
-			failed = errors.New("too many provider results")
+			// Providers may return more rows than the UI accepts. Stop extraction
+			// at the cap rather than discard an otherwise valid search.
 			return false
 		}
 		result := scraper.Result{}

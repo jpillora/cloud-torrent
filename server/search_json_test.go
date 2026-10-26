@@ -79,7 +79,6 @@ func TestJSONProviderFailuresAndUnsafeResults(t *testing.T) {
 		"data":       `{"data":{"items":[{"download":"data:text/plain,x"}]}}`,
 		"file":       `{"data":{"items":[{"download":"file:///secret"}]}}`,
 		"object":     `{"data":{"items":[{"title":{}}]}}`,
-		"many":       `{"data":{"items":[` + strings.TrimSuffix(strings.Repeat(`{},`, maxSearchResults+1), ",") + `]}}`,
 		"large":      strings.Repeat(" ", maxSearchBytes+1),
 	}
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -54,7 +55,7 @@ func TestProviderResponseBudgetsOnActualRoutes(t *testing.T) {
 	defer origin.Close()
 	s := searchFixtureServer(t, origin.URL)
 	s.searchTimeout = 3 * time.Second
-	for _, query := range []string{"large", "gzip", "many", "fail", "redirect"} {
+	for _, query := range []string{"large", "gzip", "fail", "redirect"} {
 		w := do(searchHandler(s), "GET", "/search/fixture?query="+query)
 		if w.Code == 200 {
 			t.Fatalf("unbounded provider %s accepted", query)
@@ -171,5 +172,58 @@ func TestProviderConcurrencyIsBoundedAndRecovers(t *testing.T) {
 	}
 	if w := do(searchHandler(s), "GET", "/search/fixture?query=ok"); w.Code != 200 {
 		t.Fatal("slots did not recover", w.Code)
+	}
+}
+
+// LimeTorrents returns 1,000 rows for broad queries. Keep the first bounded
+// page, in provider order, rather than failing every result in the response.
+func TestProviderResultCapReturnsFirstRows(t *testing.T) {
+	for _, format := range []string{"html", "json"} {
+		t.Run(format, func(t *testing.T) {
+			origin := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if format == "json" {
+					fmt.Fprint(w, `{"data":{"items":[`)
+				}
+				for i := range maxSearchResults * 2 {
+					if format == "html" {
+						fmt.Fprintf(w, "<li><b>result-%d</b></li>", i)
+					} else {
+						if i > 0 {
+							fmt.Fprint(w, ",")
+						}
+						fmt.Fprintf(w, `{"title":"result-%d","links":["/detail/%d"]}`, i, i)
+					}
+				}
+				if format == "json" {
+					fmt.Fprint(w, `]}}`)
+				}
+			}))
+			defer origin.Close()
+			s := searchFixtureServer(t, origin.URL)
+			if format == "json" {
+				s = jsonSearchServer(t, jsonEndpoint(origin.URL+"/{{query}}"))
+			}
+			s.searchTimeout = 3 * time.Second
+			w := do(searchHandler(s), "GET", "/search/fixture?query=many")
+			if w.Code != 200 {
+				t.Fatalf("search failed: %d %s", w.Code, w.Body.String())
+			}
+			var rows []map[string]string
+			must(t, json.Unmarshal(w.Body.Bytes(), &rows))
+			if len(rows) != maxSearchResults {
+				t.Fatalf("result count: %d", len(rows))
+			}
+			for i, row := range rows {
+				if row["name"] != fmt.Sprintf("result-%d", i) {
+					t.Fatalf("result order at %d: %v", i, row)
+				}
+				if format == "json" && row["url"] != fmt.Sprintf("%s/detail/%d", origin.URL, i) {
+					t.Fatalf("result URL was not normalized: %v", row)
+				}
+			}
+			if len(s.searchSlots) != 0 {
+				t.Fatal("request slot leaked")
+			}
+		})
 	}
 }
