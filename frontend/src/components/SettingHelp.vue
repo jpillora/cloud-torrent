@@ -98,7 +98,9 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .setting-info { display: inline-flex; flex: none; }
-.info-button { display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; padding: 0; border: 1px solid var(--border); border-radius: 50%; background: var(--grey-btn); color: var(--muted); font-family: Georgia, serif; font-style: italic; flex: none; }
-.info-button:hover, .info-button[aria-expanded='true'] { color: var(--text); background: var(--grey-btn-hover); }
+.info-button { display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; padding: 0; border: none; border-radius: 50%; background: transparent; color: var(--muted); font-family: Georgia, serif; font-style: italic; flex: none; }
+.info-button span { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: 1rem; height: 1rem; border: 1px solid var(--border); border-radius: 50%; background: var(--grey-btn); font-size: .65rem; }
+.info-button:hover { background: transparent; }
+.info-button:hover span, .info-button[aria-expanded='true'] span { color: var(--text); background: var(--grey-btn-hover); }
 .setting-tooltip { position: fixed; z-index: 100; box-sizing: border-box; max-height: calc(100dvh - 24px); overflow: auto; margin: 0; padding: .8rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); color: var(--text); box-shadow: 0 5px 20px rgb(0 0 0 / 20%); font-size: .85rem; line-height: 1.5; font-weight: normal; overflow-wrap: anywhere; }
 </style>
