@@ -5,6 +5,8 @@ import {
   mdiLoading,
   mdiFolder,
   mdiFolderOpen,
+  mdiFolderOutline,
+  mdiFolderOpenOutline,
   mdiMusic,
   mdiImage,
   mdiMovie,
@@ -50,8 +52,11 @@ const mediaType = computed<Media | null>(() => {
 })
 
 const icon = computed(() => {
+  if (!isFile.value) {
+    if (downloading.value) return open.value ? mdiFolderOpenOutline : mdiFolderOutline
+    return open.value ? mdiFolderOpen : mdiFolder
+  }
   if (downloading.value) return mdiLoading
-  if (!isFile.value) return open.value ? mdiFolderOpen : mdiFolder
   switch (mediaType.value) {
     case 'audio':
       return mdiMusic
@@ -146,6 +151,8 @@ async function remove() {
         v-if="!isFile"
         type="button"
         class="folder-toggle name"
+        :class="{ downloading }"
+        :title="downloading ? 'Download in progress' : undefined"
         :aria-expanded="open"
         data-testid="fs-folder-toggle"
         @click="toggle"

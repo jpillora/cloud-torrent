@@ -250,7 +250,7 @@ select:focus {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin: 0 0 0.55rem;
+  margin: 10px 0 0.55rem;
 }
 .section-header h3 {
   margin: 0;
@@ -634,61 +634,168 @@ select:focus {
 .torrent:hover {
   box-shadow: var(--card-shadow-hover);
 }
-.torrent .dimmer {
-  position: absolute;
-  inset: 0;
+.torrent-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.75rem;
+}
+.torrent-name {
+  min-width: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.torrent-name a {
+  color: inherit;
+}
+.torrent-controls {
   display: flex;
+  gap: 0.2rem;
+}
+.torrent-icon-button {
+  position: relative;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--dimmer);
-  border-radius: var(--radius);
-  color: var(--muted);
-  z-index: 2;
-}
-.torrent .row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-}
-.torrent .info {
-  flex: 1;
-  min-width: 0;
-}
-.torrent .info .name {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
   font-size: 1.05rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  background: transparent;
+  color: var(--muted);
 }
-.torrent .info .name a {
+.torrent-icon-button:hover {
   color: var(--text);
 }
-.torrent .info .hash {
-  font-size: 0.72rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.torrent-icon-button.resume-action {
+  color: var(--green);
 }
-.torrent .controls {
-  display: flex;
-  gap: 0.3rem;
-  white-space: nowrap;
-  /* sit above the .dimmer (z-index 2) so a pending torrent stays cancellable
-     while its metadata loads */
+.torrent-icon-button.loading > .mdi {
+  visibility: hidden;
+}
+.torrent-icon-button .btn-spinner {
+  position: absolute;
+  margin: 0;
+}
+.torrent-actions {
   position: relative;
-  z-index: 3;
 }
-.torrent .status {
-  font-size: 0.85rem;
-  color: var(--status);
+.torrent-actions-menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  z-index: 10;
+  width: max-content;
+  max-width: min(18rem, calc(100vw - 4rem));
+  padding: 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--card-shadow-hover);
+}
+.torrent-actions-menu > button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.7rem;
+  line-height: 1.3;
+  text-align: left;
+  font-weight: 400;
+  color: var(--text);
+  background: transparent;
+}
+.torrent-actions-menu > button:hover {
+  background: var(--grey-btn);
+}
+.torrent-actions-menu .remove-action {
+  color: var(--red);
+}
+.torrent-icon-button:focus-visible,
+.torrent-actions-menu > button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.torrent-state-row,
+.torrent-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.torrent-state-row {
+  margin-top: 0.45rem;
+}
+.torrent-state,
+.torrent-rates,
+.torrent-rates > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.torrent-state.sharing,
+.torrent-state.complete {
+  color: var(--green);
+}
+.torrent-percent {
+  color: var(--text);
+  font-weight: 700;
+}
+.torrent-summary {
   margin-top: 0.5rem;
 }
-.torrent .status .muted {
+.torrent-rates {
+  gap: 0.65rem;
+  color: var(--text);
+}
+.torrent-rates > span {
+  white-space: nowrap;
+}
+.torrent-notice {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0.65rem 0 0;
+  font-size: 0.8rem;
   color: var(--muted);
+}
+.torrent-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem 1rem;
+  margin: 0.9rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.torrent-details dt {
+  margin-bottom: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.torrent-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.torrent-hash {
+  grid-column: 1 / -1;
+}
+.torrent-hash code {
+  font-size: 0.75rem;
+  user-select: all;
+}
+.torrent-progress.complete .bar {
+  background: var(--green);
 }
 
 /* progress bar */
@@ -806,6 +913,9 @@ select:focus {
 .folder-toggle:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
+}
+.folder-toggle.downloading .mdi {
+  opacity: 0.6;
 }
 .node .icon {
   user-select: none;
