@@ -10,37 +10,48 @@ import { goHome } from '../navigation'
 
 // Seed this page's editable copy once, including when a direct settings link
 // loads before realtime state. Later sync updates must preserve unsaved edits.
-const form = reactive<Partial<Config>>({})
+type ConfigDraft = { [K in keyof Config]: Config[K] extends number ? number | '' : Config[K] }
+const form = reactive<Partial<ConfigDraft>>({})
 const error = ref('')
 const saved = ref(false)
 const initialized = ref(false)
 watch(() => state.Config, (config) => {
   if (!initialized.value && config) {
-    Object.assign(form, config)
+    Object.assign(form, Object.fromEntries(
+      Object.entries(config).map(([key, value]) => [key, value === 0 ? '' : value]),
+    ))
     initialized.value = true
   }
 }, { immediate: true })
 
-const settings: Record<keyof Config, { label: string; help: string }> = {
-  SeedRatioLimit: { label: 'Seeding ratio limit', help: 'Stop sharing when uploaded bytes reach this multiple of the selected content size. Existing verified content counts toward that size. Set 0 to disable. Either the ratio or time limit can stop sharing; Resume sharing overrides both until Stop.' },
-  SeedTimeMinutes: { label: 'Seeding time limit (minutes)', help: 'Stop sharing after this many minutes spent actively seeding. Paused time is excluded and the total survives restarts. Set 0 to disable. Either the ratio or time limit can stop sharing.' },
-  MaxActiveDownloads: { label: 'Active downloads', help: 'Maximum simultaneous downloads, from 1 to 256. Set 0 for unlimited. Waiting torrents start in queue order; completed selections can seed without using a download slot. At most 256 torrents can be admitted in total.' },
-  MaxActiveMetadata: { label: 'Metadata concurrency', help: 'Maximum simultaneous magnet metadata fetches, up to 64. Set 0 to use four slots. Additional magnets wait in the queue without starting a metadata connection.' },
-  DownloadLimitKiB: { label: 'Download limit (KiB/s)', help: 'Shared download payload limit across all torrents, including webseeds. One KiB is 1024 bytes. Set 0 for unlimited; a short 64 KiB burst is allowed. Changes apply without restarting downloads.' },
-  UploadLimitKiB: { label: 'Upload limit (KiB/s)', help: 'Shared upload payload limit across all torrents. One KiB is 1024 bytes. Set 0 for unlimited; a short 64 KiB burst is allowed. Changes apply without restarting torrents.' },
+const settings: Record<keyof Config, { label: string; help: string; zeroPlaceholder?: string }> = {
+  SeedRatioLimit: { label: 'Seeding ratio limit', zeroPlaceholder: 'No limit', help: 'Stop sharing when uploaded bytes reach this multiple of the selected content size. Existing verified content counts toward that size. Leave empty for no limit. Either the ratio or time limit can stop sharing; Resume sharing overrides both until Stop.' },
+  SeedTimeMinutes: { label: 'Seeding time limit (minutes)', zeroPlaceholder: 'No limit', help: 'Stop sharing after this many minutes spent actively seeding. Paused time is excluded and the total survives restarts. Leave empty for no limit. Either the ratio or time limit can stop sharing.' },
+  MaxActiveDownloads: { label: 'Active downloads', zeroPlaceholder: 'No limit', help: 'Maximum simultaneous downloads, from 1 to 256. Leave empty for no limit. Waiting torrents start in queue order; completed selections can seed without using a download slot. At most 256 torrents can be admitted in total.' },
+  MaxActiveMetadata: { label: 'Metadata concurrency', zeroPlaceholder: 'Default (4)', help: 'Maximum simultaneous magnet metadata fetches, up to 64. Leave empty to use four slots. Additional magnets wait in the queue without starting a metadata connection.' },
+  DownloadLimitKiB: { label: 'Download limit (KiB/s)', zeroPlaceholder: 'No limit', help: 'Shared download payload limit across all torrents, including webseeds. One KiB is 1024 bytes. Leave empty for no limit; a short 64 KiB burst is allowed. Changes apply without restarting downloads.' },
+  UploadLimitKiB: { label: 'Upload limit (KiB/s)', zeroPlaceholder: 'No limit', help: 'Shared upload payload limit across all torrents. One KiB is 1024 bytes. Leave empty for no limit; a short 64 KiB burst is allowed. Changes apply without restarting torrents.' },
   AutoStart: { label: 'Auto start', help: 'Automatically start newly added torrents when queue capacity is available. Turning this on does not resume torrents you have explicitly paused.' },
   DisableEncryption: { label: 'Disable encryption', help: 'Require plaintext peer transport. When off, encrypted transport is preferred with plaintext fallback. Peer transport encryption does not provide anonymity.' },
   DownloadDirectory: { label: 'Download directory', help: 'Server filesystem directory used for torrent data and served downloads. It must not overlap private session state or the import inbox. Changing it recreates the torrent client and may require checking files in the new location.' },
   EnableUpload: { label: 'Enable upload', help: 'Allow sending torrent payload to peers while downloading. Turn off to disable payload uploads, including seeding.' },
   EnableSeeding: { label: 'Enable seeding', help: 'Continue sharing selected content after it finishes downloading. Enable upload must also be on. Optional ratio and active-time limits can stop sharing automatically.' },
-  IncomingPort: { label: 'Incoming port', help: 'Port on the server for incoming BitTorrent peer connections. Container or router port mappings must allow this port for remote peers to reach it. This does not change the web interface port.' },
+  IncomingPort: { label: 'Incoming port', zeroPlaceholder: 'Default (50007)', help: 'Port on the server for incoming BitTorrent peer connections. Leave empty to use port 50007. Container or router port mappings must allow this port for remote peers to reach it. This does not change the web interface port.' },
+}
+
+function normalizeZero(key: keyof Config) {
+  if (form[key] === 0) Object.assign(form, { [key]: '' })
 }
 
 async function save() {
   error.value = ''
   saved.value = false
   try {
-    await api.configure(form as Config)
+    const config = { ...form } as Config
+    for (const key of Object.keys(settings) as (keyof Config)[]) {
+      if (settings[key].zeroPlaceholder && form[key] === '') Object.assign(config, { [key]: 0 })
+    }
+    await api.configure(config)
     saved.value = true
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
@@ -77,13 +88,15 @@ async function save() {
         </div>
         <input v-if="typeof form[key] === 'boolean'" :id="`config-${key}`" v-model="form[key]" type="checkbox" :data-testid="`config-${key}`" :aria-describedby="`help-${key}`" />
         <input
-          v-else-if="typeof form[key] === 'number'"
+          v-else-if="definition.zeroPlaceholder"
           :id="`config-${key}`"
           type="number"
           :min="key.endsWith('LimitKiB') || key.startsWith('Seed') || key.startsWith('MaxActive') ? 0 : undefined"
           :max="key.endsWith('LimitKiB') ? 1073741824 : key === 'MaxActiveDownloads' ? 256 : key === 'MaxActiveMetadata' ? 64 : undefined"
           :step="key === 'SeedRatioLimit' ? 'any' : 1"
+          :placeholder="definition.zeroPlaceholder"
           v-model.number="form[key]"
+          @blur="normalizeZero(key)"
           :data-testid="`config-${key}`"
           :aria-describedby="`help-${key}`"
         />

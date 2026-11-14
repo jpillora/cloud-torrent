@@ -15,6 +15,31 @@ export async function verifySettings(browser: Browser, base: string) {
     assert.equal(await page.getByTestId("main-page").count(), 0, "settings must replace the main page");
     const upload = page.getByTestId("config-UploadLimitKiB");
     await upload.waitFor();
+    const zeroFields = {
+      SeedRatioLimit: "No limit",
+      SeedTimeMinutes: "No limit",
+      MaxActiveDownloads: "No limit",
+      MaxActiveMetadata: "Default (4)",
+      DownloadLimitKiB: "No limit",
+      UploadLimitKiB: "No limit",
+    };
+    for (const [key, placeholder] of Object.entries(zeroFields)) {
+      const input = page.getByTestId(`config-${key}`);
+      assert.equal(await input.inputValue(), "");
+      assert.equal(await input.getAttribute("placeholder"), placeholder);
+      assert.equal(await input.getAttribute("type"), "number");
+    }
+    const ratio = page.getByTestId("config-SeedRatioLimit");
+    await ratio.fill("0.5");
+    await ratio.blur();
+    assert.equal(await ratio.inputValue(), "0.5", "fractional limits must stay editable");
+    await upload.fill("0");
+    await upload.blur();
+    assert.equal(await upload.inputValue(), "", "zero must display its placeholder after editing");
+    assert.equal(await upload.getAttribute("type"), "number", "empty numeric inputs must remain numeric");
+    const incoming = page.getByTestId("config-IncomingPort");
+    assert.equal(await incoming.getAttribute("placeholder"), "Default (50007)");
+    await incoming.fill("");
     const help = page.getByRole("button", { name: "About Upload limit (KiB/s)", exact: true });
     const explanation = page.locator("#help-UploadLimitKiB");
     assert.equal(await explanation.isVisible(), false);
@@ -58,8 +83,16 @@ export async function verifySettings(browser: Browser, base: string) {
     await upload.fill("123");
     let fail = true;
     let submissions = 0;
+    let expectedUpload = 123;
+    let expectedRatio = 0.5;
     await page.route("**/api/configure", async route => {
-      assert.equal(route.request().postDataJSON().UploadLimitKiB, 123);
+      const config = route.request().postDataJSON();
+      assert.equal(config.UploadLimitKiB, expectedUpload);
+      assert.equal(config.SeedRatioLimit, expectedRatio);
+      assert.equal(config.IncomingPort, 0);
+      for (const key of Object.keys(zeroFields).filter(key => key !== "UploadLimitKiB" && key !== "SeedRatioLimit")) {
+        assert.equal(config[key], 0, `${key} must save as numeric zero when empty`);
+      }
       submissions++;
       await route.fulfill({ status: fail ? 400 : 200, body: fail ? "Cannot save test settings" : "OK" });
     });
@@ -70,6 +103,13 @@ export async function verifySettings(browser: Browser, base: string) {
     await page.getByTestId("config-save").click();
     await page.getByTestId("config-saved").waitFor();
     assert.equal(submissions, 2);
+    expectedUpload = 0;
+    expectedRatio = 0;
+    await upload.fill("");
+    await ratio.fill("");
+    await page.getByTestId("config-save").click();
+    await page.getByTestId("config-saved").waitFor();
+    assert.equal(submissions, 3, "clearing a limit must save successfully");
     await page.getByTestId("settings-back").click();
     await page.getByTestId("main-page").waitFor();
     await page.goBack();
